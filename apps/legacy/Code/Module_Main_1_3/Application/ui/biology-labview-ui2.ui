@@ -1,0 +1,1145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1792</width>
+    <height>1120</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>1368</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>1366</width>
+         <height>1094</height>
+        </rect>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_24">
+        <item>
+         <widget class="QFrame" name="CalculatedPlots">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>350</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <widget class="QWidget" name="assayBufferGraph" native="true">
+           <property name="geometry">
+            <rect>
+             <x>90</x>
+             <y>110</y>
+             <width>321</width>
+             <height>211</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="assayLineEdit1">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="assayLineEdit2">
+           <property name="geometry">
+            <rect>
+             <x>250</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="assayLineEdit3">
+           <property name="geometry">
+            <rect>
+             <x>340</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="assayBufferGraphLabel">
+           <property name="geometry">
+            <rect>
+             <x>90</x>
+             <y>80</y>
+             <width>71</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Assay Buffer</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="biCarbLabel">
+           <property name="geometry">
+            <rect>
+             <x>250</x>
+             <y>30</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>BiCarb cal</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="slope1Label">
+           <property name="geometry">
+            <rect>
+             <x>250</x>
+             <y>50</y>
+             <width>71</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>(nmol/ml/mV)</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="co2MseLabel">
+           <property name="geometry">
+            <rect>
+             <x>340</x>
+             <y>50</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>CO2 MSE</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="hclGraph" native="true">
+           <property name="geometry">
+            <rect>
+             <x>440</x>
+             <y>110</y>
+             <width>321</width>
+             <height>211</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="hclLineEdit1">
+           <property name="geometry">
+            <rect>
+             <x>490</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="hclLineEdit2">
+           <property name="geometry">
+            <rect>
+             <x>590</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="hclLineEdit3">
+           <property name="geometry">
+            <rect>
+             <x>690</x>
+             <y>80</y>
+             <width>61</width>
+             <height>20</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="intercept2Label">
+           <property name="geometry">
+            <rect>
+             <x>490</x>
+             <y>60</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Intercept 2</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="hclGraphLabel">
+           <property name="geometry">
+            <rect>
+             <x>440</x>
+             <y>80</y>
+             <width>41</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>HCL</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="slope2Label">
+           <property name="geometry">
+            <rect>
+             <x>590</x>
+             <y>60</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>nmol/ml/mV</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="biCarnMseLabel">
+           <property name="geometry">
+            <rect>
+             <x>690</x>
+             <y>60</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>BiCarb MSE</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="velocityGraph" native="true">
+           <property name="geometry">
+            <rect>
+             <x>790</x>
+             <y>110</y>
+             <width>501</width>
+             <height>211</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="velocityGraphLabel">
+           <property name="geometry">
+            <rect>
+             <x>790</x>
+             <y>80</y>
+             <width>171</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Velocity - Concentration Graph</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="intercept1Label">
+           <property name="geometry">
+            <rect>
+             <x>170</x>
+             <y>50</y>
+             <width>61</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Intercept</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="RawDataPlot">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>350</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <widget class="QWidget" name="verticalLayoutWidget_14">
+           <property name="geometry">
+            <rect>
+             <x>100</x>
+             <y>40</y>
+             <width>77</width>
+             <height>251</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="graphCheckBoxes">
+            <item>
+             <widget class="QCheckBox" name="graph1">
+              <property name="text">
+               <string>Mass 32</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph2">
+              <property name="text">
+               <string>Mass 34</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph3">
+              <property name="text">
+               <string>Mass 36</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph4">
+              <property name="text">
+               <string>Mass 44</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph5">
+              <property name="text">
+               <string>Mass 45</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph6">
+              <property name="text">
+               <string>Mass 46</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph7">
+              <property name="text">
+               <string>Mass 47</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="graph8">
+              <property name="text">
+               <string>Mass 49</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="realTimeGraph" native="true">
+           <property name="geometry">
+            <rect>
+             <x>210</x>
+             <y>60</y>
+             <width>1071</width>
+             <height>211</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="massPlotLabel">
+           <property name="geometry">
+            <rect>
+             <x>210</x>
+             <y>10</y>
+             <width>60</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mass Plot</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="startPlot">
+           <property name="geometry">
+            <rect>
+             <x>230</x>
+             <y>290</y>
+             <width>81</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Start</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="pauseResumeGraph">
+           <property name="geometry">
+            <rect>
+             <x>340</x>
+             <y>290</y>
+             <width>81</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Pause</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="speedLabel">
+           <property name="geometry">
+            <rect>
+             <x>1070</x>
+             <y>300</y>
+             <width>41</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Speed</string>
+           </property>
+          </widget>
+          <widget class="QSlider" name="plotSpeedSlider">
+           <property name="geometry">
+            <rect>
+             <x>1120</x>
+             <y>300</y>
+             <width>160</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="CalculationButtons">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>350</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <widget class="QLabel" name="label">
+           <property name="geometry">
+            <rect>
+             <x>100</x>
+             <y>20</y>
+             <width>141</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>O2 Assay Buffer Zero</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_13">
+           <property name="geometry">
+            <rect>
+             <x>310</x>
+             <y>20</y>
+             <width>141</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>BiCarb/CO2</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="horizontalLayoutWidget">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>50</y>
+             <width>421</width>
+             <height>33</height>
+            </rect>
+           </property>
+           <layout class="QHBoxLayout" name="buttonLayout1">
+            <item>
+             <widget class="QPushButton" name="o2ZeroButton">
+              <property name="text">
+               <string>O2 Zero</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="o2ZeroLineEdit"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="biCarbButton">
+              <property name="text">
+               <string>BiCarb/CO2</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="biCarbLineEdit"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>110</y>
+             <width>114</width>
+             <height>151</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="assayBufferButtons">
+            <item>
+             <widget class="QPushButton" name="co2Cal0Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>CO2 Cal Zero</string>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>16</width>
+                <height>16</height>
+               </size>
+              </property>
+              <property name="autoRepeatDelay">
+               <number>302</number>
+              </property>
+              <property name="autoRepeatInterval">
+               <number>106</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="co2Cal6Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>CO2 Cal 6uL</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="co2Cal12Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>CO2 Cal 12uL</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="co2Cal18Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>CO2 Cal 18uL</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_2">
+           <property name="geometry">
+            <rect>
+             <x>120</x>
+             <y>110</y>
+             <width>81</width>
+             <height>151</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="assayBufferLineEdits">
+            <item>
+             <widget class="QLineEdit" name="assayLineEdit1_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="assayLineEdit2_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="assayLineEdit3_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="assayLineEdit4"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QLabel" name="label_3">
+           <property name="geometry">
+            <rect>
+             <x>120</x>
+             <y>90</y>
+             <width>81</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Assay Buffer</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_3">
+           <property name="geometry">
+            <rect>
+             <x>230</x>
+             <y>110</y>
+             <width>125</width>
+             <height>151</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="hclButtons">
+            <item>
+             <widget class="QPushButton" name="biCarbCal0Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>BiCarb Cal Zero</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="biCarbCal2Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>BiCarb Cal 2uL</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="biCarbCal4Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>BiCarb Cal 2uL</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="biCarbCal6Button">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>BiCarb Cal 6uL</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_4">
+           <property name="geometry">
+            <rect>
+             <x>340</x>
+             <y>110</y>
+             <width>81</width>
+             <height>151</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="hclLineEdits">
+            <item>
+             <widget class="QLineEdit" name="hclLineEdit1_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="hclLineEdit2_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="hclLineEdit3_2"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="hclLineEdit4"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QLabel" name="label_4">
+           <property name="geometry">
+            <rect>
+             <x>340</x>
+             <y>90</y>
+             <width>81</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>HCL</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_5">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>280</y>
+             <width>101</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="text">
+            <string>Temperature (C)</string>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="lineEdit_36">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>310</y>
+             <width>91</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="lineEdit_37">
+           <property name="geometry">
+            <rect>
+             <x>230</x>
+             <y>310</y>
+             <width>91</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_6">
+           <property name="geometry">
+            <rect>
+             <x>230</x>
+             <y>280</y>
+             <width>101</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="text">
+            <string>O2 Calibration</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="co2ZeroButton">
+           <property name="geometry">
+            <rect>
+             <x>460</x>
+             <y>50</y>
+             <width>91</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>CO2 Zero</string>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="co2ZeroLineEdit1">
+           <property name="geometry">
+            <rect>
+             <x>570</x>
+             <y>50</y>
+             <width>81</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="co2Zero44Label">
+           <property name="geometry">
+            <rect>
+             <x>560</x>
+             <y>20</y>
+             <width>111</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>CO2 Zero(Mass 44)</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="co2Zero45Label">
+           <property name="geometry">
+            <rect>
+             <x>690</x>
+             <y>20</y>
+             <width>111</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>CO2 Zero(Mass 45)</string>
+           </property>
+          </widget>
+          <widget class="QLineEdit" name="co2ZeroLineEdit2">
+           <property name="geometry">
+            <rect>
+             <x>690</x>
+             <y>50</y>
+             <width>81</width>
+             <height>22</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_5">
+           <property name="geometry">
+            <rect>
+             <x>570</x>
+             <y>100</y>
+             <width>81</width>
+             <height>141</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="co2LineEdits">
+            <item>
+             <widget class="QLineEdit" name="lineEdit_11"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_13"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_15"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_14"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_6">
+           <property name="geometry">
+            <rect>
+             <x>460</x>
+             <y>100</y>
+             <width>91</width>
+             <height>71</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="blankExtractButtons">
+            <item>
+             <widget class="QPushButton" name="blankButton">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Blank</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="extractButton">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Extract</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QLabel" name="co2Label">
+           <property name="geometry">
+            <rect>
+             <x>600</x>
+             <y>80</y>
+             <width>41</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>CO2</string>
+           </property>
+          </widget>
+          <widget class="QLabel" name="o2Label">
+           <property name="geometry">
+            <rect>
+             <x>720</x>
+             <y>80</y>
+             <width>41</width>
+             <height>16</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>O2</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_13">
+           <property name="geometry">
+            <rect>
+             <x>690</x>
+             <y>100</y>
+             <width>81</width>
+             <height>141</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="o2LineEdits">
+            <item>
+             <widget class="QLineEdit" name="lineEdit_32"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_33"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_34"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_35"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QPushButton" name="addToTableButton">
+           <property name="geometry">
+            <rect>
+             <x>800</x>
+             <y>160</y>
+             <width>91</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Add to Table</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="purgeTableButton">
+           <property name="geometry">
+            <rect>
+             <x>800</x>
+             <y>220</y>
+             <width>91</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Purge Table</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="horizontalLayoutWidget_4">
+           <property name="geometry">
+            <rect>
+             <x>910</x>
+             <y>70</y>
+             <width>361</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <layout class="QHBoxLayout" name="tableLabels">
+            <item>
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>V0</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>Vc</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string>[CO2]</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>[O2]</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="horizontalLayoutWidget_3">
+           <property name="geometry">
+            <rect>
+             <x>910</x>
+             <y>90</y>
+             <width>361</width>
+             <height>31</height>
+            </rect>
+           </property>
+           <layout class="QHBoxLayout" name="tableLineEdits">
+            <item>
+             <widget class="QLineEdit" name="lineEdit_41"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_40"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_39"/>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_38"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QTableWidget" name="tableWidget">
+           <property name="geometry">
+            <rect>
+             <x>910</x>
+             <y>130</y>
+             <width>361</width>
+             <height>151</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+       <zorder>CalculationButtons</zorder>
+       <zorder>RawDataPlot</zorder>
+       <zorder>CalculatedPlots</zorder>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1792</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>false</bool>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionSelect_Folder"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionSelect_Folder">
+   <property name="text">
+    <string>Select Folder</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
