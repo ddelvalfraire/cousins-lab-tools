@@ -7,7 +7,7 @@ __maintainer__ = ""
 __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
-from itertools import zip_longest
+from cgi import maxlen
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
@@ -34,7 +34,8 @@ from stopwatch import Stopwatch
 from datetime import datetime
 from math import floor
 from plotAllThread import PlotAllThread
-
+import openpyxl
+from itertools import zip_longest
 
 
 #####################################################################
@@ -159,6 +160,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.yAxisEquiation = sympify(self.DefaultYAxisEquiation)
         self.sampleEquationXPlotData = []
         self.sampleEquationYPlotData = []
+
+        self.currentPlotData = (dict)
         # List for holding custom plot data
         self.samplePlotData = []
 
@@ -854,21 +857,16 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ################################## bottomBarLayout #####################################################
         self.calculationPlotAddDataButton = Button("Add Data", 120, 26)
-        tempLable = QtWidgets.QLabel("Sample temperature:")
+        tempLable = QtWidgets.QLabel("Delta Part:")
 
-        self.samplePlotTemperatureLineEdit = LineEdit()
-        self.samplePlotTemperatureLineEdit.setReadOnly(False)
+        self.samplePlotDeltaPartLineEdit = LineEdit()
+        self.samplePlotDeltaPartLineEdit.setReadOnly(False)
 
-        deltaLable = QtWidgets.QLabel("Delta:")
-        self.samplePlotDeltaLineEdit = LineEdit()
 
         bottomBarLayout = QtWidgets.QGridLayout()
         bottomBarLayout.addWidget(self.calculationPlotAddDataButton, 1, 1)
         bottomBarLayout.addWidget(tempLable, 1, 2)
-        bottomBarLayout.addWidget(self.samplePlotTemperatureLineEdit, 1, 3)
-        bottomBarLayout.addWidget(deltaLable, 1, 4)
-        bottomBarLayout.addWidget(self.samplePlotDeltaLineEdit, 1,5)
-
+        bottomBarLayout.addWidget(self.samplePlotDeltaPartLineEdit, 1, 3)
 
         ################################## Table Sample Name #####################################################
         sampleNameLamble = QtWidgets.QLabel("Sample Name:")
@@ -1247,7 +1245,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
             yexp=yexp,
             lineOfBestFit=self.xyGraphLineOfBestFit,
             getVars=self.getVarsDict,
-            temp=self.samplePlotTemperatureLineEdit.text(),
+            temp=self.temperatureLineEdit.text(),
+            deltaPart=self.samplePlotDeltaPartLineEdit.text(),
         )
 
         self._calcWorker.moveToThread(self._calcThread)
@@ -1289,20 +1288,27 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 pen=pg.mkPen(color=(255, 0, 0), width=2, style=QtCore.Qt.DashLine)
             )
             self.calculationPlotGraph.plot(
-                res["equationX"], res["equationY"],
+                res["sampleEquationPlotX"], res["sampleEquationPlotY"],
                 pen=None, symbol='o', symbolBrush='r'
             )
+            # r^2 and delta graph labels
             try:
                 rSquared = round(res["rSquared"], 5)
             except:
                 rSquared = "N/A"
-            text = pg.TextItem(f"R²={rSquared}", color=(100, 255, 100),  anchor=(1, 0))
+            try:
+                delta = round(res["delta"], 5)
+            except:
+                delta = "N/A"
 
-            self.autoRangeToData(res["equationX"], res["equationY"], self.calculationPlotGraph, 0.1)
+            text = pg.TextItem(f"R²={rSquared}\nDelta={delta}", color=(100, 255, 100),  anchor=(1, 0))
+
+            self.autoRangeToData(res["sampleEquationPlotX"], res["sampleEquationPlotY"], self.calculationPlotGraph, 0.1)
             view = self.calculationPlotGraph.getViewBox()
             x_range, y_range = view.viewRange()
             text.setPos(x_range[1], y_range[1])
             self.calculationPlotGraph.addItem(text)
+
             # Time vs d²/dt²(Mass44)
             if hasattr(self, "calculationPlotGraph2") and res.get("times") is not None and res.get(
                     "d2_m44") is not None:
@@ -1322,15 +1328,12 @@ class LabViewModule1(QtWidgets.QMainWindow):
             elif hasattr(self, "calculationPlotGraph2"):
                 self.calculationPlotGraph2Curve.setData([], [])
 
-            self.sampleEquationXPlotData = Calculations.roundIfFloat(res["sampleX"], 5)
-            self.sampleEquationYPlotData = Calculations.roundIfFloat(res["sampleY"], 5)
-
-            # Delta Function
-            if res["delta"] is not None:
-                self.samplePlotDeltaLineEdit.setText(Calculations.roundIfFloat(str(res["delta"]), 5))
-            else:
-                self.samplePlotDeltaLineEdit.setText("undef")
-
+            self.currentPlotData = {
+                "sampleEquationXPlotData": Calculations.roundIfFloat(res["sampleX"], 5),
+                "sampleEquationYPlotData": Calculations.roundIfFloat(res["sampleY"], 5),
+                "rSquared": rSquared,
+                "delta": delta,
+            }
         except Exception as e:
             self.throwTellUserDilog("Plot Update Error", str(e))
 
@@ -1389,24 +1392,54 @@ class LabViewModule1(QtWidgets.QMainWindow):
             os.makedirs(path)
 
         # Invoke Save File Dialog - returns the path of the file and file type
-        path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path, "CSV Files (*.csv)")
+        path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path, "Excel Files (*.xlsx)")
 
         # if file type is not null
         if ok:
             # catch export errors, gernal file write error ei file is open somewhere else
             try:
-                with open(path, 'w', newline='') as csvfile:
-                    writer = csv.writer(csvfile, dialect='excel', lineterminator='\n')
+                wb = openpyxl.Workbook()
+                # Remove the default empty sheet
+                wb.remove(wb.active)
 
-                    for d in self.samplePlotData:
-                        columnHeaders = [d[0]]
-                        dataLists = [[]]
-                        for i in range(1, len(d)):
-                            columnHeaders.append(d[i][0])
-                            dataLists.append(d[i][1])
-                        writer.writerow(list(columnHeaders))
-                        for row in zip_longest(*dataLists, fillvalue=''):
-                            writer.writerow(list(row))
+                for d in self.samplePlotData:
+                    sheetName = str(d[0])[:31] if d[0] else "Sheet"
+
+                    ws = wb.create_sheet(title=sheetName)
+
+                    columnHeaders = [str(d[0])]
+                    dataLists = [[]]
+                    for i in range(1, len(d)):
+                        header_name = str(d[i][0])
+                        columnHeaders.append(header_name)
+                        dataLists.append(d[i][1])
+
+                    bold_font = openpyxl.styles.Font(bold=True)
+                    for col, header in enumerate(columnHeaders, start=1):
+                        cell = ws.cell(row=1, column=col, value=header)
+                        cell.font = bold_font
+
+                    for rowIdx, rowValues in enumerate(zip_longest(*dataLists, fillvalue=''), start=2):
+                        for colIdx, value in enumerate(rowValues, start=1):
+                            if value is None:
+                                value = ""
+                            elif hasattr(value, "item"):
+                                value = value.item()
+                            elif not isinstance(value, (int, float, str)):
+                                value = str(value)
+                            ws.cell(row=rowIdx, column=colIdx, value=value)
+
+                    for colIdx, header in enumerate(columnHeaders, start=1):
+                        colLetter = openpyxl.utils.get_column_letter(colIdx)
+                        maxlength = len(header)
+                        for v in dataLists[colIdx - 1]:
+                            vStr = str(v)
+                            if len(vStr) > maxlength:
+                                maxlength = len(vStr)
+                        ws.column_dimensions[colLetter].width = min(maxlength + 2, 50)
+
+                # Save workbook
+                wb.save(path)
             except Exception as e:
                 self.throwTellUserDilog("Export Error", str(e))
 
@@ -1430,8 +1463,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         equationXName = self.xAxisLineEdit.text()
         equationYName = self.yAxisLineEdit.text()
 
-        equationXData = self.sampleEquationXPlotData
-        equatoinYData = self.sampleEquationYPlotData
+        equationXData = self.currentPlotData["sampleEquationXPlotData"]
+        equatoinYData = self.currentPlotData["sampleEquationYPlotData"]
 
         sampleData.append((equationXName, equationXData))
         sampleData.append((equationYName, equatoinYData))
@@ -1462,11 +1495,17 @@ class LabViewModule1(QtWidgets.QMainWindow):
         sampleData.append(("Line Of Best Fit", ["" + Calculations.roundIfFloat(str(slope), 5) +"*x"+ " + " + Calculations.roundIfFloat(str(intecept), 5)]))
 
         #################### Adds R^2 ####################
-        r2 = Calculations.rSquared(equationXData, equatoinYData)
+        r2 = self.currentPlotData["rSquared"]
         sampleData.append(("R^2", [str(r2)]))
+
+        #################### Adds Delta ####################
+        delta = self.currentPlotData["delta"]
+        sampleData.append(("Delta", [str(delta)]))
 
         #################### Adds Data to save ####################
         self.samplePlotData.append(sampleData)
+
+
 
         # Adds sample to table
         self.calculationPlotTable.insertRow(0)

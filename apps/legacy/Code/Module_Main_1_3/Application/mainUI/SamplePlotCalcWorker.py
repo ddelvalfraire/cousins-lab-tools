@@ -12,7 +12,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     resultReady = QtCore.pyqtSignal(dict)
 
-    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp):
+    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart):
         super().__init__()
         self.data = data
         self.xexp = xexp
@@ -20,6 +20,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
         self.lineOfBestFit = lineOfBestFit
         self.getVars = getVars
         self.temp = temp
+        self.deltaPart = deltaPart
 
         self.xsymbols = sorted(list(xexp.free_symbols), key=lambda s: s.name)
         self.ysymbols = sorted(list(yexp.free_symbols), key=lambda s: s.name)
@@ -31,6 +32,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
         missing = []
         bad = []
         args = []
+
         for sym in symbols:
             name = str(sym)
             if name not in vars:
@@ -56,8 +58,11 @@ class SamplePlotCalcWorker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def run(self):
         try:
-            equationX = []
-            equationY = []
+            # sampleEquationPlot is the data that get put on the graph
+            sampleEquationPlotX = []
+            sampleEquationPlotY = []
+
+            # smaple is for the data that get put in the table, it should be the same as sampleEquationPlot expect it includes errors
             sampleX = []
             sampleY = []
             warnedOnce = False
@@ -75,6 +80,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 okx, xmsg = self.extractArgs(v, self.xsymbols)
                 oky, ymsg = self.extractArgs(v, self.ysymbols)
 
+                # Test if the expression is valid and all vars have values
                 if not okx or not oky:
                     sampleX.append(None)
                     sampleY.append(None)
@@ -84,29 +90,30 @@ class SamplePlotCalcWorker(QtCore.QObject):
                         self.userWarning.emit(ymsg)
                     continue
 
+                # trys to evaluate the expression
                 try:
-                    with np.errstate(divide='ignore', invalid='ignore', over='ignore', under='ignore'):
-                        xVal = float(self._x_eval(*xmsg))
-                        yVal = float(self._y_eval(*ymsg))
+                    xVal = float(self._x_eval(*xmsg))
+                    yVal = float(self._y_eval(*ymsg))
                 except Exception as ex:
-                    sampleX.append(None)
-                    sampleY.append(None)
+                    sampleX.append(self._x_eval(*xmsg))
+                    sampleY.append(self._y_eval(*ymsg))
                     if not warnedOnce:
                         warnedOnce = True
                         self.userWarning.emit(f"Could not evaluate equation for a row: {ex}")
                     continue
 
+                #  add data to list
                 sampleX.append(xVal)
                 sampleY.append(yVal)
                 if np.isfinite(xVal) and np.isfinite(yVal):
-                    equationX.append(xVal)
-                    equationY.append(yVal)
+                    sampleEquationPlotX.append(xVal)
+                    sampleEquationPlotY.append(yVal)
                 else:
                     if not warnedOnce:
                         warnedOnce = True
 
             # Line of best fit
-            lbfX, lbfY = self.lineOfBestFit(equationX, equationY)
+            lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
 
             # time vs d²/dt²(Mass44)
             times = []
@@ -119,6 +126,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
                     times.append(v["Time"])
                     m44.append(v["Mass44"])
 
+            # Helper calculations
             times = np.asarray(times, dtype=float)
             m44 = np.asarray(m44, dtype=float)
             mask = np.isfinite(times) & np.isfinite(m44)
@@ -129,12 +137,12 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 d1_m44 = np.gradient(m44, times, edge_order=2)
                 d2_m44 = np.gradient(d1_m44, times, edge_order=2)
 
-            delta = self.calculateDeltaVal()
+            delta = self.temp
 
             rSquared = Calculations.rSquared(sampleX, sampleY)
             self.resultReady.emit({
-                "equationX": equationX,
-                "equationY": equationY,
+                "sampleEquationPlotX": sampleEquationPlotX,
+                "sampleEquationPlotY": sampleEquationPlotY,
                 "sampleX": sampleX,
                 "sampleY": sampleY,
                 "lbfX": lbfX,
@@ -148,11 +156,3 @@ class SamplePlotCalcWorker(QtCore.QObject):
             self.error.emit(str(e))
         finally:
             self.finished.emit()
-
-    def calculateDeltaVal(self):
-        try:
-            temp = float(self.temp)
-        except:
-            return None
-        print(temp)
-        return temp * 100

@@ -223,6 +223,10 @@ class Calculations:
         :return:
         """
         t = type(data)
+        if t is list:
+            for i in range(len(data)):
+                data[i] = Calculations.roundIfFloat(data[i], sf)
+            return data
         try:
             return t(round(float(data), sf))
         except:
