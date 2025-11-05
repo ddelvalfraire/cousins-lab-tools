@@ -29,7 +29,7 @@ class File:
         pass
 
     def __next__(self):
-        
+
         x_len = len(list(self.data.iloc[:,0]))
         if self.sharedData.initialX is None:
             self.sharedData.initialX = list(self.data.iloc[:,0])[0]/1000
@@ -41,3 +41,15 @@ class File:
         y_mean_data.pop(0)
 
         return x,y_mean_data
+
+    def all(self):
+        # x values
+        x_series = self.data.iloc[:, 0].astype('float64') / 1000.0
+        if self.sharedData.initialX is None:
+            self.sharedData.initialX = list(self.data.iloc[:,0])[0]/1000
+        x_values = (x_series - self.sharedData.initialX).tolist()
+
+        # y as list of lists
+        y_rows = self.data.iloc[:, 1:].astype('float64').values.tolist()
+
+        return list(zip(x_values, y_rows))

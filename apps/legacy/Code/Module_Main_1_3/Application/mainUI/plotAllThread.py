@@ -53,29 +53,17 @@ class PlotAllThread(QObject):
                 ######### Signal to start to start file notifier thread.
                 self.filesParsedSignal.emit()
 
-            dataPoints = []
-            dataPoint = self.globalObject.dataObj.__next__()
-
-            if not dataPoint:
-
-                ##### Singal to throw exception
+            all_points = []
+            batch = self.globalObject.dataObj.all()
+            while batch:
+                all_points.extend(batch)
+                batch = self.globalObject.dataObj.all()
+            if not all_points:
                 self.throwOutOfDataExceptionSignal.emit()
                 return
-            
-            else:
-            
-                while dataPoint:
-                    dataPoints.append(dataPoint)
-                    dataPoint = self.globalObject.dataObj.__next__()
-
-                self.globalObject.stopwatch.set_elapsed_time(floor(dataPoints[-1][0]))
-
-                #### Send singal to update the data point.
-                self.newDataPointSignal.emit(dataPoints)
-
-                self.globalObject.application_state = "Out_Of_Data"
-
-                #### Send signal to throw exception.
-                self.throwOutOfDataExceptionSignal.emit()
+            self.globalObject.stopwatch.set_elapsed_time(floor(all_points[-1][0]))
+            self.newDataPointSignal.emit(all_points)
+            self.globalObject.application_state = "Out_Of_Data"
+            self.throwOutOfDataExceptionSignal.emit()
 
         self.finished.emit()

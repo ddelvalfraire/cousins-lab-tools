@@ -45,10 +45,26 @@ class GetData:
         else:
 
             self.fileObj = File(fileList[self.currentFileIndex])
-            
+            # print(self.fileObj.data)
+            # print(self.fileObj.all_vectors())
+            # print(self.fileObj.__next__())
             # Once the file is opened:
             self.currentFileIndex += 1
             x,y = self.fileObj.__next__()
             # print(x,y)
             return (x,y)
-                
+
+    def all(self):
+        fileList = self.sharedData.fileList
+        self.numberOfFiles = len(fileList)
+
+        if self.currentFileIndex == -1:
+            self.currentFileIndex += 1
+
+        if self.currentFileIndex >= self.numberOfFiles:
+            return False
+
+        self.fileObj = File(fileList[self.currentFileIndex])
+        self.currentFileIndex += 1
+
+        return self.fileObj.all()
