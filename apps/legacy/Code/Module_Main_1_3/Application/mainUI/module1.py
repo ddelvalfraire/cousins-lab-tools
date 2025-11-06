@@ -7,7 +7,6 @@ __maintainer__ = ""
 __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
-from cgi import maxlen
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
