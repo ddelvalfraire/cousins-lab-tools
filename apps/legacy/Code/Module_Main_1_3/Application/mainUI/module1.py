@@ -161,6 +161,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.sampleEquationXPlotData = []
         self.sampleEquationYPlotData = []
 
+        # store calculated values for current sample plot
         self.currentPlotData = (dict)
         # List for holding custom plot data
         self.samplePlotData = []
