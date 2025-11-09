@@ -1252,7 +1252,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self._calcWorker.moveToThread(self._calcThread)
         self._calcThread.started.connect(self._calcWorker.run)
 
-        # update plots on the GUI thread
+        # update plots on the thread
         self._calcWorker.resultReady.connect(self.applyCustomCalcResults)
 
         # Clean up

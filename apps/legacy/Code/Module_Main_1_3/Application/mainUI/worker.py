@@ -34,6 +34,8 @@ class Worker(QObject):
         self.anchorTime = None
         self.firstFlag = False
 
+        # list of (time, (m1, m2, ...)) holds all data points from one file
+        self.currentBatch = []
 
     def run(self):
 
@@ -71,61 +73,47 @@ class Worker(QObject):
             :param {_ : }
             :return -> None
         """
-        # Generator for getting the next data point
+        if self.globalObject.pauseBit or not self.globalObject.startBit:
+            return
 
-        # If th plotting of the graph is not paused
-        if self.globalObject.pauseBit == False and self.globalObject.startBit == True:
-
-            # If the condition is true, this means either the program is reading the data for the first time
-            # or there was no more data read hence, this function will send just a single point by calling __next__
-            
-            #(X, [Y1, Y2, Y3....])
-
-            dataPoints = []
-
-            if len(self.lastDataPoint) == 0:
-                
-                # Keep getting data until 'out of data' or 'valid data'
-                dataPoint = self.globalObject.dataObj.__next__()
-                if self.isDataPointValid(dataPoint):
-                    # print(dataPoint)
-                    self.lastDataPoint = dataPoint
-                    if self.firstFlag == False:
-                        self.anchorTime = self.lastDataPoint[0]
-                        self.firstFlag = True
-
-
-            stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
-
-            # print((self.lastDataPoint[0]*1000 + self.globalObject.delay), (stopwatch_time + self.anchorTime))
-            while len(self.lastDataPoint) > 0 and (self.lastDataPoint[0]*1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime):
-                # print(self.lastDataPoint[0]*1000 + self.globalObject.delay, self.globalObject.stopwatch.get_elapsed_time() + self.anchorTime)
-                dataPoint = self.globalObject.dataObj.__next__()
-                # print(dataPoint)
-
-                if self.isDataPointValid(dataPoint):
-                    dataPoints.append(self.lastDataPoint)
-                    # print(dataPoints)
-
-                    dataPoint = self.globalObject.dataObj.__next__()
-                    # print(dataPoint)
-
-                    if self.isDataPointValid(dataPoint):
-                        self.lastDataPoint = dataPoint
-
-                    else:
-                        break
-
-                else:
-                    break
-
-            if len(dataPoints) > 0:
-                # print(dataPoints)
-                # print("Break")
-                self.newDataPointSignal.emit(dataPoints)
-
-            else:
+        if not self.currentBatch:
+            self.currentBatch = self.globalObject.dataObj.all()
+            if not self.currentBatch:
+                # Out of data
+                self.timer.stop()
+                self.globalObject.stopwatch.pause()
+                self.plotEndBitSignal.emit()
+                self.finished.emit()
                 return
+            if not self.firstFlag:
+                self.anchorTime = self.currentBatch[0][0]
+                self.firstFlag = True
+
+        dataPoints = []
+
+        stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
+
+        while True:
+            while self.currentBatch and (self.currentBatch[0][0] * 1000 + self.globalObject.delay) <= (
+                    stopwatch_time + self.anchorTime):
+                dataPoints.append(self.currentBatch.pop(0))
+
+            if dataPoints or self.currentBatch:
+                break
+
+            self.currentBatch = self.globalObject.dataObj.all()
+            if not self.currentBatch:
+                # No more files
+                if dataPoints:
+                    self.newDataPointSignal.emit(dataPoints)
+                self.timer.stop()
+                self.globalObject.stopwatch.pause()
+                self.plotEndBitSignal.emit()
+                self.finished.emit()
+                return
+
+        if dataPoints:
+            self.newDataPointSignal.emit(dataPoints)
             
 
 
