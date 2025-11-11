@@ -1583,6 +1583,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
     def plotAllButtonPressed(self):
 
+        # cant plot all well started
+        if self.application_state == "Running":
+            return
+
         if self.application_state == "Out_Of_Data":
             pass
         else:
