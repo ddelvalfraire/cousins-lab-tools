@@ -20,6 +20,7 @@ class GetData:
         self.numberOfFiles = None
         self.fileObj = None
         self.sharedData = SharedSingleton()
+        print("fileLIst")
 
     def setDirectory(self, filePath):
         DataUtility.setDataDirectory(filePath)
