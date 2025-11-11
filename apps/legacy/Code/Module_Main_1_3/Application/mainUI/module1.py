@@ -1086,6 +1086,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Export Table connect method
         self.exportTableButton.clicked.connect(lambda: self.tableFileSave(self.table))
 
+
         ################################## Blank and Extract slope button ##################################
 
         self.blankSlopeButton.clicked.connect(self.blankSlopeButtonPressed)
@@ -1742,8 +1743,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
             # Updating the data points in the singleton class.
             self.sharedData.dataPoints[x] = y
-
-            # self.stopwatch.set_time(x)
 
             for i in range(len(y_value)):
                 y_value[i].append(y[i])
@@ -2444,7 +2443,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
 
         y_value = [[],[],[],[],[],[],[],[]]
-
+        print("updata data: ", dataPoints)
         # Getting the next data points from the list of all the points emitted by the worker thread.
         while len(dataPoints) != 0:
 

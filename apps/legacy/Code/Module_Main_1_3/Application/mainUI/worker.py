@@ -28,7 +28,7 @@ class Worker(QObject):
 
     def __init__(self, globalObject):
         super(Worker, self).__init__()
-
+        print("Thread Started")
         self.globalObject = globalObject
         self.lastDataPoint = tuple()
         self.anchorTime = None
@@ -72,74 +72,50 @@ class Worker(QObject):
             :return -> None
         """
         # Generator for getting the next data point
+        if self.globalObject.application_state == "Paused":
+            return
 
-        # If th plotting of the graph is not paused
-        if self.globalObject.pauseBit == False and self.globalObject.startBit == True:
-
-            # If the condition is true, this means either the program is reading the data for the first time
-            # or there was no more data read hence, this function will send just a single point by calling __next__
-            
-            #(X, [Y1, Y2, Y3....])
-
-            dataPoints = []
-
-            if len(self.lastDataPoint) == 0:
-                
-                # Keep getting data until 'out of data' or 'valid data'
-                dataPoint = self.globalObject.dataObj.__next__()
-                if self.isDataPointValid(dataPoint):
-                    # print(dataPoint)
-                    self.lastDataPoint = dataPoint
-                    if self.firstFlag == False:
-                        self.anchorTime = self.lastDataPoint[0]
-                        self.firstFlag = True
-
-
-            stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
-
-            # print((self.lastDataPoint[0]*1000 + self.globalObject.delay), (stopwatch_time + self.anchorTime))
-            while len(self.lastDataPoint) > 0 and (self.lastDataPoint[0]*1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime):
-                # print(self.lastDataPoint[0]*1000 + self.globalObject.delay, self.globalObject.stopwatch.get_elapsed_time() + self.anchorTime)
-                dataPoint = self.globalObject.dataObj.__next__()
-                # print(dataPoint)
-
-                if self.isDataPointValid(dataPoint):
-                    dataPoints.append(self.lastDataPoint)
-                    # print(dataPoints)
-
-                    dataPoint = self.globalObject.dataObj.__next__()
-                    # print(dataPoint)
-
-                    if self.isDataPointValid(dataPoint):
-                        self.lastDataPoint = dataPoint
-
-                    else:
-                        break
-
-                else:
-                    break
-
-            if len(dataPoints) > 0:
-                # print(dataPoints)
-                # print("Break")
-                self.newDataPointSignal.emit(dataPoints)
-
+        if len(self.lastDataPoint) == 0:
+            data = self.globalObject.dataObj.all()
+            if self.isDataPointValid(data):
+                self.lastDataPoint = data
+                if not self.firstFlag:
+                    # anchor to first x from the first point of the batch
+                    self.anchorTime = self.lastDataPoint[0][0]
+                    self.firstFlag = True
             else:
+                # nothing to do yet
                 return
+
+        stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
+
+        # Emit when synthetic time reached first timestamp in batch
+        print((self.lastDataPoint[0][0] * 1000 + self.globalObject.delay), (stopwatch_time + self.anchorTime), stopwatch_time)
+        while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
+
+            # Push to UI
+            dataPoints = self.lastDataPoint
+            # Try to load next
+            next_batch = self.globalObject.dataObj.all()
+            if self.isDataPointValid(next_batch):
+                self.lastDataPoint = next_batch
+            else:
+                self.lastDataPoint = []
+                break
+
+            break
+
+        if 'dataPoints' in locals() and len(dataPoints) > 0:
+            self.newDataPointSignal.emit(dataPoints)
             
 
 
     def isDataPointValid(self, dataPoint):
-
-        # If the value is false this means OUT OF DATA
-            
-        if dataPoint == False:
-            # print("No more data points to read")
-            self.timer.stop()
-            self.globalObject.stopwatch.pause()
-            self.plotEndBitSignal.emit()
-            self.finished.emit()
+        #  if dataPoint is tuple
+        if dataPoint is False or dataPoint is None:
             return False
-        
-        else:
-            return True
+        #  if dataPoint is a list of tuples
+        if isinstance(dataPoint, list):
+            return len(dataPoint) > 0
+        #  else
+        return True
