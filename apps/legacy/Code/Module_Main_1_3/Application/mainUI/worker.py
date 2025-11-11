@@ -28,7 +28,6 @@ class Worker(QObject):
 
     def __init__(self, globalObject):
         super(Worker, self).__init__()
-        print("Thread Started")
         self.globalObject = globalObject
         self.lastDataPoint = tuple()
         self.anchorTime = None
@@ -90,7 +89,6 @@ class Worker(QObject):
         stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
 
         # Emit when synthetic time reached first timestamp in batch
-        print((self.lastDataPoint[0][0] * 1000 + self.globalObject.delay), (stopwatch_time + self.anchorTime), stopwatch_time)
         while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
 
             # Push to UI

@@ -1747,7 +1747,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             for i in range(len(y_value)):
                 y_value[i].append(y[i])
 
-            # print(x_value, y_value)
         # x_value, y_value = self.getNextPoint(self.dataObj)
 
         # Updating the shared singleton plot data
@@ -1782,7 +1781,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.curve6.updateDataPoints(x, y_value[5])
         self.curve7.updateDataPoints(x, y_value[6])
         self.curve8.updateDataPoints(x, y_value[7])
-        # print("Time taken plot all the points: ", time()-start)
 
     def changeGraphRange(self, x):
 
@@ -1792,7 +1790,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         if x > self.currentXRange[1]:
 
             currentXScale = self.currentXRange[1] - self.currentXRange[0]
-            # print("CurrentXScale = ", currentXScale)
+
             self.currentXRange = [self.currentXRange[0] + currentXScale, self.currentXRange[1] + currentXScale]
             if not self.realTimeGraph.graphInteraction:
                 self.realTimeGraph.setNewXRange(self.currentXRange[0], self.currentXRange[1])
@@ -2443,7 +2441,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
 
         y_value = [[],[],[],[],[],[],[],[]]
-        print("updata data: ", dataPoints)
         # Getting the next data points from the list of all the points emitted by the worker thread.
         while len(dataPoints) != 0:
 
@@ -2461,7 +2458,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             for i in range(len(y_value)):
                 y_value[i].append(y[i])
 
-            # print(x_value, y_value)
         # x_value, y_value = self.getNextPoint(self.dataObj)
 
         # Updating the shared singleton plot data
@@ -2496,7 +2492,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.curve6.updateDataPoints(x, y_value[5])
         self.curve7.updateDataPoints(x, y_value[6])
         self.curve8.updateDataPoints(x, y_value[7])
-        # print("Time taken plot all the points: ", time()-start)
 
     def changeGraphRange(self, x):
 
@@ -2506,7 +2501,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         if x > self.currentXRange[1]:
 
             currentXScale = self.currentXRange[1] - self.currentXRange[0]
-            # print("CurrentXScale = ", currentXScale)
+
             self.currentXRange = [self.currentXRange[0] + currentXScale, self.currentXRange[1] + currentXScale]
             if not self.realTimeGraph.graphInteraction:
                 self.realTimeGraph.setNewXRange(self.currentXRange[0], self.currentXRange[1])
