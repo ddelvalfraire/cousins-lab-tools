@@ -28,14 +28,12 @@ class Worker(QObject):
 
     def __init__(self, globalObject):
         super(Worker, self).__init__()
-
+        print("Thread Started")
         self.globalObject = globalObject
         self.lastDataPoint = tuple()
         self.anchorTime = None
         self.firstFlag = False
 
-        # list of (time, (m1, m2, ...)) holds all data points from one file
-        self.currentBatch = []
 
     def run(self):
 
@@ -73,61 +71,51 @@ class Worker(QObject):
             :param {_ : }
             :return -> None
         """
-        if self.globalObject.pauseBit or not self.globalObject.startBit:
+        # Generator for getting the next data point
+        if self.globalObject.application_state == "Paused":
             return
 
-        if not self.currentBatch:
-            self.currentBatch = self.globalObject.dataObj.all()
-            if not self.currentBatch:
-                # Out of data
-                self.timer.stop()
-                self.globalObject.stopwatch.pause()
-                self.plotEndBitSignal.emit()
-                self.finished.emit()
+        if len(self.lastDataPoint) == 0:
+            data = self.globalObject.dataObj.all()
+            if self.isDataPointValid(data):
+                self.lastDataPoint = data
+                if not self.firstFlag:
+                    # anchor to first x from the first point of the batch
+                    self.anchorTime = self.lastDataPoint[0][0]
+                    self.firstFlag = True
+            else:
+                # nothing to do yet
                 return
-            if not self.firstFlag:
-                self.anchorTime = self.currentBatch[0][0]
-                self.firstFlag = True
-
-        dataPoints = []
 
         stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
 
-        while True:
-            while self.currentBatch and (self.currentBatch[0][0] * 1000 + self.globalObject.delay) <= (
-                    stopwatch_time + self.anchorTime):
-                dataPoints.append(self.currentBatch.pop(0))
+        # Emit when synthetic time reached first timestamp in batch
+        print((self.lastDataPoint[0][0] * 1000 + self.globalObject.delay), (stopwatch_time + self.anchorTime), stopwatch_time)
+        while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
 
-            if dataPoints or self.currentBatch:
+            # Push to UI
+            dataPoints = self.lastDataPoint
+            # Try to load next
+            next_batch = self.globalObject.dataObj.all()
+            if self.isDataPointValid(next_batch):
+                self.lastDataPoint = next_batch
+            else:
+                self.lastDataPoint = []
                 break
 
-            self.currentBatch = self.globalObject.dataObj.all()
-            if not self.currentBatch:
-                # No more files
-                if dataPoints:
-                    self.newDataPointSignal.emit(dataPoints)
-                self.timer.stop()
-                self.globalObject.stopwatch.pause()
-                self.plotEndBitSignal.emit()
-                self.finished.emit()
-                return
+            break
 
-        if dataPoints:
+        if 'dataPoints' in locals() and len(dataPoints) > 0:
             self.newDataPointSignal.emit(dataPoints)
             
 
 
     def isDataPointValid(self, dataPoint):
-
-        # If the value is false this means OUT OF DATA
-            
-        if dataPoint == False:
-            # print("No more data points to read")
-            self.timer.stop()
-            self.globalObject.stopwatch.pause()
-            self.plotEndBitSignal.emit()
-            self.finished.emit()
+        #  if dataPoint is tuple
+        if dataPoint is False or dataPoint is None:
             return False
-        
-        else:
-            return True
+        #  if dataPoint is a list of tuples
+        if isinstance(dataPoint, list):
+            return len(dataPoint) > 0
+        #  else
+        return True
