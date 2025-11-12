@@ -1503,6 +1503,46 @@ class LabViewModule1(QtWidgets.QMainWindow):
         delta = self.currentPlotData["delta"]
         sampleData.append(("Delta", [str(delta)]))
 
+        #################### Adds Alpha/Delta/Rubisco metrics ####################
+        # Compute alpha_total (slope) and delta_total from the equation data already used above.
+        # Reuse 'slope' from the Line Of Best Fit section, and read Δ_part from the Calculations tab input.
+        try:
+            alpha_total = float(slope)
+        except Exception:
+            # Fallback: recompute from current plot data if needed
+            x_vals = self.currentPlotData.get("sampleEquationXPlotData", [])
+            y_vals = self.currentPlotData.get("sampleEquationYPlotData", [])
+            try:
+                alpha_total, _ = Calculations.getLineOfBestFit(x_vals, y_vals)
+            except Exception:
+                alpha_total = None
+
+        # Parse delta_part (user input); default to 0.0088 if blank or invalid.
+        try:
+            delta_part_val = float(self.samplePlotDeltaPartLineEdit.text())
+        except Exception:
+            delta_part_val = 0.0088
+
+        if alpha_total is not None:
+            delta_total = alpha_total - 1.0
+            try:
+                delta_rubisco = (1.0 + delta_total) / (1.0 + delta_part_val) - 1.0
+            except Exception:
+                delta_rubisco = None
+
+            # α_total (slope)
+            sampleData.append(("α_total (slope)", [str(round(alpha_total, 6))]))
+
+            # Δ_part (input)
+            delta_part_str = f"{delta_part_val} ({delta_part_val * 1000:.2f} ‰)"
+            sampleData.append(("Δ_part (input)", [delta_part_str]))
+
+            # Δ_Rubisco
+            if delta_rubisco is not None:
+                delta_rubisco_str = f"{round(delta_rubisco, 6)} ({delta_rubisco * 1000:.2f} ‰)"
+                sampleData.append(("Δ_Rubisco", [delta_rubisco_str]))
+
+
         #################### Adds Data to save ####################
         self.samplePlotData.append(sampleData)
 
