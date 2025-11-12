@@ -26,6 +26,7 @@ class PlotAllThread(QObject):
     throwOutOfDataExceptionSignal = pyqtSignal()
     throwFolderNotSelectedExceptionSignal = pyqtSignal()
     filesParsedSignal = pyqtSignal()
+    secondsAt = QtCore.pyqtSignal(str)
 
 
     def __init__(self, globalObject):
@@ -56,6 +57,7 @@ class PlotAllThread(QObject):
             all_points = []
             batch = self.globalObject.dataObj.all()
             while batch:
+                self.secondsAt.emit(str(floor(batch[-1][0])))
                 all_points.extend(batch)
                 batch = self.globalObject.dataObj.all()
             if not all_points:
@@ -63,7 +65,7 @@ class PlotAllThread(QObject):
                 return
             self.globalObject.stopwatch.set_elapsed_time(floor(all_points[-1][0]))
             self.newDataPointSignal.emit(all_points)
-            self.globalObject.application_state = "Out_Of_Data"
+            # self.globalObject.application_state = "Out_Of_Data"
             self.throwOutOfDataExceptionSignal.emit()
 
         self.finished.emit()

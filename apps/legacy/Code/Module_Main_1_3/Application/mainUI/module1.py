@@ -10,8 +10,8 @@ __status__ = "Completed"
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QSizePolicy, QMainWindow, QMenuBar, QFileDialog, QAction, QFrame
-from PyQt5.QtWidgets import QSizePolicy, QDialogButtonBox
+from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
+from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QSizePolicy
 from PyQt5.QtGui import QMovie
 
@@ -20,22 +20,19 @@ import sys, os, csv
 import threading
 from sympy import sympify
 
-from fontTools.feaLib import ast
 from numpy.ma.core import equal
 
 from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
 from SamplePlotCalcWorker import SamplePlotCalcWorker
 from worker import Worker
 from newFileNotifierThread import NewFileNotifierThread
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QSize, QPoint
+from PyQt5.QtCore import Qt, QThread, QPoint
 import numpy as np
-import time
 from stopwatch import Stopwatch
 from datetime import datetime
 from math import floor
 from plotAllThread import PlotAllThread
-import openpyxl
-from itertools import zip_longest
+
 
 
 #####################################################################
@@ -1570,7 +1567,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.isYChnaged = True
             self.realTimeGraph.graphInteraction = False
 
-
     def plotAllButtonPressed(self):
 
         # cant plot all well started
@@ -1596,6 +1592,9 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         self.plotAllButtonThread.start()
 
+        title = self.windowTitle()
+        self.plotAllThread.secondsAt.connect(lambda sec: self.setWindowTitle(f"{title}: processing {sec}"))
+
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
         self.plotAllThread.throwOutOfDataExceptionSignal.connect(self.throwOutOfDataException)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(self.throwFolderNotSelectedException)
@@ -1611,7 +1610,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
         self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
-
 
     def startButtonPressed(self):
 
@@ -1664,7 +1662,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         else:
             self.throwFolderNotSelectedException()
-
 
     def throwOutOfDataException(self):
         self.application_state = "Out_Of_Data"
