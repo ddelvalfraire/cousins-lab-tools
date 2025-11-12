@@ -1,6 +1,7 @@
 ﻿from PyQt5 import QtCore
 import numpy as np
 from sympy import lambdify
+from scipy.signal import savgol_filter
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
@@ -133,11 +134,42 @@ class SamplePlotCalcWorker(QtCore.QObject):
             times, m44 = times[mask], m44[mask]
 
             d2_m44 = None
-            if times.size >= 3:
-                d1_m44 = np.gradient(m44, times, edge_order=2)
-                d2_m44 = np.gradient(d1_m44, times, edge_order=2)
+            if times.size >= 5:
+                # smooth data
+                m44_smooth = savgol_filter(m44, window_length=51, polyorder=3, mode='interp')
+                d1 = np.gradient(m44_smooth, times, edge_order=2)
+                d2_m44 = np.gradient(d1, times, edge_order=2)
 
-            delta = self.temp
+            slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+
+            #################### Adds Alpha/Delta/Rubisco metrics ####################
+            # Compute alpha_total (slope) and delta_total from the equation data already used above.
+            # Reuse 'slope' from the Line Of Best Fit section, and read Δ_part from the Calculations tab input.
+            try:
+                try:
+                    alpha_total = float(slope)
+                except Exception:
+                    # Fallback: recompute from current plot data if needed
+                    x_vals = sampleEquationPlotX
+                    y_vals = sampleEquationPlotY
+                    try:
+                        alpha_total, _ = Calculations.getLineOfBestFit(x_vals, y_vals)
+                    except Exception:
+                        alpha_total = None
+
+                delta_part_val = float(self.deltaPart)
+
+                if alpha_total is not None:
+                    delta_total = alpha_total - 1.0
+                    try:
+                        delta_rubisco = (1.0 + delta_total) / (1.0 + delta_part_val) - 1.0
+                    except Exception:
+                        delta_rubisco = None
+                else:
+                    delta_rubisco = None
+            except:
+                delta_rubisco = None
+                alpha_total = None
 
             rSquared = Calculations.rSquared(sampleX, sampleY)
             self.resultReady.emit({
@@ -149,8 +181,10 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "lbfY": lbfY,
                 "times": times if times.size > 0 else None,
                 "d2_m44": d2_m44,
-                "delta": delta,
-                "rSquared": rSquared
+                "delta": delta_rubisco,
+                "rSquared": rSquared,
+                "α_total (slope)": alpha_total,
+                "delta_rubisco": delta_rubisco
             })
         except Exception as e:
             self.error.emit(str(e))

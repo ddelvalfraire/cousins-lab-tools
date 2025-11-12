@@ -23,6 +23,7 @@ from sympy import sympify
 from fontTools.feaLib import ast
 from numpy.ma.core import equal
 
+from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
 from SamplePlotCalcWorker import SamplePlotCalcWorker
 from worker import Worker
 from newFileNotifierThread import NewFileNotifierThread
@@ -1298,7 +1299,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             except:
                 rSquared = "N/A"
             try:
-                delta = round(res["delta"], 5)
+                delta = round(res["delta_rubisco"], 5)
             except:
                 delta = "N/A"
 
@@ -1324,16 +1325,23 @@ class LabViewModule1(QtWidgets.QMainWindow):
                     pad = 1.0 if y_min == 0 else abs(y_min) * 0.1
                     y_min -= pad
                     y_max += pad
-                self.calculationPlotGraph2.setYRange(y_min, y_max)
+                self.calculationPlotGraph2.setYRange(min(-1, y_min), max(1, y_max))
 
             elif hasattr(self, "calculationPlotGraph2"):
                 self.calculationPlotGraph2Curve.setData([], [])
 
+            try:
+                deltaPart = float(self.samplePlotDeltaPartLineEdit.text())
+            except:
+                deltaPart = None
             self.currentPlotData = {
                 "sampleEquationXPlotData": Calculations.roundIfFloat(res["sampleX"], 5),
                 "sampleEquationYPlotData": Calculations.roundIfFloat(res["sampleY"], 5),
                 "rSquared": rSquared,
                 "delta": delta,
+                "α_total (slope)": res["α_total (slope)"],
+                "delta_rubisco": res["delta_rubisco"],
+                "delta_part": deltaPart,
             }
         except Exception as e:
             self.throwTellUserDilog("Plot Update Error", str(e))
@@ -1387,62 +1395,29 @@ class LabViewModule1(QtWidgets.QMainWindow):
         Exports data from samle table to csv file
         :return:
         """
-        # create directory if it doesn't already exist
-        path = 'C:\\Users\\' + self.user + '\\Documents\\TableData'
+        path = f'C:\\Users\\{self.user}\\Documents\\TableData'
         if not os.path.exists(path):
             os.makedirs(path)
 
-        # Invoke Save File Dialog - returns the path of the file and file type
-        path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path, "Excel Files (*.xlsx)")
+        path, ok = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Save File', path, "Excel Files (*.xlsx)"
+        )
 
-        # if file type is not null
         if ok:
-            # catch export errors, gernal file write error ei file is open somewhere else
-            try:
-                wb = openpyxl.Workbook()
-                # Remove the default empty sheet
-                wb.remove(wb.active)
+            self.statusBar().showMessage("Exporting data... please wait")
 
-                for d in self.samplePlotData:
-                    sheetName = str(d[0])[:31] if d[0] else "Sheet"
+            self.thread = QtCore.QThread()
+            self.worker = ExportWorker(path, self.samplePlotData)
+            self.worker.moveToThread(self.thread)
 
-                    ws = wb.create_sheet(title=sheetName)
+            self.thread.started.connect(self.worker.run)
+            self.worker.finished.connect(self.onExportFinished)
+            self.worker.error.connect(self.onExportError)
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.thread.finished.connect(self.thread.deleteLater)
 
-                    columnHeaders = [str(d[0])]
-                    dataLists = [[]]
-                    for i in range(1, len(d)):
-                        header_name = str(d[i][0])
-                        columnHeaders.append(header_name)
-                        dataLists.append(d[i][1])
-
-                    bold_font = openpyxl.styles.Font(bold=True)
-                    for col, header in enumerate(columnHeaders, start=1):
-                        cell = ws.cell(row=1, column=col, value=header)
-                        cell.font = bold_font
-
-                    for rowIdx, rowValues in enumerate(zip_longest(*dataLists, fillvalue=''), start=2):
-                        for colIdx, value in enumerate(rowValues, start=1):
-                            if value is None:
-                                value = ""
-                            elif hasattr(value, "item"):
-                                value = value.item()
-                            elif not isinstance(value, (int, float, str)):
-                                value = str(value)
-                            ws.cell(row=rowIdx, column=colIdx, value=value)
-
-                    for colIdx, header in enumerate(columnHeaders, start=1):
-                        colLetter = openpyxl.utils.get_column_letter(colIdx)
-                        maxlength = len(header)
-                        for v in dataLists[colIdx - 1]:
-                            vStr = str(v)
-                            if len(vStr) > maxlength:
-                                maxlength = len(vStr)
-                        ws.column_dimensions[colLetter].width = min(maxlength + 2, 50)
-
-                # Save workbook
-                wb.save(path)
-            except Exception as e:
-                self.throwTellUserDilog("Export Error", str(e))
+            self.thread.start()
 
     def addSampleToSampleData(self):
         """
@@ -1499,54 +1474,29 @@ class LabViewModule1(QtWidgets.QMainWindow):
         r2 = self.currentPlotData["rSquared"]
         sampleData.append(("R^2", [str(r2)]))
 
-        #################### Adds Delta ####################
-        delta = self.currentPlotData["delta"]
-        sampleData.append(("Delta", [str(delta)]))
-
         #################### Adds Alpha/Delta/Rubisco metrics ####################
-        # Compute alpha_total (slope) and delta_total from the equation data already used above.
-        # Reuse 'slope' from the Line Of Best Fit section, and read Δ_part from the Calculations tab input.
+        delta_part_val = self.samplePlotDeltaPartLineEdit.text()
         try:
-            alpha_total = float(slope)
-        except Exception:
-            # Fallback: recompute from current plot data if needed
-            x_vals = self.currentPlotData.get("sampleEquationXPlotData", [])
-            y_vals = self.currentPlotData.get("sampleEquationYPlotData", [])
-            try:
-                alpha_total, _ = Calculations.getLineOfBestFit(x_vals, y_vals)
-            except Exception:
-                alpha_total = None
-
-        # Parse delta_part (user input); default to 0.0088 if blank or invalid.
-        try:
-            delta_part_val = float(self.samplePlotDeltaPartLineEdit.text())
-        except Exception:
-            delta_part_val = 0.0088
-
-        if alpha_total is not None:
-            delta_total = alpha_total - 1.0
-            try:
-                delta_rubisco = (1.0 + delta_total) / (1.0 + delta_part_val) - 1.0
-            except Exception:
-                delta_rubisco = None
-
             # α_total (slope)
-            sampleData.append(("α_total (slope)", [str(round(alpha_total, 6))]))
-
+            sampleData.append(("α_total (slope)", [str(round(self.currentPlotData["α_total (slope)"], 6))]))
+        except:
+            pass
+        try:
             # Δ_part (input)
-            delta_part_str = f"{delta_part_val} ({delta_part_val * 1000:.2f} ‰)"
+            delta_part_str = f"{delta_part_val} ({self.currentPlotData["delta_part"] * 1000:.2f} ‰)"
             sampleData.append(("Δ_part (input)", [delta_part_str]))
-
+        except:
+            pass
+        try:
             # Δ_Rubisco
-            if delta_rubisco is not None:
-                delta_rubisco_str = f"{round(delta_rubisco, 6)} ({delta_rubisco * 1000:.2f} ‰)"
-                sampleData.append(("Δ_Rubisco", [delta_rubisco_str]))
-
+            delta_r = self.currentPlotData["delta_rubisco"]
+            delta_rubisco_str = f"{round(delta_r, 6)} ({delta_r * 1000:.2f} ‰)"
+            sampleData.append(("Δ_Rubisco", [delta_rubisco_str]))
+        except:
+            pass
 
         #################### Adds Data to save ####################
         self.samplePlotData.append(sampleData)
-
-
 
         # Adds sample to table
         self.calculationPlotTable.insertRow(0)
@@ -2339,6 +2289,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
 #################################################################################################################################
 ###################################################### On Edit Line Edits #######################################################
+    def onExportFinished(self, path):
+        self.throwTellUserDilog(f"Export complete: {path}", str(path))
+
+    def onExportError(self, message):
+        self.throwTellUserDilog("Export Error", message)
 
     def OnEditedTemp(self):
 
