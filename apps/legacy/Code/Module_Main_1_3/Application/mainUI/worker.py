@@ -70,41 +70,42 @@ class Worker(QObject):
             :param {_ : }
             :return -> None
         """
-        # Generator for getting the next data point
-        if self.globalObject.application_state == "Paused":
-            return
-
-        if len(self.lastDataPoint) == 0:
-            data = self.globalObject.dataObj.all()
-            if self.isDataPointValid(data):
-                self.lastDataPoint = data
-                if not self.firstFlag:
-                    # anchor to first x from the first point of the batch
-                    self.anchorTime = self.lastDataPoint[0][0]
-                    self.firstFlag = True
-            else:
-                # nothing to do yet
+        try:
+            # Generator for getting the next data point
+            if self.globalObject.application_state == "Paused":
                 return
 
-        stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
+            if len(self.lastDataPoint) == 0:
+                data = self.globalObject.dataObj.all()
+                if self.isDataPointValid(data):
+                    self.lastDataPoint = data
+                    if not self.firstFlag:
+                        # anchor to first x from the first point of the batch
+                        self.anchorTime = self.lastDataPoint[0][0]
+                        self.firstFlag = True
+                else:
+                    # nothing to do yet
+                    return
 
-        # Emit when synthetic time reached first timestamp in batch
-        while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
+            stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
 
-            # Push to UI
-            dataPoints = self.lastDataPoint
-            # Try to load next
-            next_batch = self.globalObject.dataObj.all()
-            if self.isDataPointValid(next_batch):
-                self.lastDataPoint = next_batch
-            else:
-                self.lastDataPoint = []
+            # Emit when synthetic time reached first timestamp in batch
+            while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
+
+                # Push to UI
+                dataPoints = self.lastDataPoint
+                # Try to load next
+                next_batch = self.globalObject.dataObj.all()
+                if self.isDataPointValid(next_batch):
+                    self.lastDataPoint = next_batch
+                else:
+                    self.lastDataPoint = []
+                    break
+
                 break
-
-            break
-
-        if 'dataPoints' in locals() and len(dataPoints) > 0:
-            self.newDataPointSignal.emit(dataPoints)
+        finally:
+            if 'dataPoints' in locals() and len(dataPoints) > 0:
+                self.newDataPointSignal.emit(dataPoints)
             
 
 

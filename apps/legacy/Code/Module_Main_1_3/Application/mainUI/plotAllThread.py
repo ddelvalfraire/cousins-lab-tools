@@ -33,39 +33,39 @@ class PlotAllThread(QObject):
         super(PlotAllThread, self).__init__()
 
         self.globalObject = globalObject
-        self.sharedData = SharedSingleton()
+        self.sharedData = globalObject.sharedData
 
 
     def run(self):
 
         """Long running task"""
+        try:
+            if self.globalObject.application_state == "Idle":
 
-        if self.globalObject.application_state == "Idle":
+                #### Signal to throw exception
+                self.throwFolderNotSelectedExceptionSignal.emit()
 
-            #### Signal to throw exception
-            self.throwFolderNotSelectedExceptionSignal.emit()
+            else:
 
-        else:
+                if not self.sharedData.folderAccessed:
+                    self.sharedData.fileList.extend(DataUtility.getDataFileList())
+                    self.sharedData.folderAccessed = True
 
-            if not self.sharedData.folderAccessed:
-                self.sharedData.fileList.extend(DataUtility.getDataFileList())
-                self.sharedData.folderAccessed = True
+                    ######### Signal to start to start file notifier thread.
+                    self.filesParsedSignal.emit()
 
-                ######### Signal to start to start file notifier thread.
-                self.filesParsedSignal.emit()
-
-            all_points = []
-            batch = self.globalObject.dataObj.all()
-            while batch:
-                self.secondsAt.emit(str(floor(batch[-1][0])))
-                all_points.extend(batch)
+                all_points = []
                 batch = self.globalObject.dataObj.all()
-            if not all_points:
+                while batch:
+                    self.secondsAt.emit(str(floor(batch[-1][0])))
+                    all_points.extend(batch)
+                    batch = self.globalObject.dataObj.all()
+                if not all_points:
+                    self.throwOutOfDataExceptionSignal.emit()
+                    return
+                self.globalObject.stopwatch.set_elapsed_time(floor(all_points[-1][0]))
+                self.newDataPointSignal.emit(all_points)
+                # self.globalObject.application_state = "Out_Of_Data"
                 self.throwOutOfDataExceptionSignal.emit()
-                return
-            self.globalObject.stopwatch.set_elapsed_time(floor(all_points[-1][0]))
-            self.newDataPointSignal.emit(all_points)
-            # self.globalObject.application_state = "Out_Of_Data"
-            self.throwOutOfDataExceptionSignal.emit()
-
-        self.finished.emit()
+        finally:
+            self.finished.emit()

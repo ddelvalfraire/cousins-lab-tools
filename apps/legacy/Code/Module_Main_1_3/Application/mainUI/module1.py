@@ -1574,7 +1574,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             return
 
         if self.application_state == "Out_Of_Data":
-            pass
+            return
         else:
             self.plotAllButton.setEnabled(False)
             self.processSpinnerLabel.show()
@@ -1601,12 +1601,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
 
         # Set proper state while plotting
-        self.startBit = True
-        self.pauseBit = False
-        self.application_state = "Running"
-        self.startButton.setEnabled(False)
-        self.pauseResumeButton.setText("Pause")
-        self.pauseResumeButton.setToolTip('Pause the graph')
+        if hasattr(self, 'worker') and hasattr(self.worker, 'timer') and self.worker.timer is not None:
+            self.worker.timer.stop()
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
         self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
