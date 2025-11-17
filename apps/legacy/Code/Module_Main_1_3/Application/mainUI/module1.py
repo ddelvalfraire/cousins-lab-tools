@@ -1299,8 +1299,12 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 delta = round(res["delta_rubisco"], 5)
             except:
                 delta = "N/A"
+            try:
+                blank44OverBestFit = round(float(self.blankSlope44LineEdit.text()) / float(res["slope"]), 5)
+            except:
+                blank44OverBestFit = "N/A"
 
-            text = pg.TextItem(f"R²={rSquared}\nDelta={delta}", color=(100, 255, 100),  anchor=(1, 0))
+            text = pg.TextItem(f"R²={rSquared}\nDelta={delta}\nb44/slope={blank44OverBestFit}", color=(100, 255, 100),  anchor=(1, 0))
 
             self.autoRangeToData(res["sampleEquationPlotX"], res["sampleEquationPlotY"], self.calculationPlotGraph, 0.1)
             view = self.calculationPlotGraph.getViewBox()
@@ -1339,6 +1343,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 "α_total (slope)": res["α_total (slope)"],
                 "delta_rubisco": res["delta_rubisco"],
                 "delta_part": deltaPart,
+                "b44OverSlope": blank44OverBestFit,
             }
         except Exception as e:
             self.throwTellUserDilog("Plot Update Error", str(e))
@@ -1470,6 +1475,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         #################### Adds R^2 ####################
         r2 = self.currentPlotData["rSquared"]
         sampleData.append(("R^2", [str(r2)]))
+
+        #################### Adds b44OverSlope ####################
+        b44OverSlope = self.currentPlotData["b44OverSlope"]
+        sampleData.append(("blank slope 44 / slope", [str(b44OverSlope)]))
 
         #################### Adds Alpha/Delta/Rubisco metrics ####################
         delta_part_val = self.samplePlotDeltaPartLineEdit.text()

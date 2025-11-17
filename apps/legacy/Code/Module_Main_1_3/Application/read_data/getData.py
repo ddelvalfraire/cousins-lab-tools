@@ -55,16 +55,19 @@ class GetData:
             return (x,y)
 
     def all(self):
-        fileList = self.sharedData.fileList
-        self.numberOfFiles = len(fileList)
+        try:
+            fileList = self.sharedData.fileList
+            self.numberOfFiles = len(fileList)
 
-        if self.currentFileIndex == -1:
+            if self.currentFileIndex == -1:
+                self.currentFileIndex += 1
+
+            if self.currentFileIndex >= self.numberOfFiles:
+                return False
+
+            self.fileObj = File(fileList[self.currentFileIndex])
             self.currentFileIndex += 1
 
-        if self.currentFileIndex >= self.numberOfFiles:
+            return self.fileObj.all()
+        except:
             return False
-
-        self.fileObj = File(fileList[self.currentFileIndex])
-        self.currentFileIndex += 1
-
-        return self.fileObj.all()

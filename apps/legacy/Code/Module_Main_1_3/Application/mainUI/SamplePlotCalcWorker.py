@@ -184,7 +184,8 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "delta": delta_rubisco,
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,
-                "delta_rubisco": delta_rubisco
+                "delta_rubisco": delta_rubisco,
+                "slope": slope
             })
         except Exception as e:
             self.error.emit(str(e))

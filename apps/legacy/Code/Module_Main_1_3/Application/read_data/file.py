@@ -43,13 +43,16 @@ class File:
         return x,y_mean_data
 
     def all(self):
-        # x values
-        x_series = self.data.iloc[:, 0].astype('float64') / 1000.0
-        if self.sharedData.initialX is None:
-            self.sharedData.initialX = list(self.data.iloc[:,0])[0]/1000
-        x_values = (x_series - self.sharedData.initialX).tolist()
+        try:
+            # x values
+            x_series = self.data.iloc[:, 0].astype('float64') / 1000.0
+            if self.sharedData.initialX is None:
+                self.sharedData.initialX = list(self.data.iloc[:,0])[0]/1000
+            x_values = (x_series - self.sharedData.initialX).tolist()
 
-        # y as list of lists
-        y_rows = self.data.iloc[:, 1:].astype('float64').values.tolist()
+            # y as list of lists
+            y_rows = self.data.iloc[:, 1:].astype('float64').values.tolist()
 
-        return list(zip(x_values, y_rows))
+            return list(zip(x_values, y_rows))
+        except:
+            return False
