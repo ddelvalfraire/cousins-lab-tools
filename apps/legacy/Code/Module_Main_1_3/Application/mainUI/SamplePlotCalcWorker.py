@@ -1,7 +1,7 @@
 ﻿from PyQt5 import QtCore
 import numpy as np
 from sympy import lambdify
-# from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
@@ -136,8 +136,12 @@ class SamplePlotCalcWorker(QtCore.QObject):
             d2_m44 = None
             if times.size >= 5:
                 # smooth data
-                # m44_smooth = savgol_filter(m44, window_length=51, polyorder=3, mode='interp')
-                d1 = np.gradient(m44, times, edge_order=2)
+                window = min(51, len(m44) - 1)
+                if window % 2 == 0:
+                    window -= 1
+
+                m44_smooth = savgol_filter(m44, window_length=window, polyorder=3, mode='interp')
+                d1 = np.gradient(m44_smooth, times, edge_order=2)
                 d2_m44 = np.gradient(d1, times, edge_order=2)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
