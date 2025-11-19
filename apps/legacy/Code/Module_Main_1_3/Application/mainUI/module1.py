@@ -1239,7 +1239,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Snapshot equations on the main thread
         xexp = self.xAxisEquiation
         yexp = self.yAxisEquiation
-        print(Qt.Key_Alt in self.keys_down)
+
         self._calcThread = QtCore.QThread(self)
         self._calcWorker = SamplePlotCalcWorker(
             data=data,
