@@ -88,6 +88,9 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # get current user's username
         self.user = os.getlogin()
 
+        # Set of all keys down
+        self.keys_down = set()
+
         # Setting varibales that will be used for the logic
 
         self.pauseBit = False
@@ -1236,7 +1239,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Snapshot equations on the main thread
         xexp = self.xAxisEquiation
         yexp = self.yAxisEquiation
-
+        print(Qt.Key_Alt in self.keys_down)
         self._calcThread = QtCore.QThread(self)
         self._calcWorker = SamplePlotCalcWorker(
             data=data,
@@ -1246,6 +1249,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             getVars=self.getVarsDict,
             temp=self.temperatureLineEdit.text(),
             deltaPart=self.samplePlotDeltaPartLineEdit.text(),
+            plotD1=Qt.Key_Alt in self.keys_down
         )
 
         self._calcWorker.moveToThread(self._calcThread)
@@ -1539,6 +1543,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
 #################################################################################################################################
 ##################################################### ButtonPressed Methods #####################################################
 
+    def keyPressEvent(self, event):
+        """keeps track of all keys that are curentle pressed down"""
+        self.keys_down.add(event.key())
+
+    def keyReleaseEvent(self, event):
+        """keeps track of all keys that are curentle pressed down"""
+        self.keys_down.discard(event.key())
     def blankSlopeButtonPressed(self):
         data = self.getAllMeanBarData()
 

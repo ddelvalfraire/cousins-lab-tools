@@ -13,7 +13,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     resultReady = QtCore.pyqtSignal(dict)
 
-    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart):
+    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart, plotD1):
         super().__init__()
         self.data = data
         self.xexp = xexp
@@ -22,6 +22,8 @@ class SamplePlotCalcWorker(QtCore.QObject):
         self.getVars = getVars
         self.temp = temp
         self.deltaPart = deltaPart
+
+        self.plotD1 = plotD1
 
         self.xsymbols = sorted(list(xexp.free_symbols), key=lambda s: s.name)
         self.ysymbols = sorted(list(yexp.free_symbols), key=lambda s: s.name)
@@ -143,6 +145,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 m44_smooth = savgol_filter(m44, window_length=window, polyorder=3, mode='interp')
                 d1 = np.gradient(m44_smooth, times, edge_order=2)
                 d2_m44 = np.gradient(d1, times, edge_order=2)
+
+                if self.plotD1:
+                    d2_m44 = d1
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
 
