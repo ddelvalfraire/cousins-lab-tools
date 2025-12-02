@@ -13,7 +13,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     resultReady = QtCore.pyqtSignal(dict)
 
-    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart, plotD1):
+    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart):
         super().__init__()
         self.data = data
         self.xexp = xexp
@@ -22,8 +22,6 @@ class SamplePlotCalcWorker(QtCore.QObject):
         self.getVars = getVars
         self.temp = temp
         self.deltaPart = deltaPart
-
-        self.plotD1 = plotD1
 
         self.xsymbols = sorted(list(xexp.free_symbols), key=lambda s: s.name)
         self.ysymbols = sorted(list(yexp.free_symbols), key=lambda s: s.name)
@@ -146,10 +144,8 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 d1 = np.gradient(m44_smooth, times, edge_order=2)
                 d2_m44 = np.gradient(d1, times, edge_order=2)
 
-                if self.plotD1:
-                    d2_m44 = d1
-
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+            slope44, _ = Calculations.getLineOfBestFit([t[0] for t in self.data], [t[1][3] for t in self.data])
 
             #################### Adds Alpha/Delta/Rubisco metrics ####################
             # Compute alpha_total (slope) and delta_total from the equation data already used above.
@@ -194,7 +190,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,
                 "delta_rubisco": delta_rubisco,
-                "slope": slope
+                "slope44": slope44
             })
         except Exception as e:
             self.error.emit(str(e))

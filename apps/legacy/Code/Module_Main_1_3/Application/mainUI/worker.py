@@ -89,8 +89,10 @@ class Worker(QObject):
 
             stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
 
+            # stopwatch doesent work so disabled it.
+            # and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)
             # Emit when synthetic time reached first timestamp in batch
-            while (len(self.lastDataPoint) > 0 and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)):
+            while (len(self.lastDataPoint) > 0):
 
                 # Push to UI
                 dataPoints = self.lastDataPoint

@@ -1249,7 +1249,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             getVars=self.getVarsDict,
             temp=self.temperatureLineEdit.text(),
             deltaPart=self.samplePlotDeltaPartLineEdit.text(),
-            plotD1=Qt.Key_Alt in self.keys_down
         )
 
         self._calcWorker.moveToThread(self._calcThread)
@@ -1304,7 +1303,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             except:
                 delta = "N/A"
             try:
-                blank44OverBestFit = round(float(self.blankSlope44LineEdit.text()) / float(res["slope"]), 5)
+                blank44OverBestFit = round(float(self.blankSlope44LineEdit.text()) / float(res["slope44"]), 5)
             except:
                 blank44OverBestFit = "N/A"
 
@@ -1550,6 +1549,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
     def keyReleaseEvent(self, event):
         """keeps track of all keys that are curentle pressed down"""
         self.keys_down.discard(event.key())
+
     def blankSlopeButtonPressed(self):
         data = self.getAllMeanBarData()
 
