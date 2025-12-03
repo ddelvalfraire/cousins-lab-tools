@@ -8,7 +8,6 @@ __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
 
-import pandas as pd
 from Code.Module_Main_1_3.Application.read_data.file import File
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
@@ -26,6 +25,7 @@ class GetData:
 
     def __iter__(self):
         self.currentFileIndex = -1
+        return self
 
     def __next__(self):
         
