@@ -1316,9 +1316,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.calculationPlotGraph.addItem(text)
 
             # Time vs d²/dt²(Mass44)
-            if hasattr(self, "calculationPlotGraph2") and res.get("times") is not None and res.get(
-                    "d2_m44") is not None:
-                times = res["times"]
+            if hasattr(self, "calculationPlotGraph2") and res.get("times") is not None and res.get("d2_m44") is not None:
+                times = res["d2_Time"]
                 d2 = res["d2_m44"]
                 self.calculationPlotGraph2Curve.setData(x=times, y=d2)
 

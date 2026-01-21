@@ -1,7 +1,4 @@
 # Main function
-import os
-import sys
-
 import PyQt5
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QApplication

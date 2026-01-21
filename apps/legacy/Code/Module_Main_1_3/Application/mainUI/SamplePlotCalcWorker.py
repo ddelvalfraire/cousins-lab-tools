@@ -1,7 +1,8 @@
 ﻿from PyQt5 import QtCore
 import numpy as np
 from sympy import lambdify
-from scipy.signal import savgol_filter
+import math
+import random
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
@@ -55,6 +56,33 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 return False, f"The following variable has no value: {bad[0]}"
             return False, f"Some variables have no value: {bad}"
         return True, args
+
+    def savgol_coeffs(self, window_length, polyorder, deriv=0, delta=1.0):
+        half = window_length // 2
+        # positions: -half .. +half
+        x = np.arange(-half, half + 1)
+        A = np.vstack([x ** i for i in range(polyorder + 1)]).T
+
+        # Compute the pseudo-inverse
+        ATA_inv = np.linalg.pinv(A)
+
+        # derivative row
+        coeffs = ATA_inv[deriv] * math.factorial(deriv) / (delta ** deriv)
+
+        return coeffs
+
+    def savgol_filter_np(self, y, window_length, polyorder, mode='interp'):
+        coeffs = self.savgol_coeffs(window_length, polyorder, deriv=0)
+        half = window_length // 2
+
+        # pad
+        if mode == 'interp':
+            # mirror padding (closest to SciPy’s 'interp')
+            ypad = np.pad(y, (half, half), mode='reflect')
+        else:
+            raise ValueError("only mode='interp' implemented")
+
+        return np.convolve(ypad, coeffs[::-1], mode='valid')
 
     @QtCore.pyqtSlot()
     def run(self):
@@ -134,15 +162,18 @@ class SamplePlotCalcWorker(QtCore.QObject):
             times, m44 = times[mask], m44[mask]
 
             d2_m44 = None
+            d2_Time = times
             if times.size >= 5:
                 # smooth data
                 window = min(51, len(m44) - 1)
                 if window % 2 == 0:
                     window -= 1
 
-                m44_smooth = savgol_filter(m44, window_length=window, polyorder=3, mode='interp')
+
+                m44_smooth = self.savgol_filter_np(m44, window, 3)
+
                 d1 = np.gradient(m44_smooth, times, edge_order=2)
-                d2_m44 = np.gradient(d1, times, edge_order=2)
+                d2_m44 = np.gradient(m44_smooth, times, edge_order=2)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
             slope44, _ = Calculations.getLineOfBestFit([t[0] for t in self.data], [t[1][3] for t in self.data])
@@ -186,6 +217,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "lbfY": lbfY,
                 "times": times if times.size > 0 else None,
                 "d2_m44": d2_m44,
+                "d2_Time": d2_Time,
                 "delta": delta_rubisco,
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,
@@ -196,3 +228,4 @@ class SamplePlotCalcWorker(QtCore.QObject):
             self.error.emit(str(e))
         finally:
             self.finished.emit()
+
