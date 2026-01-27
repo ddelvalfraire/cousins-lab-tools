@@ -26,7 +26,7 @@ class Graph(pg.PlotWidget):
         self.setYRange(0, yRange)
         self.plotItem.hideButtons()
         self.graphInteraction = False
-
+        self.setMinimumSize(0, 0)
         # self.plotItem.ctrlMenu = None
 
     def mouseMoveEvent(self, event):

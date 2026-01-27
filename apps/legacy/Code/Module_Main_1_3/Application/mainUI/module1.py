@@ -262,7 +262,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # Creating vertical layout for check boxes.
         self.checkBoxVLayout = QtWidgets.QVBoxLayout()
-        self.checkBoxVLayout.setSpacing(10)
 
         # Adding check boxes to the checkBoxWidget layout
         self.checkBoxVLayout.addWidget(self.graph1CheckBox)
@@ -273,7 +272,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.checkBoxVLayout.addWidget(self.graph6CheckBox)
         self.checkBoxVLayout.addWidget(self.graph7CheckBox)
         self.checkBoxVLayout.addWidget(self.graph8CheckBox)
-        
+
         #############################################################################################
 
 
@@ -367,6 +366,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.rawDataPlotFrame.setFrameLayout(self.rawDataPlotHLayout)
         self.rawDataPlotHLayout.addLayout(self.checkBoxVLayout)
         self.rawDataPlotHLayout.addLayout(self.graphStartPauseResumeSliderVLayout)
+
         ###############################################################################################
 
     def calculatedPlotsUI(self):
@@ -496,13 +496,18 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Add actions to select a file/folder
         self.select_folder_action = QAction('Select Acq Folder', self)
         self.select_ezview_action = QAction('Select EZView Data File', self)
-        self.select_file_action = QAction('Select Cal File', self)
+        self.select_file_action = QAction('Load Calibration File', self)
+        self.select_save_calc_action = QAction('Save Calibration to File', self)
         self.select_folder_action.triggered.connect(self.select_folder)
         self.select_ezview_action.triggered.connect(self.select_ezview)
         self.select_file_action.triggered.connect(self.select_file)
+        self.select_save_calc_action.triggered.connect(self.saveCalibrations)
+        self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_file_action)
         self.file_menu.addAction(self.select_ezview_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.select_save_calc_action)
 
         ######################## O2 Zero and CO2 cal #############################
 
@@ -813,31 +818,34 @@ class LabViewModule1(QtWidgets.QMainWindow):
         #  |______________________________________________|_____________|
 
         ################################### Top Bar layout #############################################
-        self.xAxisLabel = QtWidgets.QLabel("X Axis:")
-        self.yAxisLabel = QtWidgets.QLabel("Y Axis:")
-        self.emptyLabel = QtWidgets.QLabel("")
+        # self.xAxisLabel = QtWidgets.QLabel("X Axis:")
+        # self.yAxisLabel = QtWidgets.QLabel("Y Axis:")
+        # self.emptyLabel = QtWidgets.QLabel("")
 
-        self.xAxisLineEdit = LineEdit()
-        self.yAxisLineEdit = LineEdit()
+        # self.xAxisLineEdit = LineEdit()
+        # self.yAxisLineEdit = LineEdit()
+        #
+        # self.xAxisLineEdit.setReadOnly(False)
+        # self.yAxisLineEdit.setReadOnly(False)
+        #
+        # self.xAxisLineEdit.setText(str(self.DefaultXAxisEquiation))
+        # self.yAxisLineEdit.setText(str(self.DefaultYAxisEquiation))
 
-        self.xAxisLineEdit.setReadOnly(False)
-        self.yAxisLineEdit.setReadOnly(False)
+        # self.OnEditedXAxis()
+        # self.OnEditedYAxis()
+        #
+        # self.lineEditList.extend([self.xAxisLineEdit, self.yAxisLineEdit])
 
-        self.xAxisLineEdit.setText(str(self.DefaultXAxisEquiation))
-        self.yAxisLineEdit.setText(str(self.DefaultYAxisEquiation))
-
-        self.OnEditedXAxis()
-        self.OnEditedYAxis()
-
-        self.lineEditList.extend([self.xAxisLineEdit, self.yAxisLineEdit])
-
-        self.topBarGridLayout = QtWidgets.QFormLayout()
-        self.topBarGridLayout.addRow(self.xAxisLabel, self.xAxisLineEdit)
-        self.topBarGridLayout.addRow(self.yAxisLabel, self.yAxisLineEdit)
+        # self.topBarGridLayout = QtWidgets.QFormLayout()
+        # self.topBarGridLayout.addRow(self.xAxisLabel, self.xAxisLineEdit)
+        # self.topBarGridLayout.addRow(self.yAxisLabel, self.yAxisLineEdit)
 
 
         ################################## Graph #####################################################
         self.calculationPlotGraph = Graph(100, 100)
+
+        self.calculationPlotGraph.setLabel(axis="bottom", text=str(self.DefaultYAxisEquiation))
+        self.calculationPlotGraph.setLabel(axis="left", text=str(self.DefaultXAxisEquiation))
 
         self.customPlotGraphLayout = QtWidgets.QHBoxLayout()
         self.customPlotGraphLayout.addWidget(self.calculationPlotGraph)
@@ -899,7 +907,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # Graph
         self.calculationPlotButtonLayoutAxisGraph = QtWidgets.QGridLayout()
-        self.calculationPlotButtonLayoutAxisGraph.addLayout(self.topBarGridLayout, 1, 1)
+        # self.calculationPlotButtonLayoutAxisGraph.addLayout(self.topBarGridLayout, 1, 1)
         self.calculationPlotButtonLayoutAxisGraph.addLayout(self.customPlotGraphLayout, 2, 1)
         self.calculationPlotButtonLayoutAxisGraph.addLayout(bottomBarLayout, 3, 1)
 
@@ -1097,17 +1105,17 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # Update Calculation Plots from mean bar moved
         self.meanBar.sigRegionChangeFinished.connect(self.updateCustomCalcPlots)
+        self.samplePlotDeltaPartLineEdit.returnPressed.connect(self.updateCustomCalcPlots)
 
         # Adds data to sample table
         self.calculationPlotAddDataButton.clicked.connect(self.addSampleToSampleData)
-
-        # Adds Equation from lineedit to plot
-        self.xAxisLineEdit.returnPressed.connect(lambda: self.OnEditedXAxis())
-        self.yAxisLineEdit.returnPressed.connect(lambda: self.OnEditedYAxis())
-        
-        # updates the plot when equations our changed
-        self.xAxisLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots())
-        self.yAxisLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots())
+        # # Adds Equation from lineedit to plot
+        # self.xAxisLineEdit.returnPressed.connect(lambda: self.OnEditedXAxis())
+        # self.yAxisLineEdit.returnPressed.connect(lambda: self.OnEditedYAxis())
+        #
+        # # updates the plot when equations our changed
+        # self.xAxisLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots())
+        # self.yAxisLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots())
 
         # adds export table buttons
         self.calculationPlotExportTableButton.clicked.connect(lambda: self.exportSampleTable())
@@ -1214,7 +1222,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """ Updates the custom calculation plots with data from the mean bar
             Calls Async threads
         """
-        self.updateCustomCalcPlotsAsync()
+        try:
+            self.updateCustomCalcPlotsAsync()
+        except:
+            self.throwTellUserDilog("error","Failed to update custom calculation plots")
 
     def updateCustomCalcPlotsAsync(self):
         """
@@ -1440,8 +1451,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         #################### equations plot ####################
 
-        equationXName = self.xAxisLineEdit.text()
-        equationYName = self.yAxisLineEdit.text()
+        equationXName = self.DefaultXAxisEquiation
+        equationYName = self.DefaultYAxisEquiation
 
         equationXData = self.currentPlotData["sampleEquationXPlotData"]
         equatoinYData = self.currentPlotData["sampleEquationYPlotData"]
@@ -1708,108 +1719,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         obj.close()
         self.startButton.setEnabled(True)
 
-    # change-file-reading
-    # Start the thread as soon all files are read.
-    def startNewFileNotifier(self):
-
-        if not self.fileCheckThreadStarted:
-            self.fileNotiferThread = QThread(parent=self)
-            # Step 3: Create a worker object
-            self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
-            # Step 4: Move worker to the thread
-            self.newFileNotifierThread.moveToThread(self.fileNotiferThread)
-
-            # Step 5: Connect signals and slots and start the stop watch
-            self.fileNotiferThread.started.connect(self.newFileNotifierThread.run)
-
-            self.fileNotiferThread.start()
-            self.fileCheckThreadStarted = True
-
-        else:
-            pass
-
-    def update_plot_data(self, dataPoints):
-        """
-            Updates the real time plot after reading each row of data points from the file ONLY IF the pause bit is False.
-            :param {x_value : Float} -> x point value of the data point.
-            :param {y_value : Float} -> list of the y point values of the data point for different plots.
-            :return -> None
-        """
-
-        y_value = [[],[],[],[],[],[],[],[]]
-
-        # Getting the next data points from the list of all the points emitted by the worker thread.
-        while len(dataPoints) != 0:
-
-            # Popping the first data points
-            dataPoint = dataPoints.pop(0)
-
-            # Getting the x coordinate and list of y coordinates from the tuple
-            x, y = dataPoint
-
-            # Updating the data points in the singleton class.
-            self.sharedData.dataPoints[x] = y
-
-            for i in range(len(y_value)):
-                y_value[i].append(y[i])
-
-        # x_value, y_value = self.getNextPoint(self.dataObj)
-
-        # Updating the shared singleton plot data
-
-        # Updating all the curves
-        # start = time()
-        yAllMax = max(y)
-        yAllMin = min(y)
-
-        if self.yAllMin == None and self.yAllMax == None:
-            self.yAllMax = yAllMax
-            self.yAllMin = yAllMin
-            self.isYChnaged = True
-
-        else:
-
-            if yAllMin < self.yAllMin:
-                self.yAllMin = yAllMin
-                self.isYChnaged = True
-
-            if yAllMax > self.yAllMax:
-                self.yAllMax = yAllMax
-                self.isYChnaged = True
-
-        self.changeGraphRange(x)
-
-        self.curve1.updateDataPoints(x, y_value[0])
-        self.curve2.updateDataPoints(x, y_value[1])
-        self.curve3.updateDataPoints(x, y_value[2])
-        self.curve4.updateDataPoints(x, y_value[3])
-        self.curve5.updateDataPoints(x, y_value[4])
-        self.curve6.updateDataPoints(x, y_value[5])
-        self.curve7.updateDataPoints(x, y_value[6])
-        self.curve8.updateDataPoints(x, y_value[7])
-
-    def changeGraphRange(self, x):
-
-        # Changing X Axes Scale
-        self.currentXRange = self.realTimeGraph.getXAxisRange()
-
-        if x > self.currentXRange[1]:
-
-            currentXScale = self.currentXRange[1] - self.currentXRange[0]
-
-            self.currentXRange = [self.currentXRange[0] + currentXScale, self.currentXRange[1] + currentXScale]
-            if not self.realTimeGraph.graphInteraction:
-                self.realTimeGraph.setNewXRange(self.currentXRange[0], self.currentXRange[1])
-
-        # Changing Y Axes Scale:
-
-        if self.isYChnaged:
-            if not self.realTimeGraph.graphInteraction:
-                offsetMin = (20*self.yAllMin)/100
-                offsetMax = (20*self.yAllMax)/100
-                self.realTimeGraph.setNewYRange(self.yAllMin-offsetMin, self.yAllMax+offsetMax)
-                self.isYChnaged = False
-
     def on_wheel_event(self,event, axis=1):
         """
             For disabling the scroll on the axes.
@@ -1819,30 +1728,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
     def startButtonDialogAccepted(self, dlg):
         dlg.close()
-
-    def pauseResumeAction(self):
-
-        """
-            Pauses or Resumes the graph plot.
-            :param {_ : }
-            :return -> None
-        """
-
-        # Pause the Plot
-        if self.pauseBit == False:
-            self.application_state = "Paused"
-            self.pauseBit = True
-            self.stopwatch.stop()
-            self.pauseResumeButton.setText("Resume")
-            self.pauseResumeButton.setToolTip('Resume the graph')
-
-        # Resume the Plot
-        elif self.pauseBit == True:
-            self.application_state = "Running"
-            self.pauseBit = False
-            self.stopwatch.start()
-            self.pauseResumeButton.setText("Pause")
-            self.pauseResumeButton.setToolTip('Pause the graph')
 
     def graphCheckStateChanged(self, checkBox, curve):
 
@@ -1856,16 +1741,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             curve.unhide()
         elif checkBox.isChecked() != True:
             curve.hide()
-
-    def OnEditedTemp(self):
-
-        # check for numerical input
-        if (not self.isFloat(self.temperatureLineEdit.text()) and self.temperatureLineEdit.text() != ''):
-            #throw execption
-            self.throwFloatValueWarning()
-            return
-
-        self.temperature = float(self.temperatureLineEdit.text())
 
     def OnEditedO2AssayCal(self):
         """
@@ -1881,19 +1756,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # called method with manualEntry as True
         self.o2ZeroButtonPressed(True)
-
-    def OnEditedCO2Cal(self, lineEdit, curve, graph, concentration):
-        """
-        When a CO2 cal line edit is edited, the GraphMeanButtonPressed method is called
-        with manualEntry set as true.
-        """
-
-        if (not self.isFloat(lineEdit.text()) and lineEdit.text() != ''):
-            #throw execption
-            self.throwFloatValueWarning()
-            return
-
-        self.GraphMeanButtonPressed(lineEdit, curve, graph, concentration, True)
 
     def OnEditedO2Cal(self):
 
@@ -2056,13 +1918,14 @@ class LabViewModule1(QtWidgets.QMainWindow):
             mean_value = self.meanButtonPressed(self.o2ZeroLineEdit, 0)
 
         if self.temperatureLineEdit.text():
+            try:
+                # get the O2 Calbriation
+                self.o2Calibration = Calculations.calculate02Calibration(mean_value, self.temperature)
 
-            # get the O2 Calbriation
-            self.o2Calibration = Calculations.calculate02Calibration(mean_value, self.temperature)
-
-            # set O2 Calibration line edit
-            self.o2CalibrationLineEdit.setText(str(round(self.o2Calibration, 4)))
-
+                # set O2 Calibration line edit
+                self.o2CalibrationLineEdit.setText(str(round(self.o2Calibration, 4)))
+            except:
+                pass
         else:
             self.throwUndefined(self.o2CalibrationLineEdit)
 
@@ -2320,20 +2183,16 @@ class LabViewModule1(QtWidgets.QMainWindow):
         else:
             self.temperature = float(self.temperatureLineEdit.text())
 
-    def OnEditedO2AssayCal(self):
-        """
-        When the O2 Assay Buffer Zero line edit is edited, the O2ZeroButtonPressed method
-        is called with manualEntry set as true.
-        """
+        if self.o2ZeroLineEdit.text():
+            try:
+                mean_value = float(self.o2ZeroLineEdit.text())
+                # get the O2 Calbriation
+                self.o2Calibration = Calculations.calculate02Calibration(mean_value, self.temperature)
 
-        # check for numerical input
-        if (not self.isFloat(self.o2ZeroLineEdit.text()) and self.o2ZeroLineEdit.text() != ''):
-            #throw execption
-            self.throwFloatValueWarning()
-            return
-
-        # called method with manualEntry as True
-        self.o2ZeroButtonPressed(True)
+                # set O2 Calibration line edit
+                self.o2CalibrationLineEdit.setText(str(round(self.o2Calibration, 4)))
+            except:
+                pass
 
     def OnEditedCO2Cal(self, lineEdit, curve, graph, concentration):
         """
@@ -2347,19 +2206,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             lineEdit.setText('undef')
 
         self.GraphMeanButtonPressed(lineEdit, curve, graph, concentration, True)
-
-    def OnEditedO2Cal(self):
-
-        # check for numerical input
-        if (not self.isFloat(self.o2CalibrationLineEdit.text()) and self.o2CalibrationLineEdit.text() != ''):
-            #throw execption
-            self.throwFloatValueWarning()
-            return
-
-        if self.o2CalibrationLineEdit.text() == '':
-            self.o2Calibration = 0
-        else:
-            self.o2Calibration = float(self.o2CalibrationLineEdit.text())
 
     def OnEditedBiCarbCo2(self):
 
@@ -2395,7 +2241,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
 #################################################################################################################################
 ####################################################### Raw Plot Methods ########################################################
-
 
     def speedSliderValueChanged(self):
 
@@ -2526,13 +2371,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 self.realTimeGraph.setNewYRange(self.yAllMin-offsetMin, self.yAllMax+offsetMax)
                 self.isYChnaged = False
 
-    def on_wheel_event(self,event, axis=1):
-        """
-            For disabling the scroll on the axes.
-
-        """
-        event.ignore()
-
     def pauseResumeAction(self):
 
         """
@@ -2561,19 +2399,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 self.pauseResumeButton.setText("Pause")
                 self.pauseResumeButton.setToolTip('Pause the graph')
 
-    def graphCheckStateChanged(self, checkBox, curve):
-
-        """
-            Hide/Unhide the graph 8.
-            :param {_ : }
-            :return -> None
-        """
-
-        if checkBox.isChecked() == True:
-            curve.unhide()
-        elif checkBox.isChecked() != True:
-            curve.hide()
-
 ##################################################### End - Raw Plot Methods ####################################################
 #################################################################################################################################
 
@@ -2598,13 +2423,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         if not os.path.exists(path):
             os.makedirs(path)
 
-
         # Invoke Save File Dialog - returns the path of the file and file type
         path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path+"\\"+file_name, "CSV Files (*.csv)")
 
         # if file type is not null
         if ok:
-
             # open file and write in calibrations
             with open(path, 'w') as csvfile:
                 writer = csv.writer(csvfile, dialect='excel', lineterminator='\n')
@@ -2788,24 +2611,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         startButtonExceptionDlg.buttonBox.accepted.connect(lambda: self.startButtonDialogAccepted(startButtonExceptionDlg))
         startButtonExceptionDlg.exec()
 
-    def startButtonDialogAccepted(self, dlg):
-        dlg.close()
-
-    def outOfDataCondition(self):
-        self.throwOutOfDataException()
-
-    def dataButtonDialogAccepted(self, obj):
-        obj.close()
-        self.startButton.setEnabled(True)
-
-    def throwFloatValueWarning(self):
-        floatWarningDlg = Dialog(title="WARNING!", buttonCount=1, message="The entered value is not a numerical value!", parent=self)
-        floatWarningDlg.buttonBox.accepted.connect(lambda: self.floatWarningAccepted(floatWarningDlg))
-        floatWarningDlg.exec()
-
-    def floatWarningAccepted(self, obj):
-        obj.close()
-
     def purgeTablepButtonWarning(self):
 
         """
@@ -2851,9 +2656,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
         obj.close()
         pass
-
-    def throwUndefined(self, lineEdit):
-        lineEdit.setText('undef')
 
     def throwTellUserDilog(self, title, str):
         f"""
@@ -2923,18 +2725,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
 
             self.hclGraph.plotItem.getViewBox().autoRange()
-
-    def isFloat(self, string):
-        """
-        Checks if a string can be coverted to a float value
-        :param {string : string}
-        :return -> True or False
-        """
-        try:
-            float(string)
-            return True
-        except ValueError:
-            return False
 
     def clearApplication(self, keepCals):
         """
