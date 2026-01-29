@@ -494,8 +494,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.file_menu = self.menu_bar.addMenu('File')
 
         # Add actions to select a file/folder
-        self.select_folder_action = QAction('Select Acq Folder', self)
-        self.select_ezview_action = QAction('Select EZView Data File', self)
+        self.select_folder_action = QAction('Load Acq Folder', self)
+        self.select_ezview_action = QAction('Load EZView Data File', self)
         self.select_file_action = QAction('Load Calibration File', self)
         self.select_save_calc_action = QAction('Save Calibration to File', self)
         self.select_folder_action.triggered.connect(self.select_folder)
@@ -2753,11 +2753,15 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.select_folder_action.setEnabled(True)
         self.select_ezview_action.setEnabled(True)
 
-
+        self.clearCostomCalculationPlot()
         # Dictionaries to hold data for graphs
         if not keepCals:
             self.assayBufferData = {}
             self.hclData = {}
+            self.assayBufferGraph.clear()
+            self.hclGraph.clear()
+            self.concentrationGraph.clear()
+
         self.o2VelocityConcentrationData = {}
         self.co2VelocityConcentrationData = {}
 
@@ -2826,3 +2830,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.graph6CheckBox.setChecked(False)
         self.graph7CheckBox.setChecked(False)
         self.graph8CheckBox.setChecked(False)
+
+    def clearCostomCalculationPlot(self):
+        self.samplePlotData = []
+
+        self.clearSampleData()
+
+        self.calculationPlotGraph.clear()
+        self.calculationPlotGraph2Curve.clear()
