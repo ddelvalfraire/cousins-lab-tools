@@ -920,7 +920,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # final layout
         self.customCalculationPlotsLayout = QtWidgets.QGridLayout()
         self.customCalculationPlotsLayout.addLayout(self.calculationPlotButtonLayoutAxisGraph, 1, 1)
-        self.customCalculationPlotsLayout.setColumnStretch(1,3)
         self.customCalculationPlotsLayout.addLayout(tableHalfLayout, 1, 2)
         self.customCalculationPlots.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.customCalculationPlots.setLayout(self.customCalculationPlotsLayout)
@@ -936,13 +935,14 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.rawDataPlotFrame = Frame(self.scrollArea, 0.9)
 
         # Container frame that holds the tab widget
-        self.tabbedContainerFrame = Frame(self.scrollArea, 0.7)
-        self.tabbedContainerLayout = QtWidgets.QVBoxLayout()
-        self.tabbedContainerFrame.setLayout(self.tabbedContainerLayout)
-        self.tabbedContainerLayout.setContentsMargins(0, 0, 0, 0)
+        # self.tabbedContainerFrame = Frame(self.scrollArea, 0.7)
+        # self.tabbedContainerLayout = QtWidgets.QVBoxLayout()
+        # self.tabbedContainerFrame.setLayout(self.tabbedContainerLayout)
+        # self.tabbedContainerLayout.setContentsMargins(0, 0, 0, 0)
         # QTabWidget inside the container frame
         self.tabWidget = QtWidgets.QTabWidget()
-        self.tabbedContainerLayout.addWidget(self.tabWidget)
+
+        # self.tabbedContainerLayout.addWidget(self.tabWidget)
 
         # First Tab ###############
         # Layout is set later by self.calculatedPlotsUI()
@@ -950,15 +950,15 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # Second Tab ###############
         # Layout is set later by self.customCalculationPlotsUI()
-        innerScroll = QtWidgets.QScrollArea()
-        innerScroll.setWidgetResizable(True)
-        innerScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        innerScroll.setWidget(self.customCalculationPlots)
+        # innerScroll = QtWidgets.QScrollArea()
+        # innerScroll.setWidgetResizable(True)
+        # innerScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # innerScroll.setWidget(self.customCalculationPlots)
 
-        self.tabWidget.addTab(innerScroll, "Calculations")
+        self.tabWidget.addTab(self.customCalculationPlots, "Calculations")
 
         # Adding QFrames to the scroll area widget layout.
-        resizableWidget.addWidget(self.tabbedContainerFrame)
+        resizableWidget.addWidget(self.tabWidget)
         resizableWidget.addWidget(self.rawDataPlotFrame)
         resizableWidget.addWidget(self.calculationButtonsFrame)
 
@@ -1238,6 +1238,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # guard against multiple concurrent threads
         t = getattr(self, "_calcThread", None)
+        print(t)
         if t is not None:
             try:
                 if t.isRunning():
