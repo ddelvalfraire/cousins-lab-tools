@@ -913,8 +913,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # Table
         tableHalfLayout = QtWidgets.QGridLayout()
-        tableHalfLayout.addLayout(tableSampleNameLayout, 0, 0)
-        tableHalfLayout.addWidget(self.calculationPlotTable, 1, 0)
+        tableHalfLayout.addWidget(self.calculationPlotTable, 0, 0)
+        tableHalfLayout.addLayout(tableSampleNameLayout, 1, 0)
         tableHalfLayout.addLayout(outterCalculationTableWidgetButtons, 2, 0)
 
         # final layout
