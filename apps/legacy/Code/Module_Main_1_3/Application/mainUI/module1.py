@@ -921,6 +921,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.customCalculationPlotsLayout = QtWidgets.QGridLayout()
         self.customCalculationPlotsLayout.addLayout(self.calculationPlotButtonLayoutAxisGraph, 1, 1)
         self.customCalculationPlotsLayout.addLayout(tableHalfLayout, 1, 2)
+        self.customCalculationPlotsLayout.setColumnStretch(1, 6)
+        self.customCalculationPlotsLayout.setColumnStretch(2, 1)
         self.customCalculationPlots.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.customCalculationPlots.setLayout(self.customCalculationPlotsLayout)
 
@@ -941,7 +943,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # self.tabbedContainerLayout.setContentsMargins(0, 0, 0, 0)
         # QTabWidget inside the container frame
         self.tabWidget = QtWidgets.QTabWidget()
-
         # self.tabbedContainerLayout.addWidget(self.tabWidget)
 
         # First Tab ###############
@@ -1238,7 +1239,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # guard against multiple concurrent threads
         t = getattr(self, "_calcThread", None)
-        print(t)
         if t is not None:
             try:
                 if t.isRunning():

@@ -9,8 +9,7 @@ from module1 import LabViewModule1
 # from module3 import LabViewModule3
 
 def main(args):
-    PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
-    PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+
 
     app = QApplication([])
 
@@ -34,6 +33,9 @@ def main(args):
         #     labView = LabViewModule3(size.width(), size.height(), app)
         case _:
             labView = LabViewModule1(size.width(), size.height(), app)
+
+    PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
     labView.show()  # Ensure the main window is shown
     splash.finish(labView)  # Close splash screen when main window is ready
