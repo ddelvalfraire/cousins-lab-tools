@@ -1410,6 +1410,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         Exports data from samle table to csv file
         :return:
         """
+
+        if self.calculationPlotTable.rowCount() == 0:
+            self.throwTellUserDilog("No Data Found", "no data found")
+            return
         path = f'C:\\Users\\{self.user}\\Documents\\TableData'
         if not os.path.exists(path):
             os.makedirs(path)
@@ -1418,22 +1422,25 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self, 'Save File', path, "Excel Files (*.xlsx)"
         )
 
-        if ok:
-            self.statusBar().showMessage("Exporting data... please wait")
+        try:
+            if ok:
+                self.statusBar().showMessage("Exporting data... please wait")
 
-            self.thread = QtCore.QThread()
-            self.worker = ExportWorker(path, self.samplePlotData)
-            self.worker.moveToThread(self.thread)
+                self.thread = QtCore.QThread()
+                self.worker = ExportWorker(path, self.samplePlotData)
+                self.worker.moveToThread(self.thread)
 
-            self.thread.started.connect(self.worker.run)
-            self.worker.finished.connect(self.onExportFinished)
-            self.worker.error.connect(self.onExportError)
-            self.worker.finished.connect(self.thread.quit)
-            self.worker.finished.connect(self.worker.deleteLater)
-            self.thread.finished.connect(self.thread.deleteLater)
+                self.thread.started.connect(self.worker.run)
+                self.worker.finished.connect(self.onExportFinished)
+                self.worker.error.connect(self.onExportError)
+                self.worker.finished.connect(self.thread.quit)
+                self.worker.finished.connect(self.worker.deleteLater)
+                self.thread.finished.connect(self.thread.deleteLater)
 
-            self.thread.start()
-
+                self.thread.start()
+        except:
+            # will already be passed through user with threads
+            pass
     def addSampleToSampleData(self):
         """
         Adds sample data to sample table
