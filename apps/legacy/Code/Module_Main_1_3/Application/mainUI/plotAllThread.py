@@ -37,7 +37,6 @@ class PlotAllThread(QObject):
 
 
     def run(self):
-
         """Long running task"""
         try:
             if self.globalObject.application_state == "Idle":
