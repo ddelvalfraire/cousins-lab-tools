@@ -178,15 +178,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Initializing raw data plot.
         self.rawDataPlotUI()
 
-        # Initializing calculation plot
-        self.calculatedPlotsUI()
-
-        # Initializing calculation buttons
-        self.calculationButtonsUI()
-
-        # Initialize the custum plot ui elements
-        self.customCalculationPlotsUI()
-        
         # List of calibration line edits
         self.calibrationLineEdits = [self.temperatureLineEdit, self.o2CalibrationLineEdit, self.o2ZeroLineEdit, self.biCarbCo2LineEdit,
                                     self.co2CalZeroLineEdit, self.co2Cal6ulLineEdit, self.co2Cal12ulLineEdit, self.co2Cal18ulLineEdit,
@@ -374,6 +365,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         ###################################### QFormLayout for Assay Buffer #####################################
 
         # Widgets to be added in the layout
+        self.calculatedPlotsFrame = Frame(self.scrollArea, 0.7)
+
         self.intercept1Label = QtWidgets.QLabel("Intercept")
         self.biCarbCalLabel = QtWidgets.QLabel("BiCarb cal (nmol/ml/mV)")
         self.assayBufferLabel = QtWidgets.QLabel("Assay Buffer")
@@ -477,13 +470,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.calculatedPlotsFrame.setLayout(self.calculatedPlotsHLayout)
 
     def calculationButtonsUI(self):
-
         """
             Initializes file menu, calculation button.
             :param {_ : }
             :return -> None
         
         """
+        self.calculationButtonsFrame = Frame(self.scrollArea, 0.7)
 
         ############################## File Selection QDialog ##############################
 
@@ -802,8 +795,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.setCentralWidget(self.scrollArea)
 
     def customCalculationPlotsUI(self):
-        self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.defaultXAxisEquiation, self.defaultYAxisEquiation,
-                                                            blankSlopeLineEdit44=self.blankSlopeLineEdit44)
+        self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.DefaultXAxisEquiation, self.DefaultYAxisEquiation,
+                                                            blankSlopeLineEdit44=self.blankSlope44LineEdit)
         self.customCalculationPlots.softError.connect(lambda m, s: self.throwTellUserDilog(m, s))
         pass
 
@@ -812,15 +805,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
         resizableWidget = QtWidgets.QSplitter(QtCore.Qt.Vertical)
         resizableWidget.setFrameShape(QtWidgets.QFrame.NoFrame)
         # Creating a QFrame from User defined QFrame class.
-        self.calculatedPlotsFrame = Frame(self.scrollArea, 0.7)
-        self.calculationButtonsFrame = Frame(self.scrollArea, 0.7)
+        # Initializing calculation buttons
+        self.calculationButtonsUI()
         self.rawDataPlotFrame = Frame(self.scrollArea, 0.9)
 
-        # Container frame that holds the tab widget
-        # self.tabbedContainerFrame = Frame(self.scrollArea, 0.7)
-        # self.tabbedContainerLayout = QtWidgets.QVBoxLayout()
-        # self.tabbedContainerFrame.setLayout(self.tabbedContainerLayout)
-        # self.tabbedContainerLayout.setContentsMargins(0, 0, 0, 0)
+        # Initializing calculation plot
+        self.calculatedPlotsUI()
+
         # QTabWidget inside the container frame
         self.tabWidget = QtWidgets.QTabWidget()
         # self.tabbedContainerLayout.addWidget(self.tabWidget)
@@ -835,6 +826,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # innerScroll.setWidgetResizable(True)
         # innerScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # innerScroll.setWidget(self.customCalculationPlots)
+        # Initialize the custum plot ui elements
+        self.customCalculationPlotsUI()
 
         self.tabWidget.addTab(self.customCalculationPlots, "Calculations")
 
@@ -985,7 +978,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         ################################## Custom Plot Calc ##################################
 
         # Update Calculation Plots from mean bar moved
-        self.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.getAllMeanBarData))
+        self.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.ge))
 
         # Adds delt button to table
         # self.calculationPlotTable.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1271,7 +1264,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
     def outOfDataCondition(self):
         self.throwOutOfDataException()
         self.startButton.setEnabled(True)
-
 
     def dataButtonDialogAccepted(self, obj):
         obj.close()
