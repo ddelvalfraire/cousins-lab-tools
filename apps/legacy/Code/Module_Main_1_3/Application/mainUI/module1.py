@@ -164,7 +164,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # store calculated values for current sample plot
         self.currentPlotData = (dict)
         # List for holding custom plot data
-        self.samplePlotData = []
 
         # Data Object for getting the points.
         self.dataObj = GetData()
@@ -795,8 +794,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.setCentralWidget(self.scrollArea)
 
     def customCalculationPlotsUI(self):
+        dataToAdd = [("Blank Slope 44", self.blankSlope44LineEdit), ("Blank Slope 45", self.blankSlope45LineEdit.text()),
+                     ("Extract Slope 44", self.extractSlope44LineEdit), ("Extract Slope 45", self.extractSlope45LineEdit.text())]
         self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.DefaultXAxisEquiation, self.DefaultYAxisEquiation,
-                                                            blankSlopeLineEdit44=self.blankSlope44LineEdit)
+                                                            blankSlopeLineEdit44=self.blankSlope44LineEdit, dataToAdd=dataToAdd, user=self.user)
         self.customCalculationPlots.softError.connect(lambda m, s: self.throwTellUserDilog(m, s))
         pass
 
@@ -978,7 +979,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         ################################## Custom Plot Calc ##################################
 
         # Update Calculation Plots from mean bar moved
-        self.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.ge))
+        self.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.getAllMeanBarData()))
 
         # Adds delt button to table
         # self.calculationPlotTable.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1092,6 +1093,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 "CO2Zero44": self.co2ZeroLineEdit1.text(), "CO2Zero45": self.co2ZeroLineEdit2.text()}
         return vars
 
+    def getAllMeanBarData(self):
+        """Gets all data in mean bar range
+            return: (x_timestamp, [y0, y1, y2, y3, y4, y5, y6, y7])"""
+        left, right = self.meanBar.getRegion()
+        keys = [k for k in self.sharedData.dataPoints.keys() if k >= left and k <= right]
+        keyValues = [(k, self.sharedData.dataPoints[k]) for k in keys]
+        return keyValues
 
 ################################################# End - Calculation Helper Methods ##############################################
 #################################################################################################################################
