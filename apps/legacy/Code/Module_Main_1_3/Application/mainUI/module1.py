@@ -1107,14 +1107,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 #################################################################################################################################
 ##################################################### ButtonPressed Methods #####################################################
 
-    def keyPressEvent(self, event):
-        """keeps track of all keys that are curentle pressed down"""
-        self.keys_down.add(event.key())
-
-    def keyReleaseEvent(self, event):
-        """keeps track of all keys that are curentle pressed down"""
-        self.keys_down.discard(event.key())
-
     def blankSlopeButtonPressed(self):
         data = self.getAllMeanBarData()
 
@@ -1775,24 +1767,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         self.biCarbCo2ButtonPressed(True)
 
-    def OnEditedXAxis(self):
-        try:
-            equationString = self.xAxisLineEdit.text()
-            equation = sympify(equationString)
-            # self.xAxisLineEdit.setText(str(equation))
-            self.xAxisEquiation = equation
-        except:
-            self.throwTellUserDilog("Invalid Equation", f"{self.xAxisLineEdit.text()} is not a valid equation")
-
-    def OnEditedYAxis(self):
-        try:
-            equationString = self.yAxisLineEdit.text()
-            equation = sympify(equationString)
-            # self.yAxisLineEdit.setText(str(equation))
-            self.yAxisEquiation = equation
-        except:
-            self.throwTellUserDilog("Invalid Equation", f"{self.yAxisLineEdit.text()} is not a valid equation")
-
 #################################################### End - On Edit Line Edits ###################################################
 #################################################################################################################################
 
@@ -2311,7 +2285,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.select_folder_action.setEnabled(True)
         self.select_ezview_action.setEnabled(True)
 
-        self.clearCostomCalculationPlot()
+        self.customCalculationPlots.clear()
         # Dictionaries to hold data for graphs
         if not keepCals:
             self.assayBufferData = {}
@@ -2388,8 +2362,3 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.graph6CheckBox.setChecked(False)
         self.graph7CheckBox.setChecked(False)
         self.graph8CheckBox.setChecked(False)
-
-    def clearCostomCalculationPlot(self):
-        self.customCalculationPlots.clearSampleData()
-        self.customCalculationPlots.calculationPlotGraph.clear()
-        self.customCalculationPlots.calculationPlotGraph2Curve.clear()
