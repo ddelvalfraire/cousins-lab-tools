@@ -23,7 +23,7 @@ from sympy import sympify
 from numpy.ma.core import equal
 
 from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
-from Code.Module_Main_1_3.Application.CustomWidgets.customCalculationPlot import customCalculationPlot
+from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
 from SamplePlotCalcWorker import SamplePlotCalcWorker
 from worker import Worker
 from newFileNotifierThread import NewFileNotifierThread
