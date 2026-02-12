@@ -121,7 +121,7 @@ class customCalculationPlot(Frame):
             self.lastData = data
             self.updateCustomCalcPlotsAsync(data)
         except:
-            self.softError.emit(("error","Failed to update custom calculation plots"))
+            self.softError.emit("error","Failed to update custom calculation plots")
 
     def updateCustomCalcPlotsAsync(self, data):
         t = getattr(self, "_calcThread", None)

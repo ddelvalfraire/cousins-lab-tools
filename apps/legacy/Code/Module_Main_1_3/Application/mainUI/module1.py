@@ -24,7 +24,6 @@ from numpy.ma.core import equal
 
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
 from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
-from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
 from SamplePlotCalcWorker import SamplePlotCalcWorker
 from worker import Worker
 from newFileNotifierThread import NewFileNotifierThread
@@ -66,6 +65,9 @@ from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
 from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 from Code.Module_Main_1_3.Application.read_data.readEZView import read_from_ezview
+from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
+from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
+
 
 
 class LabViewModule1(QtWidgets.QMainWindow):
@@ -93,8 +95,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.keys_down = set()
 
         # Setting varibales that will be used for the logic
-
-        self.startBit = False
         self.setWindowTitle("LabView")
         self.sharedData = SharedSingleton()
         self.sharedData.fileList = []
@@ -103,7 +103,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.sharedData.xPoint = 0
         self.sharedData.initialX = None
         self.delay = 200
-        self.stopwatch = Stopwatch()
         self.firstPoint = False
         self.fileCheckThreadStarted = False
 
@@ -262,7 +261,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.assayBufferGraph = Graph(100,180)
         self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (nmol/ml)')
         self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
-        self.assayBufferGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.assayBufferGraphVLayout = QtWidgets.QVBoxLayout()
         self.assayBufferGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.assayBufferGraphVLayout.addWidget(self.assayBufferGraph)
@@ -277,7 +275,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.hclGraph = Graph(100,180)
         self.hclGraph.setLabel(axis='left', text = 'BiCarb (nmol/ml)')
         self.hclGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
-        self.hclGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.hclGraphVLayout = QtWidgets.QVBoxLayout()
         self.hclGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.hclGraphVLayout.addWidget(self.hclGraph)
@@ -294,7 +291,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.concentrationGraph = Graph(100,180)
         self.concentrationGraph.setLabel(axis='left', text = 'Velocity')
         self.concentrationGraph.setLabel(axis='bottom', text = '[CO2] (nmol/ml/sec)')
-        self.concentrationGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.concentrationGraphVLayout = QtWidgets.QVBoxLayout()
         self.concentrationGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.concentrationGraphVLayout.addWidget(self.concentrationGraph)
@@ -656,8 +652,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Creating a QFrame from User defined QFrame class.
         # Initializing calculation buttons
         self.calculationButtonsUI()
-        self.rawDataPlotFrame = RawPlotFrame(self.scrollArea, 0.9, parent=self)
-
+        self.rawDataPlotFrame = RawPlotFrame(self.scrollArea, 0.9, self.application_state, 1, parent=self)
+        self.rawDataPlotFrame.softError.connect(lambda t, m: self.throwTellUserDilog(t, m))
         # Initializing calculation plot
         self.calculatedPlotsUI()
 
@@ -812,14 +808,20 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.dataObj.setDirectory(self.folder_path)
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
+        self.select_folder_action.setEnabled(False)
 
     def select_folder(self):
         # Open a file dialog to select a folder
         self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        if self.folder_path == "":
+            return
+
         self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
         self.dataObj.setDirectory(self.folder_path)
         self.application_state = "Folder_Selected"
         self.select_folder_action.setEnabled(False)
+        self.select_ezview_action.setEnabled(False)
+
 
 ################################################# End - User Interface Creation #################################################
 #################################################################################################################################
@@ -922,146 +924,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.extractSlope44LineEdit.setText(Calculations.roundIfFloat(str(slope44), 5))
         self.extractSlope45LineEdit.setText(Calculations.roundIfFloat(str(slope45), 5))
 
-    def stopButtonPressed(self):
-        self.throwStopButtonWarning()
-
-    def barsButtonPressed(self):
-        self.rawDataPlotFrame.barsButtonPressed()
-
-    def rescaleButtonPressed(self):
-        self.rawDataPlotFrame.rescaleButtonPressed()
-
-    def plotAllButtonPressed(self):
-
-        # cant plot all well started
-        if self.application_state == "Running":
-            return
-
-        if self.application_state == "Out_Of_Data":
-            return
-        else:
-            self.rawDataPlotFrame.plotAllButton.setEnabled(False)
-            self.rawDataPlotFrame.processSpinnerLabel.show()
-            self.rawDataPlotFrame.movie.start()
-
-        self.plotAllButtonThread = QThread(parent=self)
-        # Step 3: Create a worker object
-        self.plotAllThread = PlotAllThread(self)
-
-        # Step 4: Move worker to the thread
-        self.plotAllThread.moveToThread(self.plotAllButtonThread)
-
-        # Step 5: Connect signals and slots and start the stop watch
-        self.plotAllButtonThread.started.connect(self.plotAllThread.run)
-
-        self.plotAllButtonThread.start()
-
-        title = self.windowTitle()
-        self.plotAllThread.secondsAt.connect(lambda sec: self.setWindowTitle(f"{title}: processing {sec}"))
-
-        self.rawDataPlotFrame.startButton.setEnabled(False)
-        self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
-        self.plotAllThread.throwOutOfDataExceptionSignal.connect(self.throwOutOfDataException)
-        self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(self.throwFolderNotSelectedException)
-        self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
-
-        # Set proper state while plotting
-        if hasattr(self, 'worker') and hasattr(self.worker, 'timer') and self.worker.timer is not None:
-            self.worker.timer.stop()
-
-        self.plotAllThread.finished.connect(self.endPlotAllThread)
-        self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
-
-    def startButtonPressed(self):
-
-        """
-            Starts the real time plot.
-            :param {_ : }
-            :return -> None
-
-        """
-        if self.application_state == "Folder_Selected" or self.application_state == "Out_Of_Data":
-
-            self.startBit = True
-            self.rawDataPlotFrame.pauseBit = False
-
-            # Step 2: Create a QThread object
-            self.realTimePlotthread = QThread(parent=self)
-
-            # Step 3: Create a worker object
-            self.worker = Worker(self)
-            # Step 4: Move worker to the thread
-            self.worker.moveToThread(self.realTimePlotthread)
-
-            # Step 5: Connect signals and slots and start the stop watch
-            self.realTimePlotthread.started.connect(self.worker.run)
-            self.worker.finished.connect(self.realTimePlotthread.quit)
-            # Connecting the signals to the methods.
-            self.worker.plotEndBitSignal.connect(self.outOfDataCondition)
-            self.worker.newDataPointSignal.connect(self.update_plot_data)
-
-            # Deleting the reference of the worker and the thread from the memory to free up space.
-            self.worker.finished.connect(self.worker.deleteLater)
-            self.realTimePlotthread.finished.connect(self.realTimePlotthread.deleteLater)
-
-            # Step 6: Start the thread
-            if self.stopwatch.paused == True:
-                self.stopwatch.resume()
-            else:
-                self.stopwatch.start()
-
-            self.realTimePlotthread.start()
-
-            # Final resets
-            self.rawDataPlotFrame.startButton.setEnabled(False)
-            self.application_state = "Running"
-
-
-            # change-file-reading
-            # Write code to recieve the signal and start a new thread for dirwatch.
-            self.worker.filesParsedSignal.connect(self.startNewFileNotifier)
-
-        else:
-            self.throwFolderNotSelectedException()
-
-    def throwOutOfDataException(self):
-        self.application_state = "Out_Of_Data"
-        self.rawDataPlotFrame.startButton.setEnabled(True)
-
-        # Find minimum time between points
-        times = list(self.sharedData.dataPoints.keys())
-        times.sort()
-        deltas = []
-        for i in range(len(times)-1):
-            if (times[i+1]-times[i]) > 0:
-                deltas.append((times[i+1]-times[i])) # Find the difference
-        deltas.sort()
-
-        max_speed = 100/deltas[floor(len(deltas)/4)] # Divide minimum time delta by 1 for natural speed, then convert to speedSlider units by multiplying by 100.
-
-        self.speedSlider.setValue(floor(max_speed))
-
-        def delayedRestart(self):
-            self.startButton.setEnabled(True)
-            self.startButtonPressed()
-        if self.delayTimer is None or not self.delayTimer.is_alive():
-            self.delayTimer = threading.Timer(0.5,delayedRestart,[self])
-            self.delayTimer.start()
-
-    def outOfDataCondition(self):
-        self.throwOutOfDataException()
-        self.startButton.setEnabled(True)
-
     def dataButtonDialogAccepted(self, obj):
         obj.close()
-        self.startButton.setEnabled(True)
-
-    def on_wheel_event(self,event, axis=1):
-        """
-            For disabling the scroll on the axes.
-
-        """
-        event.ignore()
 
     def startButtonDialogAccepted(self, dlg):
         dlg.close()
@@ -1551,24 +1415,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 #################################################################################################################################
 ####################################################### Raw Plot Methods ########################################################
 
-    def speedSliderValueChanged(self):
-        self.rawDataPlotFrame.speedSliderValueChanged()
-
-    def endPlotAllThread(self):
-
-        self.rawDataPlotFrame.movie.stop()
-        self.rawDataPlotFrame.processSpinnerLabel.hide()
-        self.plotAllButtonThread.quit()
-        self.plotAllButtonThread.wait()
-        self.plotAllButtonThread.deleteLater()
-        self.rawDataPlotFrame.plotAllButton.setEnabled(True)
-
-        self.startBit = False
-        self.rawDataPlotFrame.pauseBit = True
-        self.rawDataPlotFrame.startButton.setEnabled(True)
-        self.rawDataPlotFrame.pauseResumeButton.setText("Resume")
-        self.rawDataPlotFrame.pauseResumeButton.setToolTip('Resume the graph')
-
     # change-file-reading
     # Start the thread as soon all files are read.
     def startNewFileNotifier(self):
@@ -1610,6 +1456,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
         self.rawDataPlotFrame.pauseResumeAction()
 
+    def stopButtonPressed(self):
+        self.throwStopButtonWarning()
 ##################################################### End - Raw Plot Methods ####################################################
 #################################################################################################################################
 
@@ -1949,18 +1797,14 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Reset all application global variables. These varibales are global to different components of the application.
         self.setWindowTitle("LabView")
         self.application_state = "Idle"
-        self.startBit = False
         self.delay = 200
-        self.stopwatch = Stopwatch()
+
         self.firstPoint = False
         self.fileCheckThreadStarted = False
-        self.rawDataPlotFrame.speedSlider.setSliderPosition(100)
-        self.rawDataPlotFrame.speedSlider.setValue(100)
-        self.rawDataPlotFrame.startButton.setEnabled(True)
         self.select_folder_action.setEnabled(True)
         self.select_ezview_action.setEnabled(True)
 
-        self.customCalculationPlots.clear()
+        self.customCalculationPlots.clearSampleData()
         # Dictionaries to hold data for graphs
         if not keepCals:
             self.assayBufferData = {}
@@ -2016,17 +1860,4 @@ class LabViewModule1(QtWidgets.QMainWindow):
             else:
                 lineEdit.setText("")
 
-
-        self.rawDataPlotFrame.startButton.setEnabled(True)
-
-        self.rawDataPlotFrame.clearCurves()
-
-        # Uncheck all the graph boxes.
-        self.rawDataPlotFrame.graph1CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph2CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph3CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph4CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph5CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph6CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph7CheckBox.setChecked(False)
-        self.rawDataPlotFrame.graph8CheckBox.setChecked(False)
+        self.rawDataPlotFrame.clear()

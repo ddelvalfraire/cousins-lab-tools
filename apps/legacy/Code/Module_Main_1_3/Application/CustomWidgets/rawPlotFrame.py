@@ -1,26 +1,34 @@
 ﻿from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QMovie
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread
 import pyqtgraph as pg
+import threading
+from math import floor
 
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+from Code.Module_Main_1_3.Application.mainUI.worker import Worker
+from Code.Module_Main_1_3.Application.mainUI.plotAllThread import PlotAllThread
 
 class RawPlotFrame(Frame):
-    def __init__(self, scrollArea, heightFactor, parent=None):
+    softError = QtCore.pyqtSignal((str,str))
+
+    def __init__(self, scrollArea, heightFactor, stateVar, mode, parent=None, ):
         super(RawPlotFrame, self).__init__(scrollArea, heightFactor)
         self.parent = parent # LabViewModule1 instance
         self.sharedData = SharedSingleton()
-        
+        self.mode = mode
         # Data storage for raw plot
+        self.startBit = False
         self.pauseBit = False
         self.yAllMax = None
         self.yAllMin = None
         self.isYChnaged = False
         self.currentXRange = None
+        self.application_state = stateVar
 
         self.initUI()
         self.addCurveAndMeanBar()
@@ -58,15 +66,20 @@ class RawPlotFrame(Frame):
         # Creating vertical layout for check boxes.
         self.checkBoxVLayout = QtWidgets.QVBoxLayout()
 
-        # Adding check boxes to the checkBoxWidget layout
-        self.checkBoxVLayout.addWidget(self.graph1CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph2CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph3CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph4CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph5CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph6CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph7CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph8CheckBox)
+        if self.mode == 1:
+            # Adding check boxes to the checkBoxWidget layout
+            self.checkBoxVLayout.addWidget(self.graph1CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph2CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph3CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph4CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph5CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph6CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph7CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph8CheckBox)
+        elif self.mode == 2:
+            # Adding check boxes to the checkBoxWidget layout
+            self.checkBoxVLayout.addWidget(self.graph1CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph4CheckBox)
 
         #############################################################################################
 
@@ -74,10 +87,7 @@ class RawPlotFrame(Frame):
 
         # Mean Bar Button
         self.barsButton = Button("| |", 26, 26)
-        # Start Button
-        self.startButton = Button("Start", 120, 26)
-
-        self.plotAllButton = Button("Plot All", 120, 26)
+        self.plotAllButton = Button("Plot", 120, 26)
 
         # Pause/Resume Button
         self.pauseResumeButton = Button("Pause", 120, 26)
@@ -94,17 +104,6 @@ class RawPlotFrame(Frame):
         self.processSpinnerLabel.setMovie(self.movie)
         self.processSpinnerLabel.hide()
 
-        # Slider
-        self.speedSlider = QtWidgets.QSlider(Qt.Horizontal)
-        self.speedSlider.setRange(0, 3200)
-        self.speedSlider.setValue(100)
-        self.speedSlider.setTickInterval(100)
-        self.speedSlider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
-        self.speedSlider.setFixedSize(900, 50)
-
-        self.slidervbox = QtWidgets.QVBoxLayout()
-        self.slidervbox.addWidget(self.speedSlider)
-
         # Create labels for each tick value
         self.hTickbox = QtWidgets.QHBoxLayout()
         self.speedLabels = [".05x", "2x", "4x", "6x", "8x", "10x", "12x", "14x", "16x", "18x", "20x", "22x",
@@ -113,23 +112,17 @@ class RawPlotFrame(Frame):
             tickLabel = QtWidgets.QLabel(label, self)
             self.hTickbox.addWidget(tickLabel)
 
-        self.slidervbox.addLayout(self.hTickbox)
-        self.slidervbox.setSpacing(0)
+
         self.hTickbox.setSpacing(30)
 
         # Creating a Horizontal Layout for Start Pause/Resume and Slider
-        self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QGridLayout()
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.processSpinnerLabel, 0, 1)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, 2)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, 3)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, 4)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.startButton, 0, 5)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 0, 6)
-        self.rescaleStartPauseResumeSliderGridLayout.addLayout(self.slidervbox, 0, 10)
-        self.rescaleStartPauseResumeSliderGridLayout.setSpacing(30)
-        self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0, 0)
-        self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0, 1)
-
+        self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QHBoxLayout()
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.processSpinnerLabel, 0, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 10, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.setSpacing(0)
         #############################################################################################
 
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
@@ -198,11 +191,8 @@ class RawPlotFrame(Frame):
         self.barsButton.clicked.connect(self.barsButtonPressed)
         self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
         self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
-        self.speedSlider.valueChanged.connect(self.speedSliderValueChanged)
-        
-        if self.parent:
-            self.startButton.clicked.connect(self.parent.startButtonPressed)
-            self.plotAllButton.clicked.connect(self.parent.plotAllButtonPressed)
+
+        self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
 
         self.graph1CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
         self.graph2CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
@@ -227,34 +217,20 @@ class RawPlotFrame(Frame):
             self.isYChnaged = True
             self.realTimeGraph.graphInteraction = False
 
-    def speedSliderValueChanged(self):
-        speed = self.speedSlider.value()
-        if speed <= 5:
-            if self.parent:
-                self.parent.stopwatch.set_speed(0.05)
-        elif self.parent:
-            self.parent.stopwatch.set_speed(speed / 100)
-
     def pauseResumeAction(self):
-        if self.parent:
-            if self.parent.application_state == "Out_Of_Data" or self.parent.application_state == "Folder_Selected" or self.parent.application_state == "Idle":
-                self.parent.throwGraphInActiveException()
-            else:
-                # Pause the Plot
-                if self.pauseBit == False:
-                    self.parent.application_state = "Paused"
-                    self.pauseBit = True
-                    self.parent.stopwatch.stop()
-                    self.pauseResumeButton.setText("Resume")
-                    self.pauseResumeButton.setToolTip('Resume the graph')
+        # Pause the Plot
+        if self.pauseBit == False:
+            self.parent.application_state = "Paused"
+            self.pauseBit = True
+            self.pauseResumeButton.setText("Resume")
+            self.pauseResumeButton.setToolTip('Resume the graph')
 
-                # Resume the Plot
-                elif self.pauseBit == True:
-                    self.parent.application_state = "Running"
-                    self.pauseBit = False
-                    self.parent.stopwatch.start()
-                    self.pauseResumeButton.setText("Pause")
-                    self.pauseResumeButton.setToolTip('Pause the graph')
+        # Resume the Plot
+        elif self.pauseBit == True:
+            self.parent.application_state = "Running"
+            self.pauseBit = False
+            self.pauseResumeButton.setText("Pause")
+            self.pauseResumeButton.setToolTip('Pause the graph')
 
     def graphCheckStateChanged(self, checkBox, curve):
         if checkBox.isChecked():
@@ -323,3 +299,68 @@ class RawPlotFrame(Frame):
         self.curve8.clear()
         self.yAllMax = None
         self.yAllMin = None
+
+    def plotAllButtonPressed(self):
+
+        # cant plot all well started
+        if self.parent.application_state == "Running":
+            return
+
+        if self.parent.application_state == "Out_Of_Data":
+            return
+        self.plotAllButton.setEnabled(False)
+        self.processSpinnerLabel.show()
+        self.movie.start()
+
+        self.parent.application_state = "Running"
+        self.pauseBit = False
+        self.pauseResumeButton.setText("Pause")
+        self.pauseResumeButton.setToolTip('Pause the graph')
+
+        self.plotAllButtonThread = QThread(parent=self)
+        # Step 3: Create a worker object
+        self.plotAllThread = PlotAllThread(self.parent)
+
+        # Step 4: Move worker to the thread
+        self.plotAllThread.moveToThread(self.plotAllButtonThread)
+
+        # Step 5: Connect signals and slots and start the stop watch
+        self.plotAllButtonThread.started.connect(self.plotAllThread.run)
+
+        self.plotAllButtonThread.start()
+
+        title = self.windowTitle()
+        self.plotAllThread.secondsAt.connect(lambda sec: self.setWindowTitle(f"{title}: processing {sec}"))
+
+        self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(lambda msg: self.softError.emit("plot all error", msg))
+
+        self.plotAllThread.finished.connect(self.endPlotAllThread)
+        self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
+
+    def endPlotAllThread(self):
+
+        self.movie.stop()
+        self.processSpinnerLabel.hide()
+        self.plotAllButtonThread.quit()
+        self.plotAllButtonThread.wait()
+        self.plotAllButtonThread.deleteLater()
+        self.plotAllButton.setEnabled(True)
+
+        self.startBit = False
+        self.pauseBit = True
+        self.pauseResumeButton.setText("Resume")
+        self.pauseResumeButton.setToolTip('Resume the graph')
+
+    def clear(self):
+        self.clearCurves()
+
+        # Uncheck all the graph boxes.
+        self.graph1CheckBox.setChecked(False)
+        self.graph2CheckBox.setChecked(False)
+        self.graph3CheckBox.setChecked(False)
+        self.graph4CheckBox.setChecked(False)
+        self.graph5CheckBox.setChecked(False)
+        self.graph6CheckBox.setChecked(False)
+        self.graph7CheckBox.setChecked(False)
+        self.graph8CheckBox.setChecked(False)

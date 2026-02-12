@@ -48,18 +48,18 @@ sys.path.append('../uiElements')
 # adding read_data to the system path
 sys.path.append('../calculations')
 
-from getData import GetData
-from sharedSingleton import SharedSingleton
-from curve import Curve
-from graph import Graph
-from frame import Frame
-from Calculations import Calculations
-from button import Button
-from dialog import Dialog
-from LineEdit import LineEdit
-from dataUtility import DataUtility
-from readEZView import read_from_ezview
-
+from Code.Module_Main_1_3.Application.read_data.getData import GetData
+from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+from Code.Module_Main_1_3.Application.uiElements.curve import Curve
+from Code.Module_Main_1_3.Application.uiElements.graph import Graph
+from Code.Module_Main_1_3.Application.uiElements.frame import Frame
+from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
+from Code.Module_Main_1_3.Application.uiElements.button import Button
+from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
+from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
+from Code.Module_Main_1_3.Application.read_data.readEZView import read_from_ezview
+from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
+from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
 
 class LabViewModule2(QtWidgets.QMainWindow):
 
@@ -190,9 +190,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.show()
 
-
-
-        
 #################################################################################################################################
 ################################################# User Interface Creation #################################################
     """
@@ -221,122 +218,121 @@ class LabViewModule2(QtWidgets.QMainWindow):
         - BarButton, Rescale, Start Pause/Resume Slider
         - Raw Plot Graph
         """
-
-        ############################## Check Boxes Layout ##################################
-        # Initializing all the graphs
-        self.graph1CheckBox = QtWidgets.QCheckBox("Mass 32",self)
-        self.graph1CheckBox.setStyleSheet("color: #800000")
-        self.graph2CheckBox = QtWidgets.QCheckBox("Mass 44",self)
-        self.graph2CheckBox.setStyleSheet("color: #4363d8")
-        
-        # Initially all the graphs checkboxes should be checked.
-        self.graph1CheckBox.setChecked(False) 
-        self.graph2CheckBox.setChecked(False)
-        
-        # Creating vertical layout for check boxes.
-        self.checkBoxVLayout = QtWidgets.QVBoxLayout()
-        self.checkBoxVLayout.setSpacing(10)
-
-        # Adding check boxes to the checkBoxWidget layout
-        self.checkBoxVLayout.addWidget(self.graph1CheckBox)
-        self.checkBoxVLayout.addWidget(self.graph2CheckBox)
-       
-        
-        #############################################################################################
-
-
-        ############################## BarButton, Rescale, Start Pause/Resume Slider Layout #############################
-
-        # Mean Bar Button
-        self.barsButton = Button("| |", 26, 26)
-        # Start Button
-        self.startButton = Button("Start", 120, 26)
-
-        self.plotAllButton = Button("Plot All", 120, 26)
-
-        # Pause/Resume Button
-        self.pauseResumeButton = Button("Pause", 120, 26)
-
-        # Rescale Button
-        self.rescaleButton = Button("Rescale", 120, 26)
-
-        self.processSpinnerLabel = QtWidgets.QLabel()
-        self.processSpinnerLabel.setMinimumSize(QtCore.QSize(50, 50))
-        self.processSpinnerLabel.setMaximumSize(QtCore.QSize(50, 50))
-
-        self.movie = QMovie("spinner50px.gif")
-        self.movie.jumpToFrame(0)
-        self.processSpinnerLabel.setMovie(self.movie)
-        self.processSpinnerLabel.hide()
-
-        # self.movie.start()
-
-        # Slider
-        self.speedSlider = QtWidgets.QSlider(Qt.Horizontal)
-        self.speedSlider.setRange(0, 3200)
-        self.speedSlider.setValue(100)
-        self.speedSlider.setTickInterval(100)
-        self.speedSlider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
-        self.speedSlider.setFixedSize(900, 50)
-        self.speedSlider.valueChanged.connect(self.speedSliderValueChanged)
-
-        self.slidervbox = QtWidgets.QVBoxLayout()
-        self.slidervbox.addWidget(self.speedSlider)
-
-        # Create labels for each tick value
-        self.hTickbox = QtWidgets.QHBoxLayout()
-        self.speedLabels = [".05x", "2x", "4x", "6x","8x", "10x", "12x", "14x", "16x", "18x", "20x", "22x",
-                            "24x", "26x", "28x", "30x", "32x"]
-        for label in self.speedLabels:
-            tickLabel = QtWidgets.QLabel(label, self)
-            # tickLabel.setAlignment(Qt.AlignCenter)
-            self.hTickbox.addWidget(tickLabel)
-
-        self.slidervbox.addLayout(self.hTickbox)
-        self.slidervbox.setSpacing(0)
-        self.hTickbox.setSpacing(30)
-
-        # Creating a Horizontal Layout for Start Pause/Resume and Slider 
-        self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QGridLayout()
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.processSpinnerLabel, 0, 1)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, 2)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, 3)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, 4)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.startButton, 0, 5)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 0, 6)
-        self.rescaleStartPauseResumeSliderGridLayout.addLayout(self.slidervbox, 0, 10)
-        self.rescaleStartPauseResumeSliderGridLayout.setSpacing(30)
-        self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0,0)
-        self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0,1)
-        #############################################################################################
-
-        ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
-        
-        # Graph
-        self.realTimeGraph = Graph(100,100)
-        self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
-        self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
-        # self.realTimeGraph.getViewBox().wheelEvent = self.on_wheel_event
-        
-        self.graphVLayout = QtWidgets.QVBoxLayout()
-        self.graphVLayout.setContentsMargins(0, 5, 0, 0)
-        self.graphVLayout.addWidget(self.realTimeGraph)
-
-        # Layout for {Graph} AND {Start Pause/Resume Slider Layout}
-        self.graphStartPauseResumeSliderVLayout = QtWidgets.QVBoxLayout()
-        self.graphStartPauseResumeSliderVLayout.addLayout(self.graphVLayout)   # Widget containing graph
-        self.graphStartPauseResumeSliderVLayout.addLayout(self.rescaleStartPauseResumeSliderGridLayout)  # Widget containing start pause/resume and slider
-        ###############################################################################################
-
-        ############### {Checkboxes} AND {{Graph} AND {Start Pause/Resume Slider Layout}} ###############
-
-        # QFrame Widget is already initialized. Adding layout to the layout.
-        self.rawDataPlotHLayout = QtWidgets.QHBoxLayout()
-        self.rawDataPlotFrame.setFrameLayout(self.rawDataPlotHLayout)
-        self.rawDataPlotHLayout.addLayout(self.checkBoxVLayout)
-        self.rawDataPlotHLayout.addLayout(self.graphStartPauseResumeSliderVLayout)
-        ###############################################################################################
-        
+        pass
+        # ############################## Check Boxes Layout ##################################
+        # # Initializing all the graphs
+        # self.graph1CheckBox = QtWidgets.QCheckBox("Mass 32",self)
+        # self.graph1CheckBox.setStyleSheet("color: #800000")
+        # self.graph2CheckBox = QtWidgets.QCheckBox("Mass 44",self)
+        # self.graph2CheckBox.setStyleSheet("color: #4363d8")
+        #
+        # # Initially all the graphs checkboxes should be checked.
+        # self.graph1CheckBox.setChecked(False)
+        # self.graph2CheckBox.setChecked(False)
+        #
+        # # Creating vertical layout for check boxes.
+        # self.checkBoxVLayout = QtWidgets.QVBoxLayout()
+        # self.checkBoxVLayout.setSpacing(10)
+        #
+        # # Adding check boxes to the checkBoxWidget layout
+        # self.checkBoxVLayout.addWidget(self.graph1CheckBox)
+        # self.checkBoxVLayout.addWidget(self.graph2CheckBox)
+        #
+        #
+        # #############################################################################################
+        #
+        #
+        # ############################## BarButton, Rescale, Start Pause/Resume Slider Layout #############################
+        #
+        # # Mean Bar Button
+        # self.barsButton = Button("| |", 26, 26)
+        # # Start Button
+        # self.startButton = Button("Start", 120, 26)
+        #
+        # self.plotAllButton = Button("Plot All", 120, 26)
+        #
+        # # Pause/Resume Button
+        # self.pauseResumeButton = Button("Pause", 120, 26)
+        #
+        # # Rescale Button
+        # self.rescaleButton = Button("Rescale", 120, 26)
+        #
+        # self.processSpinnerLabel = QtWidgets.QLabel()
+        # self.processSpinnerLabel.setMinimumSize(QtCore.QSize(50, 50))
+        # self.processSpinnerLabel.setMaximumSize(QtCore.QSize(50, 50))
+        #
+        # self.movie = QMovie("spinner50px.gif")
+        # self.movie.jumpToFrame(0)
+        # self.processSpinnerLabel.setMovie(self.movie)
+        # self.processSpinnerLabel.hide()
+        #
+        # # self.movie.start()
+        #
+        # # Slider
+        # self.speedSlider = QtWidgets.QSlider(Qt.Horizontal)
+        # self.speedSlider.setRange(0, 3200)
+        # self.speedSlider.setValue(100)
+        # self.speedSlider.setTickInterval(100)
+        # self.speedSlider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
+        # self.speedSlider.setFixedSize(900, 50)
+        # self.speedSlider.valueChanged.connect(self.speedSliderValueChanged)
+        #
+        # self.slidervbox = QtWidgets.QVBoxLayout()
+        # self.slidervbox.addWidget(self.speedSlider)
+        #
+        # # Create labels for each tick value
+        # self.hTickbox = QtWidgets.QHBoxLayout()
+        # self.speedLabels = [".05x", "2x", "4x", "6x","8x", "10x", "12x", "14x", "16x", "18x", "20x", "22x",
+        #                     "24x", "26x", "28x", "30x", "32x"]
+        # for label in self.speedLabels:
+        #     tickLabel = QtWidgets.QLabel(label, self)
+        #     # tickLabel.setAlignment(Qt.AlignCenter)
+        #     self.hTickbox.addWidget(tickLabel)
+        #
+        # self.slidervbox.addLayout(self.hTickbox)
+        # self.slidervbox.setSpacing(0)
+        # self.hTickbox.setSpacing(30)
+        #
+        # # Creating a Horizontal Layout for Start Pause/Resume and Slider
+        # self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QGridLayout()
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.processSpinnerLabel, 0, 1)
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, 2)
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, 3)
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, 4)
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.startButton, 0, 5)
+        # self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 0, 6)
+        # self.rescaleStartPauseResumeSliderGridLayout.addLayout(self.slidervbox, 0, 10)
+        # self.rescaleStartPauseResumeSliderGridLayout.setSpacing(30)
+        # self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0,0)
+        # self.rescaleStartPauseResumeSliderGridLayout.setColumnStretch(0,1)
+        # #############################################################################################
+        #
+        # ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
+        #
+        # # Graph
+        # self.realTimeGraph = Graph(100,100)
+        # self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
+        # self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
+        # # self.realTimeGraph.getViewBox().wheelEvent = self.on_wheel_event
+        #
+        # self.graphVLayout = QtWidgets.QVBoxLayout()
+        # self.graphVLayout.setContentsMargins(0, 5, 0, 0)
+        # self.graphVLayout.addWidget(self.realTimeGraph)
+        #
+        # # Layout for {Graph} AND {Start Pause/Resume Slider Layout}
+        # self.graphStartPauseResumeSliderVLayout = QtWidgets.QVBoxLayout()
+        # self.graphStartPauseResumeSliderVLayout.addLayout(self.graphVLayout)   # Widget containing graph
+        # self.graphStartPauseResumeSliderVLayout.addLayout(self.rescaleStartPauseResumeSliderGridLayout)  # Widget containing start pause/resume and slider
+        # ###############################################################################################
+        #
+        # ############### {Checkboxes} AND {{Graph} AND {Start Pause/Resume Slider Layout}} ###############
+        #
+        # # QFrame Widget is already initialized. Adding layout to the layout.
+        # self.rawDataPlotHLayout = QtWidgets.QHBoxLayout()
+        # self.rawDataPlotFrame.setFrameLayout(self.rawDataPlotHLayout)
+        # self.rawDataPlotHLayout.addLayout(self.checkBoxVLayout)
+        # self.rawDataPlotHLayout.addLayout(self.graphStartPauseResumeSliderVLayout)
+        # ###############################################################################################
 
     def calculatedPlotsUI(self):
 
@@ -436,8 +432,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.calculatedPlotsHLayout.addLayout(self.DuBarGraphBoxGridVLayout)
 
         self.calculatedPlotsFrame.setLayout(self.calculatedPlotsHLayout)
-
-
 
     def calculationButtonsUI(self):
 
@@ -650,7 +644,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.calculationButtonsFrame.setLayout(self.calculationButtonsFrameHLayout)
         #################################################################################################
 
-
     def initializeScrollArea(self):
 
         # Creating a scroll area and setting its properties.
@@ -671,41 +664,38 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Setting the central widget with the scroll area.
         self.setCentralWidget(self.scrollArea)
 
-
     def initializeQFrames(self):
 
         # Creating a QFrame from User defined QFrame class.
         self.calculatedPlotsFrame = Frame(self.scrollArea, 0.8)
         self.calculationButtonsFrame = Frame(self.scrollArea, 0.7)
-        self.rawDataPlotFrame = Frame(self.scrollArea, 0.9)
-        
+        # self.rawDataPlotFrame = Frame(self.scrollArea, 0.9)
+        self.rawDataPlotFrame = RawPlotFrame(self.scrollArea, 0.9, self.application_state, 2, parent=self)
         # Adding QFrames to the scroll area widget layout.
         self.scrollAreaWidgetLayout.addWidget(self.calculatedPlotsFrame)
         self.scrollAreaWidgetLayout.addWidget(self.rawDataPlotFrame)
         self.scrollAreaWidgetLayout.addWidget(self.calculationButtonsFrame)
 
-
     def addCurveAndMeanBar(self):
-
-        # Adding the plot curves
-        self.curve1 = Curve("Mass 32", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
-        self.curve1.plotCurve()
-
-        self.curve2 = Curve("Mass 44", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
-        self.curve2.plotCurve()
-
-        self.curve3 = Curve("uBar", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph)
-        self.curve3.plotCurve()
-
-        self.curve4 = Curve("D[uBar]", [], pg.mkPen(color="#FFFFFF", width=4), self.DuBarGraph)
-        self.curve4.plotCurve()
-
-        # Initializing the mean bars.
-        self.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None, hoverBrush=None, hoverPen=None, movable=True, bounds=None, span=(0, 1), swapMode='sort', clipItem=None)
-        
-        # Adding the Mean bars when the plotting is paused
-        self.realTimeGraph.addItem(self.meanBar)
-
+        pass
+        # # Adding the plot curves
+        # self.curve1 = Curve("Mass 32", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
+        # self.curve1.plotCurve()
+        #
+        # self.curve2 = Curve("Mass 44", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
+        # self.curve2.plotCurve()
+        #
+        # self.curve3 = Curve("uBar", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph)
+        # self.curve3.plotCurve()
+        #
+        # self.curve4 = Curve("D[uBar]", [], pg.mkPen(color="#FFFFFF", width=4), self.DuBarGraph)
+        # self.curve4.plotCurve()
+        #
+        # # Initializing the mean bars.
+        # self.rawDataPlotFrame.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None, hoverBrush=None, hoverPen=None, movable=True, bounds=None, span=(0, 1), swapMode='sort', clipItem=None)
+        #
+        # # Adding the Mean bars when the plotting is paused
+        # self.realTimeGraph.addItem(self.rawDataPlotFrame.meanBar)
 
     def connectUItoMethods(self):
         """
@@ -715,26 +705,26 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
             We need to tell the program what to do when a UI component is interacted with (e.g. a button is clicked).
             So we connect the ui elements to methods that define the behavior of the element.
-            
+
         """
 
         # QFileDialog Folder selection
-        self.barsButton.clicked.connect(self.barsButtonPressed)
+        # self.barsButton.clicked.connect(self.barsButtonPressed)
 
-        self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
+        # self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
 
         # Rescale button connect method.
-        self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
+        # self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
 
         # Start button connect method.
-        self.startButton.clicked.connect(self.startButtonPressed)
+        # self.startButton.clicked.connect(self.startButtonPressed)
 
         # Pause/Resume button connect method.
-        self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
+        # self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
 
-        self.graph1CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
-        self.graph2CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
-        
+        # self.graph1CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
+        # self.graph2CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
+
 
         # O2 Assay Buffer Zero Button connect method
         # self.o2ZeroButton.clicked.connect(lambda: self.o2ZeroButtonPressed())
@@ -756,12 +746,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.co2Cal1ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal1ulLineEdit, 3, 0, 1))
         self.co2Cal2ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal2ulLineEdit, 3, 0, 2))
         self.co2Cal3ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal3ulLineEdit, 3, 0, 3))
-        
+
         # O2 cal buttons connect method
         self.o2TemperatureLineEdit.returnPressed.connect(self.temperatureTextChanged)
         self.o2ZeroLineEdit.returnPressed.connect(self.o2ZeroTextChanged)
         self.o2AverageLineEdit.returnPressed.connect(self.o2AverageTextChanged)
-        
+
         self.o2ZeroButton.clicked.connect(self.o2ZeroButtonPressed)
         self.o2CalibrateButton.clicked.connect(self.o2CalButtonPressed)
         self.o2CalculateButton.clicked.connect(self.o2CalculateButtonPressed)
@@ -800,12 +790,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         spool_path = os.path.abspath(QFileDialog.getOpenFileName(self, 'Select Spooling File',"","Text Files (*.txt);;All Files(*)")[0])
 
-        
+
         folderPath = os.path.abspath("../Acquisitions/" + directoryName)
 
         thread = threading.Thread(target=read_from_ezview, daemon=True,args=(folderPath, spool_path))
         thread.start()
-        
+
 
 
         self.folder_path = folderPath
@@ -838,23 +828,21 @@ class LabViewModule2(QtWidgets.QMainWindow):
     def stopButtonPressed(self):
         self.throwStopButtonWarning()
 
-        
     def barsButtonPressed(self):
 
         xRange = self.realTimeGraph.getXAxisRange()
         scale = xRange[1] - xRange[0]
         midPoint = (xRange[1] + xRange[0]) / 2
         scale = int(scale / 10)
-        self.meanBar.setRegion([midPoint-scale, midPoint+scale])
+        self.rawDataPlotFrame.meanBar.setRegion([midPoint-scale, midPoint+scale])
 
     def rescaleButtonPressed(self):
-        
+
         if self.realTimeGraph.graphInteraction == False:
             return
         elif self.realTimeGraph.graphInteraction == True:
             self.isRealYChanged = True
             self.realTimeGraph.graphInteraction = False
-            
 
     def plotAllButtonPressed(self):
 
@@ -874,7 +862,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # Step 5: Connect signals and slots and start the stop watch
         self.plotAllButtonThread.started.connect(self.plotAllThread.run)
-        
+
         self.plotAllButtonThread.start()
 
         self.plotAllThread.newDataPointSignal.connect(self.update_main_plot_data)
@@ -895,12 +883,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         """
             Starts the real time plot.
-            :param {_ : } 
+            :param {_ : }
             :return -> None
-            
+
         """
         if self.application_state == "Folder_Selected" or self.application_state == "Out_Of_Data":
-            
+
             self.startBit = True
             self.pauseBit = False
 
@@ -945,10 +933,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
             # change-file-reading
             # Write code to recieve the signal and start a new thread for dirwatch.
             self.worker.filesParsedSignal.connect(self.startNewFileNotifier)
-            
+
         else:
             self.throwFolderNotSelectedException()
-
 
     # change-file-reading
     # Start the thread as soon all files are read.
@@ -963,13 +950,13 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
             # Step 5: Connect signals and slots and start the stop watch
             self.fileNotiferThread.started.connect(self.newFileNotifierThread.run)
-            
+
             self.fileNotiferThread.start()
             self.fileCheckThreadStarted = True
-        
+
         else:
             pass
-        
+
     def meanButtonPressed(self, lineEdit, curve):
         """
             When a mean button is pressed, sets the lineEdit with
@@ -980,9 +967,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
             :param { curve : int} -> int that indicates the curve to take the mean from
             :return -> mean_value
         """
-        
+
         # Get the left and right x points from the mean bars
-        xleft, xright = self.meanBar.getRegion()
+        xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
 
         # if no data exists, return undefined
         if (not self.sharedData.dataPoints.keys()):
@@ -1010,7 +997,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             lineEdit.setText(str(mean_value))
 
             return mean_value
-        
 
     def GraphMeanButtonPressed(self, lineEdit, curve, graph, concentration, manualEntry=False):
         """
@@ -1066,8 +1052,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             else:
                 self.co2VoltLineEdit.setText(str(round(num, 10)))
 
-
-
     def co2ZeroButtonPressed(self):
         """
         Sets the CO2Zero Mass 44 line edits with the mean value
@@ -1084,22 +1068,21 @@ class LabViewModule2(QtWidgets.QMainWindow):
         Sets the CO2 sample line edit to the mean value from the
         vertical mean bars in the raw plot.
         """
-        
-        self.co2SampleReading = self.meanButtonPressed(self.co2SampleLineEdit, 3)
+        try:
+            self.co2SampleReading = self.meanButtonPressed(self.co2SampleLineEdit, 3)
 
-        #assume zero button has been pressed
-        co2Volt = float(self.co2VoltLineEdit.text())
-        co2Sample = float(self.co2SampleLineEdit.text())
-        co2Zero = float(self.co2ZeroLineEdit.text())
-        #calculate values
-        self.percentCO2 = Calculations.calculatePercentCO2(co2Volt, co2Sample, co2Zero)
-        self.uBarCO2 = Calculations.calculateUbarCO2(self.percentCO2)
-        #populate fields    
-        self.percentCO2LineEdit.setText(str(round(self.percentCO2, 4)))
-        self.uBar2LineEdit.setText(str(round(self.uBarCO2, 4)))
-
-
-
+            #assume zero button has been pressed
+            co2Volt = float(self.co2VoltLineEdit.text())
+            co2Sample = float(self.co2SampleLineEdit.text())
+            co2Zero = float(self.co2ZeroLineEdit.text())
+            #calculate values
+            self.percentCO2 = Calculations.calculatePercentCO2(co2Volt, co2Sample, co2Zero)
+            self.uBarCO2 = Calculations.calculateUbarCO2(self.percentCO2)
+            #populate fields
+            self.percentCO2LineEdit.setText(str(round(self.percentCO2, 4)))
+            self.uBar2LineEdit.setText(str(round(self.uBarCO2, 4)))
+        except:
+            return
 
     def throwUndefined(self, lineEdit):
         lineEdit.setText('undef')
@@ -1115,7 +1098,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             return True
         except ValueError:
             return False
-                                 
 
     def o2ZeroButtonPressed(self):
         """
@@ -1125,8 +1107,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Set mean value from mean bars on the Mass 32 graph
         self.meanButtonPressed(self.o2ZeroLineEdit, 0)
         self.o2Zero = float(self.o2ZeroLineEdit.text())
-        
-        
+
     def o2ZeroTextChanged(self):
         """
         Set o2 zero value directly from the line edit.
@@ -1139,8 +1120,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
             # set to default value
             self.o2ZeroLineEdit.setText("0")
             self.o2Zero = 0
-            
-            
+
     def temperatureTextChanged(self):
         """
         Reads the temperature value from the lineEdit and sets the temperature
@@ -1156,8 +1136,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.o2Temperature = 0
             
         #print(self.o2Temperature)
-            
-            
+
     def o2CalButtonPressed(self):
         """
         Calculates O2 calibration using temperature setting and O2 zero.
@@ -1169,8 +1148,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # O2 calibration calculation
         self.o2Calibration = Calculations.calculateO2Cal(self.o2Air, self.o2Zero)
         self.o2CalibrationLineEdit.setText(str(round(self.o2Calibration, 4)))
-        
-        
+
     def o2CalculateButtonPressed(self):
         """
         Collects the avrage O2 mv from main plot, then calculates O2 concentrarion .
@@ -1183,8 +1161,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # calculate uBar O2 concentration
         self.uBarO2 = Calculations.calculateUbarO2(self.o2Calibration, self.o2Measured)
         self.uBarO2LineEdit.setText(str(round(self.uBarO2, 4)))
-        
-        
+
     def o2AverageTextChanged(self):
         """
         After manual setting of mass 32 average, calculate O2 concentration.
@@ -1201,7 +1178,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # calculate uBar O2 concentration
         self.uBarO2 = Calculations.calculateUbarO2(self.o2Calibration, self.o2Measured)
         self.uBarO2LineEdit.setText(str(round(self.uBarO2, 4)))
-            
 
     def addToTableButtonPressed(self):
         """
@@ -1222,7 +1198,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.table.setItem(newRowPosition, 0, QtWidgets.QTableWidgetItem(str(round(self.percentCO2, 4))))
         self.table.setItem(newRowPosition, 1, QtWidgets.QTableWidgetItem(str(round(self.uBarCO2, 4))))
         self.table.setItem(newRowPosition, 2, QtWidgets.QTableWidgetItem(str(round(self.uBarO2, 4))))
-            
 
     def purgeTableButtonPressed(self):
         """
@@ -1234,7 +1209,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
 
         self.purgeTablepButtonWarning()
-
 
     def copyTableRowButtonPressed(self):
         """
@@ -1259,8 +1233,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             cb.setText(row, mode=cb.Clipboard)
 
 
-
-
 ################################################## End - ButtonPressed Methods ##################################################
 #################################################################################################################################
 
@@ -1280,7 +1252,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.temperature = 0
         else:
             self.temperature = float(self.temperatureLineEdit.text())
-            
 
     def OnEditedO2AssayCal(self):
         """
@@ -1296,8 +1267,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # called method with manualEntry as True
         self.o2ZeroButtonPressed(True)
-        
-        
 
     def OnEditedCO2Cal(self, lineEdit, curve, graph, concentration):
         """
@@ -1324,9 +1293,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.o2Calibration = 0
         else:
             self.o2Calibration = float(self.o2CalibrationLineEdit.text())
-            
-
-
 
 #################################################### End - On Edit Line Edits ###################################################
 #################################################################################################################################
@@ -1334,7 +1300,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
 #################################################################################################################################
 ####################################################### Raw Plot Methods ########################################################
-
 
     def speedSliderValueChanged(self):
         
@@ -1347,7 +1312,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.stopwatch.set_speed(speed/100)
 
-
     def endPlotAllThread(self):
         
         self.movie.stop()
@@ -1356,8 +1320,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.plotAllButtonThread.wait()
         self.plotAllButtonThread.deleteLater()
         self.plotAllButton.setEnabled(True)
-
-    
 
     # change-file-reading
     # Start the thread as soon all files are read.
@@ -1378,9 +1340,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         
         else:
             pass
-
-
-    
 
     def update_main_plot_data(self, dataPoints):
     
@@ -1541,7 +1500,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 offsetMax = (20*self.yMaxList[2])/100
                 self.realTimeGraph.setNewYRange(self.yMinList[2]-offsetMin, self.yMaxList[2]+offsetMax)
                 self.isYChanged[2] = False
-    
 
     def on_wheel_event(self,event, axis=1):
         """
@@ -1550,7 +1508,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
         event.ignore()
 
-   
     def pauseResumeAction(self):
 
         """
@@ -1592,14 +1549,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
         elif checkBox.isChecked() != True:
             curve.hide()
 
-
 ##################################################### End - Raw Plot Methods ####################################################
 #################################################################################################################################
 
 
 #################################################################################################################################
 #################################################### File export and import #####################################################
-
 
     def saveCalibrations(self):
         """
@@ -1636,8 +1591,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 row = (lineEdit.text() for lineEdit in  self.calibrationLineEdits)
 
                 writer.writerow(row)
-                
-    
+
     def loadCals(self, file_path):
 
         """
@@ -1671,7 +1625,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.OnEditedCO2Cal(self.calibrationLineEdits[10], 3, 1, 66.6)
             self.OnEditedCO2Cal(self.calibrationLineEdits[11], 3, 1, 99.9)
 
-
     def tableFileSave(self):
         """
         Creates a Save File Dialog for user to decide what to name file and where to save it.
@@ -1697,8 +1650,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 # write each row into the file
                 for row in range(self.table.rowCount()):
                     writer.writerow(self.table.item(row, column).text() for column in columns)
-
-
 
     def exportRawData(self):
         """
@@ -1732,8 +1683,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # close file
         file.close
 
-
-    
 ################################################## End - File epxort and import #################################################
 #################################################################################################################################
 
@@ -1806,8 +1755,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
     def buttonDialogAccepted(self, obj):
         obj.close()
 
-
-
     def throwFolderNotSelectedException(self):
         startButtonExceptionDlg = Dialog(title="EXCEPTION!!", buttonCount=1, message="Select the data folder before pressing start button.\nPress Ok to continue.", parent=self)
         startButtonExceptionDlg.buttonBox.accepted.connect(lambda: self.startButtonDialogAccepted(startButtonExceptionDlg))
@@ -1815,7 +1762,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def startButtonDialogAccepted(self, dlg):
         dlg.close()
-
 
     def throwOutOfDataException(self):
         self.application_state = "Out_Of_Data"
@@ -1847,17 +1793,13 @@ class LabViewModule2(QtWidgets.QMainWindow):
         obj.close()
         self.startButton.setEnabled(True)
 
-
     def throwFloatValueWarning(self):
         floatWarningDlg = Dialog(title="WARNING!", buttonCount=1, message="The entered value is not a numerical value!", parent=self)
         floatWarningDlg.buttonBox.accepted.connect(lambda: self.floatWarningAccepted(floatWarningDlg))
         floatWarningDlg.exec()
-        
-
 
     def floatWarningAccepted(self, obj):
         obj.close()
-        
 
     def purgeTablepButtonWarning(self):
 
@@ -1895,8 +1837,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         #autoscale other graphs
         self.assayBufferGraph.plotItem.getViewBox().autoRange()
         self.uBarGraph.plotItem.getViewBox().autoRange()
-        
-        
     
     def purgeDiaRejected(self, obj):
         """
@@ -1907,15 +1847,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
         obj.close()
         pass
 
-
     def throwUndefined(self, lineEdit):
         lineEdit.setText('undef')
-    
 
 ################################################## End - Warning Dialog and ExceptionMethods #####################################
 ##################################################################################################################################
-
-
 
     def select_file(self):
         # Open a file dialog to select a file
@@ -1925,8 +1861,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         if file_path[0] != '':
             # load calibration file
             self.loadCals(file_path)
-        
-
 
     def graphConcentrationVsMean(self, mean, graph, concentration):
         """
@@ -1973,10 +1907,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.uBarGraph.plotItem.getViewBox().autoRange()
-        
-
-
-
 
     def isFloat(self, string):
         """
@@ -1989,8 +1919,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
             return True
         except ValueError:
             return False
-                    
-
 
     def clearApplication(self, keepCals):
         """
@@ -2091,7 +2019,5 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # Uncheck all the graph boxes.
         self.graph1CheckBox.setChecked(False) 
-        self.graph2CheckBox.setChecked(False) 
-
-        
-# Main function
+        self.graph2CheckBox.setChecked(False)
+        self.rawDataPlotFrame.clear()
