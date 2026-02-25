@@ -5,6 +5,7 @@ import pyqtgraph as pg
 import threading
 from math import floor
 
+from Code.Module_Main_1_3.Application.mainUI.EzPlotAll import EzPlotAll
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
@@ -32,6 +33,8 @@ class RawPlotFrame(Frame):
 
         self.initUI()
         self.addCurveAndMeanBar()
+
+        self.EZViewPath = None
 
     def initUI(self):
         ############################## Check Boxes Layout ##################################
@@ -301,7 +304,12 @@ class RawPlotFrame(Frame):
         self.yAllMin = None
 
     def plotAllButtonPressed(self):
+        if self.EZViewPath == None:
+            self.LabViewPlotALl()
+        else:
+            self.EzViewPlotALl()
 
+    def LabViewPlotALl(self):
         # cant plot all well started
         if self.parent.application_state == "Running":
             return
@@ -330,13 +338,51 @@ class RawPlotFrame(Frame):
         self.plotAllButtonThread.start()
 
         title = self.windowTitle()
-        self.plotAllThread.secondsAt.connect(lambda sec: self.setWindowTitle(f"{title}: processing {sec}"))
+        self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
-        self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(lambda msg: self.softError.emit("plot all error", msg))
+        self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
+            lambda msg: self.softError.emit("plot all error", msg))
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
         self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
+
+    def EzViewPlotALl(self):
+        # cant plot all well started
+        if self.parent.application_state == "Running":
+            return
+
+        if self.parent.application_state == "Out_Of_Data":
+            return
+        self.plotAllButton.setEnabled(False)
+        self.processSpinnerLabel.show()
+        self.movie.start()
+
+        self.parent.application_state = "Running"
+        self.pauseBit = False
+        self.pauseResumeButton.setText("Pause")
+        self.pauseResumeButton.setToolTip('Pause the graph')
+
+        self.plotAllButtonThread = QThread(parent=self)
+        # Step 3: Create a worker object
+        self.plotAllThread = EzPlotAll(self.parent, self)
+
+        # Step 4: Move worker to the thread
+        self.plotAllThread.moveToThread(self.plotAllButtonThread)
+
+        # Step 5: Connect signals and slots and start the stop watch
+        self.plotAllButtonThread.started.connect(self.plotAllThread.run)
+
+        self.plotAllButtonThread.start()
+
+        title = self.windowTitle()
+        self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
+
+        self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
+            lambda msg: self.softError.emit("plot all error", msg))
+
+        self.plotAllThread.finished.connect(self.endPlotAllThread)
 
     def endPlotAllThread(self):
 

@@ -776,38 +776,27 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def select_ezview(self):
         # Open a file dialog to select a folder
-        #self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
-
-        # make Acquisitions folder
-        if not os.path.exists("../Acquisitions"):
-            os.makedirs("../Acquisitions")
-
-        # declare new Acquisition folder name
-        latest_file_index = len(os.listdir("../Acquisitions"))
-        directoryName = "Acquisition" + str(latest_file_index)
-        if not os.path.exists("../Acquisitions/" + directoryName):
-            os.makedirs("../Acquisitions/" + directoryName)
-
-        spool_path = os.path.abspath(QFileDialog.getOpenFileName(self, 'Select Spooling File',"","Text Files (*.txt);;All Files(*)")[0])
-
-
-        folderPath = os.path.abspath("../Acquisitions/" + directoryName)
-
-        thread = threading.Thread(target=read_from_ezview, daemon=True,args=(folderPath, spool_path))
-        thread.start()
-
-
-
-        self.folder_path = folderPath
+        self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select a file",
+            "",
+            "All Files (*);;Text Files (*.txt)"
+        )
+        if self.folder_path == "":
+            return
 
         self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
-        self.dataObj.setDirectory(self.folder_path)
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
 
     def select_folder(self):
         # Open a file dialog to select a folder
         self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        if self.folder_path == "":
+            return
+
+        self.rawDataPlotFrame.EZViewPath = None
+
         self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
         self.dataObj.setDirectory(self.folder_path)
         self.application_state = "Folder_Selected"
