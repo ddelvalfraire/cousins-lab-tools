@@ -58,7 +58,7 @@ class GetData:
         try:
             fileList = self.sharedData.fileList
             self.numberOfFiles = len(fileList)
-
+            print(self.numberOfFiles, self.currentFileIndex)
             if self.currentFileIndex == -1:
                 self.currentFileIndex += 1
 

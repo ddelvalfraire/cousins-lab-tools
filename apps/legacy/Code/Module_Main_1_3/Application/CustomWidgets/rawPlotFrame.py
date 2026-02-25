@@ -341,6 +341,7 @@ class RawPlotFrame(Frame):
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.filesParsedSignal.connect(self.parent.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))
 
@@ -379,6 +380,7 @@ class RawPlotFrame(Frame):
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.filesParsedSignal.connect(self.parent.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))
 

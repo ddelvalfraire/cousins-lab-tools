@@ -54,7 +54,7 @@ class PlotAllThread(QObject):
                     self.filesParsedSignal.emit()
 
                 # send per batch
-                MAX_POINTS_PER_EMIT = 1_000  # tune to your rendering cost
+                batchSize = 100  # tune to your rendering cost
                 acc = []
                 any_points_sent = False
                 while True:
@@ -64,26 +64,16 @@ class PlotAllThread(QObject):
 
                     batch = self.globalObject.dataObj.all()
                     if not batch:
-                        if acc:
-                            self.secondsAt.emit(str(floor(acc[-1][0])))
-                            self.newDataPointSignal.emit(acc)
-                            any_points_sent = True
-                        if not any_points_sent:
-                            self.throwOutOfDataExceptionSignal.emit()
-                        break
-
-                    if not acc:
-                        # cheap update as we start accumulating
-                        self.secondsAt.emit(str(floor(batch[-1][0])))
+                        batchSize = 10
+                        QtCore.QThread.msleep(100)
+                        continue
 
                     acc.extend(batch)
-                    if len(acc) >= MAX_POINTS_PER_EMIT:
+                    if len(acc) >= batchSize:
                         self.secondsAt.emit(str(floor(acc[-1][0])))
                         self.newDataPointSignal.emit(acc)
                         acc = []
                         any_points_sent = True
 
-                if any_points_sent:
-                    self.throwOutOfDataExceptionSignal.emit()
         finally:
             self.finished.emit()
