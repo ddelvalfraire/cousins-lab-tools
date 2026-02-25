@@ -31,7 +31,7 @@ class EzPlotAll(QObject):
                 self.finished.emit()
                 return
 
-            MAX_POINTS_PER_EMIT = 1000
+            MAX_POINTS_PER_EMIT = 100
             acc = []
             any_points_sent = False
             print(self.rawPlotFrame.EZViewPath)
@@ -60,6 +60,7 @@ class EzPlotAll(QObject):
                         hexChunk += line_chunks[1].strip()
                         current_line = file.readline()
                         if current_line == '':
+                            MAX_POINTS_PER_EMIT = 10
                             QtCore.QThread.msleep(100)
 
                     hexString = hexChunk[-108:-8]
@@ -83,8 +84,7 @@ class EzPlotAll(QObject):
                         }
                         # Based on instruction 2174-2246
                         # acc.extend([[data['time'], [-999, -999, -999, -999, data['channel1'], data['channel2'], -999, -999]]])
-                        acc.extend([[data['time'], [-999, -999, -999, data['channel1'], data['channel2'], -999, -999, -999]]])
-                        print(data['time'], [-1, -1, -1, -1, data['channel1'], data['channel2'], -1, -1])
+                        acc.extend([[data['time'], [data['channel1'], data['channel2'], data['channel3'], data['channel4'], data['channel5'], data['channel6'], data['channel7'], data['channel8']]]])
 
                     if len(acc) >= MAX_POINTS_PER_EMIT:
                         self.secondsAt.emit(str(floor(acc[-1][0])))

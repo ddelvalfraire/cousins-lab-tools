@@ -43,4 +43,4 @@ def main(args):
     app.exec_()
 
 if __name__ == "__main__":
-    main(1)
+    main(2)
