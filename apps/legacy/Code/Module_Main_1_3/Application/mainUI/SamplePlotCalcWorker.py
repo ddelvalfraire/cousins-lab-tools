@@ -161,19 +161,30 @@ class SamplePlotCalcWorker(QtCore.QObject):
             mask = np.isfinite(times) & np.isfinite(m44)
             times, m44 = times[mask], m44[mask]
 
-            d2_m44 = None
-            d2_Time = times
-            if times.size >= 5:
+            #d2_m44 = None
+            #d2_Time = times
+            #if times.size >= 5:
                 # smooth data
+                #window = min(51, len(m44) - 1)
+                #if window % 2 == 0:
+                    #window -= 1
+
+
+                #m44_smooth = self.savgol_filter_np(m44, window, 3)
+
+                #d1 = np.gradient(m44_smooth, times, edge_order=2)
+                #d2_m44 = np.gradient(d1, times, edge_order=2)
+
+            d1_m44 = None
+            d1_Time = times
+            if times.size >= 5:
                 window = min(51, len(m44) - 1)
                 if window % 2 == 0:
                     window -= 1
 
-
                 m44_smooth = self.savgol_filter_np(m44, window, 3)
 
-                d1 = np.gradient(m44_smooth, times, edge_order=2)
-                d2_m44 = np.gradient(d1, times, edge_order=2)
+                d1_m44 = np.gradient(m44_smooth, times, edge_order=2)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
             slope44, _ = Calculations.getLineOfBestFit([t[0] for t in self.data], [t[1][3] for t in self.data])
@@ -216,8 +227,10 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "lbfX": lbfX,
                 "lbfY": lbfY,
                 "times": times if times.size > 0 else None,
-                "d2_m44": d2_m44,
-                "d2_Time": d2_Time,
+                #"d2_m44": d2_m44,
+                #"d2_Time": d2_Time,
+                "d1_m44": d1_m44,
+                "d1_Time": d1_Time,
                 "delta": delta_rubisco,
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,

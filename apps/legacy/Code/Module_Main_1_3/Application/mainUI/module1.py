@@ -853,7 +853,9 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         self.calculationPlotGraph2 = Graph(100, 100)
         self.calculationPlotGraph2.setLabel(axis='bottom', text='Time')
-        self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')
+        #self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')
+        #Testing out first derivative for now, second derivative displaying with spikes, likely due to noise in the data.
+        self.calculationPlotGraph2.setLabel(axis='left', text='d/dt Mass44')
 
         # Curve
         self.calculationPlotGraph2Curve = pg.PlotDataItem(skipFiniteCheck=True, clipToView=True, useOpenGL=True)
@@ -1329,13 +1331,19 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
             # Time vs d²/dt²(Mass44)
             if hasattr(self, "calculationPlotGraph2") and res.get("times") is not None and res.get("d2_m44") is not None:
-                times = res["d2_Time"]
-                d2 = res["d2_m44"]
-                self.calculationPlotGraph2Curve.setData(x=times, y=d2)
+                #times = res["d2_Time"]
+                #d2 = res["d2_m44"]
+                #self.calculationPlotGraph2Curve.setData(x=times, y=d2)
+                #Testing out first derivative for now, second derivative displaying with spikes, likely due to noise in the data.
+
+                times = res["d1_Time"]
+                d1 = res["d1_m44"]
+                self.calculationPlotGraph2Curve.setData(x=times, y=d1)
 
                 # Rescale view
                 self.calculationPlotGraph2.setXRange(float(times[0]), float(times[-1]))
-                y_min, y_max = float(np.min(d2)), float(np.max(d2))
+                #y_min, y_max = float(np.min(d2)), float(np.max(d2))
+                y_min, y_max = float(np.min(d1)), float(np.max(d1))
                 if y_min == y_max:
                     pad = 1.0 if y_min == 0 else abs(y_min) * 0.1
                     y_min -= pad
