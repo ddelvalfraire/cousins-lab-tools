@@ -34,7 +34,10 @@ class PlotAllThread(QObject):
 
         self.globalObject = globalObject
         self.sharedData = globalObject.sharedData
+        self._is_running = True
 
+    def stop(self):
+        self._is_running = False
 
     def run(self):
         """Long running task"""
@@ -57,7 +60,7 @@ class PlotAllThread(QObject):
                 batchSize = 100  # tune to your rendering cost
                 acc = []
                 any_points_sent = False
-                while True:
+                while self._is_running:
                     if self.globalObject.application_state == "Paused":
                         QtCore.QThread.msleep(100)
                         continue

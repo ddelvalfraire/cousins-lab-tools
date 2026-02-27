@@ -23,6 +23,10 @@ class EzPlotAll(QObject):
         super(EzPlotAll, self).__init__()
         self.globalObject = globalObject
         self.rawPlotFrame = rawPlotFrame
+        self._is_running = True
+
+    def stop(self):
+        self._is_running = False
 
     def run(self):
         try:
@@ -39,7 +43,7 @@ class EzPlotAll(QObject):
             start_time = None
 
             with open(str(self.rawPlotFrame.EZViewPath), 'r') as file:
-                while True:
+                while self._is_running:
                     if self.globalObject.application_state == 'Paused':
                         QtCore.QThread.msleep(100)
                         continue
@@ -93,6 +97,4 @@ class EzPlotAll(QObject):
                         any_points_sent = True
 
         finally:
-            if not any_points_sent:
-                self.throwOutOfDataExceptionSignal.emit()
             self.finished.emit()

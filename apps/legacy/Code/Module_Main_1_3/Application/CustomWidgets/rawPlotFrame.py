@@ -38,38 +38,26 @@ class RawPlotFrame(Frame):
 
     def initUI(self):
         ############################## Check Boxes Layout ##################################
-        # Initializing all the graphs
-        self.graph1CheckBox = QtWidgets.QCheckBox("Mass 32", self)
-        self.graph1CheckBox.setStyleSheet("color: #800000")
-        self.graph2CheckBox = QtWidgets.QCheckBox("Mass 34", self)
-        self.graph2CheckBox.setStyleSheet("color: #9A6324")
-        self.graph3CheckBox = QtWidgets.QCheckBox("Mass 36", self)
-        self.graph3CheckBox.setStyleSheet("color: #808000")
-        self.graph4CheckBox = QtWidgets.QCheckBox("Mass 44", self)
-        self.graph4CheckBox.setStyleSheet("color: #4363d8")
-        self.graph5CheckBox = QtWidgets.QCheckBox("Mass 45", self)
-        self.graph5CheckBox.setStyleSheet("color: #e6194B")
-        self.graph6CheckBox = QtWidgets.QCheckBox("Mass 46", self)
-        self.graph6CheckBox.setStyleSheet("color: #911eb4")
-        self.graph7CheckBox = QtWidgets.QCheckBox("Mass 47", self)
-        self.graph7CheckBox.setStyleSheet("color: #42d4f4")
-        self.graph8CheckBox = QtWidgets.QCheckBox("Mass 49", self)
-        self.graph8CheckBox.setStyleSheet("color: #f58231")
-
-        # Initially all the graphs checkboxes should be checked.
-        self.graph1CheckBox.setChecked(False)
-        self.graph2CheckBox.setChecked(False)
-        self.graph3CheckBox.setChecked(False)
-        self.graph4CheckBox.setChecked(False)
-        self.graph5CheckBox.setChecked(False)
-        self.graph6CheckBox.setChecked(False)
-        self.graph7CheckBox.setChecked(False)
-        self.graph8CheckBox.setChecked(False)
-
         # Creating vertical layout for check boxes.
         self.checkBoxVLayout = QtWidgets.QVBoxLayout()
 
         if self.mode == 1:
+            self.graph1CheckBox = QtWidgets.QCheckBox("Mass 32", self)
+            self.graph1CheckBox.setStyleSheet("color: #800000")
+            self.graph2CheckBox = QtWidgets.QCheckBox("Mass 34", self)
+            self.graph2CheckBox.setStyleSheet("color: #9A6324")
+            self.graph3CheckBox = QtWidgets.QCheckBox("Mass 36", self)
+            self.graph3CheckBox.setStyleSheet("color: #808000")
+            self.graph4CheckBox = QtWidgets.QCheckBox("Mass 44", self)
+            self.graph4CheckBox.setStyleSheet("color: #4363d8")
+            self.graph5CheckBox = QtWidgets.QCheckBox("Mass 45", self)
+            self.graph5CheckBox.setStyleSheet("color: #e6194B")
+            self.graph6CheckBox = QtWidgets.QCheckBox("Mass 46", self)
+            self.graph6CheckBox.setStyleSheet("color: #911eb4")
+            self.graph7CheckBox = QtWidgets.QCheckBox("Mass 47", self)
+            self.graph7CheckBox.setStyleSheet("color: #42d4f4")
+            self.graph8CheckBox = QtWidgets.QCheckBox("Mass 49", self)
+            self.graph8CheckBox.setStyleSheet("color: #f58231")
             # Adding check boxes to the checkBoxWidget layout
             self.checkBoxVLayout.addWidget(self.graph1CheckBox)
             self.checkBoxVLayout.addWidget(self.graph2CheckBox)
@@ -79,10 +67,27 @@ class RawPlotFrame(Frame):
             self.checkBoxVLayout.addWidget(self.graph6CheckBox)
             self.checkBoxVLayout.addWidget(self.graph7CheckBox)
             self.checkBoxVLayout.addWidget(self.graph8CheckBox)
+
+            self.graph1CheckBox.setChecked(False)
+            self.graph2CheckBox.setChecked(False)
+            self.graph3CheckBox.setChecked(False)
+            self.graph4CheckBox.setChecked(False)
+            self.graph5CheckBox.setChecked(False)
+            self.graph6CheckBox.setChecked(False)
+            self.graph7CheckBox.setChecked(False)
+            self.graph8CheckBox.setChecked(False)
+
         elif self.mode == 2:
-            # Adding check boxes to the checkBoxWidget layout
+            self.graph1CheckBox = QtWidgets.QCheckBox("Mass 32", self)
+            self.graph1CheckBox.setStyleSheet("color: #800000")
+            self.graph4CheckBox = QtWidgets.QCheckBox("Mass 44", self)
+            self.graph4CheckBox.setStyleSheet("color: #4363d8")
+
             self.checkBoxVLayout.addWidget(self.graph1CheckBox)
             self.checkBoxVLayout.addWidget(self.graph4CheckBox)
+
+            self.graph1CheckBox.setChecked(False)
+            self.graph4CheckBox.setChecked(False)
 
         #############################################################################################
 
@@ -106,17 +111,6 @@ class RawPlotFrame(Frame):
         self.movie.jumpToFrame(0)
         self.processSpinnerLabel.setMovie(self.movie)
         self.processSpinnerLabel.hide()
-
-        # Create labels for each tick value
-        self.hTickbox = QtWidgets.QHBoxLayout()
-        self.speedLabels = [".05x", "2x", "4x", "6x", "8x", "10x", "12x", "14x", "16x", "18x", "20x", "22x",
-                            "24x", "26x", "28x", "30x", "32x"]
-        for label in self.speedLabels:
-            tickLabel = QtWidgets.QLabel(label, self)
-            self.hTickbox.addWidget(tickLabel)
-
-
-        self.hTickbox.setSpacing(30)
 
         # Creating a Horizontal Layout for Start Pause/Resume and Slider
         self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QHBoxLayout()
@@ -184,8 +178,8 @@ class RawPlotFrame(Frame):
 
         # Initializing the mean bars.
         self.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None,
-                                            hoverBrush=None, hoverPen=None, movable=True, bounds=None,
-                                            span=(0, 1), swapMode='sort', clipItem=None)
+                                           hoverBrush=None, hoverPen=None, movable=True, bounds=None,
+                                           span=(0, 1), swapMode='sort', clipItem=None)
 
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
@@ -197,14 +191,30 @@ class RawPlotFrame(Frame):
 
         self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
 
-        self.graph1CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
-        self.graph2CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
-        self.graph3CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph3CheckBox, self.curve3))
-        self.graph4CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
-        self.graph5CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5))
-        self.graph6CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph6CheckBox, self.curve6))
-        self.graph7CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph7CheckBox, self.curve7))
-        self.graph8CheckBox.stateChanged.connect(lambda: self.graphCheckStateChanged(self.graph8CheckBox, self.curve8))
+
+        if self.mode == 1:
+            self.graph1CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
+            self.graph2CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
+            self.graph3CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph3CheckBox, self.curve3))
+            self.graph4CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
+            self.graph5CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5))
+            self.graph6CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph6CheckBox, self.curve6))
+            self.graph7CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph7CheckBox, self.curve7))
+            self.graph8CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph8CheckBox, self.curve8))
+
+        if self.mode == 2:
+            self.graph1CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
+            self.graph4CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
 
     def barsButtonPressed(self):
         xRange = self.realTimeGraph.getXAxisRange()
@@ -346,7 +356,6 @@ class RawPlotFrame(Frame):
             lambda msg: self.softError.emit("plot all error", msg))
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
-        self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
 
     def EzViewPlotALl(self):
         # cant plot all well started
@@ -387,28 +396,35 @@ class RawPlotFrame(Frame):
         self.plotAllThread.finished.connect(self.endPlotAllThread)
 
     def endPlotAllThread(self):
+        try:
+            self.plotAllThread.stop()
+            self.movie.stop()
+            self.processSpinnerLabel.hide()
+            self.plotAllButton.setEnabled(True)
 
-        self.movie.stop()
-        self.processSpinnerLabel.hide()
-        self.plotAllButtonThread.quit()
-        self.plotAllButtonThread.wait()
-        self.plotAllButtonThread.deleteLater()
-        self.plotAllButton.setEnabled(True)
+            self.startBit = False
+            self.pauseBit = True
+            self.pauseResumeButton.setText("Resume")
+            self.pauseResumeButton.setToolTip('Resume the graph')
+        except Exception as exception:
+            print(exception)
 
-        self.startBit = False
-        self.pauseBit = True
-        self.pauseResumeButton.setText("Resume")
-        self.pauseResumeButton.setToolTip('Resume the graph')
 
     def clear(self):
         self.clearCurves()
+        self.plotAllButton.setEnabled(True)
+        self.endPlotAllThread()
 
         # Uncheck all the graph boxes.
-        self.graph1CheckBox.setChecked(False)
-        self.graph2CheckBox.setChecked(False)
-        self.graph3CheckBox.setChecked(False)
-        self.graph4CheckBox.setChecked(False)
-        self.graph5CheckBox.setChecked(False)
-        self.graph6CheckBox.setChecked(False)
-        self.graph7CheckBox.setChecked(False)
-        self.graph8CheckBox.setChecked(False)
+        if self.mode == 1:
+            self.graph1CheckBox.setChecked(False)
+            self.graph2CheckBox.setChecked(False)
+            self.graph3CheckBox.setChecked(False)
+            self.graph4CheckBox.setChecked(False)
+            self.graph5CheckBox.setChecked(False)
+            self.graph6CheckBox.setChecked(False)
+            self.graph7CheckBox.setChecked(False)
+            self.graph8CheckBox.setChecked(False)
+        elif self.mode == 2:
+            self.graph1CheckBox.setChecked(False)
+            self.graph4CheckBox.setChecked(False)
