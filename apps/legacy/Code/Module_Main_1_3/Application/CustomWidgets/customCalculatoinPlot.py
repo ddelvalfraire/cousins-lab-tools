@@ -50,7 +50,8 @@ class customCalculationPlot(Frame):
 
         self.calculationPlotGraph2 = Graph(100, 100)
         self.calculationPlotGraph2.setLabel(axis='bottom', text='Time')
-        self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')
+        # self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')
+        self.calculationPlotGraph2.setLabel(axis='left', text='d/dt Mass44')
 
         self.calculationPlotGraph2Curve = pg.PlotDataItem(skipFiniteCheck=True, clipToView=True, useOpenGL=True)
         self.calculationPlotGraph2Curve.setPen(color='#4363d8', width=4)

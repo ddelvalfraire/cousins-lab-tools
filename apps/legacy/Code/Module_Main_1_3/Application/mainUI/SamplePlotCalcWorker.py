@@ -116,7 +116,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
                     if not warnedOnce:
                         warnedOnce = True
                         ymsg = xmsg if not okx else ymsg
-                        self.userWarning.emit(ymsg)
+
+                        if ymsg != "The following variable has no value: CO2Zero44":
+                            self.userWarning.emit(ymsg)
                     continue
 
                 # trys to evaluate the expression
@@ -172,8 +174,8 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
                 m44_smooth = self.savgol_filter_np(m44, window, 3)
 
-                d1 = np.gradient(m44_smooth, times, edge_order=2)
-                d2_m44 = np.gradient(d1, times, edge_order=2)
+                # d1 = np.gradient(m44_smooth, times, edge_order=2)
+                d2_m44 = np.gradient(m44, times, edge_order=2)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
             slope44, _ = Calculations.getLineOfBestFit([t[0] for t in self.data], [t[1][3] for t in self.data])
