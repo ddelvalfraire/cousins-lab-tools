@@ -1705,12 +1705,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
             try:
 
-                self.realTimePlotthread.quit()
-                self.realTimePlotthread.wait()
-                self.realTimePlotthread.deleteLater()
-
-                self.newFileNotifierThread.stop()
-                self.fileNotiferThread.quit()
+                self.rawDataPlotFrame.clear()
             
             except RuntimeError as exception:
                 print(exception)
