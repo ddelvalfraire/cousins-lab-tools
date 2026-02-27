@@ -88,7 +88,17 @@ class EzPlotAll(QObject):
                         }
                         # Based on instruction 2174-2246
                         # acc.extend([[data['time'], [-999, -999, -999, -999, data['channel1'], data['channel2'], -999, -999]]])
-                        acc.extend([[data['time'], [data['channel1'], data['channel2'], data['channel3'], data['channel4'], data['channel5'], data['channel6'], data['channel7'], data['channel8']]]])
+                        acc.extend([[data['time'], [data['channel5'],    # unkown
+                                                    data['channel2'],    # unkown
+                                                    data['channel4'],    # unkown
+                                                    data['channel3'],
+                                                    data['channel1'],
+                                                    data['channel6'],    # unkown
+                                                    data['channel7'],    # unkown
+                                                    data['channel8']]]]) # unkown
+
+                        #   channel 1 = mass 45
+                        #   channel 3 = mass 44
 
                     if len(acc) >= MAX_POINTS_PER_EMIT:
                         self.secondsAt.emit(str(floor(acc[-1][0])))
