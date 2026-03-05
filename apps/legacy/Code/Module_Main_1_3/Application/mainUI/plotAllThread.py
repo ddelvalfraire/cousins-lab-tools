@@ -29,11 +29,11 @@ class PlotAllThread(QObject):
     secondsAt = QtCore.pyqtSignal(str)
 
 
-    def __init__(self, globalObject):
+    def __init__(self, globalObject, parent):
         super(PlotAllThread, self).__init__()
 
         self.globalObject = globalObject
-        self.sharedData = globalObject.sharedData
+        self.sharedData = parent.sharedData
         self._is_running = True
 
     def stop(self):

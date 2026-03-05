@@ -88,14 +88,14 @@ class EzPlotAll(QObject):
                         }
                         # Based on instruction 2174-2246
                         # acc.extend([[data['time'], [-999, -999, -999, -999, data['channel1'], data['channel2'], -999, -999]]])
-                        acc.extend([[data['time'], [data['channel5'],    # unkown
-                                                    data['channel2'],    # unkown
-                                                    data['channel4'],    # unkown
-                                                    data['channel3'],
-                                                    data['channel1'],
-                                                    data['channel6'],    # unkown
-                                                    data['channel7'],    # unkown
-                                                    data['channel8']]]]) # unkown
+                        acc.extend([[data['time'], [-404.404,    # unkown
+                                                    -404.404,    # unkown
+                                                    -404.404,    # unkown
+                                                    data['channel3'],    # mass 44
+                                                    data['channel1'],    # mass 45
+                                                    -404.404,    # unkown
+                                                    -404.404,    # unkown
+                                                    -404.404]]]) # unkown
 
                         #   channel 1 = mass 45
                         #   channel 3 = mass 44

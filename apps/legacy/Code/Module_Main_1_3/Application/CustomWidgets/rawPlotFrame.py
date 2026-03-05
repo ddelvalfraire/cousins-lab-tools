@@ -6,6 +6,7 @@ import threading
 from math import floor
 
 from Code.Module_Main_1_3.Application.mainUI.EzPlotAll import EzPlotAll
+from Code.Module_Main_1_3.Application.mainUI.newFileNotifierThread import NewFileNotifierThread
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
@@ -22,6 +23,13 @@ class RawPlotFrame(Frame):
         self.parent = parent # LabViewModule1 instance
         self.sharedData = SharedSingleton()
         self.mode = mode
+
+        self.sharedData.fileList = []
+        self.sharedData.dataPoints = {}
+        self.sharedData.folderAccessed = False
+        self.sharedData.xPoint = 0
+        self.sharedData.initialX = None
+
         # Data storage for raw plot
         self.startBit = False
         self.pauseBit = False
@@ -35,6 +43,8 @@ class RawPlotFrame(Frame):
         self.addCurveAndMeanBar()
 
         self.EZViewPath = None
+        self.folder_path = ''
+        self.fileCheckThreadStarted = False
 
     def initUI(self):
         ############################## Check Boxes Layout ##################################
@@ -82,13 +92,16 @@ class RawPlotFrame(Frame):
             self.graph1CheckBox.setStyleSheet("color: #800000")
             self.graph4CheckBox = QtWidgets.QCheckBox("Mass 44", self)
             self.graph4CheckBox.setStyleSheet("color: #4363d8")
+            self.graph5CheckBox = QtWidgets.QCheckBox("Mass 45", self)
+            self.graph5CheckBox.setStyleSheet("color: #e6194B")
 
             self.checkBoxVLayout.addWidget(self.graph1CheckBox)
             self.checkBoxVLayout.addWidget(self.graph4CheckBox)
+            self.checkBoxVLayout.addWidget(self.graph5CheckBox)
 
             self.graph1CheckBox.setChecked(False)
             self.graph4CheckBox.setChecked(False)
-
+            self.graph5CheckBox.setChecked(False)
         #############################################################################################
 
         ############################## BarButton, Rescale, Start Pause/Resume Slider Layout #############################
@@ -215,6 +228,8 @@ class RawPlotFrame(Frame):
                 lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
             self.graph4CheckBox.stateChanged.connect(
                 lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
+            self.graph5CheckBox.stateChanged.connect(
+                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5))
 
     def barsButtonPressed(self):
         xRange = self.realTimeGraph.getXAxisRange()
@@ -253,30 +268,17 @@ class RawPlotFrame(Frame):
 
     def update_plot_data(self, dataPoints):
         y_value = [[], [], [], [], [], [], [], []]
+        cloneData = dataPoints.copy()
         while len(dataPoints) != 0:
             dataPoint = dataPoints.pop(0)
             x, y = dataPoint
             self.sharedData.dataPoints[x] = y
             for i in range(len(y_value)):
-                y_value[i].append(y[i])
+                if y[i] != -404.404:
+                    y_value[i].append(y[i])
 
-        yAllMax = max(y)
-        yAllMin = min(y)
-
-        if self.yAllMin == None and self.yAllMax == None:
-            self.yAllMax = yAllMax
-            self.yAllMin = yAllMin
-            self.isYChnaged = True
-        else:
-            if yAllMin < self.yAllMin:
-                self.yAllMin = yAllMin
-                self.isYChnaged = True
-            if yAllMax > self.yAllMax:
-                self.yAllMax = yAllMax
-                self.isYChnaged = True
-
-        self.changeGraphRange(x)
-
+        # TODO: make graph rescale better
+        
         self.curve1.updateDataPoints(x, y_value[0])
         self.curve2.updateDataPoints(x, y_value[1])
         self.curve3.updateDataPoints(x, y_value[2])
@@ -285,6 +287,9 @@ class RawPlotFrame(Frame):
         self.curve6.updateDataPoints(x, y_value[5])
         self.curve7.updateDataPoints(x, y_value[6])
         self.curve8.updateDataPoints(x, y_value[7])
+
+        if self.mode == 2:
+            self.parent.update_main_plot_data(cloneData)
 
     def changeGraphRange(self, x):
         self.currentXRange = self.realTimeGraph.getXAxisRange()
@@ -337,7 +342,7 @@ class RawPlotFrame(Frame):
 
         self.plotAllButtonThread = QThread(parent=self)
         # Step 3: Create a worker object
-        self.plotAllThread = PlotAllThread(self.parent)
+        self.plotAllThread = PlotAllThread(self.parent, self)
 
         # Step 4: Move worker to the thread
         self.plotAllThread.moveToThread(self.plotAllButtonThread)
@@ -351,7 +356,7 @@ class RawPlotFrame(Frame):
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
-        self.plotAllThread.filesParsedSignal.connect(self.parent.startNewFileNotifier)
+        self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))
 
@@ -389,11 +394,29 @@ class RawPlotFrame(Frame):
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
         self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
-        self.plotAllThread.filesParsedSignal.connect(self.parent.startNewFileNotifier)
+        self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
+
+    def startNewFileNotifier(self):
+
+        if not self.fileCheckThreadStarted:
+            self.fileNotiferThread = QThread(parent=self.parent)
+            # Step 3: Create a worker object
+            self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
+            # Step 4: Move worker to the thread
+            self.newFileNotifierThread.moveToThread(self.fileNotiferThread)
+
+            # Step 5: Connect signals and slots and start the stop watch
+            self.fileNotiferThread.started.connect(self.newFileNotifierThread.run)
+
+            self.fileNotiferThread.start()
+            self.fileCheckThreadStarted = True
+
+        else:
+            pass
 
     def endPlotAllThread(self):
         try:
@@ -409,12 +432,17 @@ class RawPlotFrame(Frame):
         except Exception as exception:
             print(exception)
 
-
     def clear(self):
         self.clearCurves()
         self.plotAllButton.setEnabled(True)
         self.endPlotAllThread()
+        self.fileCheckThreadStarted = False
 
+        self.sharedData.fileList = []
+        self.sharedData.dataPoints = {}
+        self.sharedData.folderAccessed = False
+        self.sharedData.xPoint = 0
+        self.sharedData.initialX = None
         # Uncheck all the graph boxes.
         if self.mode == 1:
             self.graph1CheckBox.setChecked(False)
@@ -428,3 +456,5 @@ class RawPlotFrame(Frame):
         elif self.mode == 2:
             self.graph1CheckBox.setChecked(False)
             self.graph4CheckBox.setChecked(False)
+            self.graph5CheckBox.setChecked(False)
+

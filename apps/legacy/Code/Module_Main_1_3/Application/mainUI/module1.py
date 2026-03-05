@@ -146,7 +146,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.co2Zero45Reading = 0
 
         self.keepCals = False
-        self.folder_path = ''
 
         # Custom Plot axises
         self.DefaultXAxisEquiation = "ln(Mass44 - CO2Zero44)"
@@ -638,8 +637,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.setCentralWidget(self.scrollArea)
 
     def customCalculationPlotsUI(self):
-        dataToAdd = [("Blank Slope 44", self.blankSlope44LineEdit), ("Blank Slope 45", self.blankSlope45LineEdit.text()),
-                     ("Extract Slope 44", self.extractSlope44LineEdit), ("Extract Slope 45", self.extractSlope45LineEdit.text())]
+        dataToAdd = [("Blank Slope 44", self.blankSlope44LineEdit), ("Blank Slope 45", self.blankSlope45LineEdit),
+                     ("Extract Slope 44", self.extractSlope44LineEdit), ("Extract Slope 45", self.extractSlope45LineEdit)]
         self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.DefaultXAxisEquiation, self.DefaultYAxisEquiation,
                                                             blankSlopeLineEdit44=self.blankSlope44LineEdit, dataToAdd=dataToAdd, user=self.user)
         self.customCalculationPlots.softError.connect(lambda m, s: self.throwTellUserDilog(m, s))
@@ -786,23 +785,23 @@ class LabViewModule1(QtWidgets.QMainWindow):
             "",
             "All Files (*);;Text Files (*.txt)"
         )
-        if self.folder_path == "":
+        if self.rawDataPlotFrame.folder_path == "":
             return
 
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
+        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
 
     def select_folder(self):
         # Open a file dialog to select a folder
-        self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
-        if self.folder_path == "":
+        self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        if self.rawDataPlotFrame.folder_path == "":
             return
 
         self.rawDataPlotFrame.EZViewPath = None
 
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
-        self.dataObj.setDirectory(self.folder_path)
+        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
+        self.dataObj.setDirectory(self.rawDataPlotFrame.folder_path)
         self.application_state = "Folder_Selected"
         self.select_folder_action.setEnabled(False)
 
@@ -1399,26 +1398,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
 #################################################################################################################################
 ####################################################### Raw Plot Methods ########################################################
 
-    # change-file-reading
-    # Start the thread as soon all files are read.
-    def startNewFileNotifier(self):
-
-        if not self.fileCheckThreadStarted:
-            self.fileNotiferThread = QThread(parent=self)
-            # Step 3: Create a worker object
-            self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
-            # Step 4: Move worker to the thread
-            self.newFileNotifierThread.moveToThread(self.fileNotiferThread)
-
-            # Step 5: Connect signals and slots and start the stop watch
-            self.fileNotiferThread.started.connect(self.newFileNotifierThread.run)
-
-            self.fileNotiferThread.start()
-            self.fileCheckThreadStarted = True
-
-        else:
-            pass
-
     def update_plot_data(self, dataPoints):
         """
             Updates the real time plot after reading each row of data points from the file ONLY IF the pause bit is False.
@@ -1556,7 +1535,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             os.makedirs(path)
 
         # open file for writing, will create file if it doesn't already exist
-        file = open(path + os.path.basename(self.folder_path) + "Data.csv", 'w+')
+        file = open(path + os.path.basename(self.rawDataPlotFrame.folder_path) + "Data.csv", 'w+')
 
         writer = csv.writer(file)   # create csv writer
 
@@ -1614,7 +1593,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 print(exception)
 
         #export all raw data if there is data to load
-        if self.folder_path != '':
+        if self.rawDataPlotFrame.folder_path != '':
             self.exportRawData()
 
         self.clearApplication(self.keepCals)
@@ -1694,7 +1673,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         pass
 
     def throwTellUserDilog(self, title, str):
-        f"""
+        """
             Opens a dilog box and displays a message.
         :param title: dilog title
         :param str: meesage
