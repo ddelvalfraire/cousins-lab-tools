@@ -201,9 +201,7 @@ class RawPlotFrame(Frame):
         self.barsButton.clicked.connect(self.barsButtonPressed)
         self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
         self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
-
         self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
-
 
         if self.mode == 1:
             self.graph1CheckBox.stateChanged.connect(
@@ -239,11 +237,13 @@ class RawPlotFrame(Frame):
         self.meanBar.setRegion([midPoint - scale, midPoint + scale])
 
     def rescaleButtonPressed(self):
-        if self.realTimeGraph.graphInteraction == False:
-            return
-        elif self.realTimeGraph.graphInteraction == True:
-            self.isYChnaged = True
-            self.realTimeGraph.graphInteraction = False
+        try:
+            x = list(self.sharedData.dataPoints.keys())[-1]
+            self.realTimeGraph.setNewXRange(0, x)
+            self.realTimeGraph.setNewYRange(0, 500)
+        except:
+            print("No data")
+            pass
 
     def pauseResumeAction(self):
         # Pause the Plot
@@ -291,21 +291,6 @@ class RawPlotFrame(Frame):
         if self.mode == 2:
             self.parent.update_main_plot_data(cloneData)
 
-    def changeGraphRange(self, x):
-        self.currentXRange = self.realTimeGraph.getXAxisRange()
-        if x > self.currentXRange[1]:
-            currentXScale = self.currentXRange[1] - self.currentXRange[0]
-            self.currentXRange = [self.currentXRange[0] + currentXScale, self.currentXRange[1] + currentXScale]
-            if not self.realTimeGraph.graphInteraction:
-                self.realTimeGraph.setNewXRange(self.currentXRange[0], self.currentXRange[1])
-
-        if self.isYChnaged:
-            if not self.realTimeGraph.graphInteraction:
-                offsetMin = (20 * self.yAllMin) / 100
-                offsetMax = (20 * self.yAllMax) / 100
-                self.realTimeGraph.setNewYRange(self.yAllMin - offsetMin, self.yAllMax + offsetMax)
-                self.isYChnaged = False
-
     def clearCurves(self):
         self.curve1.clear()
         self.curve2.clear()
@@ -319,6 +304,8 @@ class RawPlotFrame(Frame):
         self.yAllMin = None
 
     def plotAllButtonPressed(self):
+        if self.folder_path == '' and self.EZViewPath == None:
+            return
         if self.EZViewPath == None:
             self.LabViewPlotALl()
         else:
@@ -402,7 +389,7 @@ class RawPlotFrame(Frame):
 
     def startNewFileNotifier(self):
 
-        if not self.fileCheckThreadStarted:
+        if not self.fileCheckThreadStarted and self.folder_path != '':
             self.fileNotiferThread = QThread(parent=self.parent)
             # Step 3: Create a worker object
             self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
@@ -430,8 +417,8 @@ class RawPlotFrame(Frame):
             self.pauseResumeButton.setText("Resume")
             self.pauseResumeButton.setToolTip('Resume the graph')
         except Exception as exception:
-            print(exception)
-
+            pass
+        
     def clear(self):
         self.clearCurves()
         self.plotAllButton.setEnabled(True)
@@ -457,4 +444,3 @@ class RawPlotFrame(Frame):
             self.graph1CheckBox.setChecked(False)
             self.graph4CheckBox.setChecked(False)
             self.graph5CheckBox.setChecked(False)
-

@@ -73,7 +73,10 @@ class PlotAllThread(QObject):
 
                     acc.extend(batch)
                     if len(acc) >= batchSize:
-                        self.secondsAt.emit(str(floor(acc[-1][0])))
+                        try:
+                            self.secondsAt.emit(str(floor(acc[-1][0])))
+                        except Exception as e:
+                            pass
                         self.newDataPointSignal.emit(acc)
                         acc = []
                         any_points_sent = True

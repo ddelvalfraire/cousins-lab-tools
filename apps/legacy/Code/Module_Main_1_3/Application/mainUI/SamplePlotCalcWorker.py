@@ -208,8 +208,11 @@ class SamplePlotCalcWorker(QtCore.QObject):
             except:
                 delta_rubisco = None
                 alpha_total = None
+            try:
+                rSquared = Calculations.rSquared(sampleX, sampleY)
+            except:
+                rSquared = "null"
 
-            rSquared = Calculations.rSquared(sampleX, sampleY)
             self.resultReady.emit({
                 "sampleEquationPlotX": sampleEquationPlotX,
                 "sampleEquationPlotY": sampleEquationPlotY,

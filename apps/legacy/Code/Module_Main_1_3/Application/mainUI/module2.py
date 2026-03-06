@@ -1053,7 +1053,27 @@ class LabViewModule2(QtWidgets.QMainWindow):
        self.checkMinMax(min(dubar_y_value), max(dubar_y_value), 2)
 
        self.curve3.updateDataPoints(x, ubar_y_value)
+       self.followCurve(self.uBarGraph, ubar_y_value)
        self.curve4.updateDataPoints(x, dubar_y_value)
+       self.followCurve(self.DuBarGraph, dubar_y_value)
+
+    def followCurve(self, plot, y):
+        try:
+            x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
+            # current_range = plot.getXAxisRange()
+            # # Get the current x-axis range
+            # current_range = plot.getXAxisRange()
+            # current_min = current_range[0]
+            # current_max = current_range[1]
+            # width = current_max - current_min
+
+            plot.setNewXRange(x - 120, x)
+            if plot.getYAxisRange()[1] < y[-1]:
+                plot.setNewYRange(y[-1] - plot.getYAxisRange()[1], y[-1])
+            elif plot.getYAxisRange()[0] > y[-1]:
+                plot.setNewYRange(y[-1], y[-1] - plot.getYAxisRange()[1])
+        except Exception as e:
+            print(e)
 
     def checkMinMax(self, min, max, graph):
         # graph 0 = real
@@ -1144,17 +1164,21 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.OnEditedO2Cal()  # O2 Assay Buffer Zero
 
             # CO2 Assay Buffer Cals
-
-            self.OnEditedCO2Cal(self.calibrationLineEdits[4], 3, 0, 0)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[5], 3, 0, 1000)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[6], 3, 0, 2000)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[7], 3, 0, 3000)
-
+            try:
+                self.OnEditedCO2Cal(self.calibrationLineEdits[4], 3, 0, 0)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[5], 3, 0, 1000)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[6], 3, 0, 2000)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[7], 3, 0, 3000)
+            except:
+                pass
             # CO2 HCl Cals
-            self.OnEditedCO2Cal(self.calibrationLineEdits[8], 3, 1, 0)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[9], 3, 1, 33.3)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[10], 3, 1, 66.6)
-            self.OnEditedCO2Cal(self.calibrationLineEdits[11], 3, 1, 99.9)
+            try:
+                self.OnEditedCO2Cal(self.calibrationLineEdits[8], 3, 1, 0)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[9], 3, 1, 33.3)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[10], 3, 1, 66.6)
+                self.OnEditedCO2Cal(self.calibrationLineEdits[11], 3, 1, 99.9)
+            except:
+                pass
 
     def tableFileSave(self):
         """
@@ -1381,14 +1405,14 @@ class LabViewModule2(QtWidgets.QMainWindow):
                     del self.hclData[key]
 
             # if mean value is not undefined, create new point
-            if (mean != None):    
-                self.hclData[concentration] = mean
-            self.uBarGraph.clear()
-            # plot point on the hcl graph
-            hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), pen=None, symbol='o',
-                                       symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
-
-            self.uBarGraph.plotItem.getViewBox().autoRange()
+            # if (mean != None):
+            #     self.hclData[concentration] = mean
+            # self.uBarGraph.clear()
+            # # plot point on the hcl graph
+            # hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), pen=None, symbol='o',
+            #                            symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
+            #
+            # self.uBarGraph.plotItem.getViewBox().autoRange()
 
     def clearApplication(self, keepCals):
         """
