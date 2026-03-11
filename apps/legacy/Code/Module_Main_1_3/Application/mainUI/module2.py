@@ -1059,15 +1059,21 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def followCurve(self, plot, y):
         try:
+            if self.oldX == None:
+                self.oldX = 0
+        except:
+            self.oldX = 0
+        try:
             x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
-            # current_range = plot.getXAxisRange()
-            # # Get the current x-axis range
-            # current_range = plot.getXAxisRange()
-            # current_min = current_range[0]
-            # current_max = current_range[1]
-            # width = current_max - current_min
 
-            plot.setNewXRange(x - 120, x)
+            # Get the current x-axis range
+            current_range = plot.getXAxisRange()
+
+            change = x - self.oldX
+            plot.setXRange(current_range[0] + change, current_range[1] + change, padding=0)
+
+            self.oldX = x
+
             if plot.getYAxisRange()[1] < y[-1]:
                 plot.setNewYRange(y[-1] - plot.getYAxisRange()[1], y[-1])
             elif plot.getYAxisRange()[0] > y[-1]:
