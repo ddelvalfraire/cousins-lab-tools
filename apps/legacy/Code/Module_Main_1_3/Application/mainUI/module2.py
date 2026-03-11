@@ -130,6 +130,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.co2SampleReading = 0
 
         self.lastUbar = 0
+        self.dubar_buffer = []
+        self.x_buffer = []
         
         # Initialize O2 calibration and measurements
         self.o2Temperature = 0
@@ -1000,12 +1002,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def update_main_plot_data(self, dataPoints):
        # Updates the real time plot after reading each row of data points from the file ONLY IF the pause bit is False.
-       # :param {x_value : Float} -> x point value of the data point.
-       # :param {y_value : Float} -> list of the y point values of the data point for different plots.
+       # :param {dataPoints : list(tuple)} -> list of (x, y) data points.
        # :return -> None
        y_value = [[], [], [], [], [], [], [], []]
-       ubar_y_value = []
-       dubar_y_value = []
+       ubar_batch = []
+       x_batch = []
 
        # Getting the next data points from the list of all the points emitted by the worker thread.
        while len(dataPoints) != 0:
@@ -1020,14 +1021,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
            for i in range(len(y_value)):
                y_value[i].append(y[i])
 
-           # y - list of float - length 8
-
-           # y_value - list of list - length 8[8]
-
-
            # Transform to reflect uBar
-
-           temp_y = y.copy()
            co2Volt = 0
            co2Zero = 0
 
@@ -1037,47 +1031,70 @@ class LabViewModule2(QtWidgets.QMainWindow):
            if self.co2ZeroLineEdit.text():
                co2Zero = float(self.co2ZeroLineEdit.text())
 
-
            percentCo2 = Calculations.calculatePercentCO2(co2Volt, y[3], co2Zero)
            uBarCO2 = Calculations.calculateUbarCO2(percentCo2)
-           temp_y[3] = uBarCO2
-           ubar_y_value.append(temp_y[3])
+           
+           ubar_batch.append(uBarCO2)
+           x_batch.append(x)
 
+       if not x_batch:
+           return
 
-           dubar_y_value.append(self.lastUbar - temp_y[3])
-           self.lastUbar = temp_y[3]
+       # Get historical data for smooth gradient calculation
+       # self.curve3.y contains the previous ubar values
+       # self.curve3.x contains the previous x values
+       full_ubar = self.curve3.y + ubar_batch
+       full_x = self.curve3.x + x_batch
+       # size we advarage down by for deritive graph
+       window = 5
 
-       # Updating all the curves
-       self.checkMinMax(min(y), max(y), 0)
-       self.checkMinMax(min(ubar_y_value), max(ubar_y_value), 1)
-       self.checkMinMax(min(dubar_y_value), max(dubar_y_value), 2)
+       if len(full_ubar) > 1:
+           # Adverage down to make plot clearer
+           smoothed_ubar = Calculations.adverageDown(full_ubar, window)
+           smoothed_x = Calculations.adverageDown(full_x, window)
+           if len(smoothed_ubar) > 1:
+               # Calculate gradient over the smoothed dataset
+               dubar_smoothed = np.gradient(smoothed_ubar, smoothed_x)
+               # Update curve 4 (DuBarGraph) with smoothed data
+               self.curve4.x = smoothed_x
+               self.curve4.y = dubar_smoothed.tolist()
+               # Trigger re-plot for curve 4
+               if self.curve4.isChecked:
+                   self.curve4.data_line.setData(x=self.curve4.x, y=self.curve4.y)
+               # Update min/max for the smoothed derivative
+               self.checkMinMax(min(self.curve4.y), max(self.curve4.y), 2)
+           else:
+               dubar_batch = [0.0] * len(ubar_batch)
+       else:
+           dubar_batch = [0.0] * len(ubar_batch)
 
-       self.curve3.updateDataPoints(x, ubar_y_value)
-       self.followCurve(self.uBarGraph, ubar_y_value)
-       self.curve4.updateDataPoints(x, dubar_y_value)
-       self.followCurve(self.DuBarGraph, dubar_y_value)
+       # Updating other curves
+       self.checkMinMax(min(ubar_batch), max(ubar_batch), 1)
+
+       self.curve3.updateDataPoints(x_batch[-1], ubar_batch)
+       self.followCurve(self.uBarGraph, ubar_batch)
+       if self.curve4.y:
+           self.followCurve(self.DuBarGraph, self.curve4.y)
 
     def followCurve(self, plot, y):
         try:
-            if self.oldX == None:
-                self.oldX = 0
-        except:
-            self.oldX = 0
-        try:
             x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
 
-            # Get the current x-axis range
+             # Get the current x-axis range
             current_range = plot.getXAxisRange()
+            width = abs(current_range[1] - current_range[0])
+            plot.setXRange(x - width, x, padding=0)
 
-            change = x - self.oldX
-            plot.setXRange(current_range[0] + change, current_range[1] + change, padding=0)
+            current_range = plot.getYAxisRange()
+            # height = abs(current_range[1] - current_range[0])
+            # plot.setYRange(y[-1] - height/2, y[-1] + height/2, padding=0) force y height to be in the middle
 
-            self.oldX = x
-
+            # insure y is in range
             if plot.getYAxisRange()[1] < y[-1]:
-                plot.setNewYRange(y[-1] - plot.getYAxisRange()[1], y[-1])
+                plot.setYRange(y[-1] - plot.getYAxisRange()[1], y[-1])
             elif plot.getYAxisRange()[0] > y[-1]:
-                plot.setNewYRange(y[-1], y[-1] - plot.getYAxisRange()[1])
+                plot.setYRange(y[-1], y[-1] - plot.getYAxisRange()[1])
+
         except Exception as e:
             print(e)
 

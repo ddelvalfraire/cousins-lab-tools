@@ -278,7 +278,7 @@ class RawPlotFrame(Frame):
                     y_value[i].append(y[i])
 
         # TODO: make graph rescale better
-        
+
         self.curve1.updateDataPoints(x, y_value[0])
         self.curve2.updateDataPoints(x, y_value[1])
         self.curve3.updateDataPoints(x, y_value[2])

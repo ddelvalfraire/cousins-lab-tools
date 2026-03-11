@@ -196,7 +196,7 @@ class customCalculationPlot(Frame):
                 d2_m44 = res["d2_m44"]
                 self.calculationPlotGraph2Curve.setData(times, d2_m44)
                 self.calculationPlotGraph2.setNewXRange(times[0], times[-1])
-                self.calculationPlotGraph2.setNewYRange(-max(d2_m44), max(d2_m44))
+                self.calculationPlotGraph2.setNewYRange(min(d2_m44), max(d2_m44))
 
             try:
                 deltaPart = float(self.samplePlotDeltaPartLineEdit.text())
