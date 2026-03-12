@@ -1045,6 +1045,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
        # self.curve3.x contains the previous x values
        full_ubar = self.curve3.y + ubar_batch
        full_x = self.curve3.x + x_batch
+
+       # Ensure full_ubar and full_x have the same length
+       min_len = min(len(full_ubar), len(full_x))
+       full_ubar = full_ubar[:min_len]
+       full_x = full_x[:min_len]
+
        # size we advarage down by for deritive graph
        window = 5
 
@@ -1052,6 +1058,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
            # Adverage down to make plot clearer
            smoothed_ubar = Calculations.adverageDown(full_ubar, window)
            smoothed_x = Calculations.adverageDown(full_x, window)
+           
+           # Ensure smoothed arrays have the same length (they should, but being safe)
+           min_smoothed_len = min(len(smoothed_ubar), len(smoothed_x))
+           smoothed_ubar = smoothed_ubar[:min_smoothed_len]
+           smoothed_x = smoothed_x[:min_smoothed_len]
+
            if len(smoothed_ubar) > 1:
                # Calculate gradient over the smoothed dataset
                dubar_smoothed = np.gradient(smoothed_ubar, smoothed_x)

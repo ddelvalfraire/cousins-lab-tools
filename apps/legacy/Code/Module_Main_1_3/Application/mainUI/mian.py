@@ -24,7 +24,7 @@ def main(args):
     screen = app.primaryScreen()
     size = screen.size()
 
-    labView = LabViewModule2(size.width(), size.height(), app)
+    labView = LabViewModule1(size.width(), size.height(), app)
 
 
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
