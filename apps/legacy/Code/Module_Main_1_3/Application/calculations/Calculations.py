@@ -253,3 +253,9 @@ class Calculations:
             return r2
         except:
             return "null"
+
+    @staticmethod
+    def adverageDown(data, window):
+        """takes a list "data" adverage every "widnow" elements toghter
+            returns the averaged of the list"""
+        return [sum(data[i:i+window]) / len(data[i:i+window]) for i in range(0, len(data), window)]

@@ -46,6 +46,7 @@ class File:
         try:
             # x values
             x_series = self.data.iloc[:, 0].astype('float64') / 1000.0
+
             if self.sharedData.initialX is None:
                 self.sharedData.initialX = list(self.data.iloc[:,0])[0]/1000
             x_values = (x_series - self.sharedData.initialX).tolist()

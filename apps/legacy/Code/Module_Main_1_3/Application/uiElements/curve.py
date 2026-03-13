@@ -53,9 +53,9 @@ class Curve:
             self.data_line.setData(x=self.x, y=self.y)
 
             if self.firstPoint == False:
-                self.graph.plotItem.getViewBox().autoRange()
-                self.graph.setXRange(0, self.graph.xRange)
-                self.graph.setYRange(0, self.graph.yRange)
+                # self.graph.plotItem.getViewBox().autoRange()
+                # self.graph.setXRange(0, self.graph.xRange)
+                # self.graph.setYRange(0, self.graph.yRange)
                 self.xMax = x
                 self.yMax = y
                 self.firstPoint = True
