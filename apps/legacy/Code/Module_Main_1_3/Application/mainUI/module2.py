@@ -745,14 +745,17 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 self.co2Cal3ulLineEdit
         #if lineedit is co2 cal 3, then compute the co2/volt line        
         if (lineEdit == self.co2Cal3ulLineEdit):
-            num = Calculations.calculateCo2OverVolt(float(self.co2CalZeroLineEdit.text()), 
-                                                    float(self.co2Cal1ulLineEdit.text()), 
-                                                    float(self.co2Cal2ulLineEdit.text()), 
-                                                    float(self.co2Cal3ulLineEdit.text()))
-            if(num == -99999): #num that is returned if num is undefinable
-                self.throwUndefined(self.co2VoltLineEdit)
-            else:
-                self.co2VoltLineEdit.setText(str(round(num, 10)))
+            try:
+                num = Calculations.calculateCo2OverVolt(float(self.co2CalZeroLineEdit.text()),
+                                                        float(self.co2Cal1ulLineEdit.text()),
+                                                        float(self.co2Cal2ulLineEdit.text()),
+                                                        float(self.co2Cal3ulLineEdit.text()))
+                if(num == -99999): #num that is returned if num is undefinable
+                    self.throwUndefined(self.co2VoltLineEdit)
+                else:
+                  self.co2VoltLineEdit.setText(str(round(num, 10)))
+            except:
+                pass
 
     def co2ZeroButtonPressed(self):
         """
