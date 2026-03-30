@@ -89,12 +89,13 @@ class LabViewModule3(QtWidgets.QMainWindow):
         self.setWindowTitle("LabView")
 
         self.sharedData = SharedSingleton() #will store (x, da49percent_y) so getMean can retrieve points stored here.
-        self.sharedData.fileList = []
-        self.sharedData.da49data = {}
-        self.sharedData.a49data = {}
-        self.sharedData.folderAccessed = False
-        self.sharedData.xPoint = 0
-        self.sharedData.initialX = None
+        with self.sharedData.lock:
+            self.sharedData.fileList = []
+            self.sharedData.da49data = {}
+            self.sharedData.a49data = {}
+            self.sharedData.folderAccessed = False
+            self.sharedData.xPoint = 0
+            self.sharedData.initialX = None
 
         self.delay = 200
         self.stopwatch = Stopwatch()
@@ -740,14 +741,19 @@ class LabViewModule3(QtWidgets.QMainWindow):
         # Get the left and right x points from the mean bars
         xleft, xright = self.meanBar.getRegion()
 
+        with self.sharedData.lock:
+            data_snapshot = dict(self.sharedData.da49data)
+
         # if no data exists, return undefined
-        if (not self.sharedData.da49data.keys()):
+        if not data_snapshot:
             self.throwUndefined(lineEdit)
             return None
 
+        keys_list = sorted(data_snapshot.keys())
+
         # if one or both of the x values is not in the range of the dataset, return undefined
-        elif (xright < list(self.sharedData.da49data.keys())[0] or xleft > list(self.sharedData.da49data.keys())[-1] or
-                 xleft < list(self.sharedData.da49data.keys())[0] or xright > list(self.sharedData.da49data.keys())[-1]):
+        if (xright < keys_list[0] or xleft > keys_list[-1] or
+                 xleft < keys_list[0] or xright > keys_list[-1]):
             
             self.throwUndefined(lineEdit)
             return None
@@ -756,16 +762,16 @@ class LabViewModule3(QtWidgets.QMainWindow):
             # get mean value between points
             
             # Find the closest x values in the data to the x values from the mean bars
-            xleft = min(self.sharedData.da49data.keys(), key=lambda x:abs(x-xleft))
-            xright = min(self.sharedData.da49data.keys(), key=lambda x:abs(x-xright))
+            xleft_closest = min(keys_list, key=lambda x:abs(x-xleft))
+            xright_closest = min(keys_list, key=lambda x:abs(x-xright))
 
-            # Get mean from graph
-            mean_value = Calculations.getMean(self.sharedData.da49data, xleft, xright, curve)
+            # Get mean from graph using snapshot
+            mean_value = Calculations.getMean(data_snapshot, xleft_closest, xright_closest, curve)
         
             # Set line edit with mean value
             lineEdit.setText(str(mean_value))
 
-            return mean_value   
+            return mean_value
 
 
     def throwUndefined(self, lineEdit):
@@ -942,23 +948,30 @@ class LabViewModule3(QtWidgets.QMainWindow):
             current_ln_a49 = math.log(current_a49) if current_a49 > 0 else float('-inf')  # Handle log(0) case
             a49percent_y.append(current_ln_a49)
 
-            self.sharedData.a49data[x] = current_ln_a49
+            with self.sharedData.lock:
+                self.sharedData.a49data[x] = current_ln_a49
             
 
             
             xs = []
             ys = []
-            for pair in list(self.sharedData.a49data.items())[min(STENCIL_SIZE,len(self.sharedData.a49data.items()))*-1:]:
+            with self.sharedData.lock:
+                snapshot_a49 = list(self.sharedData.a49data.items())
+            
+            for pair in snapshot_a49[min(STENCIL_SIZE,len(snapshot_a49))*-1:]:
                 xs.append(pair[0])
                 ys.append(pair[1])
             
             if len(xs) > 0:
-                da49percent_y.append(np.polyfit(xs,ys,1)[0]) #plot the change in a49percent
+                da49percent_y_val = np.polyfit(xs,ys,1)[0]
+                da49percent_y.append(da49percent_y_val) #plot the change in a49percent
             else:
-                da49percent_y.append(0)
+                da49percent_y_val = 0
+                da49percent_y.append(da49percent_y_val)
 
             
-            self.sharedData.da49data[x] = da49percent_y #store the found value along with its x coordinate.
+            with self.sharedData.lock:
+                self.sharedData.da49data[x] = da49percent_y_val #store the found value along with its x coordinate.
         # mass| y-value
         # 32  | 0 
         # 34  | 1

@@ -59,7 +59,8 @@ class NewFileHandler(FileSystemEventHandler):
 
     def callback(self, file_path):
         if os.path.isfile(file_path):
-            self.sharedData.fileList.append(os.path.basename(file_path))
+            with self.sharedData.lock:
+                self.sharedData.fileList.append(os.path.basename(file_path))
             # print("New file added:", os.path.basename(file_path))
 
     

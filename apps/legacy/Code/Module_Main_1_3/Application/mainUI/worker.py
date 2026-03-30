@@ -44,10 +44,11 @@ class Worker(QObject):
         # Then it will send a signal to the main thread that the directory has been read once.
         sharedData = SharedSingleton()
 
-        if not sharedData.folderAccessed:
-            sharedData.fileList.extend(DataUtility.getDataFileList())
-            sharedData.folderAccessed = True
-            self.filesParsedSignal.emit()
+        with sharedData.lock:
+            if not sharedData.folderAccessed:
+                sharedData.fileList.extend(DataUtility.getDataFileList())
+                sharedData.folderAccessed = True
+                self.filesParsedSignal.emit()
         # else:
         #     sharedData.fileList = DataUtility.getDataFileList()
         #     self.filesParsed.emit()

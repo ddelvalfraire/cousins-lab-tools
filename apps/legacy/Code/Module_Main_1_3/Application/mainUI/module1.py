@@ -878,10 +878,26 @@ class LabViewModule1(QtWidgets.QMainWindow):
     def getAllMeanBarData(self):
         """Gets all data in mean bar range
             return: (x_timestamp, [y0, y1, y2, y3, y4, y5, y6, y7])"""
-        left, right = self.rawDataPlotFrame.meanBar.getRegion()
-        keys = [k for k in self.sharedData.dataPoints.keys() if k >= left and k <= right]
-        keyValues = [(k, self.sharedData.dataPoints[k]) for k in keys]
-        return keyValues
+        try:
+            left, right = self.rawDataPlotFrame.meanBar.getRegion()
+            # Copy dataPoints with lock to avoid RuntimeError: dictionary changed size during iteration
+            with self.sharedData.lock:
+                data_snapshot = dict(self.sharedData.dataPoints)
+            
+            if not data_snapshot:
+                return []
+
+            # use numpy for faster filtering if data is large
+            keys = np.fromiter(data_snapshot.keys(), dtype=float)
+            mask = (keys >= left) & (keys <= right)
+            filtered_keys = keys[mask]
+
+            # return as list of (k, v) as expected by caller
+            keyValues = [(k, data_snapshot[k]) for k in sorted(filtered_keys)]
+            return keyValues
+        except Exception as e:
+            # self.throwTellUserDilog("Error", "mean bar error")
+            return None
 
 ################################################# End - Calculation Helper Methods ##############################################
 #################################################################################################################################
@@ -891,6 +907,9 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
     def blankSlopeButtonPressed(self):
         data = self.getAllMeanBarData()
+        if data is None or len(data) < 2:
+            self.throwTellUserDilog("Error", "Not enough data points in mean bar range for slope calculation")
+            return
 
         slope44, _ = Calculations.getLineOfBestFit([t[0] for t in data], [t[1][3] for t in data])
         slope45, _ = Calculations.getLineOfBestFit([t[0] for t in data], [t[1][4] for t in data])
@@ -900,6 +919,9 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
     def extractSlopeButtonPressed(self):
         data = self.getAllMeanBarData()
+        if data is None or len(data) < 2:
+            self.throwTellUserDilog("Error", "Not enough data points in mean bar range for slope calculation")
+            return
 
         slope44, _ = Calculations.getLineOfBestFit([t[0] for t in data], [t[1][3] for t in data])
         slope45, _ = Calculations.getLineOfBestFit([t[0] for t in data], [t[1][4] for t in data])
@@ -952,36 +974,50 @@ class LabViewModule1(QtWidgets.QMainWindow):
             :param { curve : int} -> int that indicates the curve to take the mean from
             :return -> mean_value
         """
+        try:
+            # Get the left and right x points from the mean bars
+            xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
 
-        # Get the left and right x points from the mean bars
-        xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
+            # Copy dataPoints with lock to avoid RuntimeError
+            with self.sharedData.lock:
+                data_snapshot = dict(self.sharedData.dataPoints)
 
-        # if no data exists, return undefined
-        if (not self.sharedData.dataPoints.keys()):
+            # if no data exists, return undefined
+            if not data_snapshot:
+                self.throwUndefined(lineEdit)
+                return None
+
+            keys_list = sorted(data_snapshot.keys())
+
+            # if one or both of the x values is not in the range of the dataset, return undefined
+            if (xright < keys_list[0] or xleft > keys_list[-1] or
+                     xleft < keys_list[0] or xright > keys_list[-1]):
+
+                self.throwUndefined(lineEdit)
+                return None
+
+            else:
+                # get mean value between points
+                keys_array = np.array(keys_list)
+
+                # Find the closest x values in the data to the x values from the mean bars
+                idx_left = np.abs(keys_array - xleft).argmin()
+                idx_right = np.abs(keys_array - xright).argmin()
+
+                xleft_actual = keys_list[idx_left]
+                xright_actual = keys_list[idx_right]
+
+                # Get mean from graph
+                mean_value = Calculations.getMean(data_snapshot, xleft_actual, xright_actual, curve)
+
+                # Set line edit with mean value
+                lineEdit.setText(str(mean_value))
+
+                return mean_value
+        except Exception as e:
+            # print(f"meanButtonPressed error: {e}")
             self.throwUndefined(lineEdit)
             return None
-
-        # if one or both of the x values is not in the range of the dataset, return undefined
-        elif (xright < list(self.sharedData.dataPoints.keys())[0] or xleft > list(self.sharedData.dataPoints.keys())[-1] or
-                 xleft < list(self.sharedData.dataPoints.keys())[0] or xright > list(self.sharedData.dataPoints.keys())[-1]):
-
-            self.throwUndefined(lineEdit)
-            return None
-
-        else:
-            # get mean value between points
-
-            # Find the closest x values in the data to the x values from the mean bars
-            xleft = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xleft))
-            xright = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xright))
-
-            # Get mean from graph
-            mean_value = Calculations.getMean(self.sharedData.dataPoints, xleft, xright, curve)
-
-            # Set line edit with mean value
-            lineEdit.setText(str(mean_value))
-
-            return mean_value
 
     def GraphMeanButtonPressed(self, lineEdit, curve, graph, concentration, manualEntry=False):
         """
@@ -1141,41 +1177,57 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
+        try:
+            # Get the left and right x points from the mean bars
+            xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
 
-        # Get the left and right x points from the mean bars
-        xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
+            # Snapshot data
+            data_snapshot = dict(self.sharedData.dataPoints)
 
-        # if no data exists, return undefined
-        if (not self.sharedData.dataPoints.keys()):
+            # if no data exists, return undefined
+            if not data_snapshot:
+                self.throwUndefined(self.co2LineEdit1)
+                self.throwUndefined(self.o2LineEdit1)
+                return
+
+            keys_list = sorted(data_snapshot.keys())
+
+            # if one or both of the x values is not in the range of the dataset, return undefined
+            if (xright < keys_list[0] or xleft > keys_list[-1] or
+                     xleft < keys_list[0] or xright > keys_list[-1]):
+
+                self.throwUndefined(self.co2LineEdit1)
+                self.throwUndefined(self.o2LineEdit1)
+                self.co2Blank = 0
+                self.o2Blank = 0
+                return
+
+            else:
+                # Find the closest x values in the data to the x values from the mean bars
+                keys_array = np.array(keys_list)
+                idx_left = np.abs(keys_array - xleft).argmin()
+                idx_right = np.abs(keys_array - xright).argmin()
+
+                xleft_actual = keys_list[idx_left]
+                xright_actual = keys_list[idx_right]
+
+                if xleft_actual == xright_actual:
+                    self.throwTellUserDilog("Error", "Not enough data points in mean bar range for slope calculation")
+                    return
+
+                # Calculate slope between these two points for graph Mass 44
+                self.co2Blank = (data_snapshot[xright_actual][3] - data_snapshot[xleft_actual][3]) / (xright_actual - xleft_actual)
+
+                # Calculate slope between these two points for graph Mass 32
+                self.o2Blank = (data_snapshot[xright_actual][0] - data_snapshot[xleft_actual][0]) / (xright_actual - xleft_actual)
+
+                # Set CO2 and O2 line edits
+                self.co2LineEdit1.setText(str(round(self.co2Blank, 4)))
+                self.o2LineEdit1.setText(str(round(self.o2Blank, 4)))
+        except Exception as e:
+            # print(f"blankButtonPressed error: {e}")
             self.throwUndefined(self.co2LineEdit1)
             self.throwUndefined(self.o2LineEdit1)
-            return
-
-        # if one or both of the x values is not in the range of the dataset, return undefined
-        elif (xright < list(self.sharedData.dataPoints.keys())[0] or xleft > list(self.sharedData.dataPoints.keys())[-1] or
-                 xleft < list(self.sharedData.dataPoints.keys())[0] or xright > list(self.sharedData.dataPoints.keys())[-1]):
-
-            self.throwUndefined(self.co2LineEdit1)
-            self.throwUndefined(self.o2LineEdit1)
-            self.co2Blank = 0
-            self.o2Blank = 0
-            return
-
-        else:
-
-            # Find the closest x values in the data to the x values from the mean bars
-            xleft = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xleft))
-            xright = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xright))
-
-            # Calculate slope between these two points for graph Mass 44
-            self.co2Blank = (self.sharedData.dataPoints[xright][3] - self.sharedData.dataPoints[xleft][3]) / (xright - xleft)
-
-            # Calculate slope between these two points for graph Mass 32
-            self.o2Blank = (self.sharedData.dataPoints[xright][0] - self.sharedData.dataPoints[xleft][0]) / (xright - xleft)
-
-            # Set CO2 and O2 line edits
-            self.co2LineEdit1.setText(str(round(self.co2Blank, 4)))
-            self.o2LineEdit1.setText(str(round(self.o2Blank, 4)))
 
     def extractButtonPressed(self):
         """
@@ -1187,61 +1239,80 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
+        try:
+            ################ First Line ###############
 
-        ################ First Line ###############
+            # Get the left and right x points from the mean bars
+            xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
 
-        # Get the left and right x points from the mean bars
-        xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
+            # Snapshot data
+            data_snapshot = dict(self.sharedData.dataPoints)
 
-        # if no data exists, return undefined
-        if (not self.sharedData.dataPoints.keys()):
+            # if no data exists, return undefined
+            if not data_snapshot:
+                self.throwUndefined(self.co2LineEdit2)
+                self.throwUndefined(self.o2LineEdit2)
+                return
+
+            keys_list = sorted(data_snapshot.keys())
+
+            # if one or both of the x values is not in the range of the dataset, return undefined
+            if (xright < keys_list[0] or xleft > keys_list[-1] or
+                     xleft < keys_list[0] or xright > keys_list[-1]):
+
+                self.throwUndefined(self.co2LineEdit2)
+                self.throwUndefined(self.o2LineEdit2)
+                return
+
+            # Find the closest x values in the data to the x values from the mean bars
+            keys_array = np.array(keys_list)
+            idx_left = np.abs(keys_array - xleft).argmin()
+            idx_right = np.abs(keys_array - xright).argmin()
+
+            xleft_actual = keys_list[idx_left]
+            xright_actual = keys_list[idx_right]
+
+            if xleft_actual == xright_actual:
+                self.throwTellUserDilog("Error", "Not enough data points in mean bar range for slope calculation")
+                return
+
+            # Calculate slope between these two points for graph Mass 44
+            self.co2Extract = (data_snapshot[xright_actual][3] - data_snapshot[xleft_actual][3]) / (xright_actual - xleft_actual)
+
+            # Calculate slope between these two points for graph Mass 32
+            self.o2Extract = (data_snapshot[xright_actual][0] - data_snapshot[xleft_actual][0]) / (xright_actual - xleft_actual)
+
+            # Set CO2 and O2 line edits
+            self.co2LineEdit2.setText(str(round(self.co2Extract, 4)))
+            self.o2LineEdit2.setText(str(round(self.o2Extract, 4)))
+
+            ################ Secone Line ###############
+
+            # if Blank has not been found yet, return undefined
+            if (self.co2Blank == 0):
+                self.throwUndefined(self.co2LineEdit3)
+                self.throwUndefined(self.o2LineEdit3)
+                return
+
+            # calculate net rate of consumption for CO2 and O2
+            self.co2ConsumptionRate = self.co2Extract - self.co2Blank
+            self.o2ConsumptionRate = self.o2Extract - self.o2Blank
+
+            # Set Line Edits
+            self.co2LineEdit3.setText(str(round(self.co2ConsumptionRate, 4)))
+            self.o2LineEdit3.setText(str(round(self.o2ConsumptionRate, 4)))
+
+            ################ Third Line ###############
+
+            # Get mean value from mean bars from Mass 44 and Mass 32 graphs
+            # meanButtonPressed already snapshots data
+            co2Reading = self.meanButtonPressed(self.co2LineEdit4, 3)
+            o2Reading = self.meanButtonPressed(self.o2LineEdit4, 0)
+        except Exception as e:
+            # print(f"extractButtonPressed error: {e}")
             self.throwUndefined(self.co2LineEdit2)
             self.throwUndefined(self.o2LineEdit2)
             return
-
-        # if one or both of the x values is not in the range of the dataset, return undefined
-        elif (xright < list(self.sharedData.dataPoints.keys())[0] or xleft > list(self.sharedData.dataPoints.keys())[-1] or
-                 xleft < list(self.sharedData.dataPoints.keys())[0] or xright > list(self.sharedData.dataPoints.keys())[-1]):
-
-            self.throwUndefined(self.co2LineEdit2)
-            self.throwUndefined(self.o2LineEdit2)
-            return
-
-        # Find the closest x values in the data to the x values from the mean bars
-        xleft = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xleft))
-        xright = min(self.sharedData.dataPoints.keys(), key=lambda x:abs(x-xright))
-
-        # Calculate slope between these two points for graph Mass 44
-        self.co2Extract = (self.sharedData.dataPoints[xright][3] - self.sharedData.dataPoints[xleft][3]) / (xright - xleft)
-
-        # Calculate slope between these two points for graph Mass 32
-        self.o2Extract = (self.sharedData.dataPoints[xright][0] - self.sharedData.dataPoints[xleft][0]) / (xright - xleft)
-
-        # Set CO2 and O2 line edits
-        self.co2LineEdit2.setText(str(round(self.co2Extract, 4)))
-        self.o2LineEdit2.setText(str(round(self.o2Extract, 4)))
-
-        ################ Secone Line ###############
-
-        # if Blank has not been found yet, return undefined
-        if (self.co2Blank == 0):
-            self.throwUndefined(self.co2LineEdit3)
-            self.throwUndefined(self.o2LineEdit3)
-            return
-
-        # calculate net rate of consumption for CO2 and O2
-        self.co2ConsumptionRate = self.co2Extract - self.co2Blank
-        self.o2ConsumptionRate = self.o2Extract - self.o2Blank
-
-        # Set Line Edits
-        self.co2LineEdit3.setText(str(round(self.co2ConsumptionRate, 4)))
-        self.o2LineEdit3.setText(str(round(self.o2ConsumptionRate, 4)))
-
-        ################ Third Line ###############
-
-        # Get mean value from mean bars from Mass 44 and Mass 32 graphs
-        co2Reading = self.meanButtonPressed(self.co2LineEdit4, 3)
-        o2Reading = self.meanButtonPressed(self.o2LineEdit4, 0)
 
         ######### Populate Velocities and Concentrations for Table ########
 

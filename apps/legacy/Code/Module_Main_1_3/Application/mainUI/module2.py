@@ -674,14 +674,19 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Get the left and right x points from the mean bars
         xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
 
+        with self.rawDataPlotFrame.sharedData.lock:
+            data_snapshot = dict(self.rawDataPlotFrame.sharedData.dataPoints)
+
         # if no data exists, return undefined
-        if (not self.rawDataPlotFrame.sharedData.dataPoints.keys()):
+        if not data_snapshot:
             self.throwUndefined(lineEdit)
             return None
 
+        keys_list = sorted(data_snapshot.keys())
+
         # if one or both of the x values is not in the range of the dataset, return undefined
-        elif (xright < list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[0] or xleft > list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1] or
-                 xleft < list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[0] or xright > list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]):
+        if (xright < keys_list[0] or xleft > keys_list[-1] or
+                 xleft < keys_list[0] or xright > keys_list[-1]):
             
             self.throwUndefined(lineEdit)
             return None
@@ -689,11 +694,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
             # get mean value between points
             
             # Find the closest x values in the data to the x values from the mean bars
-            xleft = min(self.rawDataPlotFrame.sharedData.dataPoints.keys(), key=lambda x:abs(x-xleft))
-            xright = min(self.rawDataPlotFrame.sharedData.dataPoints.keys(), key=lambda x:abs(x-xright))
+            xleft_closest = min(keys_list, key=lambda x:abs(x-xleft))
+            xright_closest = min(keys_list, key=lambda x:abs(x-xright))
 
             # Get mean from graph
-            mean_value = Calculations.getMean(self.rawDataPlotFrame.sharedData.dataPoints, xleft, xright, curve)
+            mean_value = Calculations.getMean(data_snapshot, xleft_closest, xright_closest, curve)
         
             # Set line edit with mean value
             lineEdit.setText(str(mean_value))
@@ -1093,7 +1098,10 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def followCurve(self, plot, y):
         try:
-            x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
+            with self.rawDataPlotFrame.sharedData.lock:
+                if not self.rawDataPlotFrame.sharedData.dataPoints:
+                    return
+                x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
 
              # Get the current x-axis range
             current_range = plot.getXAxisRange()
@@ -1262,12 +1270,16 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # write header to csv file
         writer.writerow(['Count', 'Time', 'm32', 'm34', 'm36', 'm44', 'm45', 'm46', 'm47', 'm49'])
 
+        # get snapshot of data with lock to avoid race conditions
+        with self.rawDataPlotFrame.sharedData.lock:
+            data_snapshot = dict(self.rawDataPlotFrame.sharedData.dataPoints)
+        
         # get list of time and voltage values from data
-        times = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())
-        voltages = list(self.rawDataPlotFrame.sharedData.dataPoints.values())
+        times = sorted(data_snapshot.keys())
+        voltages = [data_snapshot[t] for t in times]
 
         # write lines of data to csv file
-        for i in range(len(self.rawDataPlotFrame.sharedData.dataPoints)):
+        for i in range(len(times)):
             row = [i, times[i]*1000, voltages[i][0], voltages[i][1], voltages[i][2], voltages[i][3],
                                voltages[i][4], voltages[i][5], voltages[i][6], voltages[i][7]]
 

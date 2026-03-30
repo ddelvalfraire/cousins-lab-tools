@@ -49,12 +49,12 @@ class PlotAllThread(QObject):
 
             else:
 
-                if not self.sharedData.folderAccessed:
-                    self.sharedData.fileList.extend(DataUtility.getDataFileList())
-                    self.sharedData.folderAccessed = True
-
-                    ######### Signal to start to start file notifier thread.
-                    self.filesParsedSignal.emit()
+                with self.sharedData.lock:
+                    if not self.sharedData.folderAccessed:
+                        self.sharedData.fileList.extend(DataUtility.getDataFileList())
+                        self.sharedData.folderAccessed = True
+                        ######### Signal to start to start file notifier thread.
+                        self.filesParsedSignal.emit()
 
                 # send per batch
                 batchSize = 100  # tune to your rendering cost

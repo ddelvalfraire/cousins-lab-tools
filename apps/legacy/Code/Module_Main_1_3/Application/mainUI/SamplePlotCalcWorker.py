@@ -97,7 +97,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             warnedOnce = False
 
             # Process each record
-            for d in self.data:
+            for d in (self.data if self.data else []):
                 v = self.getVars(d)
                 if not v:
                     sampleX.append(None)
@@ -144,12 +144,15 @@ class SamplePlotCalcWorker(QtCore.QObject):
                         warnedOnce = True
 
             # Line of best fit
-            lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+            if len(sampleEquationPlotX) >= 2:
+                lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+            else:
+                lbfX, lbfY = [], []
 
             # time vs d²/dt²(Mass44)
             times = []
             m44 = []
-            for d in self.data:
+            for d in (self.data if self.data else []):
                 v = self.getVars(d)
                 if v is None:
                     continue
@@ -159,6 +162,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
             # Helper calculations
             d2_m44 = None
+            d1 = None
 
             # adverage out the data so that the diritive graph has 1/10th the data points, is neccery for good output
             times = Calculations.adverageDown(times, 8)
@@ -174,7 +178,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 d2_m44 = np.gradient(d1, times, edge_order=2)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
-            slope44, _ = Calculations.getLineOfBestFit([t[0] for t in self.data], [t[1][3] for t in self.data])
+            slope44, _ = Calculations.getLineOfBestFit([t[0] for t in (self.data if self.data else [])], [t[1][3] for t in (self.data if self.data else [])])
 
             #################### Adds Alpha/Delta/Rubisco metrics ####################
             # Compute alpha_total (slope) and delta_total from the equation data already used above.
@@ -217,10 +221,10 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "lbfX": lbfX,
                 "lbfY": lbfY,
                 "times": times if times.size > 0 else None,
-                #"d2_m44": d2_m44,
-                #"d2_Time": d2_Time,
-                "d1_m44": d1_m44,
-                "d1_Time": d1_Time,
+                "d2_m44": d2_m44,
+                "d2_Time": d2_Time,
+                "d1_m44": d1,
+                "d1_Time": times if times.size > 0 else None,
                 "delta": delta_rubisco,
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,

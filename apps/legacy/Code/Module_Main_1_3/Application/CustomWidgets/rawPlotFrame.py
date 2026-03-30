@@ -272,7 +272,8 @@ class RawPlotFrame(Frame):
         while len(dataPoints) != 0:
             dataPoint = dataPoints.pop(0)
             x, y = dataPoint
-            self.sharedData.dataPoints[x] = y
+            with self.sharedData.lock:
+                self.sharedData.dataPoints[x] = y
             for i in range(len(y_value)):
                 if y[i] != -404.404:
                     y_value[i].append(y[i])

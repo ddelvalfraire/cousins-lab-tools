@@ -125,6 +125,9 @@ class customCalculationPlot(Frame):
             self.softError.emit("error","Failed to update custom calculation plots")
 
     def updateCustomCalcPlotsAsync(self, data):
+        if data is None or len(data) == 0:
+            return
+
         t = getattr(self, "_calcThread", None)
         if t is not None:
             try:
