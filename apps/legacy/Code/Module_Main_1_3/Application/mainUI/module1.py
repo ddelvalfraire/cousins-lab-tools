@@ -18,7 +18,7 @@ from PyQt5.QtGui import QMovie
 import pyqtgraph as pg
 import sys, os, csv
 import threading
-from sympy import sympify
+from sympy import sympify, false
 
 from numpy.ma.core import equal
 
@@ -1748,15 +1748,23 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
 
         obj.close()
+
+        self.clearVelGraph = False
+        purgeWarningDlg = Dialog(title="Clear Velocity Graph", buttonCount=2, message="do you want to clear the Velocity Graph.\nPress OK to clear", parent=self)
+        purgeWarningDlg.buttonBox.accepted.connect(lambda: (setattr(self, 'clearVelGraph', True), purgeWarningDlg.close()))
+        purgeWarningDlg.buttonBox.rejected.connect(lambda: (setattr(self, 'clearVelGraph', False), purgeWarningDlg.close()))
+        purgeWarningDlg.exec()
+
         # clear table
         self.table.setRowCount(0)
 
         # clear data sets
         self.o2VelocityConcentrationData.clear()
         self.co2VelocityConcentrationData.clear()
-
+        print(self.clearVelGraph)
         # clear plots
-        self.concentrationGraph.clear()
+        if self.clearVelGraph:
+            self.concentrationGraph.clear()
 
         #autoscale other graphs
         self.assayBufferGraph.plotItem.getViewBox().autoRange()
