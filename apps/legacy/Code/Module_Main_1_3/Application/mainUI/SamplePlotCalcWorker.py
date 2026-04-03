@@ -6,6 +6,9 @@ import random
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
+import logging
+logger = logging.getLogger(__name__)
+
 class SamplePlotCalcWorker(QtCore.QObject):
     # Singles for the main module
     finished = QtCore.pyqtSignal()
@@ -59,6 +62,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def run(self):
+        logger.debug("Worker starting calculation")
         try:
             # sampleEquationPlot is the data that get put on the graph
             sampleEquationPlotX = []
@@ -138,20 +142,20 @@ class SamplePlotCalcWorker(QtCore.QObject):
             d1 = None
 
             # adverage out the data so that the diritive graph has 1/10th the data points, is neccery for good output
-            # times = Calculations.adverageDown(times, 8)
+            times_smooth = Calculations.adverageDown(times, 8)
             m44_smooth = Calculations.adverageDown(m44, 8)
 
-            # times = np.asarray(times, dtype=float)
+            times_smooth = np.asarray(times_smooth, dtype=float)
             m44_smooth = np.asarray(m44_smooth, dtype=float)
 
             d2_Time = times
             
-            # if times.size >= 5:
-            #     d1 = np.gradient(m44_smooth, times, edge_order=2)
-            #     d2_m44 = np.gradient(d1, times, edge_order=2)
+            if times_smooth.size >= 5:
+                d1 = np.gradient(m44_smooth, times_smooth, edge_order=2)
+                d2_m44 = np.gradient(d1, times_smooth, edge_order=2)
 
-            d2_m44 = Calculations.segment_linearity(m44, times, 0, len(times) - 1)
-            d2_m44 = np.asarray(d2_m44, dtype=float)
+            m44dif = Calculations.segment_linearity(m44, times, 0, len(times) - 1)
+            m44dif = np.asarray(m44dif, dtype=float)
             times = np.asarray(times, dtype=float)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
@@ -190,6 +194,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             except:
                 rSquared = "null"
 
+            logger.debug("Worker emitting results")
             self.resultReady.emit({
                 "sampleEquationPlotX": sampleEquationPlotX,
                 "sampleEquationPlotY": sampleEquationPlotY,
@@ -197,11 +202,12 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "sampleY": sampleY,
                 "lbfX": lbfX,
                 "lbfY": lbfY,
-                "times": times if times.size > 0 else None,
+                "times_smooth": times_smooth if times_smooth.size > 0 else None,
                 "d2_m44": d2_m44,
                 "d2_Time": d2_Time,
                 "d1_m44": d1,
-                "d1_Time": times if times.size > 0 else None,
+                "times": times if times.size > 0 else None,
+                "difference": m44dif,
                 "delta": delta_rubisco,
                 "rSquared": rSquared,
                 "α_total (slope)": alpha_total,

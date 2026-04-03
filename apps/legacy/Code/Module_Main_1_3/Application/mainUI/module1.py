@@ -885,7 +885,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """Gets all data in mean bar range
             return: (x_timestamp, [y0, y1, y2, y3, y4, y5, y6, y7])"""
         try:
-            left, right = self.rawDataPlotFrame.meanBar.getRegion()
+            region = self.rawDataPlotFrame.meanBar.getRegion()
+            if region is None or len(region) != 2:
+                return []
+            left, right = region
             # Copy dataPoints with lock to avoid RuntimeError: dictionary changed size during iteration
             with self.sharedData.lock:
                 data_snapshot = dict(self.sharedData.dataPoints)
@@ -903,7 +906,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             return keyValues
         except Exception as e:
             # self.throwTellUserDilog("Error", "mean bar error")
-            return None
+            return []
 
 ################################################# End - Calculation Helper Methods ##############################################
 #################################################################################################################################

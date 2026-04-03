@@ -14,6 +14,9 @@ from Code.Module_Main_1_3.Application.mainUI.SamplePlotCalcWorker import SampleP
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 from numpy.ma.core import equal
 
+import logging
+logger = logging.getLogger(__name__)
+
 class customCalculationPlot(Frame):
     softError = QtCore.pyqtSignal((str,str))
 
@@ -57,6 +60,19 @@ class customCalculationPlot(Frame):
         self.calculationPlotGraph2Curve.setPen(color='#4363d8', width=4)
         self.calculationPlotGraph2.setClipToView(True)
         self.calculationPlotGraph2.addItem(self.calculationPlotGraph2Curve)
+
+        self.calculationPlotLbfCurve = pg.PlotDataItem()
+        self.calculationPlotLbfCurve.setPen(color=(255, 0, 0), width=2, style=QtCore.Qt.DashLine)
+        self.calculationPlotGraph.addItem(self.calculationPlotLbfCurve)
+
+        self.calculationPlotDataPoints = pg.PlotDataItem()
+        self.calculationPlotDataPoints.setPen(None)
+        self.calculationPlotDataPoints.setSymbol('o')
+        self.calculationPlotDataPoints.setSymbolBrush('r')
+        self.calculationPlotGraph.addItem(self.calculationPlotDataPoints)
+
+        self.calculationPlotTextItem = pg.TextItem(color=(100, 255, 100), anchor=(1, 0))
+        self.calculationPlotGraph.addItem(self.calculationPlotTextItem)
 
         self.customPlotGraphLayout.addWidget(self.calculationPlotGraph2)
         ################################################# Bottom Bar Layout ##############################################
@@ -128,14 +144,20 @@ class customCalculationPlot(Frame):
         if data is None or len(data) == 0:
             return
 
+        logger.debug(f"Starting updateCustomCalcPlotsAsync with {len(data)} points")
+
+        # Check if there is an existing thread
         t = getattr(self, "_calcThread", None)
         if t is not None:
             try:
                 if t.isRunning():
+                    # If already running, store the latest data to be processed when it finishes
+                    self._pendingData = data
                     return
             except RuntimeError:
                 self._calcThread = None
 
+        self._pendingData = None
         xexp = self.xAxisEquiation
         yexp = self.yAxisEquiation
 
@@ -156,23 +178,34 @@ class customCalculationPlot(Frame):
         self._calcWorker.finished.connect(self._calcThread.quit)
         self._calcWorker.finished.connect(self._calcWorker.deleteLater)
         self._calcThread.finished.connect(self._calcThread.deleteLater)
-        self._calcThread.finished.connect(lambda: setattr(self, "_calcThread", None))
+        self._calcThread.finished.connect(self._onThreadFinished)
         self._calcWorker.userWarning.connect(lambda msg: self.softError.emit("Calculation Warning", msg))
         self._calcWorker.error.connect(lambda msg:  self.softError.emit("Calculation Error", msg))
         self._calcThread.start()
 
+    def _onThreadFinished(self):
+        logger.debug("Calculation thread finished")
+        self._calcThread = None
+        # If there's pending data (new move happened while calculating), start a new calculation
+        if hasattr(self, "_pendingData") and self._pendingData is not None:
+            data = self._pendingData
+            self._pendingData = None
+            self.updateCustomCalcPlotsAsync(data)
+
     @QtCore.pyqtSlot(dict)
     def applyCustomCalcResults(self, res):
+        logger.debug("Applying custom calculation results to UI - BEGIN")
         try:
-            self.calculationPlotGraph.clear()
-            self.calculationPlotGraph.plot(
-                res["lbfX"], res["lbfY"],
-                pen=pg.mkPen(color=(255, 0, 0), width=2, style=QtCore.Qt.DashLine)
-            )
-            self.calculationPlotGraph.plot(
-                res["sampleEquationPlotX"], res["sampleEquationPlotY"],
-                pen=None, symbol='o', symbolBrush='r'
-            )
+            # logger.debug("Clearing calculationPlotGraph")
+            # self.calculationPlotGraph.clear()
+            
+            logger.debug("Plotting lbfX, lbfY via setData")
+            self.calculationPlotLbfCurve.setData(res["lbfX"], res["lbfY"])
+            
+            logger.debug("Plotting sampleEquationPlotX, sampleEquationPlotY via setData")
+            self.calculationPlotDataPoints.setData(res["sampleEquationPlotX"], res["sampleEquationPlotY"])
+            
+            logger.debug("Rounding results")
             try:
                 rSquared = round(res["rSquared"], 5)
             except:
@@ -181,25 +214,46 @@ class customCalculationPlot(Frame):
                 delta = round(res["delta_rubisco"], 5)
             except:
                 delta = "N/A"
+            
+            logger.debug("Reading blankSlopeLineEdit44")
             try:
-                blank44OverBestFit = round(float(self.blankSlopeLineEdit44.text()) / float(res["slope44"]), 5)
+                blankSlopeText = self.blankSlopeLineEdit44.text()
+                blank44OverBestFit = round(float(blankSlopeText) / float(res["slope44"]), 5)
             except:
                 blank44OverBestFit = "N/A"
 
-            text = pg.TextItem(f"R²={rSquared}\nDelta={delta}\nb44/slope={blank44OverBestFit}", color=(100, 255, 100), anchor=(1, 0))
+            # text = pg.TextItem(f"R²={rSquared}\nDelta={delta}\nb44/slope={blank44OverBestFit}", color=(100, 255, 100), anchor=(1, 0))
+            self.calculationPlotTextItem.setText(f"R²={rSquared}\nDelta={delta}\nb44/slope={blank44OverBestFit}")
 
-            self.autoRangeToData(res["sampleEquationPlotX"], res["sampleEquationPlotY"], self.calculationPlotGraph, 0.1)
+            if len(res["sampleEquationPlotX"]) > 0:
+                logger.debug("Calling autoRangeToData")
+                self.autoRangeToData(res["sampleEquationPlotX"], res["sampleEquationPlotY"], self.calculationPlotGraph, 0.1)
+            
+            logger.debug("Setting text position")
             view = self.calculationPlotGraph.getViewBox()
             x_range, y_range = view.viewRange()
-            text.setPos(x_range[1], y_range[1])
-            self.calculationPlotGraph.addItem(text)
+            self.calculationPlotTextItem.setPos(x_range[1], y_range[1])
+            # self.calculationPlotGraph.addItem(text)
 
-            if hasattr(self, "calculationPlotGraph2") and res.get("times") is not None and res.get("d2_m44") is not None:
-                times = res["d2_Time"]
-                d2_m44 = res["d2_m44"]
-                self.calculationPlotGraph2Curve.setData(times, d2_m44)
-                self.calculationPlotGraph2.setNewXRange(times[0], times[-1])
-                self.calculationPlotGraph2.setNewYRange(min(d2_m44), max(d2_m44))
+            if hasattr(self, "calculationPlotGraph2") and res.get("times_smooth") is not None and res.get("d2_m44") is not None:
+                logger.debug("Updating calculationPlotGraph2")
+                try:
+                    deltaPartText = self.samplePlotDeltaPartLineEdit.text()
+                    if deltaPartText != "test":
+                        d2_m44 = res["d2_m44"]
+                        times = res["times_smooth"]
+                    else:
+                        d2_m44 = res["difference"]
+                        times = res["times"]
+                    
+                    if len(times) > 0 and len(d2_m44) > 0:
+                        logger.debug("Setting data for calculationPlotGraph2Curve")
+                        self.calculationPlotGraph2Curve.setData(times, d2_m44)
+                        logger.debug("Setting X/Y range for calculationPlotGraph2")
+                        self.calculationPlotGraph2.setNewXRange(times[0], times[-1])
+                        self.calculationPlotGraph2.setNewYRange(min(d2_m44), max(d2_m44))
+                except Exception as e2:
+                    logger.error(f"Error in calculationPlotGraph2 update: {e2}")
 
             try:
                 deltaPart = float(self.samplePlotDeltaPartLineEdit.text())
@@ -216,7 +270,9 @@ class customCalculationPlot(Frame):
                 "delta_part": deltaPart,
                 "b44OverSlope": blank44OverBestFit,
             }
+            logger.debug("Applying custom calculation results to UI - END")
         except Exception as e:
+            logger.error(f"Error in applyCustomCalcResults: {e}")
             self.softError.emit("Plot Update Error", str(e))
 
     def autoRangeToData(self, xs, ys, plot, padding):
