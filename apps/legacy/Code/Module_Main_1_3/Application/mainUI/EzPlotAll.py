@@ -1,10 +1,12 @@
-﻿import pandas as pd
+﻿from datetime import datetime
+
+import pandas as pd
 from PyQt5.QtCore import QObject, pyqtSignal
 import PyQt5.QtCore as QtCore
 import sys
 from math import floor
 import struct
-from datetime import datetime
+import time
 
 sys.path.insert(0, '../read_data')
 
@@ -64,8 +66,10 @@ class EzPlotAll(QObject):
                         hexChunk += line_chunks[1].strip()
                         current_line = file.readline()
                         if current_line == '':
-                            MAX_POINTS_PER_EMIT = 10
-                            QtCore.QThread.msleep(100)
+                            MAX_POINTS_PER_EMIT = 1
+                            time.sleep(0.5)
+                            # QtCore.QThread.msleep(100)
+                            continue
 
                     hexString = hexChunk[-108:-8]
                     if len(hexString) == 100:
@@ -104,7 +108,6 @@ class EzPlotAll(QObject):
                         self.secondsAt.emit(str(floor(acc[-1][0])))
                         self.newDataPointSignal.emit(acc)
                         acc = []
-                        any_points_sent = True
 
         finally:
             self.finished.emit()

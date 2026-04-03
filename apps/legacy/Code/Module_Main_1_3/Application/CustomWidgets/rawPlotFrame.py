@@ -5,6 +5,8 @@ import pyqtgraph as pg
 import threading
 from math import floor
 
+from sympy.core import symbol
+
 from Code.Module_Main_1_3.Application.mainUI.EzPlotAll import EzPlotAll
 from Code.Module_Main_1_3.Application.mainUI.newFileNotifierThread import NewFileNotifierThread
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
@@ -275,8 +277,7 @@ class RawPlotFrame(Frame):
             with self.sharedData.lock:
                 self.sharedData.dataPoints[x] = y
             for i in range(len(y_value)):
-                if y[i] != -404.404:
-                    y_value[i].append(y[i])
+                y_value[i].append(y[i])
 
         # TODO: make graph rescale better
 
