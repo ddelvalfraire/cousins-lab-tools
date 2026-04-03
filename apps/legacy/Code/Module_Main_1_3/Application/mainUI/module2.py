@@ -623,6 +623,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Export Table connect method
         self.exportTableButton.clicked.connect(self.tableFileSave)
 
+        # Copy Table Row connect method
+        self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
     def select_ezview(self):
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
@@ -923,21 +925,45 @@ class LabViewModule2(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
-        rowIndex = self.table.currentRow()
+        rowIndex = self.table.columnCount()
+        columnIndex = self.table.columnCount()
 
-        # if a row is selected
-        if rowIndex != -1:
-            
+        try:
             row = ''
+            if len(self.table.selectedItems()) == 0:
+                for i in range(self.table.rowCount()):
+                    for j in range(self.table.columnCount()):
+                        row += self.table.item(i, j).text() + "\t"
+                    row += "\n"
+            else:
+                # copys selected items to clipbord
+                rowMin = 0
+                rowMax = 0
+                columnMin = 0
+                columnMax = 0
+                for items in self.table.selectedItems():
+                    if items.row() < rowMin:
+                        rowMin = items.row()
+                    if items.row() > rowMax:
+                        rowMax = items.row()
+                    if items.column() < columnMin:
+                        columnMin = items.column()
+                    if items.column() > columnMax:
+                        columnMax = items.column()
 
-            # create string with row values, separated by spaces
-            for i in range(4):
-                row += self.table.item(rowIndex, i).text() + ' '
+                for i in range(rowMin - 1, rowMax):
+                    for j in range(columnMin - 1, columnMax):
+                        if self.table.item(i + 1, j + 1) in self.table.selectedItems():
+                            row += self.table.item(i + 1, j + 1).text()
+                        row += "\t"
+                    row += "\n"
 
             # copy row string to clipboard
             cb = QApplication.clipboard()
             cb.clear(mode=cb.Clipboard)
             cb.setText(row, mode=cb.Clipboard)
+        except Exception as e:
+            print(f"copyTableRowButtonPressed error: {e}")
 
 
 ################################################## End - ButtonPressed Methods ##################################################

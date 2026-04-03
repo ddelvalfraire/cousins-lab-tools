@@ -1415,8 +1415,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
                     if items.column() > columnMax:
                         columnMax = items.column()
 
-                for i in range(rowMin, rowMax):
-                    for j in range(columnMin, columnMax):
+                for i in range(rowMin - 1, rowMax):
+                    for j in range(columnMin - 1, columnMax):
                         if self.table.item(i+1, j+1) in self.table.selectedItems():
                             row += self.table.item(i+1, j+1).text()
                         row += "\t"
