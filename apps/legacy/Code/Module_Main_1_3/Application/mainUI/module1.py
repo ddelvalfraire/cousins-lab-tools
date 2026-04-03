@@ -290,15 +290,20 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.concentrationGraph = Graph(100,180)
         self.concentrationGraph.setLabel(axis='left', text = 'Velocity')
         self.concentrationGraph.setLabel(axis='bottom', text = '[CO2] (nmol/ml/sec)')
-        self.concentrationGraphVLayout = QtWidgets.QVBoxLayout()
+
+        self.concentrationGraph2 = Graph(100, 180)
+        self.concentrationGraph2.setLabel(axis='bottom', text='[CO2] (nmol/ml/sec)')
+
+        self.concentrationGraphVLayout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.concentrationGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.concentrationGraphVLayout.addWidget(self.concentrationGraph)
+        self.concentrationGraphVLayout.addWidget(self.concentrationGraph2)
 
         self.concentrationLabelGraphVLayout = QtWidgets.QVBoxLayout()
         self.concentrationGraphLabel = QtWidgets.QLabel("Velocity - Concentration Graph")
         self.concentrationGraphLabel.setContentsMargins(0,10,0,0)
         self.concentrationLabelGraphVLayout.addWidget(self.concentrationGraphLabel, alignment=QtCore.Qt.AlignCenter)
-        self.concentrationLabelGraphVLayout.addLayout(self.concentrationGraphVLayout)
+        self.concentrationLabelGraphVLayout.addWidget(self.concentrationGraphVLayout)
         #################################################################################################
 
 
@@ -1366,10 +1371,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.concentrationGraph.plot(list(self.o2VelocityConcentrationData.keys()), list(self.o2VelocityConcentrationData.values()), pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
 
-        self.concentrationGraph.plot(list(self.co2VelocityConcentrationData.keys()), list(self.co2VelocityConcentrationData.values()), pen=None, symbol='o',
+        self.concentrationGraph2.plot(list(self.co2VelocityConcentrationData.keys()), list(self.co2VelocityConcentrationData.values()), pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#ff0000", width=0), symbolBrush=pg.mkBrush("#ff0000"))
 
         self.concentrationGraph.plotItem.getViewBox().autoRange()
+        self.concentrationGraph2.plotItem.getViewBox().autoRange()
 
     def purgeTableButtonPressed(self):
         """
@@ -1761,10 +1767,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # clear data sets
         self.o2VelocityConcentrationData.clear()
         self.co2VelocityConcentrationData.clear()
-        print(self.clearVelGraph)
+
         # clear plots
         if self.clearVelGraph:
             self.concentrationGraph.clear()
+            self.concentrationGraph2.clear()
 
         #autoscale other graphs
         self.assayBufferGraph.plotItem.getViewBox().autoRange()
@@ -1875,6 +1882,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
             self.hclGraph.clear()
             self.concentrationGraph.clear()
+            self.concentrationGraph2.clear()
 
         self.o2VelocityConcentrationData = {}
         self.co2VelocityConcentrationData = {}

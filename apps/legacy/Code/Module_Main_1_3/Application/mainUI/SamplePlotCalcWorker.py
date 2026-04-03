@@ -57,33 +57,6 @@ class SamplePlotCalcWorker(QtCore.QObject):
             return False, f"Some variables have no value: {bad}"
         return True, args
 
-    def savgol_coeffs(self, window_length, polyorder, deriv=0, delta=1.0):
-        half = window_length // 2
-        # positions: -half .. +half
-        x = np.arange(-half, half + 1)
-        A = np.vstack([x ** i for i in range(polyorder + 1)]).T
-
-        # Compute the pseudo-inverse
-        ATA_inv = np.linalg.pinv(A)
-
-        # derivative row
-        coeffs = ATA_inv[deriv] * math.factorial(deriv) / (delta ** deriv)
-
-        return coeffs
-
-    def savgol_filter_np(self, y, window_length, polyorder, mode='interp'):
-        coeffs = self.savgol_coeffs(window_length, polyorder, deriv=0)
-        half = window_length // 2
-
-        # pad
-        if mode == 'interp':
-            # mirror padding (closest to SciPy’s 'interp')
-            ypad = np.pad(y, (half, half), mode='reflect')
-        else:
-            raise ValueError("only mode='interp' implemented")
-
-        return np.convolve(ypad, coeffs[::-1], mode='valid')
-
     @QtCore.pyqtSlot()
     def run(self):
         try:
@@ -165,17 +138,21 @@ class SamplePlotCalcWorker(QtCore.QObject):
             d1 = None
 
             # adverage out the data so that the diritive graph has 1/10th the data points, is neccery for good output
-            times = Calculations.adverageDown(times, 8)
+            # times = Calculations.adverageDown(times, 8)
             m44_smooth = Calculations.adverageDown(m44, 8)
 
-            times = np.asarray(times, dtype=float)
+            # times = np.asarray(times, dtype=float)
             m44_smooth = np.asarray(m44_smooth, dtype=float)
 
             d2_Time = times
+            
+            # if times.size >= 5:
+            #     d1 = np.gradient(m44_smooth, times, edge_order=2)
+            #     d2_m44 = np.gradient(d1, times, edge_order=2)
 
-            if times.size >= 5:
-                d1 = np.gradient(m44_smooth, times, edge_order=2)
-                d2_m44 = np.gradient(d1, times, edge_order=2)
+            d2_m44 = Calculations.segment_linearity(m44, times, 0, len(times) - 1)
+            d2_m44 = np.asarray(d2_m44, dtype=float)
+            times = np.asarray(times, dtype=float)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
             slope44, _ = Calculations.getLineOfBestFit([t[0] for t in (self.data if self.data else [])], [t[1][3] for t in (self.data if self.data else [])])

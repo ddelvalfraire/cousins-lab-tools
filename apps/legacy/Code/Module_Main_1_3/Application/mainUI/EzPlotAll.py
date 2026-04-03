@@ -60,16 +60,17 @@ class EzPlotAll(QObject):
                         start_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
 
                     while current_line and hexChunk[-8:] != 'ffffffff':
+                        if current_line == '':
+                            MAX_POINTS_PER_EMIT = 1
+                            # time.sleep(0.5)
+                            QtCore.QThread.msleep(100)
+                            continue
                         line_chunks = current_line.strip().split('\t')
                         if len(hexChunk) == 0:
                             current_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
                         hexChunk += line_chunks[1].strip()
                         current_line = file.readline()
-                        if current_line == '':
-                            MAX_POINTS_PER_EMIT = 1
-                            time.sleep(0.5)
-                            # QtCore.QThread.msleep(100)
-                            continue
+
 
                     hexString = hexChunk[-108:-8]
                     if len(hexString) == 100:

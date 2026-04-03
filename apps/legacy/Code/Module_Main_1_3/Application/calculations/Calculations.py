@@ -14,6 +14,26 @@ import numpy as np
 class Calculations:
 
     @staticmethod
+    def segment_linearity(m44, times, start_idx, end_idx):
+        m44 = np.array(m44)
+        times = np.array(times)
+
+        # draw straight line from start to end
+        t0, t1 = times[start_idx], times[end_idx]
+        y0, y1 = m44[start_idx], m44[end_idx]
+
+        t_seg = times[start_idx:end_idx + 1]
+        y_seg = m44[start_idx:end_idx + 1]
+
+        # linear interpolation along the line
+        line = y0 + (y1 - y0) * (t_seg - t0) / (t1 - t0)
+
+        # deviation of actual data from that line
+        deviation = y_seg - line
+
+        return deviation  # array of how far each point sits off the line
+
+    @staticmethod
     def getMean(dataPoints, xleft, xright, graph):
         """
             Returns mean from a one data stream 
