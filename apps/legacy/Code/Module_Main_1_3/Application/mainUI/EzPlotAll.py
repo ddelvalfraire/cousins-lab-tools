@@ -37,7 +37,7 @@ class EzPlotAll(QObject):
                 self.finished.emit()
                 return
 
-            MAX_POINTS_PER_EMIT = 100
+            MAX_POINTS_PER_EMIT = 10
             acc = []
             any_points_sent = False
             print(self.rawPlotFrame.EZViewPath)
@@ -53,26 +53,28 @@ class EzPlotAll(QObject):
                     hexChunk = ''
                     current_time = None
                     current_line = file.readline()
-
                     if isFirstline:
                         isFirstline = False
                         line_chunks = current_line.strip().split('\t')
                         start_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
 
                     while current_line and hexChunk[-8:] != 'ffffffff':
-                        if current_line == '':
-                            MAX_POINTS_PER_EMIT = 1
-                            # time.sleep(0.5)
-                            QtCore.QThread.msleep(100)
-                            continue
                         line_chunks = current_line.strip().split('\t')
                         if len(hexChunk) == 0:
                             current_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
                         hexChunk += line_chunks[1].strip()
                         current_line = file.readline()
+                        if current_line == '':
+                            print("Empty line")
+                            MAX_POINTS_PER_EMIT = 1
+                            # time.sleep(0.5)
+                            QtCore.QThread.msleep(100)
+                            current_line = file.readline()
+                            continue
 
 
                     hexString = hexChunk[-108:-8]
+                    print("hexString: ", hexString)
                     if len(hexString) == 100:
                         data = {
                             'time': int((current_time - start_time).total_seconds()),
@@ -106,6 +108,7 @@ class EzPlotAll(QObject):
                         #   channel 3 = mass 44
 
                     if len(acc) >= MAX_POINTS_PER_EMIT:
+                        print("sending")
                         self.secondsAt.emit(str(floor(acc[-1][0])))
                         self.newDataPointSignal.emit(acc)
                         acc = []
