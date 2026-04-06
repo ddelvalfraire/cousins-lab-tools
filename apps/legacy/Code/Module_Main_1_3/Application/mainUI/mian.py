@@ -17,11 +17,19 @@ import logging
 is_frozen = getattr(sys, 'frozen', False)
 log_level = logging.WARNING if is_frozen else logging.DEBUG
 
-logging.basicConfig(
-    filename='crash_report.log',
-    level=log_level,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+try:
+    if not is_frozen:
+        logging.basicConfig(
+            filename='crash_report.log',
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+except Exception as e:
+    # If file is locked or other error, fallback to stderr
+    print(f"Warning: Failed to initialize logging to file: {e}", file=sys.stderr)
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+logging.info(f"Application starting (Frozen: {is_frozen}, Log Level: {logging.getLevelName(log_level)})")
 
 def exception_hook(exctype, value, tb):
     """Global exception handler for unhandled exceptions."""
@@ -29,11 +37,11 @@ def exception_hook(exctype, value, tb):
     logging.critical("Unhandled exception:\n" + err_msg)
     print(err_msg, file=sys.stderr)
     try:
+        pass
         # Show error dialog if possible
-        QtWidgets.QMessageBox.critical(None, "Fatal Error", f"An unhandled error occurred:\n{value}\n\nCheck crash_report.log for details.")
+        # QtWidgets.QMessageBox.critical(None, "Fatal Error", f"An unhandled error occurred:\n{value}\n\nCheck crash_report.log for details.")
     except:
         pass
-    sys.exit(1)
 
 sys.excepthook = exception_hook
 
@@ -53,7 +61,7 @@ def main(args):
     screen = app.primaryScreen()
     size = screen.size()
 
-    labView = LabViewModule2(size.width(), size.height(), app)
+    labView = LabViewModule1(size.width(), size.height(), app)
 
 
     PyQt5.QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)

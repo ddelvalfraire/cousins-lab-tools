@@ -144,20 +144,20 @@ class customCalculationPlot(Frame):
         if data is None or len(data) == 0:
             return
 
-        logger.debug(f"Starting updateCustomCalcPlotsAsync with {len(data)} points")
+        logger.debug(f"updateCustomCalcPlotsAsync - START (Points: {len(data)})")
 
         # Check if there is an existing thread
         t = getattr(self, "_calcThread", None)
         if t is not None:
             try:
                 if t.isRunning():
-                    # If already running, store the latest data to be processed when it finishes
-                    self._pendingData = data
+                    logger.debug("Existing calculation thread is running, skipping update")
                     return
             except RuntimeError:
+                logger.debug("RuntimeError checking thread status, resetting _calcThread")
                 self._calcThread = None
 
-        self._pendingData = None
+        logger.debug("Starting new calculation thread")
         xexp = self.xAxisEquiation
         yexp = self.yAxisEquiation
 
@@ -182,15 +182,11 @@ class customCalculationPlot(Frame):
         self._calcWorker.userWarning.connect(lambda msg: self.softError.emit("Calculation Warning", msg))
         self._calcWorker.error.connect(lambda msg:  self.softError.emit("Calculation Error", msg))
         self._calcThread.start()
+        logger.debug("updateCustomCalcPlotsAsync - END")
 
     def _onThreadFinished(self):
         logger.debug("Calculation thread finished")
         self._calcThread = None
-        # If there's pending data (new move happened while calculating), start a new calculation
-        if hasattr(self, "_pendingData") and self._pendingData is not None:
-            data = self._pendingData
-            self._pendingData = None
-            self.updateCustomCalcPlotsAsync(data)
 
     @QtCore.pyqtSlot(dict)
     def applyCustomCalcResults(self, res):

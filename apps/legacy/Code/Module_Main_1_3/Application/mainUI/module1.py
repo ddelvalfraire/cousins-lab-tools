@@ -343,7 +343,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.select_file_action.triggered.connect(self.select_file)
         self.select_save_calc_action.triggered.connect(self.saveCalibrations)
         self.file_menu.addAction(self.select_folder_action)
-        self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_file_action)
         self.file_menu.addAction(self.select_ezview_action)
         self.file_menu.addSeparator()
@@ -791,12 +790,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
             "",
             "All Files (*);;Text Files (*.txt)"
         )
-        if self.rawDataPlotFrame.folder_path == "":
+        if self.rawDataPlotFrame.EZViewPath == "" or self.rawDataPlotFrame.EZViewPath is None:
             return
 
-        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
+        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.EZViewPath)}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
+        self.select_folder_action.setEnabled(False)
 
     def select_folder(self):
         # Open a file dialog to select a folder
@@ -810,7 +810,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.dataObj.setDirectory(self.rawDataPlotFrame.folder_path)
         self.application_state = "Folder_Selected"
         self.select_folder_action.setEnabled(False)
-
+        self.select_ezview_action.setEnabled(False)
 
 ################################################# End - User Interface Creation #################################################
 #################################################################################################################################
@@ -1437,8 +1437,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
             cb.setText(row, mode=cb.Clipboard)
         except Exception as e:
             print(f"copyTableRowButtonPressed error: {e}")
-
-
 
 ################################################## End - ButtonPressed Methods ##################################################
 #################################################################################################################################

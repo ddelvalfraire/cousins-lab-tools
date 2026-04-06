@@ -1,8 +1,10 @@
-﻿from PyQt5 import QtWidgets, QtCore
+﻿from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QThread
 import pyqtgraph as pg
 import threading
+import numpy as np
+import logging
 from math import floor
 
 from sympy.core import symbol
@@ -40,6 +42,7 @@ class RawPlotFrame(Frame):
         self.isYChnaged = False
         self.currentXRange = None
         self.application_state = stateVar
+        self.lofCurves = []
 
         self.initUI()
         self.addCurveAndMeanBar()
@@ -118,6 +121,13 @@ class RawPlotFrame(Frame):
         # Rescale Button
         self.rescaleButton = Button("Rescale", 120, 26)
 
+        # Line Of Best Fit Check Box
+        self.lofCheckBox = QtWidgets.QCheckBox("Line Of Best Fit", self)
+        self.lofCheckBox.setStyleSheet("color: #800000")
+        self.lofCheckBox.setChecked(False)
+        self.lineOfBestFitDraw = False
+        self.lofCheckBox.clicked.connect(self.toggleLineOfBestFit)
+
         self.processSpinnerLabel = QtWidgets.QLabel()
         self.processSpinnerLabel.setMinimumSize(QtCore.QSize(50, 50))
         self.processSpinnerLabel.setMaximumSize(QtCore.QSize(50, 50))
@@ -133,7 +143,8 @@ class RawPlotFrame(Frame):
         self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, Qt.AlignmentFlag.AlignLeft)
         self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, Qt.AlignmentFlag.AlignLeft)
         self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 10, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 0, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.lofCheckBox, 10, Qt.AlignmentFlag.AlignLeft)
         self.rescaleStartPauseResumeSliderGridLayout.setSpacing(0)
         #############################################################################################
 
@@ -165,6 +176,62 @@ class RawPlotFrame(Frame):
         ###############################################################################################
         self.connectSignals()
 
+    def toggleLineOfBestFit(self):
+        self.lineOfBestFitDraw = not self.lineOfBestFitDraw
+        if self.lineOfBestFitDraw:
+            self.lofCheckBox.setChecked(True)
+        else:
+            self.lofCheckBox.setChecked(False)
+        self.drawLinesOfBestFit()
+
+    def drawLinesOfBestFit(self):
+        logging.debug("drawLinesOfBestFit - START")
+        if self.lineOfBestFitDraw:
+            # Remove old LOF lines
+            logging.debug(f"Removing {len(self.lofCurves)} old LOF curves")
+            for lofCurve in self.lofCurves:
+                self.realTimeGraph.removeItem(lofCurve)
+            self.lofCurves = []
+
+            # Get mean bar region
+            region = self.meanBar.getRegion()
+            region_start, region_end = region
+            logging.debug(f"Mean bar region: {region_start} to {region_end}")
+
+            for curve in self.curves:
+                if curve.isChecked:
+                    logging.debug(f"Processing LOF for curve: {curve.name}")
+                    x_arr = np.array(curve.x)
+                    y_arr = np.array(curve.y)
+
+                    # Mask for points in mean bar region
+                    mask = (x_arr >= region_start) & (x_arr <= region_end)
+                    x_region = x_arr[mask]
+                    y_region = y_arr[mask]
+                    logging.debug(f"Points in region for {curve.name}: {len(x_region)}")
+
+                    if len(x_region) > 1:
+                        # Calculate line of best fit (linear)
+                        try:
+                            # polyfit returns coefficients [slope, intercept] for degree 1
+                            m, c = np.polyfit(x_region, y_region, 1)
+
+                            # Define the line to span the region
+                            lof_x = np.array([region_start, region_end])
+                            lof_y = m * lof_x + c
+
+                            # Create a temporary curve for the LOF line
+                            color = QtGui.QColor(255, 255, 255, curve.pen.color().alpha())
+                            pen = pg.mkPen(color=color, width=1, style=QtCore.Qt.DashLine)
+                            lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen)
+                            self.realTimeGraph.addItem(lof_data_line)
+                            self.lofCurves.append(lof_data_line)
+                            logging.debug(f"Added LOF curve for {curve.name}")
+                        except Exception as e:
+                            logging.error(f"LOF calculation error for {curve.name}: {e}")
+                            print(f"LOF calculation error for {curve.name}: {e}")
+        logging.debug("drawLinesOfBestFit - END")
+
     def addCurveAndMeanBar(self):
         # Adding the plot curves
         self.curve1 = Curve("Curve 1", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
@@ -191,6 +258,8 @@ class RawPlotFrame(Frame):
         self.curve8 = Curve("Curve 8", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph)
         self.curve8.plotCurve()
 
+        self.curves = [self.curve1, self.curve2, self.curve3, self.curve4, self.curve5, self.curve6, self.curve7, self.curve8]
+
         # Initializing the mean bars.
         self.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None,
                                            hoverBrush=None, hoverPen=None, movable=True, bounds=None,
@@ -198,12 +267,15 @@ class RawPlotFrame(Frame):
 
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
+        self.meanBar.sigRegionChangeFinished.connect(self.drawLinesOfBestFit)
+
 
     def connectSignals(self):
         self.barsButton.clicked.connect(self.barsButtonPressed)
         self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
         self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
         self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
+        self.lofCheckBox.stateChanged.connect(self.lofCheckStateChanged)
 
         if self.mode == 1:
             self.graph1CheckBox.stateChanged.connect(
@@ -268,40 +340,59 @@ class RawPlotFrame(Frame):
         else:
             curve.hide()
 
+    def lofCheckStateChanged(self):
+        if not self.lofCheckBox.isChecked():
+            for lofCurve in self.lofCurves:
+                self.realTimeGraph.removeItem(lofCurve)
+            self.lofCurves = []
+
     def update_plot_data(self, dataPoints):
-        y_value = [[], [], [], [], [], [], [], []]
+        if not dataPoints:
+            return
+
+        logging.debug(f"update_plot_data - START (Points: {len(dataPoints)})")
+        x_values = []
+        y_values = [[], [], [], [], [], [], [], []]
         cloneData = dataPoints.copy()
+        
+        # Protect dataPoints modification and sync with sharedData
         while len(dataPoints) != 0:
             dataPoint = dataPoints.pop(0)
             x, y = dataPoint
+            x_values.append(x)
             with self.sharedData.lock:
                 self.sharedData.dataPoints[x] = y
-            for i in range(len(y_value)):
-                y_value[i].append(y[i])
+            for i in range(len(y_values)):
+                y_values[i].append(y[i])
 
-        # TODO: make graph rescale better
+        if not x_values:
+            logging.debug("update_plot_data - END (No x_values)")
+            return
 
-        self.curve1.updateDataPoints(x, y_value[0])
-        self.curve2.updateDataPoints(x, y_value[1])
-        self.curve3.updateDataPoints(x, y_value[2])
-        self.curve4.updateDataPoints(x, y_value[3])
-        self.curve5.updateDataPoints(x, y_value[4])
-        self.curve6.updateDataPoints(x, y_value[5])
-        self.curve7.updateDataPoints(x, y_value[6])
-        self.curve8.updateDataPoints(x, y_value[7])
+        logging.debug(f"Updating curves with {len(x_values)} points")
+        self.curve1.updateDataPoints(x_values, y_values[0])
+        self.curve2.updateDataPoints(x_values, y_values[1])
+        self.curve3.updateDataPoints(x_values, y_values[2])
+        self.curve4.updateDataPoints(x_values, y_values[3])
+        self.curve5.updateDataPoints(x_values, y_values[4])
+        self.curve6.updateDataPoints(x_values, y_values[5])
+        self.curve7.updateDataPoints(x_values, y_values[6])
+        self.curve8.updateDataPoints(x_values, y_values[7])
 
         if self.mode == 2:
+            logging.debug("Passing data to parent update_main_plot_data")
             self.parent.update_main_plot_data(cloneData)
+        
+        logging.debug("update_plot_data - END")
 
     def clearCurves(self):
-        self.curve1.clear()
-        self.curve2.clear()
-        self.curve3.clear()
-        self.curve4.clear()
-        self.curve5.clear()
-        self.curve6.clear()
-        self.curve7.clear()
-        self.curve8.clear()
+        for curve in self.curves:
+            curve.clear()
+        
+        for lofCurve in self.lofCurves:
+            self.realTimeGraph.removeItem(lofCurve)
+        self.lofCurves = []
+        
         self.yAllMax = None
         self.yAllMin = None
 

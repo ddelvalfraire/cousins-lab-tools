@@ -62,7 +62,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def run(self):
-        logger.debug("Worker starting calculation")
+        logger.debug(f"SamplePlotCalcWorker.run - START (Points: {len(self.data) if self.data else 0})")
         try:
             # sampleEquationPlot is the data that get put on the graph
             sampleEquationPlotX = []
@@ -74,6 +74,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             warnedOnce = False
 
             # Process each record
+            logger.debug("Processing records for custom plot")
             for d in (self.data if self.data else []):
                 v = self.getVars(d)
                 if not v:
@@ -120,13 +121,18 @@ class SamplePlotCalcWorker(QtCore.QObject):
                     if not warnedOnce:
                         warnedOnce = True
 
+            logger.debug(f"Processed {len(sampleEquationPlotX)} valid points for plotting")
+
             # Line of best fit
             if len(sampleEquationPlotX) >= 2:
+                logger.debug("Calculating line of best fit")
                 lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
             else:
+                logger.debug("Not enough points for line of best fit")
                 lbfX, lbfY = [], []
 
             # time vs d²/dt²(Mass44)
+            logger.debug("Processing Mass44 for derivatives")
             times = []
             m44 = []
             for d in (self.data if self.data else []):
@@ -151,9 +157,11 @@ class SamplePlotCalcWorker(QtCore.QObject):
             d2_Time = times
             
             if times_smooth.size >= 5:
+                logger.debug("Calculating gradients")
                 d1 = np.gradient(m44_smooth, times_smooth, edge_order=2)
                 d2_m44 = np.gradient(d1, times_smooth, edge_order=2)
 
+            logger.debug("Calculating segment linearity and slope metrics")
             m44dif = Calculations.segment_linearity(m44, times, 0, len(times) - 1)
             m44dif = np.asarray(m44dif, dtype=float)
             times = np.asarray(times, dtype=float)
@@ -162,6 +170,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             slope44, _ = Calculations.getLineOfBestFit([t[0] for t in (self.data if self.data else [])], [t[1][3] for t in (self.data if self.data else [])])
 
             #################### Adds Alpha/Delta/Rubisco metrics ####################
+            logger.debug("Calculating Alpha/Delta/Rubisco metrics")
             # Compute alpha_total (slope) and delta_total from the equation data already used above.
             # Reuse 'slope' from the Line Of Best Fit section, and read Δ_part from the Calculations tab input.
             try:

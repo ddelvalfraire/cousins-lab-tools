@@ -639,6 +639,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
+        self.select_folder_action.setEnabled(False)
+        print(self.select_ezview_action.isEnabled())
+        print(self.select_folder_action.isEnabled())
 
     def select_folder(self):
         # Open a file dialog to select a folder
@@ -651,8 +654,10 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
         self.dataObj.setDirectory(self.rawDataPlotFrame.folder_path)
         self.application_state = "Folder_Selected"
+        self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
-
+        print(self.select_ezview_action.isEnabled())
+        print(self.select_folder_action.isEnabled())
 ################################################# End - User Interface Creation #################################################
 #################################################################################################################################
 
@@ -1117,7 +1122,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
        # Updating other curves
        self.checkMinMax(min(ubar_batch), max(ubar_batch), 1)
 
-       self.curve3.updateDataPoints(x_batch[-1], ubar_batch)
+       self.curve3.updateDataPoints(x_batch, ubar_batch)
        self.followCurve(self.uBarGraph, ubar_batch)
        if self.curve4.y:
            self.followCurve(self.DuBarGraph, self.curve4.y)

@@ -27,11 +27,13 @@ class Curve:
         self.name = name
         if type(y) != list:
             print("something else was received")
-        self.y = y
+        self.y = list(y)
         self.pen = pen
         self.points = SharedSingleton()
         with self.points.lock:
-            self.x = list(self.points.dataPoints.keys())
+            # If y is provided during init, we should have matching x.
+            # However, in this project y seems to be passed as an empty list [] usually.
+            self.x = list(self.points.dataPoints.keys())[:len(self.y)]
         self.graph = graph
         self.isChecked = False
         self.firstPoint = False
@@ -45,21 +47,25 @@ class Curve:
 
 
     def updateDataPoints(self, x, y):
-
+        self.x += x
         self.y += y
-        with self.points.lock:
-            self.x = list(self.points.dataPoints.keys())
 
         if self.isChecked == True:
+            # Safety check: PyQtGraph will crash if lengths don't match.
+            if len(self.x) == len(self.y):
+                self.data_line.setData(x=self.x, y=self.y)
+            else:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Skipping plot update for {self.name}: X({len(self.x)}) and Y({len(self.y)}) shape mismatch."
+                )
 
-            self.data_line.setData(x=self.x, y=self.y)
-
-            if self.firstPoint == False:
+            if self.firstPoint == False and len(x) > 0:
                 # self.graph.plotItem.getViewBox().autoRange()
                 # self.graph.setXRange(0, self.graph.xRange)
                 # self.graph.setYRange(0, self.graph.yRange)
-                self.xMax = x
-                self.yMax = y
+                self.xMax = x[-1]
+                self.yMax = y[-1]
                 self.firstPoint = True
 
 
@@ -71,7 +77,13 @@ class Curve:
     def unhide(self):
 
         self.isChecked = True
-        self.data_line.setData(x=self.x, y=self.y)
+        if len(self.x) == len(self.y):
+            self.data_line.setData(x=self.x, y=self.y)
+        else:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Skipping unhide update for {self.name}: X({len(self.x)}) and Y({len(self.y)}) shape mismatch."
+            )
 
     def clear(self):
 
