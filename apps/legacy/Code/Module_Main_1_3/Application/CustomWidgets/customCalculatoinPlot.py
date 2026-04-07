@@ -191,6 +191,11 @@ class customCalculationPlot(Frame):
     @QtCore.pyqtSlot(dict)
     def applyCustomCalcResults(self, res):
         logger.debug("Applying custom calculation results to UI - BEGIN")
+        logger.debug(f"Result keys: {list(res.keys())}")
+        if "sampleEquationPlotX" in res:
+            logger.debug(f"sampleEquationPlotX len: {len(res['sampleEquationPlotX'])}")
+        if "lbfX" in res:
+            logger.debug(f"lbfX len: {len(res['lbfX'])}")
         try:
             # logger.debug("Clearing calculationPlotGraph")
             # self.calculationPlotGraph.clear()
@@ -222,8 +227,9 @@ class customCalculationPlot(Frame):
             self.calculationPlotTextItem.setText(f"R²={rSquared}\nDelta={delta}\nb44/slope={blank44OverBestFit}")
 
             if len(res["sampleEquationPlotX"]) > 0:
-                logger.debug("Calling autoRangeToData")
+                logger.debug("Calling autoRangeToData - BEGIN")
                 self.autoRangeToData(res["sampleEquationPlotX"], res["sampleEquationPlotY"], self.calculationPlotGraph, 0.1)
+                logger.debug("Calling autoRangeToData - END")
             
             logger.debug("Setting text position")
             view = self.calculationPlotGraph.getViewBox()
@@ -232,7 +238,7 @@ class customCalculationPlot(Frame):
             # self.calculationPlotGraph.addItem(text)
 
             if hasattr(self, "calculationPlotGraph2") and res.get("times_smooth") is not None and res.get("d2_m44") is not None:
-                logger.debug("Updating calculationPlotGraph2")
+                logger.debug("Updating calculationPlotGraph2 - BEGIN")
                 try:
                     deltaPartText = self.samplePlotDeltaPartLineEdit.text()
                     if deltaPartText != "test":
@@ -243,13 +249,15 @@ class customCalculationPlot(Frame):
                         times = res["times"]
                     
                     if len(times) > 0 and len(d2_m44) > 0:
-                        logger.debug("Setting data for calculationPlotGraph2Curve")
+                        logger.debug(f"Setting data for calculationPlotGraph2Curve (len={len(times)})")
                         self.calculationPlotGraph2Curve.setData(times, d2_m44)
-                        logger.debug("Setting X/Y range for calculationPlotGraph2")
+                        logger.debug("Setting X Range for calculationPlotGraph2")
                         self.calculationPlotGraph2.setNewXRange(times[0], times[-1])
+                        logger.debug("Setting Y Range for calculationPlotGraph2")
                         self.calculationPlotGraph2.setNewYRange(min(d2_m44), max(d2_m44))
                 except Exception as e2:
                     logger.error(f"Error in calculationPlotGraph2 update: {e2}")
+                logger.debug("Updating calculationPlotGraph2 - END")
 
             try:
                 deltaPart = float(self.samplePlotDeltaPartLineEdit.text())
@@ -273,6 +281,7 @@ class customCalculationPlot(Frame):
 
     def autoRangeToData(self, xs, ys, plot, padding):
         try:
+            logger.debug("autoRangeToData - xs/ys min/max")
             xMin = min(xs)
             xMax = max(xs)
             yMin = min(ys)
@@ -285,10 +294,13 @@ class customCalculationPlot(Frame):
                 yMax += padding
             xPadding = (xMax - xMin) * padding
             yPadding = (yMax - yMin) * padding
+            logger.debug(f"autoRangeToData - Setting X Range: {xMin - xPadding} to {xMax + xPadding}")
             plot.setXRange(xMin - xPadding, xMax + xPadding)
+            logger.debug(f"autoRangeToData - Setting Y Range: {yMin - yPadding} to {yMax + yPadding}")
             plot.setYRange(yMin - yPadding, yMax + yPadding)
-        except:
-            pass
+            logger.debug("autoRangeToData - Done")
+        except Exception as e:
+            logger.error(f"Error in autoRangeToData: {e}")
 
     def xyGraphLineOfBestFit(self, xData, yData):
         slope, intercept = Calculations.getLineOfBestFit(xData, yData)
