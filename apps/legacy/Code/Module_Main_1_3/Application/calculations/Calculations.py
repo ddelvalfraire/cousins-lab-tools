@@ -9,6 +9,9 @@ __status__ = "Completed"
 
 from statistics import mean
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Calculations:

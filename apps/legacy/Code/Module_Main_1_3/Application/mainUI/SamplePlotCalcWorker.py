@@ -223,7 +223,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 "delta_rubisco": delta_rubisco,
                 "slope44": slope44
             })
+            logger.debug("SamplePlotCalcWorker.run - END")
         except Exception as e:
+            logger.error(f"SamplePlotCalcWorker.run - ERROR: {e}")
             self.error.emit(str(e))
         finally:
             self.finished.emit()

@@ -144,7 +144,7 @@ class customCalculationPlot(Frame):
         if data is None or len(data) == 0:
             return
 
-        logger.debug(f"updateCustomCalcPlotsAsync - START (Points: {len(data)})")
+        logger.debug(f"updateCustomCalcPlotsAsync - BEGIN (Points: {len(data)})")
 
         # Check if there is an existing thread
         t = getattr(self, "_calcThread", None)
@@ -185,8 +185,9 @@ class customCalculationPlot(Frame):
         logger.debug("updateCustomCalcPlotsAsync - END")
 
     def _onThreadFinished(self):
-        logger.debug("Calculation thread finished")
+        logger.debug("_onThreadFinished - BEGIN")
         self._calcThread = None
+        logger.debug("_onThreadFinished - END")
 
     @QtCore.pyqtSlot(dict)
     def applyCustomCalcResults(self, res):
@@ -455,6 +456,8 @@ class customCalculationPlot(Frame):
                     self.ensureCustomTableEmptyRow(table)
 
     def clearCostomCalculationPlot(self):
+        logger.debug("clearCostomCalculationPlot - BEGIN")
         self.clearSampleData()
         self.calculationPlotGraph.clear()
         self.calculationPlotGraph2Curve.clear()
+        logger.debug("clearCostomCalculationPlot - END")

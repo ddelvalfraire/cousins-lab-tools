@@ -13,6 +13,9 @@ sys.path.insert(0, '../read_data')
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
+import logging
+logger = logging.getLogger(__name__)
+
 class EzPlotAll(QObject):
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
@@ -31,6 +34,7 @@ class EzPlotAll(QObject):
         self._is_running = False
 
     def run(self):
+        logger.debug("EzPlotAll.run - BEGIN")
         try:
             if self.rawPlotFrame.EZViewPath == None:
                 self.filesParsedSignal.emit()
@@ -110,4 +114,5 @@ class EzPlotAll(QObject):
                         acc = []
 
         finally:
+            logger.debug("EzPlotAll.run - END")
             self.finished.emit()

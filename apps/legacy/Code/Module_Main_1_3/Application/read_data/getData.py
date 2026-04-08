@@ -11,6 +11,10 @@ __status__ = "Completed"
 from Code.Module_Main_1_3.Application.read_data.file import File
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class GetData:
 
@@ -21,6 +25,7 @@ class GetData:
         self.sharedData = SharedSingleton()
 
     def setDirectory(self, filePath):
+        logger.info(f"Setting data directory: {filePath}")
         DataUtility.setDataDirectory(filePath)
 
     def __iter__(self):
@@ -37,13 +42,15 @@ class GetData:
         # Reading the first ever file from the folder.
         if self.currentFileIndex ==-1:
             self.currentFileIndex += 1
+            logger.debug("First file access in GetData")
 
         # If folder is out of files to be read.
         if self.currentFileIndex >= self.numberOfFiles:
+            logger.debug("GetData out of files")
             return False
         
         else:
-
+            logger.debug(f"GetData reading file index {self.currentFileIndex}: {fileList[self.currentFileIndex]}")
             self.fileObj = File(fileList[self.currentFileIndex])
             # print(self.fileObj.data)
             # print(self.fileObj.all_vectors())

@@ -10,6 +10,9 @@ __status__ = "Completed"
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
+import logging
+
+logger = logging.getLogger(__name__)
 from PyQt5.QtWidgets import QApplication, QSizePolicy, QMainWindow, QMenuBar, QFileDialog, QAction
 from PyQt5.QtWidgets import QSizePolicy, QDialogButtonBox
 from PyQt5.QtWidgets import QSizePolicy
@@ -626,6 +629,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Copy Table Row connect method
         self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
     def select_ezview(self):
+        logger.info("Selecting EZView file (Module 2)")
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
             None,
@@ -634,21 +638,24 @@ class LabViewModule2(QtWidgets.QMainWindow):
             "All Files (*);;Text Files (*.txt)"
         )
         if self.rawDataPlotFrame.folder_path == "":
+            logger.info("EZView selection cancelled (Module 2)")
             return
 
+        logger.info(f"EZView file selected (Module 2): {self.rawDataPlotFrame.EZViewPath}")
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
-        print(self.select_ezview_action.isEnabled())
-        print(self.select_folder_action.isEnabled())
 
     def select_folder(self):
+        logger.info("Selecting folder (Module 2)")
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
         if self.rawDataPlotFrame.folder_path == "":
+            logger.info("Folder selection cancelled (Module 2)")
             return
 
+        logger.info(f"Folder selected (Module 2): {self.rawDataPlotFrame.folder_path}")
         self.rawDataPlotFrame.EZViewPath = None
 
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
@@ -656,8 +663,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
-        print(self.select_ezview_action.isEnabled())
-        print(self.select_folder_action.isEnabled())
 ################################################# End - User Interface Creation #################################################
 #################################################################################################################################
 

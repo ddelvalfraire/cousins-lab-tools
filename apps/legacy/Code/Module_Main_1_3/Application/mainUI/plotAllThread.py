@@ -19,6 +19,9 @@ sys.path.insert(0, '../read_data')
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PlotAllThread(QObject):
 
     finished = pyqtSignal()
@@ -41,6 +44,7 @@ class PlotAllThread(QObject):
 
     def run(self):
         """Long running task"""
+        logger.debug("PlotAllThread.run - BEGIN")
         try:
             if self.globalObject.application_state == "Idle":
 
@@ -82,4 +86,5 @@ class PlotAllThread(QObject):
                         any_points_sent = True
 
         finally:
+            logger.debug("PlotAllThread.run - END")
             self.finished.emit()

@@ -18,6 +18,10 @@ from PyQt5.QtGui import QMovie
 import pyqtgraph as pg
 import sys, os, csv
 import threading
+import logging
+
+logger = logging.getLogger(__name__)
+
 from sympy import sympify, false
 
 from numpy.ma.core import equal
@@ -783,6 +787,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # self.calculationPlotTable.customContextMenuRequested.connect(lambda pos: self.customPlotTableContexWindow(self.calculationPlotTable, pos))
 
     def select_ezview(self):
+        logger.info("Selecting EZView file")
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
             None,
@@ -791,19 +796,24 @@ class LabViewModule1(QtWidgets.QMainWindow):
             "All Files (*);;Text Files (*.txt)"
         )
         if self.rawDataPlotFrame.EZViewPath == "" or self.rawDataPlotFrame.EZViewPath is None:
+            logger.info("EZView selection cancelled")
             return
 
+        logger.info(f"EZView file selected: {self.rawDataPlotFrame.EZViewPath}")
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.EZViewPath)}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
 
     def select_folder(self):
+        logger.info("Selecting folder")
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
         if self.rawDataPlotFrame.folder_path == "":
+            logger.info("Folder selection cancelled")
             return
 
+        logger.info(f"Folder selected: {self.rawDataPlotFrame.folder_path}")
         self.rawDataPlotFrame.EZViewPath = None
 
         self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
@@ -1511,6 +1521,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             :param {y_value : Float} -> list of the y point values of the data point for different plots.
             :return -> None
         """
+        logger.debug(f"Updating plot data with {len(dataPoints)} points")
         self.rawDataPlotFrame.update_plot_data(dataPoints)
 
     def changeGraphRange(self, x):
@@ -1523,9 +1534,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
             :param {_ : }
             :return -> None
         """
+        logger.info("Pause/Resume action triggered")
         self.rawDataPlotFrame.pauseResumeAction()
 
     def stopButtonPressed(self):
+        logger.info("Stop button pressed")
         self.throwStopButtonWarning()
 ##################################################### End - Raw Plot Methods ####################################################
 #################################################################################################################################

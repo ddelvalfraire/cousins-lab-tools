@@ -10,6 +10,10 @@ __status__ = "Completed"
 import pandas as pd
 import time as time
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class File:
 

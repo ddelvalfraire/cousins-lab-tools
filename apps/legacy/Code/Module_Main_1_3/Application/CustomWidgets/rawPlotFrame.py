@@ -5,6 +5,8 @@ import pyqtgraph as pg
 import threading
 import numpy as np
 import logging
+
+logger = logging.getLogger(__name__)
 from math import floor
 
 from sympy.core import symbol
@@ -386,6 +388,7 @@ class RawPlotFrame(Frame):
         logging.debug("update_plot_data - END")
 
     def clearCurves(self):
+        logging.debug("clearCurves - BEGIN")
         for curve in self.curves:
             curve.clear()
         
@@ -395,6 +398,7 @@ class RawPlotFrame(Frame):
         
         self.yAllMax = None
         self.yAllMin = None
+        logging.debug("clearCurves - END")
 
     def plotAllButtonPressed(self):
         if self.folder_path == '' and self.EZViewPath == None:
@@ -405,6 +409,7 @@ class RawPlotFrame(Frame):
             self.EzViewPlotALl()
 
     def LabViewPlotALl(self):
+        logging.debug("LabViewPlotALl - BEGIN")
         # cant plot all well started
         if self.parent.application_state == "Running":
             return
@@ -443,6 +448,7 @@ class RawPlotFrame(Frame):
         self.plotAllThread.finished.connect(self.endPlotAllThread)
 
     def EzViewPlotALl(self):
+        logging.debug("EzViewPlotALl - BEGIN")
         # cant plot all well started
         if self.parent.application_state == "Running":
             return
@@ -499,6 +505,7 @@ class RawPlotFrame(Frame):
             pass
 
     def endPlotAllThread(self):
+        logging.debug("endPlotAllThread - BEGIN")
         try:
             self.plotAllThread.stop()
             self.movie.stop()
@@ -510,9 +517,12 @@ class RawPlotFrame(Frame):
             self.pauseResumeButton.setText("Resume")
             self.pauseResumeButton.setToolTip('Resume the graph')
         except Exception as exception:
+            logging.error(f"Error in endPlotAllThread: {exception}")
             pass
-        
+        logging.debug("endPlotAllThread - END")
+
     def clear(self):
+        logging.debug("RawPlotFrame.clear - BEGIN")
         self.clearCurves()
         self.plotAllButton.setEnabled(True)
         self.endPlotAllThread()
@@ -537,3 +547,4 @@ class RawPlotFrame(Frame):
             self.graph1CheckBox.setChecked(False)
             self.graph4CheckBox.setChecked(False)
             self.graph5CheckBox.setChecked(False)
+        logging.debug("RawPlotFrame.clear - END")
