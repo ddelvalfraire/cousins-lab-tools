@@ -15,8 +15,8 @@ import logging
 # Configure logging
 # Detect if running as a frozen PyInstaller bundle
 is_frozen = getattr(sys, 'frozen', False)
+is_frozen = False
 log_level = logging.WARNING if is_frozen else logging.DEBUG
-
 try:
     if not is_frozen:
         logging.basicConfig(

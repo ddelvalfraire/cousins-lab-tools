@@ -271,7 +271,6 @@ class RawPlotFrame(Frame):
         self.realTimeGraph.addItem(self.meanBar)
         self.meanBar.sigRegionChangeFinished.connect(self.drawLinesOfBestFit)
 
-
     def connectSignals(self):
         self.barsButton.clicked.connect(self.barsButtonPressed)
         self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
@@ -348,18 +347,18 @@ class RawPlotFrame(Frame):
                 self.realTimeGraph.removeItem(lofCurve)
             self.lofCurves = []
 
-    def update_plot_data(self, dataPoints):
-        if not dataPoints:
+    def update_plot_data(self, dataPointsTemp):
+        if not dataPointsTemp:
             return
 
+        dataPoints = list(dataPointsTemp)
         logging.debug(f"update_plot_data - START (Points: {len(dataPoints)})")
         x_values = []
         y_values = [[], [], [], [], [], [], [], []]
         cloneData = dataPoints.copy()
         
         # Protect dataPoints modification and sync with sharedData
-        while len(dataPoints) != 0:
-            dataPoint = dataPoints.pop(0)
+        for dataPoint in dataPoints:
             x, y = dataPoint
             x_values.append(x)
             with self.sharedData.lock:
@@ -440,7 +439,9 @@ class RawPlotFrame(Frame):
         title = self.windowTitle()
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
-        self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.newDataPointSignal.connect(
+            self.update_plot_data, QtCore.Qt.QueuedConnection
+        )
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))
@@ -479,7 +480,9 @@ class RawPlotFrame(Frame):
         title = self.windowTitle()
         self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
 
-        self.plotAllThread.newDataPointSignal.connect(self.update_plot_data)
+        self.plotAllThread.newDataPointSignal.connect(
+            self.update_plot_data, QtCore.Qt.QueuedConnection
+        )
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg))

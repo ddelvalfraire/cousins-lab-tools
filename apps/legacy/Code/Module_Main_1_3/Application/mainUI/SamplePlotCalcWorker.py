@@ -17,13 +17,13 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     resultReady = QtCore.pyqtSignal(dict)
 
-    def __init__(self, data, xexp, yexp, lineOfBestFit, getVars, temp, deltaPart):
+    def __init__(self, data, pre_extracted, xexp, yexp, lineOfBestFit, temp, deltaPart):
         super().__init__()
         self.data = data
+        self.pre_extracted = pre_extracted
         self.xexp = xexp
         self.yexp = yexp
         self.lineOfBestFit = lineOfBestFit
-        self.getVars = getVars
         self.temp = temp
         self.deltaPart = deltaPart
 
@@ -64,42 +64,33 @@ class SamplePlotCalcWorker(QtCore.QObject):
     def run(self):
         logger.debug(f"SamplePlotCalcWorker.run - START (Points: {len(self.data) if self.data else 0})")
         try:
-            # sampleEquationPlot is the data that get put on the graph
             sampleEquationPlotX = []
             sampleEquationPlotY = []
-
-            # smaple is for the data that get put in the table, it should be the same as sampleEquationPlot expect it includes errors
             sampleX = []
             sampleY = []
             warnedOnce = False
 
-            # Process each record
             logger.debug("Processing records for custom plot")
-            for d in (self.data if self.data else []):
-                v = self.getVars(d)
+            for i, d in enumerate(self.data if self.data else []):
+                v = self.pre_extracted[i]  # ✅ plain dict, no Qt access
                 if not v:
                     sampleX.append(None)
                     sampleY.append(None)
-                    if not warnedOnce:
-                        warnedOnce = True
                     continue
 
                 okx, xmsg = self.extractArgs(v, self.xsymbols)
                 oky, ymsg = self.extractArgs(v, self.ysymbols)
 
-                # Test if the expression is valid and all vars have values
                 if not okx or not oky:
                     sampleX.append(None)
                     sampleY.append(None)
                     if not warnedOnce:
                         warnedOnce = True
                         ymsg = xmsg if not okx else ymsg
-
                         if ymsg != "The following variable has no value: CO2Zero44":
                             self.userWarning.emit(ymsg)
                     continue
 
-                # trys to evaluate the expression
                 try:
                     xVal = float(self._x_eval(*xmsg))
                     yVal = float(self._y_eval(*ymsg))
@@ -111,19 +102,14 @@ class SamplePlotCalcWorker(QtCore.QObject):
                         self.userWarning.emit(f"Could not evaluate equation for a row: {ex}")
                     continue
 
-                #  add data to list
                 sampleX.append(xVal)
                 sampleY.append(yVal)
                 if np.isfinite(xVal) and np.isfinite(yVal):
                     sampleEquationPlotX.append(xVal)
                     sampleEquationPlotY.append(yVal)
-                else:
-                    if not warnedOnce:
-                        warnedOnce = True
 
             logger.debug(f"Processed {len(sampleEquationPlotX)} valid points for plotting")
 
-            # Line of best fit
             if len(sampleEquationPlotX) >= 2:
                 logger.debug("Calculating line of best fit")
                 lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
@@ -131,31 +117,27 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 logger.debug("Not enough points for line of best fit")
                 lbfX, lbfY = [], []
 
-            # time vs d²/dt²(Mass44)
             logger.debug("Processing Mass44 for derivatives")
             times = []
             m44 = []
-            for d in (self.data if self.data else []):
-                v = self.getVars(d)
+            for i, d in enumerate(self.data if self.data else []):
+                v = self.pre_extracted[i]  # ✅ plain dict
                 if v is None:
                     continue
                 if "Time" in v and "Mass44" in v:
                     times.append(v["Time"])
                     m44.append(v["Mass44"])
 
-            # Helper calculations
             d2_m44 = None
             d1 = None
 
-            # adverage out the data so that the diritive graph has 1/10th the data points, is neccery for good output
             times_smooth = Calculations.adverageDown(times, 8)
             m44_smooth = Calculations.adverageDown(m44, 8)
-
             times_smooth = np.asarray(times_smooth, dtype=float)
             m44_smooth = np.asarray(m44_smooth, dtype=float)
 
             d2_Time = times
-            
+
             if times_smooth.size >= 5:
                 logger.debug("Calculating gradients")
                 d1 = np.gradient(m44_smooth, times_smooth, edge_order=2)
@@ -167,17 +149,16 @@ class SamplePlotCalcWorker(QtCore.QObject):
             times = np.asarray(times, dtype=float)
 
             slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
-            slope44, _ = Calculations.getLineOfBestFit([t[0] for t in (self.data if self.data else [])], [t[1][3] for t in (self.data if self.data else [])])
+            slope44, _ = Calculations.getLineOfBestFit(
+                [t[0] for t in (self.data if self.data else [])],
+                [t[1][3] for t in (self.data if self.data else [])]
+            )
 
-            #################### Adds Alpha/Delta/Rubisco metrics ####################
             logger.debug("Calculating Alpha/Delta/Rubisco metrics")
-            # Compute alpha_total (slope) and delta_total from the equation data already used above.
-            # Reuse 'slope' from the Line Of Best Fit section, and read Δ_part from the Calculations tab input.
             try:
                 try:
                     alpha_total = float(slope)
                 except Exception:
-                    # Fallback: recompute from current plot data if needed
                     x_vals = sampleEquationPlotX
                     y_vals = sampleEquationPlotY
                     try:
@@ -198,6 +179,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             except:
                 delta_rubisco = None
                 alpha_total = None
+
             try:
                 rSquared = Calculations.rSquared(sampleX, sampleY)
             except:

@@ -99,6 +99,7 @@ class Calculations:
         else:
             return 0
 
+    @staticmethod
     def calculateCo2OverVolt(calZero, cal1, cal2, cal3):
         """to be called once cals are completed
         Calculates the average %CO2/mv for all CO2 cal
@@ -178,7 +179,7 @@ class Calculations:
         result = o2Cal * o2Measured
         return result
 
-
+    @staticmethod
     def calculateIntercept(dataPoints, slope):
         """
         Calculates and returns the y-intercept of a line (given more than one point)
@@ -192,6 +193,7 @@ class Calculations:
         else:
             return 0
 
+    @staticmethod
     def calculateAtom49(y):
         """
         Calculates atom%49 from y_values, return y value to plot on atom49% graph. (likely graph2)

@@ -647,7 +647,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
     def customCalculationPlotsUI(self):
         dataToAdd = [("Blank Slope 44", self.blankSlope44LineEdit), ("Blank Slope 45", self.blankSlope45LineEdit),
                      ("Extract Slope 44", self.extractSlope44LineEdit), ("Extract Slope 45", self.extractSlope45LineEdit)]
-        self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.DefaultXAxisEquiation, self.DefaultYAxisEquiation,
+        self.customCalculationPlots = customCalculationPlot(self.scrollArea, 0.7, self.getVarsDict, self.DefaultXAxisEquiation, self.DefaultYAxisEquiation, self,
                                                             blankSlopeLineEdit44=self.blankSlope44LineEdit, dataToAdd=dataToAdd, user=self.user)
         self.customCalculationPlots.softError.connect(lambda m, s: self.throwTellUserDilog(m, s))
         pass

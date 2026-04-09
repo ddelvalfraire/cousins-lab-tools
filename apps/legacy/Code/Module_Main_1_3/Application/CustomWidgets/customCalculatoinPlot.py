@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class customCalculationPlot(Frame):
     softError = QtCore.pyqtSignal((str,str))
 
-    def __init__(self, scrollArea, heightFactor, getVars, DefaultXAxisEquiation, DefaultYAxisEquiation,
+    def __init__(self, scrollArea, heightFactor, getVars, DefaultXAxisEquiation, DefaultYAxisEquiation, parent,
                  blankSlopeLineEdit44=None, dataToAdd=None, user=None):
         super(customCalculationPlot, self).__init__(scrollArea, heightFactor)
         self.getVars = getVars
@@ -29,7 +29,7 @@ class customCalculationPlot(Frame):
         self.blankSlopeLineEdit44 = blankSlopeLineEdit44
         self.currentPlotData = {}
         self.user = user
-
+        self.parent = parent
         # List of tuples where (name, ref to data)
         self.dataToAdd = dataToAdd
 
@@ -137,57 +137,87 @@ class customCalculationPlot(Frame):
         try:
             self.lastData = data
             self.updateCustomCalcPlotsAsync(data)
-        except:
-            self.softError.emit("error","Failed to update custom calculation plots")
+        except Exception as e:
+            self.softError.emit("error",f"Failed to update custom calculation plots {e}")
 
     def updateCustomCalcPlotsAsync(self, data):
         if data is None or len(data) == 0:
             return
 
-        logger.debug(f"updateCustomCalcPlotsAsync - BEGIN (Points: {len(data)})")
+        if getattr(self, "_calcRunning", False):
+            logger.debug("Calculation already running, skipping")
+            return
 
-        # Check if there is an existing thread
-        t = getattr(self, "_calcThread", None)
-        if t is not None:
-            try:
-                if t.isRunning():
-                    logger.debug("Existing calculation thread is running, skipping update")
-                    return
-            except RuntimeError:
-                logger.debug("RuntimeError checking thread status, resetting _calcThread")
-                self._calcThread = None
+        self._calcRunning = True
 
-        logger.debug("Starting new calculation thread")
         xexp = self.xAxisEquiation
         yexp = self.yAxisEquiation
 
-        self._calcThread = QtCore.QThread(self)
+        # Snapshot all widget values on the main thread before the worker starts
+        widget_snapshot = {
+            "BlankSlope44": self.parent.blankSlope44LineEdit.text(),
+            "BlankSlope45": self.parent.blankSlope45LineEdit.text(),
+            "ExtractSlope44": self.parent.extractSlope44LineEdit.text(),
+            "ExtractSlope45": self.parent.extractSlope45LineEdit.text(),
+            "CO2Zero44": self.parent.co2ZeroLineEdit1.text(),
+            "CO2Zero45": self.parent.co2ZeroLineEdit2.text(),
+        }
+
+        pre_extracted = []
+        for d in data:
+            masses = d[1]
+            pre_extracted.append({
+                "Mass32": masses[0], "Mass34": masses[1], "Mass36": masses[2],
+                "Mass44": masses[3], "Mass45": masses[4], "Mass46": masses[5],
+                "Mass47": masses[6], "Mass49": masses[7],
+                "Time": d[0],
+                **widget_snapshot
+            })
+
+        self._calcThread = QtCore.QThread()
         self._calcWorker = SamplePlotCalcWorker(
             data=data,
+            pre_extracted=pre_extracted,
             xexp=xexp,
             yexp=yexp,
             lineOfBestFit=self.xyGraphLineOfBestFit,
-            getVars=self.getVars,
             temp=None,
             deltaPart=self.samplePlotDeltaPartLineEdit.text()
         )
 
         self._calcWorker.moveToThread(self._calcThread)
         self._calcThread.started.connect(self._calcWorker.run)
-        self._calcWorker.resultReady.connect(self.applyCustomCalcResults)
+
+        self._calcWorker.resultReady.connect(
+            self.applyCustomCalcResults, QtCore.Qt.QueuedConnection
+        )
+        self._calcWorker.userWarning.connect(
+            lambda msg: self.softError.emit("Calculation Warning", msg)
+        )
+        self._calcWorker.error.connect(
+            lambda msg: self.softError.emit("Calculation Error", msg)
+        )
+
         self._calcWorker.finished.connect(self._calcThread.quit)
         self._calcWorker.finished.connect(self._calcWorker.deleteLater)
         self._calcThread.finished.connect(self._calcThread.deleteLater)
         self._calcThread.finished.connect(self._onThreadFinished)
-        self._calcWorker.userWarning.connect(lambda msg: self.softError.emit("Calculation Warning", msg))
-        self._calcWorker.error.connect(lambda msg:  self.softError.emit("Calculation Error", msg))
+
         self._calcThread.start()
-        logger.debug("updateCustomCalcPlotsAsync - END")
 
     def _onThreadFinished(self):
-        logger.debug("_onThreadFinished - BEGIN")
+        self._calcRunning = False
+        QtCore.QTimer.singleShot(0, self._clearWorkerRefs)
+
+    def _clearWorkerRefs(self):
+        try:
+            if self._calcWorker:
+                self._calcWorker.userWarning.disconnect()
+                self._calcWorker.error.disconnect()
+        except RuntimeError:
+            pass
         self._calcThread = None
-        logger.debug("_onThreadFinished - END")
+        self._calcWorker = None
 
     @QtCore.pyqtSlot(dict)
     def applyCustomCalcResults(self, res):
