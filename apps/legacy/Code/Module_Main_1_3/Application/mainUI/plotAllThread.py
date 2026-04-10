@@ -16,7 +16,6 @@ from math import floor
 
 sys.path.insert(0, '../read_data')
 
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
 import logging

@@ -6,10 +6,9 @@ import threading
 import numpy as np
 import logging
 
-logger = logging.getLogger(__name__)
-from math import floor
+from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
-from sympy.core import symbol
+logger = logging.getLogger(__name__)
 
 from Code.Module_Main_1_3.Application.mainUI.EzPlotAll import EzPlotAll
 from Code.Module_Main_1_3.Application.mainUI.newFileNotifierThread import NewFileNotifierThread
@@ -18,7 +17,6 @@ from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
-from Code.Module_Main_1_3.Application.mainUI.worker import Worker
 from Code.Module_Main_1_3.Application.mainUI.plotAllThread import PlotAllThread
 
 class RawPlotFrame(Frame):
@@ -45,7 +43,7 @@ class RawPlotFrame(Frame):
         self.currentXRange = None
         self.application_state = stateVar
         self.lofCurves = []
-
+        self.lofCurvesRs = []
         self.initUI()
         self.addCurveAndMeanBar()
 
@@ -128,7 +126,7 @@ class RawPlotFrame(Frame):
         self.lofCheckBox.setStyleSheet("color: #800000")
         self.lofCheckBox.setChecked(False)
         self.lineOfBestFitDraw = False
-        self.lofCheckBox.clicked.connect(self.toggleLineOfBestFit)
+        self.lofCheckBox.clicked.connect(self.toggleLineOfBestFit, QtCore.Qt.QueuedConnection)
 
         self.processSpinnerLabel = QtWidgets.QLabel()
         self.processSpinnerLabel.setMinimumSize(QtCore.QSize(50, 50))
@@ -193,7 +191,12 @@ class RawPlotFrame(Frame):
             logging.debug(f"Removing {len(self.lofCurves)} old LOF curves")
             for lofCurve in self.lofCurves:
                 self.realTimeGraph.removeItem(lofCurve)
+
+            for lofCurveRs in self.lofCurvesRs:
+                self.realTimeGraph.removeItem(lofCurveRs)
+
             self.lofCurves = []
+            self.lofCurvesRs = []
 
             # Get mean bar region
             region = self.meanBar.getRegion()
@@ -228,10 +231,19 @@ class RawPlotFrame(Frame):
                             lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen)
                             self.realTimeGraph.addItem(lof_data_line)
                             self.lofCurves.append(lof_data_line)
+
+                            # rSqItem = pg.TextItem(f"r^2: {Calculations.rSquared(y_region, x_region):.4f}",
+                            #                       anchor=(0.5, 0.5), color=color)
+                            #
+                            # self.realTimeGraph.addItem(rSqItem)
+                            # rSqItem.setPos(lof_x[1], lof_y[1] + 2)
+                            # self.lofCurvesRs.append(rSqItem)
+
                             logging.debug(f"Added LOF curve for {curve.name}")
                         except Exception as e:
                             logging.error(f"LOF calculation error for {curve.name}: {e}")
                             print(f"LOF calculation error for {curve.name}: {e}")
+
         logging.debug("drawLinesOfBestFit - END")
 
     def addCurveAndMeanBar(self):
@@ -269,14 +281,14 @@ class RawPlotFrame(Frame):
 
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
-        self.meanBar.sigRegionChangeFinished.connect(self.drawLinesOfBestFit)
+        self.meanBar.sigRegionChangeFinished.connect(self.drawLinesOfBestFit, QtCore.Qt.QueuedConnection)
 
     def connectSignals(self):
-        self.barsButton.clicked.connect(self.barsButtonPressed)
-        self.rescaleButton.clicked.connect(self.rescaleButtonPressed)
-        self.pauseResumeButton.clicked.connect(self.pauseResumeAction)
-        self.plotAllButton.clicked.connect(self.plotAllButtonPressed)
-        self.lofCheckBox.stateChanged.connect(self.lofCheckStateChanged)
+        self.barsButton.clicked.connect(self.barsButtonPressed, QtCore.Qt.QueuedConnection)
+        self.rescaleButton.clicked.connect(self.rescaleButtonPressed, QtCore.Qt.QueuedConnection)
+        self.pauseResumeButton.clicked.connect(self.pauseResumeAction, QtCore.Qt.QueuedConnection)
+        self.plotAllButton.clicked.connect(self.plotAllButtonPressed, QtCore.Qt.QueuedConnection)
+        self.lofCheckBox.stateChanged.connect(self.lofCheckStateChanged, QtCore.Qt.QueuedConnection)
 
         if self.mode == 1:
             self.graph1CheckBox.stateChanged.connect(
@@ -444,7 +456,9 @@ class RawPlotFrame(Frame):
         )
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
-            lambda msg: self.softError.emit("plot all error", msg))
+            lambda msg: self.softError.emit("plot all error", msg),
+            QtCore.Qt.QueuedConnection
+        )
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
 

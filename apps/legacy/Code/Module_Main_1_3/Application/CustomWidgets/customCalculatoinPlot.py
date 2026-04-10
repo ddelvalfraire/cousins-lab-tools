@@ -1,5 +1,5 @@
 ﻿from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import QPoint
 import pyqtgraph as pg
 import os
 
@@ -12,7 +12,6 @@ from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
 from Code.Module_Main_1_3.Application.mainUI.SamplePlotCalcWorker import SamplePlotCalcWorker
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-from numpy.ma.core import equal
 
 import logging
 logger = logging.getLogger(__name__)
@@ -128,10 +127,10 @@ class customCalculationPlot(Frame):
         self.setLayout(self.customCalculationPlotsLayout)
 
     def connectSignals(self):
-        self.samplePlotDeltaPartLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots(self.lastData))
-        self.calculationPlotAddDataButton.clicked.connect(lambda: self.addSampleToSampleData(self.lastData))
-        self.calculationPlotExportTableButton.clicked.connect(self.exportSampleTable)
-        self.calculationPlotClearTableButton.clicked.connect(self.clearSampleData)
+        self.samplePlotDeltaPartLineEdit.returnPressed.connect(lambda: self.updateCustomCalcPlots(self.lastData), QtCore.Qt.QueuedConnection)
+        self.calculationPlotAddDataButton.clicked.connect(lambda: self.addSampleToSampleData(self.lastData), QtCore.Qt.QueuedConnection)
+        self.calculationPlotExportTableButton.clicked.connect(self.exportSampleTable, QtCore.Qt.QueuedConnection)
+        self.calculationPlotClearTableButton.clicked.connect(self.clearSampleData, QtCore.Qt.QueuedConnection)
 
     def updateCustomCalcPlots(self, data):
         try:
@@ -186,16 +185,19 @@ class customCalculationPlot(Frame):
         )
 
         self._calcWorker.moveToThread(self._calcThread)
-        self._calcThread.started.connect(self._calcWorker.run)
+
+        self._calcThread.started.connect(
+            self._calcWorker.run, QtCore.Qt.QueuedConnection
+        )
 
         self._calcWorker.resultReady.connect(
             self.applyCustomCalcResults, QtCore.Qt.QueuedConnection
         )
         self._calcWorker.userWarning.connect(
-            lambda msg: self.softError.emit("Calculation Warning", msg)
+            lambda msg: self.softError.emit("Calculation Warning", msg), QtCore.Qt.QueuedConnection
         )
         self._calcWorker.error.connect(
-            lambda msg: self.softError.emit("Calculation Error", msg)
+            lambda msg: self.softError.emit("Calculation Error", msg), QtCore.Qt.QueuedConnection
         )
 
         self._calcWorker.finished.connect(self._calcThread.quit)

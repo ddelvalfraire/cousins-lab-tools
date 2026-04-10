@@ -13,31 +13,17 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
 from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QSizePolicy
-from PyQt5.QtGui import QMovie
 
 import pyqtgraph as pg
-import sys, os, csv
-import threading
+import sys, os, csv, json
 import logging
 
 logger = logging.getLogger(__name__)
 
-from sympy import sympify, false
-
-from numpy.ma.core import equal
-
-from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
-from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
-from SamplePlotCalcWorker import SamplePlotCalcWorker
-from worker import Worker
-from newFileNotifierThread import NewFileNotifierThread
-from PyQt5.QtCore import Qt, QThread, QPoint
+from sympy import sympify
+from PyQt5.QtCore import Qt
 import numpy as np
-from stopwatch import Stopwatch
 from datetime import datetime
-from math import floor
-from plotAllThread import PlotAllThread
-
 
 
 #####################################################################
@@ -61,14 +47,12 @@ sys.path.append('../calculations')
 
 from Code.Module_Main_1_3.Application.read_data.getData import GetData
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
-from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
 from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
-from Code.Module_Main_1_3.Application.read_data.readEZView import read_from_ezview
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
 from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
 
@@ -109,6 +93,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.delay = 200
         self.firstPoint = False
         self.fileCheckThreadStarted = False
+        self.autosave_timer = QtCore.QTimer()
+        self.autosave_timer.setSingleShot(True)
+        self.autosave_timer.setInterval(2000)  # 2 seconds debounce
+        self.autosave_timer.timeout.connect(self.autosaveData)
 
         self.application_state = "Idle"
 
@@ -182,7 +170,48 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # Connect UI to Methods
         self.connectUItoMethods()
 
+        # Connect autosave for line edits
+        for le in self.lineEditList:
+            le.textChanged.connect(self.triggerAutosave)
+
+        # Connect autosave for table
+        self.table.itemChanged.connect(self.triggerAutosave)
+
+        # Connect autosave for custom calculation plot table
+        if hasattr(self, 'customCalculationPlots') and self.customCalculationPlots:
+            self.customCalculationPlots.calculationPlotTable.itemChanged.connect(self.triggerAutosave)
+
+        # Check for improper shutdown on launch
+        self.checkForImproperShutdown()
+
         self.show()
+
+    def checkForImproperShutdown(self):
+        """
+        Checks if the last autosave was not properly closed and prompts the user to load it.
+        """
+        path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
+        autosave_path = os.path.join(path, 'autosave.json')
+        if os.path.exists(autosave_path):
+            try:
+                with open(autosave_path, 'r') as f:
+                    data = json.load(f)
+                if not data.get("properly_closed", False):
+                    # Improper shutdown detected
+                    reply = QtWidgets.QMessageBox.question(self, 'Improper Shutdown Detected',
+                                                           'The application was not closed properly. Would you like to load the last autosave?',
+                                                           QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes)
+                    if reply == QtWidgets.QMessageBox.Yes:
+                        self.loadAllData(file_path=autosave_path)
+            except Exception as e:
+                logger.error(f"Error checking for improper shutdown: {e}")
+
+    def closeEvent(self, event):
+        """
+        Handles the application close event.
+        """
+        self.autosaveData(properly_closed=True)
+        event.accept()
 
 #################################################################################################################################
 ################################################# User Interface Creation #################################################
@@ -342,15 +371,24 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.select_ezview_action = QAction('Load EZView Data File', self)
         self.select_file_action = QAction('Load Calibration File', self)
         self.select_save_calc_action = QAction('Save Calibration to File', self)
+        self.save_all_action = QAction('Save All Data', self)
+        self.load_all_action = QAction('Load All Data', self)
+
         self.select_folder_action.triggered.connect(self.select_folder)
         self.select_ezview_action.triggered.connect(self.select_ezview)
         self.select_file_action.triggered.connect(self.select_file)
         self.select_save_calc_action.triggered.connect(self.saveCalibrations)
+        self.save_all_action.triggered.connect(self.saveAllData)
+        self.load_all_action.triggered.connect(self.loadAllData)
+
         self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_file_action)
         self.file_menu.addAction(self.select_ezview_action)
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.select_save_calc_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.save_all_action)
+        self.file_menu.addAction(self.load_all_action)
 
         ######################## O2 Zero and CO2 cal #############################
 
@@ -707,80 +745,80 @@ class LabViewModule1(QtWidgets.QMainWindow):
         # QFileDialog Folder selection
 
         # O2 Assay Buffer Zero Button connect method
-        self.o2ZeroButton.clicked.connect(lambda: self.o2ZeroButtonPressed())
+        self.o2ZeroButton.clicked.connect(lambda: self.o2ZeroButtonPressed(), QtCore.Qt.QueuedConnection)
 
         # O2 Assay Buffer Zero LineEdit text edited connect method
-        self.o2ZeroLineEdit.returnPressed.connect(lambda: self.OnEditedO2AssayCal())
+        self.o2ZeroLineEdit.returnPressed.connect(lambda: self.OnEditedO2AssayCal(), QtCore.Qt.QueuedConnection)
 
         # Temperature Lineedir text edited connect method
-        self.temperatureLineEdit.returnPressed.connect(lambda: self.OnEditedTemp())
+        self.temperatureLineEdit.returnPressed.connect(lambda: self.OnEditedTemp(), QtCore.Qt.QueuedConnection)
 
         # CO2 Cal buttons connect method
-        self.co2CalZeroButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2CalZeroLineEdit, 3, 0, 0))
-        self.co2Cal6ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal6ulLineEdit, 3, 0, 1000))
-        self.co2Cal12ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal12ulLineEdit, 3, 0, 2000))
-        self.co2Cal18ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal18ulLineEdit, 3, 0, 3000))
+        self.co2CalZeroButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2CalZeroLineEdit, 3, 0, 0), QtCore.Qt.QueuedConnection)
+        self.co2Cal6ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal6ulLineEdit, 3, 0, 1000), QtCore.Qt.QueuedConnection)
+        self.co2Cal12ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal12ulLineEdit, 3, 0, 2000), QtCore.Qt.QueuedConnection)
+        self.co2Cal18ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal18ulLineEdit, 3, 0, 3000), QtCore.Qt.QueuedConnection)
 
         # CO2 Cal LineEdits connect text edited connet method
-        self.co2CalZeroLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2CalZeroLineEdit, 3, 0, 0))
-        self.co2Cal6ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal6ulLineEdit, 3, 0, 1000))
-        self.co2Cal12ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal12ulLineEdit, 3, 0, 2000))
-        self.co2Cal18ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal18ulLineEdit, 3, 0, 3000))
+        self.co2CalZeroLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2CalZeroLineEdit, 3, 0, 0), QtCore.Qt.QueuedConnection)
+        self.co2Cal6ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal6ulLineEdit, 3, 0, 1000), QtCore.Qt.QueuedConnection)
+        self.co2Cal12ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal12ulLineEdit, 3, 0, 2000), QtCore.Qt.QueuedConnection)
+        self.co2Cal18ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal18ulLineEdit, 3, 0, 3000), QtCore.Qt.QueuedConnection)
         
 
         # BiCarb Cal buttons connect method
-        self.biCarbCalZeroButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCalZeroLineEdit, 3, 1, 0))
-        self.biCarbCal2ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal2ulLineEdit, 3, 1, 33.3))
-        self.biCarbCal4ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal4ulLineEdit, 3, 1, 66.6))
-        self.biCarbCal6ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal6ulLineEdit, 3, 1, 99.9))
+        self.biCarbCalZeroButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCalZeroLineEdit, 3, 1, 0), QtCore.Qt.QueuedConnection)
+        self.biCarbCal2ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal2ulLineEdit, 3, 1, 33.3), QtCore.Qt.QueuedConnection)
+        self.biCarbCal4ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal4ulLineEdit, 3, 1, 66.6), QtCore.Qt.QueuedConnection)
+        self.biCarbCal6ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.biCarbCal6ulLineEdit, 3, 1, 99.9), QtCore.Qt.QueuedConnection)
 
         # BiCarb Cal LineEdits connect text edited cnnnect method
-        self.biCarbCalZeroLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCalZeroLineEdit, 3, 1, 0))
-        self.biCarbCal2ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal2ulLineEdit, 3, 1, 33.3))
-        self.biCarbCal4ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal4ulLineEdit, 3, 1, 66.6))
-        self.biCarbCal6ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal6ulLineEdit, 3, 1, 99.9))
+        self.biCarbCalZeroLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCalZeroLineEdit, 3, 1, 0), QtCore.Qt.QueuedConnection)
+        self.biCarbCal2ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal2ulLineEdit, 3, 1, 33.3), QtCore.Qt.QueuedConnection)
+        self.biCarbCal4ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal4ulLineEdit, 3, 1, 66.6), QtCore.Qt.QueuedConnection)
+        self.biCarbCal6ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.biCarbCal6ulLineEdit, 3, 1, 99.9), QtCore.Qt.QueuedConnection)
 
-        self.o2CalibrationLineEdit.returnPressed.connect(lambda: self.OnEditedO2Cal())
+        self.o2CalibrationLineEdit.returnPressed.connect(lambda: self.OnEditedO2Cal(), QtCore.Qt.QueuedConnection)
         
 
         # BiCarb / CO2 button connect method
-        self.biCarbCo2Button.clicked.connect(lambda: self.biCarbCo2ButtonPressed())
+        self.biCarbCo2Button.clicked.connect(lambda: self.biCarbCo2ButtonPressed(), QtCore.Qt.QueuedConnection)
 
         # BiCarb / CO2 LineEdit text edited connect method
-        self.biCarbCo2LineEdit.returnPressed.connect(lambda: self.OnEditedBiCarbCo2())
+        self.biCarbCo2LineEdit.returnPressed.connect(lambda: self.OnEditedBiCarbCo2(), QtCore.Qt.QueuedConnection)
 
         # CO2 Zero button connect method
-        self.co2ZeroButton.clicked.connect(self.co2ZeroButtonPressed)
+        self.co2ZeroButton.clicked.connect(self.co2ZeroButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Blank button connect method
-        self.blankButton.clicked.connect(self.blankButtonPressed)
+        self.blankButton.clicked.connect(self.blankButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Extract button connect method
-        self.extractButton.clicked.connect(self.extractButtonPressed)
+        self.extractButton.clicked.connect(self.extractButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Add to Table connect method
-        self.addToTableButton.clicked.connect(self.addToTableButtonPressed)
+        self.addToTableButton.clicked.connect(self.addToTableButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Stop Button connect method
-        self.stopButton.clicked.connect(self.stopButtonPressed)
+        self.stopButton.clicked.connect(self.stopButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Purge Table connect method
-        self.purgeTableButton.clicked.connect(self.purgeTableButtonPressed)
+        self.purgeTableButton.clicked.connect(self.purgeTableButtonPressed, QtCore.Qt.QueuedConnection)
 
         # Export Table connect method
-        self.exportTableButton.clicked.connect(lambda: self.tableFileSave(self.table))
+        self.exportTableButton.clicked.connect(lambda: self.tableFileSave(self.table), QtCore.Qt.QueuedConnection)
 
         # Copy Table connect method
-        self.copyTableRowButton.clicked.connect(lambda: self.copyTableRowButtonPressed())
+        self.copyTableRowButton.clicked.connect(lambda: self.copyTableRowButtonPressed(), QtCore.Qt.QueuedConnection)
         ################################## Blank and Extract slope button ##################################
 
-        self.blankSlopeButton.clicked.connect(self.blankSlopeButtonPressed)
-        self.extractSlopeButton.clicked.connect(self.extractSlopeButtonPressed)
+        self.blankSlopeButton.clicked.connect(self.blankSlopeButtonPressed, QtCore.Qt.QueuedConnection)
+        self.extractSlopeButton.clicked.connect(self.extractSlopeButtonPressed, QtCore.Qt.QueuedConnection)
 
         ################################## Custom Plot Calc ##################################
 
         # Update Calculation Plots from mean bar moved
-        self.rawDataPlotFrame.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.getAllMeanBarData()))
+        self.rawDataPlotFrame.meanBar.sigRegionChangeFinished.connect(lambda: self.customCalculationPlots.updateCustomCalcPlots(self.getAllMeanBarData()), QtCore.Qt.QueuedConnection)
 
         # Adds delt button to table
         # self.calculationPlotTable.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1674,6 +1712,185 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # close file
         file.close
+
+    def saveAllData(self, autosave_path=None, properly_closed=False):
+        """
+        Saves all line edit values and table contents to a JSON file.
+        """
+        if autosave_path:
+            path = autosave_path
+            ok = True
+        else:
+            path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            now = datetime.now()
+            file_name = "AllData_" + now.strftime("%d-%m-%y %H-%M-%S") + ".json"
+
+            path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save All Data', os.path.join(path, file_name), "JSON Files (*.json)")
+
+        if ok:
+            data = {
+                "lineEdits": [le.text() for le in self.lineEditList],
+                "table": [],
+                "customSamplePlotData": [],
+                "properly_closed": properly_closed
+            }
+
+            for row in range(self.table.rowCount()):
+                row_data = []
+                for col in range(self.table.columnCount()):
+                    item = self.table.item(row, col)
+                    row_data.append(item.text() if item is not None else "")
+                data["table"].append(row_data)
+
+            # Collect custom sample plot data
+            if hasattr(self, 'customCalculationPlots') and self.customCalculationPlots:
+                for sample in self.customCalculationPlots.samplePlotData:
+                    serialized_sample = []
+                    # sample is a list [sampleName, (eqXName, eqXData), (eqYName, eqYData), (var1, var1Data), ..., (extraName, extraVal), ...]
+                    for item in sample:
+                        if isinstance(item, tuple):
+                            # Convert any non-serializable objects (like sympy symbols) to string
+                            serialized_sample.append([str(item[0]), item[1]])
+                        else:
+                            serialized_sample.append(item)
+                    data["customSamplePlotData"].append(serialized_sample)
+
+            with open(path, 'w') as f:
+                json.dump(data, f, indent=4)
+
+    def triggerAutosave(self):
+        """
+        Triggers the autosave timer.
+        """
+        self.autosave_timer.start()
+
+    def autosaveData(self, properly_closed=False):
+        """
+        Performs the autosave to a default file.
+        """
+        path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        autosave_path = os.path.join(path, 'autosave.json')
+        self.saveAllData(autosave_path=autosave_path, properly_closed=properly_closed)
+
+    def loadAllData(self, file_path=None):
+        """
+        Loads all line edit values and table contents from a JSON file.
+        """
+        if file_path:
+            path = file_path
+            ok = True
+        else:
+            path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
+            path, ok = QtWidgets.QFileDialog.getOpenFileName(self, 'Load All Data', path, "JSON Files (*.json)")
+
+        if ok:
+            # Block autosave during load
+            self.autosave_timer.stop()
+            for le in self.lineEditList:
+                le.blockSignals(True)
+            self.table.blockSignals(True)
+            if hasattr(self, 'customCalculationPlots') and self.customCalculationPlots:
+                self.customCalculationPlots.calculationPlotTable.blockSignals(True)
+
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+
+                # Load line edits
+                le_data = data.get("lineEdits", [])
+                for i, text in enumerate(le_data):
+                    if i < len(self.lineEditList):
+                        self.lineEditList[i].setText(text)
+
+                # Load table
+                table_data = data.get("table", [])
+                self.table.setRowCount(len(table_data))
+                
+                # Reset concentration data before repopulating
+                self.o2VelocityConcentrationData.clear()
+                self.co2VelocityConcentrationData.clear()
+
+                for row_idx, row_data in enumerate(table_data):
+                    for col_idx, text in enumerate(row_data):
+                        if col_idx < self.table.columnCount():
+                            self.table.setItem(row_idx, col_idx, QtWidgets.QTableWidgetItem(text))
+                    
+                    # Extract and store concentration data for graphs (VO, VC, [CO2], [O2])
+                    if len(row_data) >= 4:
+                        try:
+                            vO = float(row_data[0])
+                            vC = float(row_data[1])
+                            co2Concentration = float(row_data[2])
+                            o2Concentration = float(row_data[3])
+                            
+                            self.o2VelocityConcentrationData[o2Concentration] = vO
+                            self.co2VelocityConcentrationData[co2Concentration] = vC
+                        except ValueError:
+                            logger.warning(f"Invalid numeric data at row {row_idx} while loading table")
+
+                # Update concentration graphs
+                if self.o2VelocityConcentrationData:
+                    self.concentrationGraph.plot(list(self.o2VelocityConcentrationData.keys()), list(self.o2VelocityConcentrationData.values()), pen=None, symbol='o',
+                                                   symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
+                
+                if self.co2VelocityConcentrationData:
+                    self.concentrationGraph2.plot(list(self.co2VelocityConcentrationData.keys()), list(self.co2VelocityConcentrationData.values()), pen=None, symbol='o',
+                                                   symbolsize=1, symbolPen=pg.mkPen(color="#ff0000", width=0), symbolBrush=pg.mkBrush("#ff0000"))
+
+                self.concentrationGraph.plotItem.getViewBox().autoRange()
+                self.concentrationGraph2.plotItem.getViewBox().autoRange()
+
+                # Load custom sample plot data
+                custom_data = data.get("customSamplePlotData", [])
+                if hasattr(self, 'customCalculationPlots') and self.customCalculationPlots:
+                    # Clear existing sample data first
+                    self.customCalculationPlots.clearSampleData()
+                    
+                    # Reconstruct and populate
+                    for serialized_sample in custom_data:
+                        reconstructed_sample = []
+                        for item in serialized_sample:
+                            if isinstance(item, list) and len(item) == 2:
+                                reconstructed_sample.append(tuple(item))
+                            else:
+                                reconstructed_sample.append(item)
+                        
+                        self.customCalculationPlots.samplePlotData.append(reconstructed_sample)
+                        
+                        # Also need to populate the table UI in customCalculationPlot
+                        # Assuming the first element is the sample name
+                        if reconstructed_sample:
+                            sampleName = reconstructed_sample[0]
+                            self.customCalculationPlots.calculationPlotTable.insertRow(0)
+                            self.customCalculationPlots.calculationPlotTable.setItem(0, 0, QtWidgets.QTableWidgetItem(str(sampleName)))
+
+                # Trigger updates for edited line edits
+                self.OnEditedTemp()
+                self.OnEditedO2Cal()
+                self.OnEditedBiCarbCo2()
+
+                # Calibration line edits
+                if len(self.calibrationLineEdits) >= 12:
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[4], 3, 0, 0)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[5], 3, 0, 1000)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[6], 3, 0, 2000)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[7], 3, 0, 3000)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[8], 3, 1, 0)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[9], 3, 1, 33.3)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[10], 3, 1, 66.6)
+                    self.OnEditedCO2Cal(self.calibrationLineEdits[11], 3, 1, 99.9)
+            finally:
+                # Unblock signals
+                for le in self.lineEditList:
+                    le.blockSignals(False)
+                self.table.blockSignals(False)
+                if hasattr(self, 'customCalculationPlots') and self.customCalculationPlots:
+                    self.customCalculationPlots.calculationPlotTable.blockSignals(False)
 
 ################################################## End - File epxort and import #################################################
 #################################################################################################################################

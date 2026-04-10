@@ -141,6 +141,7 @@ class Calculations:
 
         result = -0.0018 * pow(temperature, 3) + 0.2229 * pow(temperature, 2) - 12.387 * temperature + 456.49
         return result
+
     @staticmethod
     def calculateO2AirModule3(temperature):
         """
@@ -149,6 +150,7 @@ class Calculations:
 
         result = 0.0018 * pow(temperature, 3) + 0.2229 * pow(temperature, 2) - 12.387 * temperature + 456.49
         return result
+
     @staticmethod
     def calculateO2Cal(o2Air, o2Zero):
         """
@@ -169,6 +171,7 @@ class Calculations:
         result = o2Air / o2Standard
         result = result * o2Measured
         return result
+
     @staticmethod
     def calculateUbarO2(o2Cal, o2Measured):
         """
@@ -268,14 +271,18 @@ class Calculations:
         try:
             x = np.array(xData, dtype=float)
             y = np.array(yData, dtype=float)
-            slope, intercept = Calculations.getLineOfBestFit(xData, yData)
-            yPred = slope * x + intercept
 
-            ssRes = np.sum((y - yPred) ** 2)
-            ssTot = np.sum((y - np.mean(y)) ** 2)
+            # 1. Fit the data to a linear polynomial (y = mx + c)
+            coeffs = np.polyfit(x, y, 1)
+            p = np.poly1d(coeffs)
 
-            r2 = 1 - (ssRes / ssTot)
-            return r2
+            y_pred = p(x)
+
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+
+            r_squared = 1 - (ss_res / ss_tot)
+            return r_squared
         except:
             return "null"
 
