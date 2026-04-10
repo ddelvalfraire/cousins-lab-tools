@@ -1342,6 +1342,23 @@ class LabViewModule2(QtWidgets.QMainWindow):
     def stopDiaAccepted(self, obj):
         obj.close()
 
+        # Get Documents folder path
+        documents_path = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.DocumentsLocation)
+        
+        # Determine base name from folder_path or EZViewPath
+        base_name = "Export"
+        source_path = self.rawDataPlotFrame.folder_path or self.rawDataPlotFrame.EZViewPath
+        if source_path:
+            base_name = os.path.basename(source_path.rstrip('\\/'))
+            if not base_name: # Handle case where path ends in slash or is empty after strip
+                 base_name = "Export"
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        export_filename = f"{base_name}_{timestamp}.csv"
+        export_path = os.path.join(documents_path, export_filename)
+
+        self.rawDataPlotFrame.exportToCsv(export_path)
+
         saveCalsDlg = Dialog(title="Save Calibrations?", buttonCount=3, message="Would you like to keep calibrations in the program?\n Press Save to export calibrations", parent=self)
         saveCalsDlg.buttonBox.addButton("Save", QDialogButtonBox.HelpRole)
         saveCalsDlg.buttonBox.helpRequested.connect(lambda: self.saveCals(saveCalsDlg))

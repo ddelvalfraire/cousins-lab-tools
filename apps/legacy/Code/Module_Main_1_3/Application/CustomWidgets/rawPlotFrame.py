@@ -5,6 +5,7 @@ import pyqtgraph as pg
 import threading
 import numpy as np
 import logging
+import pandas as pd
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
@@ -573,3 +574,52 @@ class RawPlotFrame(Frame):
             self.graph4CheckBox.setChecked(False)
             self.graph5CheckBox.setChecked(False)
         logging.debug("RawPlotFrame.clear - END")
+
+    def exportToCsv(self, path):
+        """
+        Exports the current plot data to a CSV file.
+        :param path: The file path where the CSV file will be saved.
+        """
+        logging.debug(f"exportToCsv - START (Path: {path})")
+        try:
+            with self.sharedData.lock:
+                data = self.sharedData.dataPoints.copy()
+
+            if not data:
+                logging.warning("exportToCsv - No data to export")
+                return
+
+            # Sort data by x-values (time/index)
+            sorted_x = sorted(data.keys())
+            
+            # Prepare columns based on mode
+            if self.mode == 1:
+                columns = ["Time", "Mass 32", "Mass 34", "Mass 36", "Mass 44", "Mass 45", "Mass 46", "Mass 47", "Mass 49"]
+            elif self.mode == 2:
+                columns = ["Time", "Mass 32", "Mass 44", "Mass 45"]
+            else:
+                # Fallback if mode is unknown, use generic names
+                num_y = len(next(iter(data.values())))
+                columns = ["Time"] + [f"Value {i+1}" for i in range(num_y)]
+
+            # Create rows for DataFrame
+            rows = []
+            for x in sorted_x:
+                y_values = data[x]
+                if self.mode == 2:
+                    # For mode 2, we only have curves 1, 4, and 5 (indices 0, 3, 4 in the 8-value list)
+                    # Assuming y_values always has 8 elements as initialized in update_plot_data
+                    if len(y_values) >= 5:
+                        rows.append([x, y_values[0], y_values[3], y_values[4]])
+                    else:
+                        rows.append([x] + list(y_values))
+                else:
+                    rows.append([x] + list(y_values))
+
+            df = pd.DataFrame(rows, columns=columns)
+            df.to_csv(path, index=False)
+            logging.info(f"exportToCsv - Successfully exported to {path}")
+
+        except Exception as e:
+            logging.error(f"exportToCsv - Error: {e}")
+            self.softError.emit("Export Error", f"Failed to export data to CSV: {e}")
