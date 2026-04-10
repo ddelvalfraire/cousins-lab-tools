@@ -51,6 +51,8 @@ class RawPlotFrame(Frame):
         self.folder_path = ''
         self.fileCheckThreadStarted = False
 
+        self.point_counter = 0
+
     def initUI(self):
         ############################## Check Boxes Layout ##################################
         # Creating vertical layout for check boxes.
@@ -186,63 +188,66 @@ class RawPlotFrame(Frame):
 
     def drawLinesOfBestFit(self):
         logging.debug("drawLinesOfBestFit - START")
-        if self.lineOfBestFitDraw:
-            # Remove old LOF lines
-            logging.debug(f"Removing {len(self.lofCurves)} old LOF curves")
-            for lofCurve in self.lofCurves:
-                self.realTimeGraph.removeItem(lofCurve)
+        try:
+            if self.lineOfBestFitDraw:
+                # Remove old LOF lines
+                logging.debug(f"Removing {len(self.lofCurves)} old LOF curves")
+                for lofCurve in self.lofCurves:
+                    self.realTimeGraph.removeItem(lofCurve)
 
-            for lofCurveRs in self.lofCurvesRs:
-                self.realTimeGraph.removeItem(lofCurveRs)
+                for lofCurveRs in self.lofCurvesRs:
+                    self.realTimeGraph.removeItem(lofCurveRs)
 
-            self.lofCurves = []
-            self.lofCurvesRs = []
+                self.lofCurves = []
+                self.lofCurvesRs = []
 
-            # Get mean bar region
-            region = self.meanBar.getRegion()
-            region_start, region_end = region
-            logging.debug(f"Mean bar region: {region_start} to {region_end}")
+                # Get mean bar region
+                region = self.meanBar.getRegion()
+                region_start, region_end = region
+                logging.debug(f"Mean bar region: {region_start} to {region_end}")
 
-            for curve in self.curves:
-                if curve.isChecked:
-                    logging.debug(f"Processing LOF for curve: {curve.name}")
-                    x_arr = np.array(curve.x)
-                    y_arr = np.array(curve.y)
+                for curve in self.curves:
+                    if curve.isChecked:
+                        logging.debug(f"Processing LOF for curve: {curve.name}")
+                        x_arr = np.array(curve.x)
+                        y_arr = np.array(curve.y)
 
-                    # Mask for points in mean bar region
-                    mask = (x_arr >= region_start) & (x_arr <= region_end)
-                    x_region = x_arr[mask]
-                    y_region = y_arr[mask]
-                    logging.debug(f"Points in region for {curve.name}: {len(x_region)}")
+                        # Mask for points in mean bar region
+                        mask = (x_arr >= region_start) & (x_arr <= region_end)
+                        x_region = x_arr[mask]
+                        y_region = y_arr[mask]
+                        logging.debug(f"Points in region for {curve.name}: {len(x_region)}")
 
-                    if len(x_region) > 1:
-                        # Calculate line of best fit (linear)
-                        try:
-                            # polyfit returns coefficients [slope, intercept] for degree 1
-                            m, c = np.polyfit(x_region, y_region, 1)
+                        if len(x_region) > 1:
+                            # Calculate line of best fit (linear)
+                            try:
+                                # polyfit returns coefficients [slope, intercept] for degree 1
+                                m, c = np.polyfit(x_region, y_region, 1)
 
-                            # Define the line to span the region
-                            lof_x = np.array([region_start, region_end])
-                            lof_y = m * lof_x + c
+                                # Define the line to span the region
+                                lof_x = np.array([region_start, region_end])
+                                lof_y = m * lof_x + c
 
-                            # Create a temporary curve for the LOF line
-                            color = QtGui.QColor(255, 255, 255, curve.pen.color().alpha())
-                            pen = pg.mkPen(color=color, width=1, style=QtCore.Qt.DashLine)
-                            lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen)
-                            self.realTimeGraph.addItem(lof_data_line)
-                            self.lofCurves.append(lof_data_line)
+                                # Create a temporary curve for the LOF line
+                                color = QtGui.QColor(255, 255, 255, curve.pen.color().alpha())
+                                pen = pg.mkPen(color=color, width=1, style=QtCore.Qt.DashLine)
+                                lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen)
+                                self.realTimeGraph.addItem(lof_data_line)
+                                self.lofCurves.append(lof_data_line)
 
-                            # rSqItem = pg.TextItem(f"r^2: {Calculations.rSquared(y_region, x_region):.4f}",
-                            #                       anchor=(0.5, 0.5), color=color)
-                            #
-                            # self.realTimeGraph.addItem(rSqItem)
-                            # rSqItem.setPos(lof_x[1], lof_y[1] + 2)
-                            # self.lofCurvesRs.append(rSqItem)
+                                # rSqItem = pg.TextItem(f"r^2: {Calculations.rSquared(y_region, x_region):.4f}",
+                                #                       anchor=(0.5, 0.5), color=color)
+                                #
+                                # self.realTimeGraph.addItem(rSqItem)
+                                # rSqItem.setPos(lof_x[1], lof_y[1] + 2)
+                                # self.lofCurvesRs.append(rSqItem)
 
-                            logging.debug(f"Added LOF curve for {curve.name}")
-                        except Exception as e:
-                            logging.error(f"LOF calculation error for {curve.name}: {e}")
-                            print(f"LOF calculation error for {curve.name}: {e}")
+                                logging.debug(f"Added LOF curve for {curve.name}")
+                            except Exception as e:
+                                logging.error(f"LOF calculation error for {curve.name}: {e}")
+                                print(f"LOF calculation error for {curve.name}: {e}")
+        except Exception as e:
+            logging.error(f"Error in drawLinesOfBestFit: {e}")
 
         logging.debug("drawLinesOfBestFit - END")
 
@@ -368,15 +373,18 @@ class RawPlotFrame(Frame):
         x_values = []
         y_values = [[], [], [], [], [], [], [], []]
         cloneData = dataPoints.copy()
-        
+        self.plot_n = 1
         # Protect dataPoints modification and sync with sharedData
         for dataPoint in dataPoints:
             x, y = dataPoint
-            x_values.append(x)
             with self.sharedData.lock:
                 self.sharedData.dataPoints[x] = y
-            for i in range(len(y_values)):
-                y_values[i].append(y[i])
+
+            if self.point_counter % self.plot_n == 0:
+                x_values.append(x)
+                for i in range(len(y_values)):
+                    y_values[i].append(y[i])
+            self.point_counter += 1
 
         if not x_values:
             logging.debug("update_plot_data - END (No x_values)")

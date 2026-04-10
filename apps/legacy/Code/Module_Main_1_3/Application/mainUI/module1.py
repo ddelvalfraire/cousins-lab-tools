@@ -78,6 +78,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # get current user's username
         self.user = os.getlogin()
+        logger.info(f"Application initializing for user: {self.user}")
 
         # Set of all keys down
         self.keys_down = set()
@@ -97,6 +98,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.autosave_timer.setSingleShot(True)
         self.autosave_timer.setInterval(2000)  # 2 seconds debounce
         self.autosave_timer.timeout.connect(self.autosaveData)
+        logger.debug(f"Autosave timer initialized (Interval: {self.autosave_timer.interval()}ms)")
 
         self.application_state = "Idle"
 
@@ -1234,9 +1236,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
+        logger.info("Blank button pressed")
         try:
             # Get the left and right x points from the mean bars
             xleft, xright = self.rawDataPlotFrame.meanBar.getRegion()
+            logger.debug(f"Mean bar region: {xleft} to {xright}")
 
             # Snapshot data
             data_snapshot = dict(self.sharedData.dataPoints)
@@ -1282,7 +1286,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 self.co2LineEdit1.setText(str(round(self.co2Blank, 4)))
                 self.o2LineEdit1.setText(str(round(self.o2Blank, 4)))
         except Exception as e:
-            # print(f"blankButtonPressed error: {e}")
+            logger.error(f"Error in blankButtonPressed: {e}", exc_info=True)
             self.throwUndefined(self.co2LineEdit1)
             self.throwUndefined(self.o2LineEdit1)
 
@@ -1296,6 +1300,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
+        logger.info("Extract button pressed")
         try:
             ################ First Line ###############
 
@@ -1401,6 +1406,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
+        logger.info("Add To Table button pressed")
 
         ####  Add values to the table  ####
 
@@ -1436,7 +1442,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
-
+        logger.info("Purge Table button pressed")
         self.purgeTablepButtonWarning()
 
     def copyTableRowButtonPressed(self):
@@ -1484,7 +1490,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             cb.clear(mode=cb.Clipboard)
             cb.setText(row, mode=cb.Clipboard)
         except Exception as e:
-            print(f"copyTableRowButtonPressed error: {e}")
+            logger.error(f"Error in copyTableRowButtonPressed: {e}", exc_info=True)
 
 ################################################## End - ButtonPressed Methods ##################################################
 #################################################################################################################################
@@ -1590,6 +1596,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         Opens a save file dialog and saves all calibration files to a csv file. Default location is . Default name
         is the date and time.
         """
+        logger.info("Saving calibrations")
 
         # datetime object containing current date and time
         now = datetime.now()
@@ -1607,6 +1614,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         # if file type is not null
         if ok:
+            logger.info(f"Saving calibrations to {path}")
             # open file and write in calibrations
             with open(path, 'w') as csvfile:
                 writer = csv.writer(csvfile, dialect='excel', lineterminator='\n')
@@ -1624,6 +1632,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
         Loads calibration values from a csv file.
         """
+        logger.info(f"Loading calibrations from {file_path}")
 
         with open(file_path[0], newline='') as cal_file:
             reader = csv.reader(cal_file)
@@ -1718,9 +1727,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         Saves all line edit values and table contents to a JSON file.
         """
         if autosave_path:
+            logger.debug(f"Autosaving all data to {autosave_path}")
             path = autosave_path
             ok = True
         else:
+            logger.info("Saving all data")
             path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -1731,6 +1742,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
             path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save All Data', os.path.join(path, file_name), "JSON Files (*.json)")
 
         if ok:
+            if not autosave_path:
+                logger.info(f"Saving all data to {path}")
             data = {
                 "lineEdits": [le.text() for le in self.lineEditList],
                 "table": [],
@@ -1758,19 +1771,28 @@ class LabViewModule1(QtWidgets.QMainWindow):
                             serialized_sample.append(item)
                     data["customSamplePlotData"].append(serialized_sample)
 
-            with open(path, 'w') as f:
-                json.dump(data, f, indent=4)
+            try:
+                with open(path, 'w') as f:
+                    json.dump(data, f, indent=4)
+                if autosave_path:
+                    logger.info(f"Autosave completed successfully to {path}")
+                else:
+                    logger.info(f"Save completed successfully to {path}")
+            except Exception as e:
+                logger.error(f"Failed to save data to {path}: {e}", exc_info=True)
 
     def triggerAutosave(self):
         """
         Triggers the autosave timer.
         """
+        logger.debug("Autosave triggered (queuing save with debounce)")
         self.autosave_timer.start()
 
     def autosaveData(self, properly_closed=False):
         """
         Performs the autosave to a default file.
         """
+        logger.info("Autosave starting (timer timeout)")
         path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
         if not os.path.exists(path):
             os.makedirs(path)
@@ -1782,9 +1804,11 @@ class LabViewModule1(QtWidgets.QMainWindow):
         Loads all line edit values and table contents from a JSON file.
         """
         if file_path:
+            logger.info(f"Loading all data from {file_path}")
             path = file_path
             ok = True
         else:
+            logger.info("Loading all data")
             path = 'C:\\Users\\' + self.user + '\\Documents\\ApplicationData'
             path, ok = QtWidgets.QFileDialog.getOpenFileName(self, 'Load All Data', path, "JSON Files (*.json)")
 
@@ -2094,6 +2118,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             :param { keepCals : list(QLineEdit)} -> List of calibration line edit that needs to be retained.
             :return -> None
         """
+        logger.info(f"Clearing application (keepCals={keepCals})")
 
         # Reset all application global variables. These varibales are global to different components of the application.
         self.setWindowTitle("LabView")
