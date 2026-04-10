@@ -1352,9 +1352,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
             base_name = os.path.basename(source_path.rstrip('\\/'))
             if not base_name: # Handle case where path ends in slash or is empty after strip
                  base_name = "Export"
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        export_filename = f"{base_name}_{timestamp}.csv"
+        base_name = base_name.replace(".txt", "")
+        export_filename = f"{base_name}.csv"
         export_path = os.path.join(documents_path, export_filename)
 
         self.rawDataPlotFrame.exportToCsv(export_path)
