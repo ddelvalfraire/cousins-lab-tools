@@ -232,7 +232,7 @@ class RawPlotFrame(Frame):
                                 # Create a temporary curve for the LOF line
                                 color = QtGui.QColor(255, 255, 255, curve.pen.color().alpha())
                                 pen = pg.mkPen(color=color, width=1, style=QtCore.Qt.DashLine)
-                                lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen)
+                                lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen, antialias=True)
                                 self.realTimeGraph.addItem(lof_data_line)
                                 self.lofCurves.append(lof_data_line)
 

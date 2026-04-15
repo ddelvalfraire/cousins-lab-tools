@@ -78,7 +78,7 @@ class EzPlotAll(QObject):
                     hexString = hexChunk[-108:-8]
                     if len(hexString) == 100:
                         data = {
-                            'time': int((current_time - start_time).total_seconds()),
+                            'time': (current_time - start_time).total_seconds(),
                             'channel1': struct.unpack('!i', bytes.fromhex('0' + hexString[1:8]))[0] / 234800968 * 0.2,
                             'channel2': struct.unpack('!i', bytes.fromhex('0' + hexString[9:16]))[0] / 234800968 * 20.0,
                             'channel3': struct.unpack('!i', bytes.fromhex('0' + hexString[17:24]))[0] / 234800968 * 20.0,
