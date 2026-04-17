@@ -10,8 +10,7 @@ __status__ = "Completed"
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QSizePolicy, QMainWindow, QMenuBar, QFileDialog, QAction
-from PyQt5.QtWidgets import QSizePolicy, QDialogButtonBox
+from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
 from PyQt5.QtWidgets import QSizePolicy
 from PyQt5.QtGui import QMovie
 
@@ -20,14 +19,13 @@ import pyqtgraph as pg
 import sys, os, csv
 import threading
 from worker import Worker
-from newFileNotifierThread import NewFileNotifierThread
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QSize
+from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import NewFileNotifierThread
+from PyQt5.QtCore import Qt, QThread
 import numpy as np
-from time import time
 from stopwatch import Stopwatch
 from datetime import datetime
 from math import floor
-from plotAllThread import PlotAllThread
+from Code.Module_Main_1_3.Application.Workers.plotAllThread import PlotAllThread
 
 
 #####################################################################

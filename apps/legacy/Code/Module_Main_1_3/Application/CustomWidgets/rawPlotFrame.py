@@ -2,25 +2,25 @@
 from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QThread
 import pyqtgraph as pg
-import threading
 import numpy as np
 import logging
 import pandas as pd
 
-from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-
 logger = logging.getLogger(__name__)
 
-from Code.Module_Main_1_3.Application.mainUI.EzPlotAll import EzPlotAll
-from Code.Module_Main_1_3.Application.mainUI.newFileNotifierThread import NewFileNotifierThread
+from Code.Module_Main_1_3.Application.Workers.EzPlotAll import EzPlotAll
+from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import NewFileNotifierThread
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
-from Code.Module_Main_1_3.Application.mainUI.plotAllThread import PlotAllThread
+from Code.Module_Main_1_3.Application.Workers.plotAllThread import PlotAllThread
 
 class RawPlotFrame(Frame):
+    """
+    Custom widget that processes the data display it and convert it into a usable format
+    """
     softError = QtCore.pyqtSignal((str,str))
 
     def __init__(self, scrollArea, heightFactor, stateVar, mode, parent=None, ):

@@ -1,11 +1,4 @@
-"""
-__author__ = "Ritik Agarwal, Zoe Parker"
-__credits__ = ["Ritik Agarwal", "Zoe Parker"]
-__version__ = "1.0.0"
-__maintainer__ = ""
-__email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
-__status__ = "Completed"
-"""
+
 
 from statistics import mean
 import numpy as np
@@ -15,16 +8,21 @@ logger = logging.getLogger(__name__)
 
 
 class Calculations:
-
+    """
+    stores calculations methods to be used thought the program, complete stati, should not be declared
+    """
     @staticmethod
-    def segment_linearity(m44, times, start_idx, end_idx):
+    def segment_linearity(y, x, start_idx, end_idx):
+        """
+            Returns the given lines diffrence form its line of best fit.
+        """
         try:
 
-            m44 = np.array(m44, dtype=float)
-            times = np.array(times, dtype=float)
+            y = np.array(y, dtype=float)
+            x = np.array(x, dtype=float)
 
-            t_seg = times[start_idx:end_idx + 1]
-            y_seg = m44[start_idx:end_idx + 1]
+            t_seg = x[start_idx:end_idx + 1]
+            y_seg = y[start_idx:end_idx + 1]
 
             # best fit line through all points, not just endpoints
             p = np.polyfit(t_seg, y_seg, 1)

@@ -5,8 +5,7 @@ from PyQt5.QtWidgets import QApplication, QSplashScreen
 from PyQt5.QtGui import QPixmap
 
 from module1 import LabViewModule1
-# from module2 import LabViewModule2
-# from module3 import LabViewModule3
+
 
 import sys
 import traceback
@@ -44,7 +43,7 @@ def exception_hook(exctype, value, tb):
 
 sys.excepthook = exception_hook
 
-def main(args):
+def main():
 
 
     app = QApplication([])
@@ -72,4 +71,4 @@ def main(args):
     app.exec_()
 
 if __name__ == "__main__":
-    main(2)
+    main()

@@ -1,35 +1,19 @@
 
-"""
-__author__ = "Ritik Agarwal, Zoe Parker"
-__credits__ = ["Ritik Agarwal", "Zoe Parker"]
-__version__ = "1.0.0"
-__maintainer__ = ""
-__email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
-__status__ = "Completed"
-"""
 
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
 import logging
 
 logger = logging.getLogger(__name__)
-from PyQt5.QtWidgets import QApplication, QSizePolicy, QMainWindow, QMenuBar, QFileDialog, QAction
-from PyQt5.QtWidgets import QSizePolicy, QDialogButtonBox
+from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
+from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QSizePolicy
-from PyQt5.QtGui import QMovie
 
 import pyqtgraph as pg
 import sys, os, csv
-import threading
-from worker import Worker
-from newFileNotifierThread import NewFileNotifierThread
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QSize
+from PyQt5.QtCore import Qt
 import numpy as np
-from time import time
 from datetime import datetime
-from math import floor
-from plotAllThread import PlotAllThread
-
 
 #####################################################################
 
@@ -51,7 +35,6 @@ sys.path.append('../uiElements')
 sys.path.append('../calculations')
 
 from Code.Module_Main_1_3.Application.read_data.getData import GetData
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
@@ -59,9 +42,8 @@ from Code.Module_Main_1_3.Application.calculations.Calculations import Calculati
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
 from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
-from Code.Module_Main_1_3.Application.read_data.readEZView import read_from_ezview
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
-from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import customCalculationPlot
+
 
 class LabViewModule2(QtWidgets.QMainWindow):
 

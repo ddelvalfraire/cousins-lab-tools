@@ -1,22 +1,20 @@
 ﻿from datetime import datetime
 
-import pandas as pd
 from PyQt5.QtCore import QObject, pyqtSignal
 import PyQt5.QtCore as QtCore
 import sys
 from math import floor
 import struct
-import time
 
 sys.path.insert(0, '../read_data')
-
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
-from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
 import logging
 logger = logging.getLogger(__name__)
 
 class EzPlotAll(QObject):
+    """
+    Read an Ezview output file and contentiously returns the new data added to it.
+    """
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     throwOutOfDataExceptionSignal = pyqtSignal()
@@ -40,10 +38,10 @@ class EzPlotAll(QObject):
                 self.filesParsedSignal.emit()
                 self.finished.emit()
                 return
-
+            # determines how often point get plotted, lower cause more lag when loading an old file, higher provide more responsive system.
             MAX_POINTS_PER_EMIT = 10
             acc = []
-            any_points_sent = False
+
             isFirstline = True
             start_time = None
 
@@ -56,7 +54,9 @@ class EzPlotAll(QObject):
                     hexChunk = ''
                     current_time = None
                     current_line = file.readline()
+
                     if isFirstline:
+                        # sets start time
                         isFirstline = False
                         line_chunks = current_line.strip().split('\t')
                         start_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
@@ -67,14 +67,17 @@ class EzPlotAll(QObject):
                             current_time = datetime.strptime(line_chunks[0][:-4], '%m/%d/%y %H:%M:%S.%f')
                         hexChunk += line_chunks[1].strip()
                         current_line = file.readline()
+
                         if current_line == '':
+                            # if reached the end of file
                             MAX_POINTS_PER_EMIT = 1
                             # time.sleep(0.5)
                             QtCore.QThread.msleep(100)
                             current_line = file.readline()
                             continue
 
-
+                    # Processing of hexdata was done by prevuise team and they left no info on what its doing by it works.
+                    # channels dont nessacarle mean mass number, only conformed 3 = m44, 1 = m45
                     hexString = hexChunk[-108:-8]
                     if len(hexString) == 100:
                         data = {
@@ -94,8 +97,8 @@ class EzPlotAll(QObject):
                             'gainSetting': '0' + hexString[97:],
                             'index': [0]
                         }
-                        # Based on instruction 2174-2246
-                        # acc.extend([[data['time'], [-999, -999, -999, -999, data['channel1'], data['channel2'], -999, -999]]])
+
+                        # returns required data, all others are unsed
                         acc.extend([[data['time'], [-404.404,    # unkown
                                                     -404.404,    # unkown
                                                     -404.404,    # unkown
@@ -105,10 +108,8 @@ class EzPlotAll(QObject):
                                                     -404.404,    # unkown
                                                     -404.404]]]) # unkown
 
-                        #   channel 1 = mass 45
-                        #   channel 3 = mass 44
-
                     if len(acc) >= MAX_POINTS_PER_EMIT:
+                        # sends data to plots
                         self.secondsAt.emit(str(floor(acc[-1][0])))
                         self.newDataPointSignal.emit(acc)
                         acc = []

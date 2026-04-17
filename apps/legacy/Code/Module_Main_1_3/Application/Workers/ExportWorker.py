@@ -1,9 +1,11 @@
 ﻿from PyQt5 import QtCore
 import openpyxl
-import os
 from itertools import zip_longest
 
 class ExportWorker(QtCore.QObject):
+    """
+    an object that export the sample plot table to and excle file
+    """
     finished = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
 

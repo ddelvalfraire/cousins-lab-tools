@@ -1,8 +1,6 @@
 ﻿from PyQt5 import QtCore
 import numpy as np
 from sympy import lambdify
-import math
-import random
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
@@ -10,6 +8,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SamplePlotCalcWorker(QtCore.QObject):
+    """
+    runs calculation need for sample calc plot and its stored data
+    """
     # Singles for the main module
     finished = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str)

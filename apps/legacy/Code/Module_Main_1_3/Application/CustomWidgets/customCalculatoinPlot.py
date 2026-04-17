@@ -1,5 +1,4 @@
 ﻿from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import QPoint
 import pyqtgraph as pg
 import os
 
@@ -9,14 +8,19 @@ from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
-from Code.Module_Main_1_3.Application.mainUI.ExportWorker import ExportWorker
-from Code.Module_Main_1_3.Application.mainUI.SamplePlotCalcWorker import SamplePlotCalcWorker
+from Code.Module_Main_1_3.Application.Workers.ExportWorker import ExportWorker
+from Code.Module_Main_1_3.Application.Workers.SamplePlotCalcWorker import SamplePlotCalcWorker
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
 import logging
 logger = logging.getLogger(__name__)
 
 class customCalculationPlot(Frame):
+    """
+    A Custom widget that processes a custom experiment needed by the lab
+    """
+
+    # Connects no hard crash warning to a parent
     softError = QtCore.pyqtSignal((str,str))
 
     def __init__(self, scrollArea, heightFactor, getVars, DefaultXAxisEquiation, DefaultYAxisEquiation, parent,
@@ -44,6 +48,7 @@ class customCalculationPlot(Frame):
         self.useAsync = False
         
         # Throttling timer for custom calculation updates
+        # Used prevent overloading crashes, can probable be removed.
         self.calcTimer = QtCore.QTimer()
         self.calcTimer.setSingleShot(True)
         self.calcTimer.setInterval(250)  # Update every 500ms at most
@@ -143,6 +148,7 @@ class customCalculationPlot(Frame):
         self.calculationPlotClearTableButton.clicked.connect(self.clearSampleData, QtCore.Qt.QueuedConnection)
 
     def updateCustomCalcPlots(self, data):
+        """stores data to be caclulated when timer triggers"""
         try:
             self.lastData = data
             if not self.calcTimer.isActive():
@@ -151,6 +157,10 @@ class customCalculationPlot(Frame):
             self.softError.emit("error",f"Failed to update custom calculation plots {e}")
 
     def _onCalcTimerTimeout(self):
+        """
+        processes data, Async run multi threaded but can cause crashes so until fix uses sync
+        :return:
+        """
         if self.lastData is not None:
             if self.useAsync:
                 self.updateCustomCalcPlotsAsync(self.lastData)
@@ -536,7 +546,6 @@ class customCalculationPlot(Frame):
         self.calculationPlotTable.setItem(0, 0, QtWidgets.QTableWidgetItem(sampleName))
 
     def clearSampleData(self):
-        # We need to clear the list in place because it's shared
         self.samplePlotData.clear()
         self.calculationPlotTable.clear()
         self.calculationPlotTable.setRowCount(0)
@@ -554,19 +563,6 @@ class customCalculationPlot(Frame):
                 continue
         if lastHasData or last < 0:
             table.insertRow(last+1)
-
-    def customPlotTableContexWindow(self, table, position: QPoint):
-        row = table.rowAt(position.y())
-        table.selectRow(row)
-        menu = QtWidgets.QMenu()
-        deleteAction = menu.addAction("Delete Row")
-        action = menu.exec_(table.viewport().mapToGlobal(position))
-        if action == deleteAction:
-            row = table.currentRow()
-            if row >= 0:
-                table.removeRow(row)
-                if row == table.rowCount():
-                    self.ensureCustomTableEmptyRow(table)
 
     def clearCostomCalculationPlot(self):
         logger.debug("clearCostomCalculationPlot - BEGIN")

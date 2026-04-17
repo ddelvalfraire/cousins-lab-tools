@@ -1,13 +1,4 @@
 
-"""
-__author__ = "Ritik Agarwal, Zoe Parker"
-__credits__ = ["Ritik Agarwal", "Zoe Parker"]
-__version__ = "1.0.0"
-__maintainer__ = ""
-__email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
-__status__ = "Completed"
-"""
-
 from PyQt5.QtCore import QObject, pyqtSignal
 import PyQt5.QtCore as QtCore
 from time import time
@@ -22,7 +13,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class PlotAllThread(QObject):
-
+    """
+    Plots the all Asc Data, and contentiously emits new data added to the folder
+    name a hold over from old code
+    """
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     throwOutOfDataExceptionSignal = pyqtSignal()
