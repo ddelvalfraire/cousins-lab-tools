@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QSizePolicy
 
 import pyqtgraph as pg
-import sys, os, csv
+import sys, os, csv, re
 from PyQt5.QtCore import Qt
 import numpy as np
 from datetime import datetime
@@ -1327,14 +1327,22 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Get Documents folder path
         documents_path = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.DocumentsLocation)
         
-        # Determine base name from folder_path or EZViewPath
-        base_name = "Export"
-        source_path = self.rawDataPlotFrame.folder_path or self.rawDataPlotFrame.EZViewPath
-        if source_path:
-            base_name = os.path.basename(source_path.rstrip('\\/'))
-            if not base_name: # Handle case where path ends in slash or is empty after strip
-                 base_name = "Export"
-        base_name = base_name.replace(".txt", "")
+        # Scan for existing RawDataAcquisition{n}Data.csv files to determine next index
+        max_n = 0
+        pattern = re.compile(r"RawDataAcquisition(\d+)Data\.csv")
+        
+        if os.path.exists(documents_path):
+            for filename in os.listdir(documents_path):
+                match = pattern.match(filename)
+                if match:
+                    try:
+                        n = int(match.group(1))
+                        if n > max_n:
+                            max_n = n
+                    except ValueError:
+                        pass
+        
+        base_name = f"RawDataAcquisition{max_n + 1}Data"
         export_filename = f"{base_name}.csv"
         export_path = os.path.join(documents_path, export_filename)
 
