@@ -612,13 +612,14 @@ class RawPlotFrame(Frame):
                 columns = ["Time"] + [f"Value {i+1}" for i in range(num_y)]
                 y_indices = list(range(num_y))
 
-            # Create target x-values: every 0.5 seconds from first to last
+            n = 0.5 # Interpolation step size in seconds
+            # Create target x-values: every n seconds from first to last
             start_x = sorted_x[0]
             end_x = sorted_x[-1]
-            interpolated_x = np.arange(start_x, end_x + 0.1, 0.5) # Using 0.1 buffer to include the end if it's close to a 0.5 multiple
+            interpolated_x = np.arange(start_x, end_x + 0.1, n) # Using 0.1 buffer to include the end if it's close to a n multiple
             
             # If end_x was not reached by arange due to step, ensure we at least try to get as close as possible
-            # or strictly follow the "every 0.5 seconds" which arange does.
+            # or strictly follow the "every n seconds" which arange does.
             
             # Prepare data for interpolation
             # Transpose data: from {x: [y1, y2...]} to [[y1_all], [y2_all]...]
