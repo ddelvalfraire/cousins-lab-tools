@@ -4,6 +4,8 @@ module 1 and 2 are complete buit and working, module 3 has not been touched but 
 ## Data 
 -> Data stores test data and programs that simulate the machines Acquisition output and ezview output
 ## Build
+- run the build.bat bash file
+- or:
 1. to download all requirements: pip install -r Code/Module_Main_1_3/Application/requirements.txt
 2. To build: run from outside the code folder: pyinstaller --name LabView_module_1 --onefile --windowed --paths . --paths Code Code\Module_Main_1_3\Application\mainUI\MainAndBuildFiles\mianMoudle1.py --add-data "Code\Module_Main_1_3\Application\mainUI\spinner50px.gif;Code/Module_Main_1_3/Application/mainUI"
 3. Replace the 1's with 2's to build moudle 2
