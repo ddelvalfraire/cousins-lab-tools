@@ -577,7 +577,7 @@ class RawPlotFrame(Frame):
 
     def exportToCsv(self, path):
         """
-        Exports the current plot data to a CSV file.
+        Exports the current plot data to a CSV file with interpolation every 0.5 seconds.
         :param path: The file path where the CSV file will be saved.
         """
         logging.debug(f"exportToCsv - START (Path: {path})")
@@ -590,35 +590,53 @@ class RawPlotFrame(Frame):
                 return
 
             # Sort data by x-values (time/index)
-            sorted_x = sorted(data.keys())
+            sorted_x = np.array(sorted(data.keys()))
             
+            if len(sorted_x) < 2:
+                logging.warning("exportToCsv - Not enough data points to interpolate")
+                # Fallback to exporting the single point if it exists
+                # Or just return
+                return
+
             # Prepare columns based on mode
             if self.mode == 1:
                 columns = ["Time", "Mass 32", "Mass 34", "Mass 36", "Mass 44", "Mass 45", "Mass 46", "Mass 47", "Mass 49"]
+                y_indices = list(range(8))
             elif self.mode == 2:
                 columns = ["Time", "Mass 32", "Mass 44", "Mass 45"]
+                # For mode 2, we only have curves 1, 4, and 5 (indices 0, 3, 4 in the 8-value list)
+                y_indices = [0, 3, 4]
             else:
-                # Fallback if mode is unknown, use generic names
+                # Fallback if mode is unknown
                 num_y = len(next(iter(data.values())))
                 columns = ["Time"] + [f"Value {i+1}" for i in range(num_y)]
+                y_indices = list(range(num_y))
 
-            # Create rows for DataFrame
-            rows = []
-            for x in sorted_x:
-                y_values = data[x]
-                if self.mode == 2:
-                    # For mode 2, we only have curves 1, 4, and 5 (indices 0, 3, 4 in the 8-value list)
-                    # Assuming y_values always has 8 elements as initialized in update_plot_data
-                    if len(y_values) >= 5:
-                        rows.append([x, y_values[0], y_values[3], y_values[4]])
-                    else:
-                        rows.append([x] + list(y_values))
-                else:
-                    rows.append([x] + list(y_values))
+            n = 0.5 # Interpolation step size in seconds
+            # Create target x-values: every n seconds from first to last
+            start_x = sorted_x[0]
+            end_x = sorted_x[-1]
+            interpolated_x = np.arange(start_x, end_x + 0.1, n) # Using 0.1 buffer to include the end if it's close to a n multiple
+            
+            # If end_x was not reached by arange due to step, ensure we at least try to get as close as possible
+            # or strictly follow the "every n seconds" which arange does.
+            
+            # Prepare data for interpolation
+            # Transpose data: from {x: [y1, y2...]} to [[y1_all], [y2_all]...]
+            y_data_raw = np.array([data[x] for x in sorted_x])
+            
+            interpolated_rows = []
+            for target_x in interpolated_x:
+                row = [target_x]
+                for idx in y_indices:
+                    # np.interp(x_to_interpolate, xp_original, fp_original)
+                    val = np.interp(target_x, sorted_x, y_data_raw[:, idx])
+                    row.append(val)
+                interpolated_rows.append(row)
 
-            df = pd.DataFrame(rows, columns=columns)
+            df = pd.DataFrame(interpolated_rows, columns=columns)
             df.to_csv(path, index=False)
-            logging.info(f"exportToCsv - Successfully exported to {path}")
+            logging.info(f"exportToCsv - Successfully exported interpolated data to {path}")
 
         except Exception as e:
             logging.error(f"exportToCsv - Error: {e}")

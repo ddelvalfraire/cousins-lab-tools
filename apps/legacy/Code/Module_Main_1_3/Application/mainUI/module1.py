@@ -315,10 +315,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         self.concentrationGraph = Graph(100,180)
         self.concentrationGraph.setLabel(axis='left', text = 'Velocity')
-        self.concentrationGraph.setLabel(axis='bottom', text = '[CO2] (nmol/ml/sec)')
+        self.concentrationGraph.setLabel(axis='bottom', text = '[O2]')
 
         self.concentrationGraph2 = Graph(100, 180)
-        self.concentrationGraph2.setLabel(axis='bottom', text='[CO2] (nmol/ml/sec)')
+        self.concentrationGraph2.setLabel(axis='bottom', text='[CO2]')
 
         self.concentrationGraphVLayout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.concentrationGraphVLayout.setContentsMargins(0, 10, 0, 0)

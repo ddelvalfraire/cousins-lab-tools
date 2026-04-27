@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Code\\Module_Main_1_3\\Application\\mainUI\\mian.py'],
+    ['Code\\Module_Main_1_3\\Application\\MainAndBuildFiles\\mianMoudle1.py'],
     pathex=['.', 'Code'],
     binaries=[],
     datas=[('Code\\Module_Main_1_3\\Application\\mainUI\\spinner50px.gif', 'Code/Module_Main_1_3/Application/mainUI')],
