@@ -1,6 +1,6 @@
 # Program Info
 This is a multigroup long project so their is some built in strangeness with that lake of communication.
-module 1 and 2 are complete buit and working, module 3 has not been touched but should be moved into module main 1_3 (all modules use to be their own folder but their was allot of duplicxated code, so to make it so improvement to one would spain to the others)
+module 1 and 2 are complete buit and working, module 3 has not been touched but should be moved into module main 1_3 (all modules use to be their own folder but their was allot of duplicated code, so to make it so improvement to one would span to the others). Their is a buntch of loggin in the code to help track down a few crashes that have now been fixed. The mainModules dectect if its an exxe (the "frozen" bool) and if not will added those logs to the crash report file.
 ## Data 
 -> Data stores test data and programs that simulate the machines Acquisition output and ezview output
 ## Build
@@ -24,3 +24,19 @@ module 1 and 2 are complete buit and working, module 3 has not been touched but 
   - file: read file data and store file info
   - getData: read the files in the selected folder for acq mode
   - ReadEZView: old file that kept around as it contain lost info on how to decode ezview files
+  - sharedSingleton: a storeage object that used to store info cross class and cross thread, it was implamented by the old team and the program should be rewritten to not us it.
+- uiElements: Default widget structure that should be use in place of the widget they represent to keep ui consented, but no code require them be used.
+  - button: we clicked triggers set targeted events.
+  - curve: a line on a graph.
+  - CurveModule3: curve but from module 3, as we did not combine module 3 into the program structure it remians, should be combined with curve
+  - dialog: pop up text box, with built in buttons.
+  - frame: widget/sub-frame holder, manly used as they have built in fetures like rescaling or scrolling.
+  - graph: the graph ui elements
+  - LineEdit: imputable text boxes.
+- Workers: classes that do computation work, genrall should not dercle interact with ui, are usally run on seperate threads
+  - ExportWorks: Exports module1s customCalculationsPlots table to an excel file
+  - EzPlotAll: Converts the Ezview files into data to be saved and plotted, run contuisle and updates as the file get added to, can be tested with Data/Test Data/EZviewTest.py
+  - newFileNotifier: reads the Acq folder and updates when a new file gets added to that folder.
+  - plotAllThread: plots a acq folder, updates automaticle when the files gets added, can be tested with Data/Test Data/simulate.py
+  - SamplePlotCalcWorker: handles the calculatons for SamplePlot.
+  
