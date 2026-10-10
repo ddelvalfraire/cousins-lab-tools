@@ -1,0 +1,24 @@
+Agenda items:
+1. What to bring
+2. Dress code?
+3. Agenda for Friday meeting?
+4. Other preparation
+5. Source control
+
+Decisions:
+1.) Bring Pencil, Pen, Paper, or electronic device for taking notes. Ask for permission to record to transcribe later?
+
+2.) Smart casual - Shorts are fine, but should be nicer. No flip-flops, sweatpants, 
+
+3.) We won't have a written agenda because the meeting is on the longer side and we're going in blind. Try to meet with researchers/ whoever is actually using the platform.
+
+4.) Read through the first section of the report template to find what questions to ask. Expect to come out of the meeting with a requirements document
+
+5.) Set up / get access on Friday to repository, check for old documentation
+
+Questions to ask:
+ - access to prior teams' documentation / repository?
+ - basic requirements?
+ - how do current sensors interface with the platform?
+ - Get an idea for researcher technical skills
+ - Existing infrastructure, get hardware limitations? (stable backend vs. everyday desktop powered on for working hours etc...)
