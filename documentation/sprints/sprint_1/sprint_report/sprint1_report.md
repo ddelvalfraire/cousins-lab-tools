@@ -1,6 +1,7 @@
 # Sprint x Report (Dates from Sprint * to Sprint *)
 
-## YouTube link of Sprint * Video (Make this video unlisted)
+## YouTube link of Sprint 1 Video (Make this video unlisted)
+[link](https://youtu.be/o_k17oQQ70w)
 
 ## What's New (User Facing)
 
@@ -58,10 +59,9 @@ Here's what went well:
  
 Here's what we'd like to improve:
    * Client communication
-   * Item 2
-   * Item x
+   * Client meeting frequency
+   * Planning next steps
   
 Here are changes we plan to implement in the next sprint:
    * Meet with client more frequently
-   * Item 2
-   * Item x
+   * Create a solid roadmap for our sprint 2 software
