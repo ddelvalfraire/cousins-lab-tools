@@ -1,0 +1,49 @@
+classDiagram
+ direction TB
+ class Session {
+  UUID id
+  string editableName
+  uint manifestRevision
+ }
+ class CapturePlan {
+  Member settingsAndTiming
+  Policy immutableSnapshot
+ }
+ class Capture {
+  UUID id
+  UUID deviceId
+  uint connectionEpoch
+ }
+ class InstrumentDefinition {
+  string versionHash
+  Channels unitsAndTypes
+  Capabilities timingAndControl
+ }
+ class SampleBatch {
+  SeqRange rowIdentity
+  ClockStamp rawTimes
+  Quality flagsAndGaps
+ }
+ class Segment {
+  string relativePath
+  string checksum
+  SeqRange committedRows
+ }
+ class ClockDomain {
+  UUID id
+  string originAndEpoch
+  optional uncertainty
+ }
+ class TemplateRevision {
+  Charts channelsAndStyle
+  Settings deviceConfiguration
+  Recipes analysisVersions
+ }
+ Session "1" *-- "0..*" CapturePlan
+ CapturePlan "1" *-- "1..*" Capture
+ Session "*" --> "0..1" TemplateRevision : pins
+ Capture "*" --> "1" InstrumentDefinition : pins
+ Capture "1" *-- "0..*" SampleBatch
+ Capture "1" *-- "0..*" Segment
+ SampleBatch "*" --> "1..*" ClockDomain : preserves
+ Segment ..> SampleBatch : exact ranges

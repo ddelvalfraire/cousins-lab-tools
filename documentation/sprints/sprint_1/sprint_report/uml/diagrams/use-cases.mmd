@@ -1,0 +1,14 @@
+flowchart LR
+ Researcher["«actor»<br/>Researcher"]
+ subgraph App[Proposed data acquisition application]
+  Monitor([Monitor gas and fluorescence together])
+  Start([Coordinate capture])
+  Analyze([Run and review analysis])
+  Configure([Choose charts and appearance])
+  Locate([Locate recorded data])
+ end
+ Researcher --- Monitor
+ Researcher --- Start
+ Researcher --- Analyze
+ Researcher --- Configure
+ Researcher --- Locate

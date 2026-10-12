@@ -1,0 +1,14 @@
+flowchart LR
+ Begin(( )) --> Choose(Choose data and analysis recipe)
+ Choose --> Scope{Interval required?}
+ Scope -->|yes| Propose(Propose or select intervals)
+ Propose --> Review(Researcher reviews intervals)
+ Review --> Evaluate(Calculate result)
+ Scope -->|no| Evaluate
+ Evaluate --> Quality{Valid result?}
+ Quality -->|yes| Save(Save result with input references)
+ Quality -->|no| Explain(Show missing inputs or failed checks)
+ Save --> Finish((( )))
+ Explain --> Finish
+ style Begin fill:#172c46,stroke:#172c46
+ style Finish fill:#172c46,stroke:#172c46
