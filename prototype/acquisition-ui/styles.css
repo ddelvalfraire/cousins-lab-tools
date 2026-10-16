@@ -215,3 +215,20 @@ dialog form { display: flex; flex-direction: column; gap: 14px; }
   .bento-grid > .bento-tile { grid-column: 1 / -1 !important; grid-row: auto !important; }
   .bento-tile.kind-chart { min-height: 320px; }
 }
+.capture-interval { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.range-heading { display: flex; gap: 10px; font-size: 14px; align-items: baseline; }
+.range-heading span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.range-options { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.range-chip { font-size: 14px; min-height: 36px; padding: 6px 12px; }
+.reference-select { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); margin-right: 6px; }
+.custom-range-form { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; padding: 12px; background: var(--workspace); border-radius: var(--radius-sm); }
+.custom-range-form input { width: 140px; font-variant-numeric: tabular-nums; }
+.custom-range-form p { flex-basis: 100%; }
+.custom-range-form[hidden] { display: none; }
+.replay-transport { display: flex; gap: 12px; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+.playhead-readout { display: flex; gap: 6px; align-items: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.playhead-readout strong { font-size: 22px; }
+.playhead-readout span { color: var(--muted); font-size: 14px; }
+.replay-scrubber { flex: 1; display: flex; }
+.replay-scrubber input { width: 100%; accent-color: var(--accent); padding: 0; border: 0; }
+.speed-control { display: flex; gap: 8px; align-items: center; }

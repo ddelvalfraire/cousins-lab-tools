@@ -4,7 +4,7 @@
 import { api, esc, fmtClock, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { visible } from "./layout.js";
-import { axisFor, extentOf, formatDuration, windowFor } from "./timerange.js";
+import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -38,7 +38,7 @@ function liveSource(m, template) {
 
   source.dataset = () => ({
     version: source.version,
-    axis: { name: RUN_CLOCK, format: formatDuration },
+    axis: { name: RUN_CLOCK, format: formatDuration, parse: parseDuration },
     extent: [0, source.elapsed],
     chartSeries: id => specs[id].series.map(s => ({ name: `${s.role} · ${s.value}`, points: points.get(`${s.role}:${s.value}`) || [] })),
     chartMarkers: id => events.filter(e => e.x != null && (e.source === "operator"
@@ -48,12 +48,14 @@ function liveSource(m, template) {
   return source;
 }
 
+let replayVersion = 0;
+
 async function replaySource(m, session, template, reference) {
   const saved = session.alignments.at(-1);
   const inputs = saved?.inputs ? structuredClone(saved.inputs)
     : { reference: template.data.alignment?.default_reference || "event", manual: {}, trial_params: {} };
   if (reference) inputs.reference = reference;
-  const source = { live: false, version: 1, status: m.status, captures: m.captures, inputs, saved, events: [] };
+  const source = { live: false, version: ++replayVersion, status: m.status, captures: m.captures, inputs, saved, events: [] };
   let aligned = { alignment: { reference: inputs.reference, unaligned: [], trials: [] }, charts: [], values: {} };
   try {
     aligned = await api(`/api/sessions/${m.id}/alignment/preview`, { method: "POST", body: inputs });
@@ -148,45 +150,164 @@ async function mount(page, id, restart) {
     },
   };
 
+  const view = {
+    range: { mode: source.live ? "60" : "all", custom: null },
+    frozen: null,
+    cursor: null, playing: false, speed: 1, lastTick: 0,
+  };
+  const windowOf = ds => view.frozen || windowFor(view.range.mode, ds.extent, view.range.custom);
+
   const frame = () => {
     const dataset = source.dataset();
-    return { dataset, window: windowFor("all", dataset.extent), cursor: null, live: source.live, status: source.status, captures: source.captures };
+    const window = windowOf(dataset);
+    if (!source.live) view.cursor = Math.min(window.end, Math.max(window.start, view.cursor ?? window.end));
+    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures };
+  };
+  const paintToolbar = f => {
+    const fmt = f.dataset.axis.format;
+    const q = sel => page.querySelector(sel);
+    q("[data-range-summary]").textContent = `${fmt(f.window.start)} to ${fmt(f.window.end)} · ${Math.round(f.window.end - f.window.start)} s`;
+    page.querySelectorAll("[data-range]").forEach(b => b.setAttribute("aria-pressed", !view.frozen && b.dataset.range === view.range.mode));
+    q("[data-range-custom]").setAttribute("aria-pressed", view.range.mode === "custom" || !!view.frozen);
+    const freeze = q('[data-header="freeze"]');
+    if (freeze) freeze.innerHTML = view.frozen ? `${icon("play")}Resume live` : `${icon("pause")}Freeze display`;
+    if (source.live) return;
+    q("[data-replay-time]").textContent = fmt(f.cursor);
+    q("[data-replay-end]").textContent = fmt(f.window.end);
+    Object.assign(q("[data-seek]"), { min: f.window.start, max: f.window.end, value: f.cursor });
+    q("[data-seek]").setAttribute("aria-valuetext", fmt(f.cursor));
+    q("[data-play]").innerHTML = view.playing ? `${icon("pause")}Pause` : `${icon("play")}Play interval`;
   };
   const paint = () => {
-    grid?.paint(frame());
+    const f = frame();
+    grid?.paint(f);
+    paintToolbar(f);
     page.querySelector("[data-strip]").innerHTML = statusStrip(m, source);
     page.querySelector("[data-alerts]").innerHTML = alerts(m, session, source);
   };
   const mountView = () => {
     grid?.dispose();
-    const view = views.find(v => v.id === state.view);
+    const v = views.find(v => v.id === state.view);
     const canvas = page.querySelector("[data-canvas]");
-    canvas.innerHTML = renderGrid(view.components, ctx);
-    grid = mountGrid(canvas, view.components, ctx);
+    canvas.innerHTML = renderGrid(v.components, ctx);
+    grid = mountGrid(canvas, v.components, ctx);
     page.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-selected", b.dataset.view === state.view));
     paint();
   };
+  const setRange = (mode, custom = null) => {
+    Object.assign(view, { range: { mode, custom }, frozen: source.live && custom ? custom : null, playing: false });
+    view.cursor = source.live ? null : windowOf(source.dataset()).start;
+    paint();
+  };
+
+  const references = [["event", "Shared event"], ["elapsed", "Elapsed since each start"], ["clock", "Clock time"]];
+  const toolbar = () => `
+    <div class="capture-interval">
+      <div class="range-heading"><strong>${source.live ? "Display interval" : "Replay interval"}</strong><span data-range-summary></span></div>
+      <div class="range-options" role="group" aria-label="Time range">
+        ${source.live ? "" : `<label class="reference-select"><span>Reference</span><select data-reference>${references.map(([k, label]) =>
+          `<option value="${k}" ${k === source.alignment?.reference ? "selected" : ""}>${label}</option>`).join("")}</select></label>`}
+        ${RANGE_PRESETS.map(([k, label]) => `<button class="range-chip" data-range="${k}">${label}</button>`).join("")}
+        <button class="range-chip" data-range-custom aria-controls="custom-range">${icon("sliders")}Custom</button>
+      </div>
+    </div>`;
+  const customForm = () => `
+    <form id="custom-range" class="custom-range-form" hidden novalidate>
+      <label class="field">Start<input name="from" autocomplete="off"></label>
+      <label class="field">End<input name="to" autocomplete="off"></label>
+      <button type="submit" class="primary">Apply</button><button type="button" data-custom-cancel>Cancel</button>
+      <p class="small muted">${source.live ? "Run clock" : { event: "Time from the event, negative before it", elapsed: "Time since each capture's start", clock: "Local clock time" }[source.alignment?.reference] || ""}, as HH:MM:SS or seconds.
+        Only the display changes; stored data keeps its original times.</p>
+      <p class="error-text" role="alert"></p>
+    </form>`;
+  const transport = () => source.live ? "" : `
+    <div class="replay-transport">
+      <button data-play></button>
+      <button class="icon-only" data-restart aria-label="Restart interval" title="Restart interval">${icon("undo")}</button>
+      <div class="playhead-readout"><strong data-replay-time></strong><span>/ <span data-replay-end></span></span></div>
+      <label class="replay-scrubber"><span class="sr-only">Replay position</span><input type="range" step="0.1" data-seek></label>
+      <label class="speed-control">Speed<select data-speed>${[0.5, 1, 2, 4, 10, 20].map(v => `<option value="${v}" ${v === view.speed ? "selected" : ""}>${v}×</option>`).join("")}</select></label>
+    </div>`;
 
   const t = m.template;
   page.innerHTML = pageHeader([["Sessions", "#/"], [m.name, `#/sessions/${m.id}`]], m.name, {
     current: "Capture",
     sub: `<a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · ${statusBadge(m.status)}`,
-    actions: session.live ? `<button class="danger" data-header="stop">${icon("stop")}Stop run</button>`
+    actions: session.live ? `<button data-header="freeze"></button><button class="danger" data-header="stop">${icon("stop")}Stop run</button>`
       : `<a class="button" href="#/sessions/${esc(m.id)}">${icon("file")}Review &amp; export</a>`,
   }) + `
     <div class="runtime-page">
       <section class="capture-status-strip" aria-label="Session state" data-strip></section>
       <div data-alerts></div>
-      <section class="replay-controls">
+      <section class="replay-controls" aria-label="${source.live ? "Display time range" : "Recording replay"}">
         <div class="capture-toolbar">
           <div class="view-tabs" role="tablist" aria-label="Views">${views.map(v => `<button role="tab" data-view="${esc(v.id)}">${esc(v.name)}</button>`).join("")}</div>
+          ${toolbar()}
         </div>
+        ${customForm()}
+        ${transport()}
       </section>
       <div class="runtime-workspace"><div class="runtime-canvas" data-canvas></div></div>
     </div>`;
+
+  const q = sel => page.querySelector(sel);
+  const form = q("#custom-range");
   page.querySelectorAll("[data-view]").forEach(b => (b.onclick = () => { state.view = b.dataset.view; mountView(); }));
-  page.querySelector('[data-header="stop"]')?.addEventListener("click", ctx.actions.stop);
+  page.querySelectorAll("[data-range]").forEach(b => (b.onclick = () => setRange(b.dataset.range)));
+  q("[data-range-custom]").onclick = () => {
+    const f = frame();
+    form.hidden = false;
+    form.elements.from.value = f.dataset.axis.format(f.window.start);
+    form.elements.to.value = f.dataset.axis.format(f.window.end);
+    form.elements.from.focus();
+  };
+  q("[data-custom-cancel]").onclick = () => { form.hidden = true; };
+  form.onsubmit = event => {
+    event.preventDefault();
+    const ds = source.dataset();
+    const [from, to] = [form.elements.from.value, form.elements.to.value].map(ds.axis.parse);
+    const [lo, hi] = ds.extent;
+    const error = !Number.isFinite(from) || !Number.isFinite(to) ? "Enter HH:MM:SS or seconds."
+      : from >= to ? "End must be after start."
+      : to < lo || from > hi ? `The data spans ${ds.axis.format(lo)} to ${ds.axis.format(hi)}.` : "";
+    form.querySelector(".error-text").textContent = error;
+    if (error) return;
+    form.hidden = true;
+    setRange("custom", { start: from, end: to });
+  };
+  q('[data-header="freeze"]')?.addEventListener("click", () => {
+    view.frozen = view.frozen ? null : windowOf(source.dataset());
+    if (!view.frozen && view.range.mode === "custom") view.range = { mode: "60", custom: null };
+    paint();
+  });
+  q('[data-header="stop"]')?.addEventListener("click", ctx.actions.stop);
+  q("[data-reference]")?.addEventListener("change", async event => {
+    source = await replaySource(m, session, template, event.target.value);
+    Object.assign(view, { range: { mode: "all", custom: null }, cursor: null, playing: false });
+    form.hidden = true;
+    mountView();
+  });
+  q("[data-play]")?.addEventListener("click", () => {
+    const w = windowOf(source.dataset());
+    if (!view.playing && view.cursor >= w.end) view.cursor = w.start;
+    view.playing = !view.playing;
+    view.lastTick = performance.now();
+    paint();
+  });
+  q("[data-restart]")?.addEventListener("click", () => { view.cursor = windowOf(source.dataset()).start; view.playing = false; paint(); });
+  q("[data-seek]")?.addEventListener("input", event => { view.cursor = Number(event.target.value); view.playing = false; paint(); });
+  q("[data-speed]")?.addEventListener("change", event => { view.speed = Number(event.target.value); });
   mountView();
+
+  const replay = setInterval(() => {
+    if (!view.playing) return;
+    const now = performance.now();
+    const step = advance(view.cursor, (now - view.lastTick) / 1000, view.speed, windowOf(source.dataset()));
+    view.lastTick = now;
+    view.cursor = step.cursor;
+    view.playing = !step.ended;
+    paint();
+  }, 100);
 
   const poll = async () => {
     try {
@@ -200,7 +321,7 @@ async function mount(page, id, restart) {
     }
   };
   if (source.live) poll();
-  return () => { clearTimeout(timer); grid?.dispose(); };
+  return () => { clearTimeout(timer); clearInterval(replay); grid?.dispose(); };
 }
 
 export async function renderCapture(page, id) {
