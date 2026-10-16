@@ -1,0 +1,17 @@
+id: ms2-ezview-simulated
+label: Mass spectrometer 2, EZView spool (simulated)
+adapter: ezview_spool
+input_kind: simulated
+model: Mass spectrometer read through EZ-Tap and EZView (model not documented)
+aliases: {m45: ch1, m44: ch3}
+settings:
+  poll_interval_s: 0.1
+simulate:
+  note: >
+    A simulator writes an EZView-style spool with this machine's clock. Values are the
+    researcher's recorded Mass 44 and Mass 45 for plant 150-pl1 (workbook rows 6762-8282).
+    Mass 32 (-404.404) is left out because the spool decoder cannot produce negative values.
+  workbook: ${repo}/reference/instruments/mass-spec/Raw data-mass spec.xlsx
+  first_row: 6762
+  last_row: 8282
+  channels: {ch3: m44, ch1: m45}

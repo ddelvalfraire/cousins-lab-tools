@@ -1,0 +1,9 @@
+id: ms2-ezview
+label: Mass spectrometer 2, EZView spool
+adapter: ezview_spool
+input_kind: hardware
+model: Mass spectrometer read through EZ-Tap and EZView (model not documented)
+aliases: {m45: ch1, m44: ch3}
+settings:
+  spool_path: ""
+  poll_interval_s: 0.1
