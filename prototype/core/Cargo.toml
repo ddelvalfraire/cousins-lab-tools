@@ -1,0 +1,11 @@
+[package]
+name = "cousinslab"
+version = "0.1.0"
+description = "Acquisition engine for the Cousins Lab: templates, instrument adapters, sessions, alignment"
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
