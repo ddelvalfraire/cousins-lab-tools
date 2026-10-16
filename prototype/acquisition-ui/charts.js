@@ -9,16 +9,20 @@ export function makeChart(el) {
   return { chart, dispose: () => { observer.disconnect(); chart.dispose(); } };
 }
 
+export function markLines(markers, cursor) {
+  const marks = [
+    ...markers.map(m => ({ xAxis: m.x, name: m.label, lineStyle: { color: cssVar("--muted"), type: "dashed", width: 1 } })),
+    ...(cursor == null ? [] : [{ xAxis: cursor, name: "Playhead", lineStyle: { color: cssVar("--fg"), type: "solid", width: 1.5 } }]),
+  ];
+  return { symbol: "none", silent: true, animation: false, label: { show: false }, data: marks };
+}
+
 /**
  * series: [{name, points: [[x, y]...]}], markers: [{x, label}], cursor: x of the replay playhead.
  * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
  */
 export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false }) {
   const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
-  const marks = [
-    ...markers.map(m => ({ xAxis: m.x, name: m.label, lineStyle: { color: muted, type: "dashed", width: 1 } })),
-    ...(cursor == null ? [] : [{ xAxis: cursor, name: "Playhead", lineStyle: { color: text, type: "solid", width: 1.5 } }]),
-  ];
   return {
     animation: false,
     color: PALETTE_VARS.map(cssVar),
@@ -41,7 +45,7 @@ export function lineOption({ series, markers = [], cursor = null, window = null,
       sampling: "lttb",
       lineStyle: { width: 1.5 },
       data: s.points,
-      markLine: i === 0 && marks.length ? { symbol: "none", silent: true, label: { show: false }, data: marks } : undefined,
+      markLine: i === 0 ? markLines(markers, cursor) : undefined,
     })),
   };
 }
