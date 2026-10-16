@@ -109,7 +109,7 @@ function statusStrip(m, source) {
         <span class="device-row"><span>Acquisition</span>${statusBadge(c.status, ACQUISITION[c.status])}</span>
         <span class="device-row"><span>Recording</span>${recordingState(c, source.status, source.live)}<small>${c.rows ?? 0} rows</small></span>
       </div>`).join("")}</div>
-    <div class="capture-policy"><span>Device failure</span><strong>${policy}</strong></div>`;
+    ${m.kind === "import" ? "" : `<div class="capture-policy"><span>Device failure</span><strong>${policy}</strong></div>`}`;
 }
 
 function alerts(m, session, source) {

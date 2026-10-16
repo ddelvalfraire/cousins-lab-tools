@@ -171,15 +171,15 @@ dialog form { display: flex; flex-direction: column; gap: 14px; }
 .appearance-option[data-mode="system"] .preview i { background: #fff; }
 
 /* Capture page */
-.capture-status-strip { display: flex; gap: 32px; align-items: flex-start; padding: 16px var(--page-gutter); background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.capture-status-strip { display: flex; gap: 24px 32px; align-items: flex-start; padding: 16px var(--page-gutter); background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .capture-clock { display: flex; flex-direction: column; min-width: 170px; }
 .capture-clock > span, .capture-policy > span, .device-row > span:first-child { color: var(--muted); font-size: 14px; }
 .capture-clock strong { font: 600 32px/40px var(--font-display); font-variant-numeric: tabular-nums; }
 .capture-clock small { color: var(--muted); font-size: 13px; }
-.capture-devices { display: flex; gap: 32px; flex: 1; flex-wrap: wrap; }
-.device-state { display: grid; gap: 4px; min-width: 220px; }
+.capture-devices { display: flex; gap: 16px 28px; flex: 1; flex-wrap: wrap; }
+.device-state { display: grid; gap: 4px; }
 .device-name { display: flex; gap: 8px; align-items: center; }
-.device-row { display: grid; grid-template-columns: 92px auto 1fr; gap: 8px; align-items: center; }
+.device-row { display: grid; grid-template-columns: 84px auto auto; gap: 8px; align-items: center; justify-content: start; }
 .device-row small { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .capture-policy { display: flex; flex-direction: column; text-align: right; }
 .alert-strip { display: flex; gap: 10px; align-items: center; padding: 10px var(--page-gutter); font-size: 14px; border-bottom: 1px solid var(--border); }
@@ -246,7 +246,7 @@ dialog form { display: flex; flex-direction: column; gap: 14px; }
 .diag-list li.operator strong { color: var(--accent); }
 .diag-list li.tone-bad { color: var(--destructive-text); }
 .diag-time { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
-@media (max-width: 1099px) { :root { --diagnostic-width: 320px; } }
+@media (max-width: 1099px) { :root { --diagnostic-width: 320px; } .capture-policy { flex-basis: 100%; flex-direction: row; gap: 8px; text-align: left; } .device-row { grid-template-columns: 80px auto auto; } }
 
 /* Layout editor */
 .editor-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; }
