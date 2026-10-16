@@ -142,3 +142,20 @@ charts:
     title: Mass 44 signal
     unit: mV
     series: [{role: ms, value: m44}]
+
+layout:
+  views:
+    - id: acquisition
+      name: Acquisition
+      components:
+        - {id: co2-chart, kind: chart, chart: co2, x: 0, y: 0, w: 4, h: 5}
+        - {id: fluorescence-chart, kind: chart, chart: fluorescence, x: 4, y: 0, w: 4, h: 5}
+        - {id: co2-now, kind: metric, value: ubar_co2, x: 8, y: 0, w: 2, h: 2}
+        - {id: fluorescence-now, kind: metric, value: fluorescence, x: 10, y: 0, w: 2, h: 2}
+        - {id: controls, kind: controls, x: 8, y: 2, w: 4, h: 3}
+        - {id: captures, kind: captures, x: 0, y: 5, w: 12, h: 3}
+    - id: signals
+      name: Mass 44 and parameters
+      components:
+        - {id: mass44-chart, kind: chart, chart: mass44, x: 0, y: 0, w: 8, h: 4}
+        - {id: parameters, kind: inputs, title: Parameters in this revision, x: 8, y: 0, w: 4, h: 4}

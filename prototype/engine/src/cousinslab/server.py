@@ -98,7 +98,7 @@ class App:
         plans = {role: (p.__dict__ if (p := t.protocol_plan(role)) else None) for role in t.data["roles"]}
         return {"data": t.data, "yaml": yaml.safe_dump(t.data, sort_keys=False, allow_unicode=True),
                 "revisions": self.templates.revisions(t.id), "charts": t.charts(), "protocol_plans": plans,
-                "enabled_roles": list(t.enabled_roles())}
+                "enabled_roles": list(t.enabled_roles()), "layout": t.layout(), "hidden_components": t.hidden_components()}
 
     def save_template(self, body, query, tid):
         data = yaml.safe_load(body["yaml"]) if "yaml" in body else body["data"]
