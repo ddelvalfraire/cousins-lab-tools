@@ -1,0 +1,616 @@
+{
+  "instruments/ambit-replay-150-pl1.yaml": {
+    "id": "ambit-replay-150-pl1",
+    "label": "Ambit, replay of sample 150 plant 1",
+    "adapter": "ambit_replay",
+    "input_kind": "replay",
+    "model": "Ambit fluorometer (USB 1A86:55D4) with external LED pulser (USB 303A:1001)",
+    "settings": {
+      "recording": "${repo}/reference/instruments/ambit/Ambit raw data_sample_150_pl1.csv"
+    }
+  },
+  "instruments/ambit-replay-150-pl2.yaml": {
+    "id": "ambit-replay-150-pl2",
+    "label": "Ambit, replay of sample 150 plant 2",
+    "adapter": "ambit_replay",
+    "input_kind": "replay",
+    "model": "Ambit fluorometer (USB 1A86:55D4) with external LED pulser (USB 303A:1001)",
+    "settings": {
+      "recording": "${repo}/reference/instruments/ambit/Ambit raw data_sample_150_pl2.csv"
+    }
+  },
+  "instruments/ms2-ezview-simulated.yaml": {
+    "id": "ms2-ezview-simulated",
+    "label": "Mass spectrometer 2, EZView spool (simulated)",
+    "adapter": "ezview_spool",
+    "input_kind": "simulated",
+    "model": "Mass spectrometer read through EZ-Tap and EZView (model not documented)",
+    "aliases": {
+      "m45": "ch1",
+      "m44": "ch3"
+    },
+    "settings": {
+      "poll_interval_s": 0.1
+    },
+    "simulate": {
+      "note": "A simulator writes an EZView-style spool with this machine's clock. Values are the researcher's recorded Mass 44 and Mass 45 from the start of the 150-pl1 window (row 6762) to the end of the acquisition, so the simulated instrument keeps running like the real one. Mass 32 (-404.404) is left out because the spool decoder cannot produce negative values.\n",
+      "workbook": "${repo}/reference/instruments/mass-spec/Raw data-mass spec.xlsx",
+      "first_row": 6762,
+      "last_row": 26860,
+      "channels": {
+        "ch3": "m44",
+        "ch1": "m45"
+      }
+    }
+  },
+  "instruments/ms2-ezview.yaml": {
+    "id": "ms2-ezview",
+    "label": "Mass spectrometer 2, EZView spool",
+    "adapter": "ezview_spool",
+    "input_kind": "hardware",
+    "model": "Mass spectrometer read through EZ-Tap and EZView (model not documented)",
+    "aliases": {
+      "m45": "ch1",
+      "m44": "ch3"
+    },
+    "settings": {
+      "spool_path": "",
+      "poll_interval_s": 0.1
+    }
+  },
+  "templates/jii-leaf-co2-fluorescence.yaml": {
+    "id": "jii-leaf-co2-fluorescence",
+    "revision": 1,
+    "name": "Leaf disc CO2 drawdown with PSII fluorescence",
+    "summary": "One plant per run. The mass spectrometer records CO2 (mass 44) continuously while the Ambit runs Protocol 2 under red actinic light with saturation flashes. The CO2 supply needle is removed after the 4th flash (\"closed system\"). Results are CO2 in the cuvette (µbar) and fluorescence (S - offset) / R, compared around the closed-system moment.\n",
+    "evidence": [
+      "Protocol 2 and the closed-system comment: Python script to control Ambit system.ipynb, cell 11",
+      "Offset 815.52 and (S - OFFSET) / R: notebook cell 13; Fluorescence column of Ambit raw data_sample_150_pl1.csv",
+      "Calibration slope, mzero, and per-plant zero rows: Raw data-mass spec.xlsx, sheets RawDataAcquisition67Data, 150-pl1, 150-pl2",
+      "Red actinic 225: the Red column of both sample 150 Ambit files"
+    ],
+    "roles": {
+      "ms": {
+        "label": "Mass spectrometer (mass 44 = CO2)",
+        "instrument": "ms2-ezview-simulated",
+        "import": "ms_workbook",
+        "start_delay_s": 0,
+        "on_failure": "continue_others"
+      },
+      "light": {
+        "label": "Ambit fluorometer with red actinic LED",
+        "instrument": "ambit-replay-150-pl1",
+        "import": "ambit_csv",
+        "protocol": "protocol_2",
+        "start_delay_s": 30,
+        "on_failure": "continue_others"
+      }
+    },
+    "protocols": {
+      "protocol_2": {
+        "source": "notebook cell 11, Protocol_2, with ACTINIC_INT 225 as recorded in the sample 150 files",
+        "flash_red_level": 2500,
+        "vars": {
+          "$actinic": 225
+        },
+        "blocks": {
+          "sat_flash": [
+            [
+              "M",
+              25,
+              0.05,
+              0
+            ],
+            [
+              "A",
+              "R",
+              2500
+            ],
+            [
+              "M",
+              10,
+              0.05,
+              250
+            ],
+            [
+              "M",
+              5,
+              0.05,
+              150
+            ],
+            [
+              "M",
+              5,
+              0.05,
+              100
+            ],
+            [
+              "M",
+              10,
+              0.05,
+              250
+            ],
+            [
+              "A",
+              "R",
+              0
+            ],
+            [
+              "M",
+              10,
+              0.05,
+              0
+            ]
+          ]
+        },
+        "steps": [
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            700,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          [
+            "M",
+            700,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          [
+            "M",
+            700,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            300,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            300,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            300,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            200,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            250,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            400,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            400,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            400,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          {
+            "block": "sat_flash"
+          },
+          [
+            "A",
+            "R",
+            "$actinic"
+          ],
+          [
+            "M",
+            300,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          [
+            "M",
+            300,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ],
+          [
+            "M",
+            600,
+            0.1,
+            0
+          ],
+          [
+            "P"
+          ]
+        ]
+      }
+    },
+    "parameters": {
+      "ambit_offset": {
+        "value": 815.52,
+        "unit": "counts",
+        "note": "No-chlorophyll baseline (notebook OFFSET)"
+      },
+      "co2_zero_mv": {
+        "value": 0.303,
+        "unit": "mV",
+        "note": "Mass 44 at zero CO2; the workbook uses 0.303 for pl1 and 0.302 for pl2"
+      },
+      "ubar_per_mv": {
+        "value": 1831.1123481696839,
+        "unit": "µbar/mV",
+        "note": "SLOPE of the 4-point CO2 injection curve, workbook cell P14"
+      }
+    },
+    "derived": {
+      "ubar_co2": {
+        "role": "ms",
+        "expr": "(m44 - co2_zero_mv) * ubar_per_mv",
+        "unit": "µbar",
+        "label": "CO2"
+      },
+      "fluorescence": {
+        "role": "light",
+        "expr": "(S - ambit_offset) / R",
+        "unit": "ratio",
+        "label": "Fluorescence"
+      }
+    },
+    "events": {
+      "closed_system": {
+        "label": "Closed system (CO2 supply needle removed)",
+        "operator_marker": true,
+        "detect": {
+          "role": "light",
+          "kind": "sat_flash",
+          "number": 4
+        },
+        "note": "The notebook places needle removal right after the 4th flash. Using the 4th flash as the event is an inference: it matches the workbook zero rows to within the MS sample interval but has not been confirmed with the researcher.\n"
+      }
+    },
+    "alignment": {
+      "default_reference": "event",
+      "event": "closed_system",
+      "trial_role": "light",
+      "window_s": [
+        -320,
+        438.5
+      ]
+    },
+    "charts": [
+      {
+        "id": "co2",
+        "title": "CO2 in cuvette",
+        "unit": "µbar",
+        "series": [
+          {
+            "role": "ms",
+            "value": "ubar_co2"
+          }
+        ]
+      },
+      {
+        "id": "fluorescence",
+        "title": "PSII fluorescence",
+        "unit": "(S - offset) / R",
+        "series": [
+          {
+            "role": "light",
+            "value": "fluorescence"
+          }
+        ],
+        "markers": {
+          "role": "light",
+          "kind": "sat_flash"
+        }
+      },
+      {
+        "id": "mass44",
+        "title": "Mass 44 signal",
+        "unit": "mV",
+        "series": [
+          {
+            "role": "ms",
+            "value": "m44"
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "views": [
+        {
+          "id": "acquisition",
+          "name": "Acquisition",
+          "components": [
+            {
+              "id": "co2-chart",
+              "kind": "chart",
+              "chart": "co2",
+              "x": 0,
+              "y": 0,
+              "w": 4,
+              "h": 5
+            },
+            {
+              "id": "fluorescence-chart",
+              "kind": "chart",
+              "chart": "fluorescence",
+              "x": 4,
+              "y": 0,
+              "w": 4,
+              "h": 5
+            },
+            {
+              "id": "co2-now",
+              "kind": "metric",
+              "value": "ubar_co2",
+              "x": 8,
+              "y": 0,
+              "w": 2,
+              "h": 2
+            },
+            {
+              "id": "fluorescence-now",
+              "kind": "metric",
+              "value": "fluorescence",
+              "x": 10,
+              "y": 0,
+              "w": 2,
+              "h": 2
+            },
+            {
+              "id": "controls",
+              "kind": "controls",
+              "x": 8,
+              "y": 2,
+              "w": 4,
+              "h": 3
+            },
+            {
+              "id": "captures",
+              "kind": "captures",
+              "x": 0,
+              "y": 5,
+              "w": 12,
+              "h": 3
+            }
+          ]
+        },
+        {
+          "id": "signals",
+          "name": "Mass 44 and parameters",
+          "components": [
+            {
+              "id": "mass44-chart",
+              "kind": "chart",
+              "chart": "mass44",
+              "x": 0,
+              "y": 0,
+              "w": 8,
+              "h": 4
+            },
+            {
+              "id": "parameters",
+              "kind": "inputs",
+              "title": "Parameters in this revision",
+              "x": 8,
+              "y": 0,
+              "w": 4,
+              "h": 4
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
