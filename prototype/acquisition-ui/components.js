@@ -97,7 +97,7 @@ export function mountGrid(root, items, ctx) {
   const all = [];
   const collect = list => list.forEach(c => (all.push(c), c.components && collect(c.components)));
   collect(items);
-  const charts = all.filter(c => c.kind === "chart").map(c => ({ c, key: null, ...makeChart(root.querySelector(`[data-chart-for="${c.id}"]`)) }));
+  const charts = all.filter(c => c.kind === "chart").map(c => ({ c, key: null, ...makeChart(root.querySelector(`[data-chart-for="${CSS.escape(c.id)}"]`)) }));
   const derived = ctx.template.data.derived;
 
   root.addEventListener("click", event => {
@@ -124,16 +124,16 @@ export function mountGrid(root, items, ctx) {
         const at = frame.cursor ?? frame.window.end;
         const values = ds.valueSeries(c.value, derived[c.value].role).map(s => ({ name: s.name, y: valueAt(s.points, at) }));
         const shown = values.find(v => v.y != null);
-        root.querySelector(`[data-metric-for="${c.id}"]`).textContent = shown ? number.format(shown.y) : "–";
-        root.querySelector(`[data-trials-for="${c.id}"]`).innerHTML = values.length > 1
+        root.querySelector(`[data-metric-for="${CSS.escape(c.id)}"]`).textContent = shown ? number.format(shown.y) : "–";
+        root.querySelector(`[data-trials-for="${CSS.escape(c.id)}"]`).innerHTML = values.length > 1
           ? values.map(v => `<span>${esc(v.name)}: <strong>${v.y == null ? "–" : number.format(v.y)}</strong></span>`).join("") : "";
       }
       const key = JSON.stringify([frame.live, frame.status, frame.captures]);
       if (key === stateKey) return;
       stateKey = key;
-      for (const c of all.filter(c => c.kind === "controls")) root.querySelector(`[data-controls-for="${c.id}"]`).innerHTML = controlsBody(c, ctx, frame);
+      for (const c of all.filter(c => c.kind === "controls")) root.querySelector(`[data-controls-for="${CSS.escape(c.id)}"]`).innerHTML = controlsBody(c, ctx, frame);
       for (const c of all.filter(c => c.kind === "captures")) {
-        root.querySelector(`[data-captures-for="${c.id}"]`).innerHTML = captureTable({ ...ctx.session, captures: frame.captures }, c.role);
+        root.querySelector(`[data-captures-for="${CSS.escape(c.id)}"]`).innerHTML = captureTable({ ...ctx.session, captures: frame.captures }, c.role);
       }
     },
     dispose: () => charts.forEach(c => c.dispose()),

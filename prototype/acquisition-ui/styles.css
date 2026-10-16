@@ -305,3 +305,4 @@ a.list-row:hover { background: var(--workspace); }
 @media (max-width: 1099px) { .list-row { grid-template-columns: 88px 1fr auto; } .list-row > :nth-child(3), .list-row > :nth-child(4) { display: none; } }
 .live-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--accent-tint); color: var(--accent); }
 .detail-row > td { background: var(--workspace); }
+.page { display: flex; flex-direction: column; flex: 1; min-width: 0; }

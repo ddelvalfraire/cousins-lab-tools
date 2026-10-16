@@ -133,13 +133,14 @@ async function mount(page, id, restart) {
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
   let source = session.live ? liveSource(m, template) : await replaySource(m, session, template);
-  let grid = null, timer = null, storedEvents = null, panelKey = null;
+  let grid = null, timer = null, storedEvents = null, panelKey = null, stopped = false;
   const actions = [];
   const logged = (text, request) => async (...args) => {
     actions.push({ when: new Date().toISOString(), source: "this page", text, tone: "info" });
     try {
       return await request(...args);
     } catch (e) {
+      if (stopped) return;
       actions.push({ when: new Date().toISOString(), source: "engine", text: e.message, tone: "bad" });
       toast(e.message);
     }
@@ -155,8 +156,7 @@ async function mount(page, id, restart) {
       stop: logged("Stop requested", async () => { await api(`/api/sessions/${m.id}/stop`, { method: "POST" }); toast("Stopping…"); }),
       cancel: async () => {
         if (!confirm("Cancel the run? Data recorded so far is kept.")) return;
-        await logged("Cancel requested", () => api(`/api/sessions/${m.id}/cancel`, { method: "POST" }))();
-        toast("Cancelling…");
+        await logged("Cancel requested", async () => { await api(`/api/sessions/${m.id}/cancel`, { method: "POST" }); toast("Cancelling…"); })();
       },
     },
   };
@@ -324,7 +324,9 @@ async function mount(page, id, restart) {
   });
   q('[data-header="stop"]')?.addEventListener("click", ctx.actions.stop);
   q("[data-reference]")?.addEventListener("change", async event => {
-    source = await replaySource(m, session, template, event.target.value);
+    const next = await replaySource(m, session, template, event.target.value);
+    if (stopped) return;
+    source = next;
     Object.assign(view, { range: { mode: "all", custom: null }, cursor: null, playing: false });
     form.hidden = true;
     mountView();
@@ -354,22 +356,30 @@ async function mount(page, id, restart) {
   const poll = async () => {
     try {
       await source.poll();
+      if (stopped) return;
       paint();
       if (["running", "stopping", "preparing"].includes(source.status)) timer = setTimeout(poll, LIVE_POLL_MS);
       else restart();
     } catch (e) {
+      if (stopped) return;
       actions.push({ when: new Date().toISOString(), source: "engine", text: `Live update failed: ${e.message}`, tone: "bad" });
       toast(e.message);
       timer = setTimeout(poll, 2000);
     }
   };
   if (source.live) poll();
-  return () => { clearTimeout(timer); clearInterval(replay); grid?.dispose(); };
+  return () => { stopped = true; clearTimeout(timer); clearInterval(replay); grid?.dispose(); };
 }
 
 export async function renderCapture(page, id) {
+  let disposed = false;
   let dispose = () => {};
-  const restart = async () => { dispose(); dispose = await mount(page, id, restart); };
+  const restart = async () => {
+    dispose();
+    const next = await mount(page, id, restart);
+    if (disposed) next();
+    else dispose = next;
+  };
   dispose = await mount(page, id, restart);
-  return () => dispose();
+  return () => { disposed = true; dispose(); };
 }

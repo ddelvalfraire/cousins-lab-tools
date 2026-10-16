@@ -99,7 +99,7 @@ export async function renderTemplate(page, id, revision, tab) {
     page.querySelectorAll("[data-tab-panel]").forEach(p => (p.hidden = p.dataset.tabPanel !== key));
     const editor = page.querySelector('[data-tab-panel="layout"]');
     if (key === "layout" && !editor.childElementCount) {
-      mountEditor(editor, view, { onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
+      mountEditor(editor, view, { draft: data, onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
     }
   };
   page.querySelectorAll("[data-page-tab]").forEach(b => (b.onclick = () => showTab(b.dataset.pageTab)));

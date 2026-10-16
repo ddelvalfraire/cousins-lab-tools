@@ -74,8 +74,10 @@ function defaults(kind, layout, view, template) {
   }[kind] || {};
 }
 
-export function mountEditor(el, template, { onSaved }) {
-  const layout = structuredClone(template.layout);
+/** draft is the template page's unsaved copy of the revision; the editor edits its layout, and saving posts all of it. */
+export function mountEditor(el, template, { draft, onSaved }) {
+  const { columns, ...initial } = structuredClone(template.layout);
+  const layout = (draft.layout = initial);
   const latest = Math.max(...template.revisions);
   const state = { view: layout.views[0].id, selected: null, dirty: false, catalogOpen: false, filter: "", error: "" };
   const currentView = () => layout.views.find(v => v.id === state.view);
@@ -95,7 +97,7 @@ export function mountEditor(el, template, { onSaved }) {
         </div>
       </div>
       ${state.error ? `<div class="notice bad">${icon("alert")}<div>${esc(state.error)}</div></div>` : ""}
-      <p class="small muted">${state.dirty ? "Unsaved layout changes. Saving creates a new revision; sessions keep the layout they ran with." : `Layout of revision ${template.data.revision}. Drag the handle to move, the corner to resize.`}</p>
+      <p class="small muted">${state.dirty ? "Unsaved layout changes. Saving creates a new revision with them and any unsaved Setup changes; sessions keep the layout they ran with." : `Layout of revision ${template.data.revision}. Drag the handle to move, the corner to resize.`}</p>
       <div class="editor-workspace ${selected ? "has-inspector" : ""}">
         <div class="editor-canvas">${editGrid(view.components, { template, hidden: template.hidden_components, selected: state.selected, listId: view.id })}</div>
         ${selected ? `<aside class="inspector">${inspector(selected, template)}</aside>` : ""}
@@ -118,7 +120,7 @@ export function mountEditor(el, template, { onSaved }) {
     const rect = gridEl.getBoundingClientRect();
     const gap = parseFloat(getComputedStyle(gridEl).columnGap) || 16;
     const colW = (rect.width - 11 * gap) / 12 + gap;
-    const rowH = parseFloat(getComputedStyle(gridEl).getPropertyValue("--row")) + gap;
+    const rowH = parseFloat(getComputedStyle(gridEl).gridAutoRows.match(/[\d.]+px/)[0]) + gap;
     const start = { x: event.clientX, y: event.clientY, c: { ...component } };
     const tile = event.target.closest(".bento-tile");
     const move = e => {
@@ -229,9 +231,8 @@ export function mountEditor(el, template, { onSaved }) {
   });
 
   const save = async () => {
-    const { columns, ...stored } = layout;
     try {
-      const saved = await api(`/api/templates/${template.data.id}/revisions`, { method: "POST", body: { data: { ...template.data, layout: stored } } });
+      const saved = await api(`/api/templates/${template.data.id}/revisions`, { method: "POST", body: { data: draft } });
       onSaved(saved);
     } catch (e) {
       state.error = e.message;

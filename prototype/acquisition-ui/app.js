@@ -43,11 +43,17 @@ function renderSidebar() {
 }
 
 let cleanup = null;
+let generation = 0;
 
 async function route() {
   cleanup?.();
   cleanup = null;
-  const page = document.getElementById("page");
+  const current = ++generation;
+  // A fresh container per navigation: a page that finishes loading after the user has moved on
+  // renders into a detached element instead of over the new page.
+  const page = document.createElement("div");
+  page.className = "page";
+  document.getElementById("page").replaceChildren(page);
   const hash = location.hash || "#/";
   for (const [pattern, nav, render] of routes) {
     const match = hash.match(pattern);
@@ -56,7 +62,9 @@ async function route() {
       a.dataset.nav === nav ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
     page.innerHTML = '<p class="page-body muted">Loading…</p>';
     try {
-      cleanup = (await render(page, ...match.slice(1))) || null;
+      const done = (await render(page, ...match.slice(1))) || null;
+      if (current === generation) cleanup = done;
+      else done?.();
     } catch (e) {
       page.innerHTML = `<div class="page-body"><div class="notice bad">${esc(e.message)}</div></div>`;
     }
