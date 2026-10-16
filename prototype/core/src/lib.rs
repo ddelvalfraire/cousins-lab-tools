@@ -6,6 +6,7 @@ pub mod ms_workbook;
 pub mod protocol;
 pub mod pycompat;
 pub mod schemas;
+pub mod session;
 pub mod simulate;
 pub mod spool;
 pub mod templates;
