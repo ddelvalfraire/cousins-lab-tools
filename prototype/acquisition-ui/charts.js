@@ -1,21 +1,35 @@
-window.Charts=(()=>{
- const mounted=new Map();let observer;
- function dispose(){for(const chart of mounted.values())chart.dispose();mounted.clear();observer?.disconnect();document.querySelectorAll(".chart-legend").forEach(el=>el.remove());}
- function streams(c){return [...(c.channels||[]).map(channel=>({device:c.device,channel,process:c.process||'raw',gain:c.gain,offset:c.offset})),...(c.extraStreams||[])];}
- function issue(c){const all=streams(c);if(!all.length)return 'Select at least one channel in Data.';if(all.some(s=>!Cousins.channelInfo(s.device,s.channel)))return 'A bound channel is unavailable. Update its source in Data.';if(all.some(s=>c.chartType==='spectrum'?!Cousins.channelInfo(s.device,s.channel).shape.startsWith('Vector'):Cousins.channelInfo(s.device,s.channel).shape.startsWith('Vector')))return c.chartType==='spectrum'?'Bind a vector channel to display a spectrum.':'Use a spectrum chart for vector channels.';if(new Set(all.map(s=>Cousins.channelInfo(s.device,s.channel).unit)).size>2)return 'Use at most two units per chart. Split additional units into another chart.';return '';}
- function data(c,seconds=120,range=null){const start=range?.start??Math.max(0,seconds-120),end=range?.end??seconds,steps=Math.min(1200,Math.max(1,Math.ceil(end-start)));return streams(c).map((s,i)=>{const channel=Cousins.channelInfo(s.device,s.channel);return {id:s.device+'/'+s.channel,name:(channel?.name||s.channel)+(s.process==='linear'?' · derived':''),unit:channel?.unit||'',derived:s.process==='linear',values:Array.from({length:c.chartType==='spectrum'?121:end===start?1:steps+1},(_,n)=>{const x=c.chartType==='spectrum'?n:start+(end-start)*n/steps;let y=c.chartType==='spectrum'?5+70*Math.exp(-(((x-32)/2)**2))+44*Math.exp(-(((x-44)/3)**2))+3*Math.sin(x):Cousins.signal(x,i);if(s.process==='linear')y=y*(s.gain===undefined?1:Number(s.gain))+(Number(s.offset)||0);return [x,Number(y.toFixed(3))];})};});}
- function mount(root=document,seconds=120,range=null){
-  if(!window.echarts)return;
-  observer=new ResizeObserver(entries=>entries.forEach(entry=>mounted.get(entry.target)?.resize()));
-  root.querySelectorAll('[data-chart]').forEach(el=>{
-   let c;try{c=JSON.parse(el.dataset.chart);}catch{return;}
-   const error=issue(c);if(error){el.innerHTML=`<div class="chart-error">${UI.icon('alert')}<span>${UI.e(error)}</span></div>`;return;}
-   const style=getComputedStyle(document.documentElement),fg=style.getPropertyValue('--muted').trim(),line=style.getPropertyValue('--border').trim(),font=style.getPropertyValue('--body').trim();
-   const colors=['--accent','--blue','--violet','--trace-four'].map(key=>style.getPropertyValue(key).trim());if(c.colorHex)colors[0]=c.colorHex;
-   const d=data(c,seconds,range),units=[...new Set(d.map(s=>s.unit))],chart=echarts.init(el,null,{renderer:'canvas'});mounted.set(el,chart);observer.observe(el);
-   if(c.showLegend!==false){const legend=document.createElement('div');legend.className='chart-legend';legend.setAttribute('aria-label','Chart series');legend.innerHTML=d.map((s,i)=>`<div class="legend-series"><button class="legend-toggle" type="button" aria-label="Toggle ${UI.e(s.name)}" aria-pressed="true" data-series-index="${i}" style="--trace:${colors[i%colors.length]}"><span class="legend-stroke ${s.derived?'dashed':''}"></span></button>${UI.name(s.name)}<span class="legend-unit">${UI.e(s.unit)}</span></div>`).join('');legend.addEventListener('click',event=>{const b=event.target.closest('[data-series-index]');if(!b)return;const show=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(show));b.closest('.legend-series').classList.toggle('muted-series',!show);chart.dispatchAction({type:'legendToggleSelect',name:d[Number(b.dataset.seriesIndex)].name});});el.before(legend);}
-   chart.setOption({animation:false,color:colors,textStyle:{fontFamily:font,fontSize:16},aria:{enabled:true},tooltip:{trigger:'axis',confine:true,textStyle:{fontFamily:font,fontSize:16}},legend:{show:false},grid:{left:16,right:16,top:40,bottom:72,containLabel:true},xAxis:{type:'value',name:c.chartType==='spectrum'?'m/z':'Time (s)',nameLocation:'middle',nameGap:32,axisLabel:{color:fg,fontFamily:font,fontSize:16,hideOverlap:true},axisLine:{lineStyle:{color:line}},splitLine:{show:false}},yAxis:units.map((unit,i)=>({type:c.logScale?'log':'value',position:i?'right':'left',name:unit,nameTextStyle:{color:fg,fontSize:16,padding:[0,0,12,0]},min:c.axisMin!==''&&c.axisMin!==undefined?Number(c.axisMin):undefined,max:c.axisMax!==''&&c.axisMax!==undefined?Number(c.axisMax):undefined,axisLabel:{color:fg,fontSize:16,hideOverlap:true},splitLine:{show:i===0,lineStyle:{color:line,type:'dashed'}}})),dataZoom:[{type:'inside',filterMode:'none'},{type:'slider',height:20,bottom:0,borderColor:line,showDetail:false,brushSelect:false,handleStyle:{color:colors[0]},fillerColor:style.getPropertyValue('--accent-soft').trim()}],series:d.map(s=>({name:s.name,type:c.chartType==='scatter'?'scatter':c.chartType==='spectrum'?'bar':'line',yAxisIndex:units.indexOf(s.unit),data:s.values,showSymbol:false,symbolSize:4,lineStyle:{width:Number(c.thickness)||2,type:s.derived?'dashed':'solid'},barMaxWidth:5,smooth:false,tooltip:{valueFormatter:v=>Number(v).toFixed(2)+' '+s.unit}}))});
-  });
- }
- return {mount,dispose,data,issue,streams};
-})();
+const PALETTE = ["#1f5fd1", "#d4590f", "#17794a", "#6941c6", "#0e7090", "#b42318"];
+
+export function makeChart(el) {
+  const chart = echarts.init(el, null, { renderer: "canvas" });
+  const resize = () => chart.resize();
+  window.addEventListener("resize", resize);
+  return { chart, dispose: () => { window.removeEventListener("resize", resize); chart.dispose(); } };
+}
+
+/** series: [{name, points: [[x, y]...]}], markers: [{x, label}], xFormatter for clock axes. The card header shows the unit. */
+export function lineOption({ series, markers = [], xName, xFormatter, animation = false }) {
+  return {
+    animation,
+    color: PALETTE,
+    grid: { left: 64, right: 24, top: 36, bottom: 56 },
+    legend: { top: 0, type: "scroll" },
+    tooltip: { trigger: "axis", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
+    xAxis: { type: "value", name: xName, nameLocation: "middle", nameGap: 32, scale: true,
+             axisLabel: xFormatter ? { formatter: xFormatter } : {} },
+    yAxis: { type: "value", scale: true },
+    dataZoom: [{ type: "inside" }, { type: "slider", height: 16, bottom: 4 }],
+    series: series.map((s, i) => ({
+      name: s.name,
+      type: "line",
+      showSymbol: false,
+      sampling: "lttb",
+      lineStyle: { width: 1.5 },
+      data: s.points,
+      markLine: i === 0 && markers.length
+        ? { symbol: "none", silent: true, label: { show: false }, lineStyle: { color: "#98a2b3", type: "dashed", width: 1 },
+            data: markers.map(m => ({ xAxis: m.x, name: m.label })) }
+        : undefined,
+    })),
+  };
+}

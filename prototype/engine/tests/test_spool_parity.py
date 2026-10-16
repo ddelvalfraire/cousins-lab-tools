@@ -112,3 +112,23 @@ def test_frame_split_across_end_of_file_is_kept():
 def test_value_the_decoder_cannot_produce_is_rejected():
     with pytest.raises(ValueError):
         encode_frame({5: -404.404})
+
+
+def test_legacy_viewer_file_reader_accepts_exported_frames(tmp_path, monkeypatch):
+    pytest.importorskip("pandas")
+    read_data = REPO / "module1" / "application" / "read-data"
+    monkeypatch.syspath_prepend(str(read_data))
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
+    from file import File  # module1's viewer reader, unchanged
+    from sharedSingleton import SharedSingleton
+
+    SharedSingleton().initialX = None
+    spool = tmp_path / "spool.txt"
+    write_spool(spool, separator="")
+    with open(spool) as stream:
+        frame = next(read_frames(stream))
+    exported = tmp_path / "0.csv"
+    exported.write_text(legacy_frame_csv(frame_row(frame, 0, datetime.now(), FROZEN_START)))
+    x, means = File(str(exported)).__next__()
+    assert x == 0.0
+    assert means[3] == 0.839 and means[4] == 0.008, "viewer slots m44 and m45 hold ch3 and ch1"

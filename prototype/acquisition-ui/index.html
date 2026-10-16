@@ -3,116 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<title>Cousins · acquisition workspace</title>
+<title>Cousins Lab · acquisition</title>
 <link rel="icon" type="image/png" href="assets/cousins-logo.png">
-<style>/* OD-LAYOUT-PRIMITIVES v1 — structure only: display, flex/grid, overflow, wrapping, ratio.
-   Put this @layer first; product CSS outside the layer always wins. */
-@layer od-layout {
-  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
-
-  /* containers */
-  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
-  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
-  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
-  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
-  .od-fill    { flex: 1 1 0; min-width: 0; }
-  .od-fixed   { flex: none; }
-  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
-
-  /* stacked information: each piece is its own line — never sibling inline spans */
-  .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
-  :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
-  .od-tile { display: grid; grid-template-rows: auto 1fr; }
-  :where(.od-tile) > :where(*) { display: block; }
-
-  /* media keeps its intrinsic ratio by default; never a distorted or cropped
-     cover by accident. height:auto lets the ratio win over an <img height="…">
-     attribute. Cropping to a uniform box is an explicit opt-in: set --od-ratio
-     AND add .od-media-cover together (per the core rule, only where a crop is
-     deliberate — tile thumbs, decorative fills — never on full-frame content). */
-  .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
-  .od-media-cover { object-fit: cover; }
-
-  /* data text only — authored copy is rewritten to its budget instead */
-  .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .od-clamp-2 { -webkit-line-clamp: 2; }
-  .od-clamp-3 { -webkit-line-clamp: 3; }
-  .od-lines-2 { min-height: calc(2 * 1.4em); }   /* block-level reservation for a shared baseline */
-  .od-nowrap  { white-space: nowrap; }           /* 数字+单位 · 价格+起 · 日期+星期 */
-  .od-keep    { word-break: keep-all; overflow-wrap: anywhere; } /* CJK labels break at spaces / <wbr> first */
-
-  /* screen skeleton (optional): bars take their own space, the middle scrolls — no padding guessed for chrome */
-  .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
-  .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
-
-  /* horizontal rail: the next item peeks at the edge; trailing room survives overflow */
-  .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
-             padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
-  .od-rail::-webkit-scrollbar { display: none; }
-  :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
-  :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
-
-  .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
-  .od-touch  { min-width: 44px; min-height: 44px; }
-}
-/* /OD-LAYOUT-PRIMITIVES v1 */
-/* Airtable package tokens. Workspace and dark-mode extensions implement the requested two-tone shell. */
-:root {
- --bg:#ffffff;--surface:#ffffff;--surface-warm:var(--surface);
- --fg:#181d26;--fg-2:#333333;--muted:rgba(4,14,32,.69);--meta:var(--muted);
- --border:#e0e2e6;--border-soft:#eef0f3;
- --accent:#1b61c9;--accent-on:#ffffff;--accent-hover:#254fad;--accent-active:color-mix(in oklab,var(--accent),black 14%);
- --success:#006400;--warn:#eab308;--danger:#dc2626;
- --font-display:"Haas Groot Disp",Haas,-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
- --font-body:Haas,-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
- --font-mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Monaco,Consolas,monospace;
- --text-xs:12px;--text-sm:14px;--text-base:16px;--text-lg:20px;--text-xl:24px;--text-2xl:32px;--text-3xl:40px;--text-4xl:48px;
- --leading-body:1.35;--leading-tight:1.2;--tracking-display:0;
- --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-12:48px;
- --section-y-desktop:96px;--section-y-tablet:64px;--section-y-phone:48px;
- --radius-sm:12px;--radius-md:16px;--radius-lg:24px;--radius-pill:9999px;
- --elev-flat:none;--elev-ring:0 0 0 1px var(--border);
- --elev-raised:0 0 1px rgba(0,0,0,.32),0 0 2px rgba(0,0,0,.08),0 1px 3px rgba(45,127,249,.28),inset 0 0 0 .5px rgba(0,0,0,.06);
- --focus-ring:0 0 0 3px color-mix(in oklab,var(--accent),transparent 70%);
- --motion-fast:150ms;--motion-base:200ms;--ease-standard:cubic-bezier(.2,0,0,1);
- --container-max:1200px;--container-gutter-desktop:24px;--container-gutter-tablet:16px;--container-gutter-phone:12px;
- --workspace:#f8fafc;--warning-text:#805300;--destructive-text:#b42318;--destructive-fill:#b42318;--destructive-on:#ffffff;
- --trace-blue:#177b86;--trace-violet:#8055bb;--trace-amber:#9a590c;
- --accent-tint:#eaf1fc;--success-tint:#eaf4ed;--warning-tint:#fff3d8;--danger-tint:#fceceb;--violet-tint:#f1ecf8;
- --backdrop:rgba(15,23,42,.4);--page-gutter:32px;
-}
-:root[data-theme=dark] {
- --workspace:#151a23;--surface:#202734;--fg:#f0f3f8;--fg-2:#dce3ed;--muted:#b7c1d0;
- --border:#485365;--border-soft:#343e4c;--accent:#a6c4ff;--accent-on:#14213a;--accent-hover:#c1d5ff;
- --success:#96d7ad;--warning-text:#f1c878;--destructive-text:#ffb2ae;--destructive-fill:#ad2923;--destructive-on:#ffffff;
- --trace-blue:#7ed0d7;--trace-violet:#c6aafa;--trace-amber:#f1c878;
- --accent-tint:#293c5b;--success-tint:#233e30;--warning-tint:#44391f;--danger-tint:#482c30;--violet-tint:#392d50;
- --backdrop:rgba(0,0,0,.64);
-}
-
-</style>
-<link rel="stylesheet" href="design.css?v=preset-layout-8">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app"></div>
-<dialog id="dialog" aria-label="Confirm action"></dialog>
+<nav class="sidebar" aria-label="Main navigation">
+  <a class="brand" href="#/"><img src="assets/cousins-logo.png" alt=""><span>Cousins Lab</span></a>
+  <a href="#/" data-nav="sessions">Sessions</a>
+  <a href="#/templates" data-nav="templates">Experiment templates</a>
+  <a href="#/instruments" data-nav="instruments">Instruments</a>
+  <p class="sidebar-note">Prototype. Inputs are simulated, replayed, or imported; no hardware is connected.</p>
+</nav>
+<main id="page" tabindex="-1"></main>
+<dialog id="dialog"></dialog>
 <div id="toast" role="status" aria-live="polite" hidden></div>
-<noscript><p>Cousins needs JavaScript enabled to edit presets and open collections.</p></noscript>
-<script src="assets/vendor/echarts.min.js?v=airtable-7"></script>
-<script src="model.js?v=airtable-7"></script>
-<script src="layout.js?v=airtable-7"></script>
-<script src="ui.js?v=airtable-7"></script>
-<script src="capture.js?v=airtable-7"></script>
-<script src="charts.js?v=airtable-7"></script>
-<script src="components.js?v=airtable-7"></script>
-<script src="editor.js?v=preset-layout-8"></script>
-<script src="runtime.js?v=airtable-7"></script>
-<script src="analytics.js?v=airtable-7"></script>
-<script src="assets/vendor/parquet-writer.js?v=airtable-7"></script>
-<script src="recording-data.js?v=airtable-7"></script>
-<script src="pages.js?v=home-stats-9"></script>
-<script src="app.js?v=airtable-7"></script>
+<script src="assets/vendor/echarts.min.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
