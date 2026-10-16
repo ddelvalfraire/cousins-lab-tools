@@ -3,6 +3,7 @@
 
 import { api, esc, fmtClock, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
+import { PANELS, panel } from "./diagnostics.js";
 import { visible } from "./layout.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 
@@ -128,23 +129,33 @@ function alerts(m, session, source) {
 async function mount(page, id, restart) {
   const session = await api(`/api/sessions/${id}`);
   const m = session.manifest;
-  const template = await api(`/api/templates/${m.template.id}?revision=${m.template.revision}`);
+  const [template, instruments] = await Promise.all([api(`/api/templates/${m.template.id}?revision=${m.template.revision}`), api("/api/instruments")]);
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
   let source = session.live ? liveSource(m, template) : await replaySource(m, session, template);
-  let grid = null, timer = null;
+  let grid = null, timer = null, storedEvents = null, panelKey = null;
+  const actions = [];
+  const logged = (text, request) => async (...args) => {
+    actions.push({ when: new Date().toISOString(), source: "this page", text, tone: "info" });
+    try {
+      return await request(...args);
+    } catch (e) {
+      actions.push({ when: new Date().toISOString(), source: "engine", text: e.message, tone: "bad" });
+      toast(e.message);
+    }
+  };
 
   const ctx = {
     template, session: m,
     actions: {
-      mark: async ({ event }) => {
+      mark: logged("Mark requested", async ({ event }) => {
         const mk = await api(`/api/sessions/${m.id}/mark`, { method: "POST", body: { event } });
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
-      },
-      stop: async () => { await api(`/api/sessions/${m.id}/stop`, { method: "POST" }); toast("Stopping…"); },
+      }),
+      stop: logged("Stop requested", async () => { await api(`/api/sessions/${m.id}/stop`, { method: "POST" }); toast("Stopping…"); }),
       cancel: async () => {
         if (!confirm("Cancel the run? Data recorded so far is kept.")) return;
-        await api(`/api/sessions/${m.id}/cancel`, { method: "POST" });
+        await logged("Cancel requested", () => api(`/api/sessions/${m.id}/cancel`, { method: "POST" }))();
         toast("Cancelling…");
       },
     },
@@ -178,10 +189,31 @@ async function mount(page, id, restart) {
     q("[data-seek]").setAttribute("aria-valuetext", fmt(f.cursor));
     q("[data-play]").innerHTML = view.playing ? `${icon("pause")}Pause` : `${icon("play")}Play interval`;
   };
+  const paintPanel = () => {
+    const aside = page.querySelector("[data-panel]");
+    page.querySelector("[data-workspace]").classList.toggle("has-diagnostics", !!view.panel);
+    page.querySelectorAll("[data-panel-open]").forEach(b => b.setAttribute("aria-expanded", b.dataset.panelOpen === view.panel));
+    aside.hidden = !view.panel;
+    if (!view.panel) return void (panelKey = null);
+    const eventList = source.live ? source.events : storedEvents?.map(e => ({ ...e, x: e.x_run_s }));
+    const key = JSON.stringify([view.panel, eventList?.length, source.captures, actions.length]);
+    if (key === panelKey) return;
+    panelKey = key;
+    aside.innerHTML = panel(view.panel, { m, captures: source.captures, instruments, eventList, actions });
+  };
+  const openPanel = async tab => {
+    view.panel = view.panel === tab ? null : tab;
+    if (view.panel === "events" && !source.live && !storedEvents) {
+      paintPanel();
+      storedEvents = await api(`/api/sessions/${m.id}/events`);
+    }
+    paintPanel();
+  };
   const paint = () => {
     const f = frame();
     grid?.paint(f);
     paintToolbar(f);
+    paintPanel();
     page.querySelector("[data-strip]").innerHTML = statusStrip(m, source);
     page.querySelector("[data-alerts]").innerHTML = alerts(m, session, source);
   };
@@ -241,19 +273,29 @@ async function mount(page, id, restart) {
       <div data-alerts></div>
       <section class="replay-controls" aria-label="${source.live ? "Display time range" : "Recording replay"}">
         <div class="capture-toolbar">
-          <div class="view-tabs" role="tablist" aria-label="Views">${views.map(v => `<button role="tab" data-view="${esc(v.id)}">${esc(v.name)}</button>`).join("")}</div>
+          <div class="capture-view-controls">
+            <div class="view-tabs" role="tablist" aria-label="Views">${views.map(v => `<button role="tab" data-view="${esc(v.id)}">${esc(v.name)}</button>`).join("")}</div>
+            <div class="actions">${PANELS.map(([k, label, ico]) => `<button class="quiet" data-panel-open="${k}" aria-controls="diagnostics" aria-expanded="false">${icon(ico)}${label}</button>`).join("")}</div>
+          </div>
           ${toolbar()}
         </div>
         ${customForm()}
         ${transport()}
       </section>
-      <div class="runtime-workspace"><div class="runtime-canvas" data-canvas></div></div>
+      <div class="runtime-workspace" data-workspace><div class="runtime-canvas" data-canvas></div>
+        <aside class="diagnostics-panel" id="diagnostics" data-panel hidden aria-label="Diagnostics"></aside></div>
     </div>`;
 
   const q = sel => page.querySelector(sel);
   const form = q("#custom-range");
   page.querySelectorAll("[data-view]").forEach(b => (b.onclick = () => { state.view = b.dataset.view; mountView(); }));
   page.querySelectorAll("[data-range]").forEach(b => (b.onclick = () => setRange(b.dataset.range)));
+  page.querySelectorAll("[data-panel-open]").forEach(b => (b.onclick = () => openPanel(b.dataset.panelOpen)));
+  q("[data-panel]").addEventListener("click", event => {
+    if (event.target.closest("[data-panel-close]")) openPanel(view.panel);
+    const tab = event.target.closest("[data-panel-tab]");
+    if (tab && tab.dataset.panelTab !== view.panel) openPanel(tab.dataset.panelTab);
+  });
   q("[data-range-custom]").onclick = () => {
     const f = frame();
     form.hidden = false;
@@ -316,6 +358,7 @@ async function mount(page, id, restart) {
       if (["running", "stopping", "preparing"].includes(source.status)) timer = setTimeout(poll, LIVE_POLL_MS);
       else restart();
     } catch (e) {
+      actions.push({ when: new Date().toISOString(), source: "engine", text: `Live update failed: ${e.message}`, tone: "bad" });
       toast(e.message);
       timer = setTimeout(poll, 2000);
     }
