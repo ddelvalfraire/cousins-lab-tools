@@ -116,7 +116,7 @@ def _place(items: list[Any], prefix: str) -> list[Any]:
         w, h = COMPONENT_SIZES.get(c.get("kind"), (6, 3))
         c = {**c, "id": c.get("id") or f"{prefix}-{i + 1}"}
         c = {**c, "x": c.get("x", 0), "y": c.get("y", bottom), "w": c.get("w", w), "h": c.get("h", h)}
-        if c["kind"] == "group":
+        if c.get("kind") == "group" and isinstance(c.get("components", []), list):
             c["components"] = _place(c.get("components") or [], c["id"])
         if all(_is_int(c[k]) for k in "xywh"):
             bottom = max(bottom, c["y"] + c["h"])
@@ -128,8 +128,13 @@ def normalize_layout(data: dict[str, Any]) -> dict[str, Any]:
     views = (data.get("layout") or default_layout(data)).get("views")
     return {"columns": GRID_COLUMNS, "views": [
         {**v, "id": v.get("id") or f"view-{i + 1}", "name": v.get("name") or v.get("id") or f"View {i + 1}",
-         "components": _place(v.get("components") or [], v.get("id") or f"view-{i + 1}")}
+         "components": _place(v.get("components") or [] if isinstance(v.get("components", []), list) else [],
+                              v.get("id") or f"view-{i + 1}")}
         for i, v in enumerate(views if isinstance(views, list) else []) if isinstance(v, dict)]}
+
+
+def known(value: Any, names) -> bool:
+    return isinstance(value, str) and value in names
 
 
 def _overlap(a: dict[str, Any], b: dict[str, Any]) -> bool:
@@ -140,6 +145,8 @@ def _layout_errors(data: dict[str, Any]) -> list[str]:
     if "layout" in data and not (isinstance(data["layout"], dict) and isinstance(data["layout"].get("views"), list)
                                  and data["layout"]["views"]):
         return ["layout.views must be a non-empty list"]
+    if "layout" in data and not all(isinstance(v, dict) and isinstance(v.get("components", []), list) for v in data["layout"]["views"]):
+        return ["Layout: each view must be a mapping with a list of components"]
     errors: list[str] = []
     seen: set[str] = set()
     charts, derived = {c["id"] for c in data.get("charts", [])}, set(data.get("derived", {}))
@@ -151,6 +158,9 @@ def _layout_errors(data: dict[str, Any]) -> list[str]:
                 errors.append(f"Layout {where}: each component must be a mapping")
                 continue
             name, kind = f"Layout component {c['id']!r}", c.get("kind")
+            if not isinstance(c["id"], str):
+                errors.append(f"Layout {where}: component ids must be text, not {c['id']!r}")
+                continue
             if c["id"] in seen:
                 errors.append(f"{name} is defined twice")
             seen.add(c["id"])
@@ -167,15 +177,22 @@ def _layout_errors(data: dict[str, Any]) -> list[str]:
             else:
                 errors.extend(f"Layout components {p['id']!r} and {c['id']!r} overlap in {where}" for p in placed if _overlap(p, c))
                 placed.append(c)
-            if c.get("role") is not None and c["role"] not in data["roles"]:
+            if c.get("role") is not None and not known(c["role"], data["roles"]):
                 errors.append(f"{name}: unknown role {c['role']!r}")
-            if kind == "chart" and c.get("chart") not in charts:
+            if kind == "chart" and not known(c.get("chart"), charts):
                 errors.append(f"{name}: unknown chart {c.get('chart')!r}")
-            if kind == "metric" and c.get("value") not in derived:
+            if kind == "metric" and not known(c.get("value"), derived):
                 errors.append(f"{name}: {c.get('value')!r} is not a derived value")
-            if kind == "inputs" and (unknown := set(c.get("parameters") or []) - set(data.get("parameters", {}))):
+            elif kind == "metric" and c.get("role") not in (None, own := data["derived"][c["value"]]["role"]):
+                errors.append(f"{name}: a metric takes its role from {c['value']} ({own}); remove role {c['role']!r}")
+            params = c.get("parameters") or []
+            if kind == "inputs" and not (isinstance(params, list) and all(isinstance(k, str) for k in params)):
+                errors.append(f"{name}: parameters must be a list of parameter names")
+            elif kind == "inputs" and (unknown := set(params) - set(data.get("parameters", {}))):
                 errors.append(f"{name}: unknown parameters {sorted(unknown)}")
-            if kind == "group":
+            if kind == "group" and not isinstance(c.get("components"), list):
+                errors.append(f"{name}: components must be a list")
+            elif kind == "group":
                 check(c["components"], f"group {c['id']!r}")
 
     view_ids: set[str] = set()

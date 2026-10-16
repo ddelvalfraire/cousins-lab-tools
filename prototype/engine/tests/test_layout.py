@@ -68,6 +68,12 @@ def test_a_template_without_a_layout_gets_one_view_with_every_chart_then_control
     ([{"id": "a", "kind": "inputs", "parameters": ["gain"]}], "unknown parameters ['gain']"),
     ([{"id": "a", "kind": "controls"}, {"id": "a", "kind": "captures"}], "'a' is defined twice"),
     ([{"id": "g", "kind": "group", "components": [{"id": "x", "kind": "chart", "chart": "nope"}]}], "unknown chart 'nope'"),
+    ([{"id": "a"}], "unknown kind None"),
+    ([{"id": "g", "kind": "group", "components": 5}], "components must be a list"),
+    ([{"id": "a", "kind": "metric", "value": ["ubar_co2"]}], "['ubar_co2'] is not a derived value"),
+    ([{"id": "a", "kind": "controls", "role": ["ms"]}], "unknown role ['ms']"),
+    ([{"id": ["a"], "kind": "controls"}], "ids must be text"),
+    ([{"id": "a", "kind": "metric", "value": "fluorescence", "role": "ms"}], "a metric takes its role from fluorescence (light)"),
 ])
 def test_invalid_layouts_are_rejected_with_the_reason(data, components, message):
     with pytest.raises(TemplateError, match=re.escape(message)):
@@ -77,6 +83,9 @@ def test_invalid_layouts_are_rejected_with_the_reason(data, components, message)
 def test_a_layout_needs_at_least_one_view_and_unique_view_ids(data):
     data["layout"] = {"views": []}
     with pytest.raises(TemplateError, match="non-empty list"):
+        validate(data, load_profiles())
+    data["layout"] = {"views": [1]}
+    with pytest.raises(TemplateError, match="each view must be a mapping"):
         validate(data, load_profiles())
     twice = [{"id": "run", "components": []}, {"id": "run", "components": []}]
     with pytest.raises(TemplateError, match="view 'run' is defined twice"):
