@@ -160,3 +160,14 @@ def test_not_ready_instrument_prevents_the_whole_group_from_starting(tmp_path):
     assert "No spool file configured" in run.manifest["captures"]["ms"]["readiness"]["detail"]
     assert run.manifest["captures"]["light"]["status"] == "ready"
     assert "start_command_utc" not in run.manifest["captures"]["light"]
+
+
+def test_a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it(tmp_path):
+    template = template_with(tmp_path, light={"start_delay_s": 0})
+    template.data["charts"] = [c for c in template.data["charts"] if c["id"] != "fluorescence"]
+    template.data["layout"] = {"views": [{"id": "run", "components": [{"id": "now", "kind": "metric", "value": "fluorescence"}]}]}
+    run = start(tmp_path, template)
+    assert wait_until(lambda: run.manifest["captures"]["light"]["rows"] > 20)
+    live = run.live({})
+    run.stop()
+    assert any(row.get("fluorescence") is not None for row in live["captures"]["light"]["rows"])

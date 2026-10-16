@@ -228,6 +228,21 @@ class Template:
     def layout(self) -> dict[str, Any]:
         return normalize_layout(self.data)
 
+    def live_values(self, role: str) -> set[str]:
+        """Columns and derived values the live view of a role needs: chart series plus metric bindings."""
+        values = {s["value"] for chart in self.charts() for s in chart["series"] if s["role"] == role}
+        derived = self.data.get("derived", {})
+
+        def visit(items: list[dict[str, Any]]) -> None:
+            for c in items:
+                if c["kind"] == "metric" and derived[c["value"]]["role"] == role:
+                    values.add(c["value"])
+                visit(c.get("components") or [])
+
+        for view in self.layout()["views"]:
+            visit(view["components"])
+        return values
+
     def hidden_components(self) -> dict[str, str]:
         """Component id -> why it is not shown. Mirrors charts(): an excluded role takes its components with it."""
         roles, charts, derived = self.enabled_roles(), {c["id"] for c in self.charts()}, self.data.get("derived", {})

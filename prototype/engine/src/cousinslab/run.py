@@ -239,7 +239,7 @@ class _CaptureSink:
         self.cap = run.captures[role]
         self.meta = run.manifest["captures"][role]
         self.aliases = self.meta["aliases"]
-        self.values = {s["value"] for chart in run.template.charts() for s in chart["series"] if s["role"] == role}
+        self.values = run.template.live_values(role)
 
     def rows(self, rows: list[dict[str, Any]]) -> None:
         self.cap.writer.append(rows)
