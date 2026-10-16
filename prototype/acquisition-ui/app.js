@@ -4,16 +4,19 @@ import { renderInstruments } from "./instruments.js";
 import { renderSession } from "./session.js";
 import { renderSettings } from "./settings.js";
 import { renderCapture } from "./capture.js";
+import { renderHome } from "./home.js";
 import { applyAppearance, esc, icon } from "./util.js";
 
 const NAV = [
-  ["sessions", "#/", "folder", "Sessions"],
+  ["home", "#/", "home", "Home"],
   ["templates", "#/templates", "grid", "Experiment templates"],
   ["instruments", "#/instruments", "device", "Instruments"],
+  ["sessions", "#/sessions", "folder", "Sessions"],
 ];
 
 const routes = [
-  [/^#?\/?$/, "sessions", renderSessions],
+  [/^#?\/?$/, "home", renderHome],
+  [/^#\/sessions$/, "sessions", renderSessions],
   [/^#\/templates$/, "templates", renderTemplates],
   [/^#\/templates\/([\w-]+)(?:\/r(\d+))?(?:\/(layout))?$/, "templates", renderTemplate],
   [/^#\/instruments$/, "instruments", renderInstruments],

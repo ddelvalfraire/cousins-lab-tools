@@ -262,7 +262,7 @@ async function mount(page, id, restart) {
     </div>`;
 
   const t = m.template;
-  page.innerHTML = pageHeader([["Sessions", "#/"], [m.name, `#/sessions/${m.id}`]], m.name, {
+  page.innerHTML = pageHeader([["Home", "#/"], ["Sessions", "#/sessions"], [m.name, `#/sessions/${m.id}`]], m.name, {
     current: "Capture",
     sub: `<a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · ${statusBadge(m.status)}`,
     actions: session.live ? `<button data-header="freeze"></button><button class="danger" data-header="stop">${icon("stop")}Stop run</button>`

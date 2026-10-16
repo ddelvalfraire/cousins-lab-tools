@@ -1,5 +1,6 @@
 import { api, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 import { mountEditor } from "./editor.js";
+import { componentCount, layoutThumb } from "./components.js";
 
 export async function renderTemplates(page) {
   const templates = await api("/api/templates");
@@ -8,7 +9,9 @@ export async function renderTemplates(page) {
   }) + `<div class="page-body">
     ${templates.map(t => `
       <section class="card">
-        <div class="card-head"><h2><a href="#/templates/${esc(t.data.id)}">${esc(t.data.name)}</a></h2><span class="muted">revision ${t.data.revision}</span></div>
+        <div class="template-card-head"><a href="#/templates/${esc(t.data.id)}/r${t.data.revision}/layout" class="row-thumb" title="Run-page layout">${layoutThumb(t)}</a>
+          <div class="card-head" style="flex:1"><h2><a href="#/templates/${esc(t.data.id)}">${esc(t.data.name)}</a></h2>
+          <span class="muted">revision ${t.data.revision} · ${t.layout.views.length} views · ${componentCount(t)} components</span></div></div>
         <p>${esc(t.data.summary)}</p>
         <p class="small muted">Roles: ${t.enabled_roles.map(r => esc(t.data.roles[r].label)).join(" · ")}</p>
         <div class="actions"><button class="primary" data-start="${esc(t.data.id)}">Start run</button><a class="button" href="#/templates/${esc(t.data.id)}">Configure</a></div>

@@ -3,13 +3,13 @@ import { startRunDialog } from "./templates.js";
 
 export async function renderSessions(page) {
   const [sessions, templates] = await Promise.all([api("/api/sessions"), api("/api/templates")]);
-  page.innerHTML = pageHeader([], "Sessions", {
+  page.innerHTML = pageHeader([["Home", "#/"]], "Sessions", {
     sub: "Each session is one experiment run or one set of imported recordings, stored as Parquet with its template revision.",
     actions: `<button id="import">${icon("download")}Import recordings</button><button class="primary" id="start">${icon("play")}Start run</button>`,
   }) + `
     <div class="page-body">
       <div class="table-wrap"><table>
-        <thead><tr><th>Session</th><th>Template</th><th>Inputs</th><th>Status</th><th>Created</th></tr></thead>
+        <thead><tr><th>Session</th><th>Template</th><th>Inputs</th><th>Status</th><th>Created</th><th></th></tr></thead>
         <tbody>${sessions.map(s => `
           <tr>
             <td><a href="#/sessions/${esc(s.id)}">${esc(s.name)}</a>${s.live ? ' <span class="badge tone-active">Live</span>' : ""}</td>
@@ -17,7 +17,8 @@ export async function renderSessions(page) {
             <td>${s.inputs.map(inputBadge).join(" ")}</td>
             <td>${statusBadge(s.status)}</td>
             <td class="small muted">${esc(fmtTime(s.created_utc))}</td>
-          </tr>`).join("") || '<tr><td colspan="5" class="muted">No sessions yet. Start a run or import recordings.</td></tr>'}
+            <td><a class="button" href="#/sessions/${esc(s.id)}/capture">${icon("play")}${s.live ? "Open" : "Replay"}</a></td>
+          </tr>`).join("") || '<tr><td colspan="6" class="muted">No sessions yet. Start a run or import recordings.</td></tr>'}
         </tbody>
       </table></div>
     </div>`;

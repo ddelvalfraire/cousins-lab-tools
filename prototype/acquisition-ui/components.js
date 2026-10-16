@@ -139,3 +139,14 @@ export function mountGrid(root, items, ctx) {
     dispose: () => charts.forEach(c => c.dispose()),
   };
 }
+
+/** A miniature of a layout's first view, for template lists. */
+export function layoutThumb(template) {
+  const view = template.layout.views[0];
+  const items = (view?.components || []).filter(c => !template.hidden_components[c.id]);
+  const rows = Math.max(1, ...items.map(c => c.y + c.h));
+  return `<span class="layout-thumb" style="--rows:${rows}" role="img" aria-label="Layout of ${esc(view?.name || "the run page")}">${items.map(c =>
+    `<i class="k-${esc(c.kind)}" style="grid-column:${c.x + 1} / span ${c.w};grid-row:${c.y + 1} / span ${c.h}"></i>`).join("")}</span>`;
+}
+
+export const componentCount = template => template.layout.views.reduce((n, v) => n + v.components.length, 0);

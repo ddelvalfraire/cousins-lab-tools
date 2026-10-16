@@ -10,7 +10,7 @@ export async function renderSession(page, id) {
 
 function header(m, actions = "") {
   const t = m.template;
-  return pageHeader([["Sessions", "#/"]], m.name, {
+  return pageHeader([["Home", "#/"], ["Sessions", "#/sessions"]], m.name, {
     actions,
     sub: `${statusBadge(m.status)} ${m.kind === "import" ? "Imported recordings" : "Run"} · <a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · created ${esc(fmtTime(m.created_utc))}`,
   });
