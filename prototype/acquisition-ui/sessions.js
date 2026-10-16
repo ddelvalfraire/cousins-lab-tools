@@ -1,22 +1,18 @@
-import { api, esc, fmtTime, inputBadge, openDialog, statusBadge } from "./util.js";
+import { api, esc, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
 import { startRunDialog } from "./templates.js";
 
 export async function renderSessions(page) {
   const [sessions, templates] = await Promise.all([api("/api/sessions"), api("/api/templates")]);
-  page.innerHTML = `
-    <div class="page-head">
-      <div><h1>Sessions</h1><p class="sub">Each session is one experiment run or one set of imported recordings, stored as Parquet with its template revision.</p></div>
-      <div class="actions">
-        <button id="import">Import recordings</button>
-        <button class="primary" id="start">Start run</button>
-      </div>
-    </div>
-    <section class="card">
+  page.innerHTML = pageHeader([], "Sessions", {
+    sub: "Each session is one experiment run or one set of imported recordings, stored as Parquet with its template revision.",
+    actions: `<button id="import">${icon("download")}Import recordings</button><button class="primary" id="start">${icon("play")}Start run</button>`,
+  }) + `
+    <div class="page-body">
       <div class="table-wrap"><table>
         <thead><tr><th>Session</th><th>Template</th><th>Inputs</th><th>Status</th><th>Created</th></tr></thead>
         <tbody>${sessions.map(s => `
           <tr>
-            <td><a href="#/sessions/${esc(s.id)}">${esc(s.name)}</a>${s.live ? ' <span class="badge status-running">live</span>' : ""}</td>
+            <td><a href="#/sessions/${esc(s.id)}">${esc(s.name)}</a>${s.live ? ' <span class="badge tone-active">Live</span>' : ""}</td>
             <td>${esc(s.template)}</td>
             <td>${s.inputs.map(inputBadge).join(" ")}</td>
             <td>${statusBadge(s.status)}</td>
@@ -24,7 +20,7 @@ export async function renderSessions(page) {
           </tr>`).join("") || '<tr><td colspan="5" class="muted">No sessions yet. Start a run or import recordings.</td></tr>'}
         </tbody>
       </table></div>
-    </section>`;
+    </div>`;
   page.querySelector("#start").onclick = () => startRunDialog(templates[0].data.id, templates);
   page.querySelector("#import").onclick = () => importDialog(templates);
 }

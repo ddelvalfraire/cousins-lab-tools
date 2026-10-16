@@ -3,18 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Cousins Lab · acquisition</title>
 <link rel="icon" type="image/png" href="assets/cousins-logo.png">
 <link rel="stylesheet" href="styles.css">
+<script>
+  (() => {
+    const mode = localStorage.getItem("cousins-appearance") || "system";
+    const dark = mode === "dark" || (mode === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
 </head>
 <body>
-<nav class="sidebar" aria-label="Main navigation">
-  <a class="brand" href="#/"><img src="assets/cousins-logo.png" alt=""><span>Cousins Lab</span></a>
-  <a href="#/" data-nav="sessions">Sessions</a>
-  <a href="#/templates" data-nav="templates">Experiment templates</a>
-  <a href="#/instruments" data-nav="instruments">Instruments</a>
-  <p class="sidebar-note">Prototype. Inputs are simulated, replayed, or imported; no hardware is connected.</p>
-</nav>
+<nav class="sidebar" aria-label="Main navigation" id="sidebar"></nav>
 <main id="page" tabindex="-1"></main>
 <dialog id="dialog"></dialog>
 <div id="toast" role="status" aria-live="polite" hidden></div>

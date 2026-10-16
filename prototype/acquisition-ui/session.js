@@ -1,4 +1,4 @@
-import { api, deltaSeconds, esc, fmtClock, fmtSeconds, fmtTime, hms, inputBadge, statusBadge, toast } from "./util.js";
+import { api, deltaSeconds, esc, fmtClock, fmtSeconds, fmtTime, hms, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
 
 const LIVE_POLL_MS = 500;
@@ -10,13 +10,10 @@ export async function renderSession(page, id) {
 
 function header(m, actions = "") {
   const t = m.template;
-  return `
-    <div class="page-head">
-      <div><div class="crumbs"><a href="#/">Sessions</a></div>
-        <h1>${esc(m.name)}</h1>
-        <p class="sub">${statusBadge(m.status)} ${m.kind === "import" ? "Imported recordings" : "Run"} · <a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · created ${esc(fmtTime(m.created_utc))}</p></div>
-      <div class="actions">${actions}</div>
-    </div>`;
+  return pageHeader([["Sessions", "#/"]], m.name, {
+    actions,
+    sub: `${statusBadge(m.status)} ${m.kind === "import" ? "Imported recordings" : "Run"} · <a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · created ${esc(fmtTime(m.created_utc))}`,
+  });
 }
 
 function captureTable(m) {
@@ -45,7 +42,7 @@ async function renderLive(page, session) {
   const markerEvents = Object.entries(m.template.events || {}).filter(([, e]) => e.operator_marker);
   page.innerHTML = header(m, `
       ${markerEvents.map(([k, e]) => `<button data-mark="${esc(k)}">Mark: ${esc(e.label)}</button>`).join("")}
-      <button id="stop">Stop run</button><button class="danger" id="cancel">Cancel</button>`) + `
+      <button id="stop">Stop run</button><button class="danger" id="cancel">Cancel</button>`) + `<div class="page-body">
     <section class="card">
       <div class="status-strip">
         <div class="stat"><span class="label">Run clock</span><span class="value" id="elapsed">00:00:00</span></div>
@@ -58,7 +55,7 @@ async function renderLive(page, session) {
     <div class="grid charts" id="charts">${template.charts.map(c => `
       <section class="card"><div class="card-head"><h2>${esc(c.title)}</h2><span class="small muted">${esc(c.unit)}</span></div><div class="chart" data-chart="${esc(c.id)}"></div></section>`).join("")}
     </div>
-    <section class="card"><h2>Events</h2><div class="log" id="log"><div class="muted">Saturation flashes and operator markers appear here.</div></div></section>`;
+    <section class="card"><h2>Events</h2><div class="log" id="log"><div class="muted">Saturation flashes and operator markers appear here.</div></div></section></div>`;
 
   const charts = Object.fromEntries(template.charts.map(c => [c.id, { spec: c, ...makeChart(page.querySelector(`[data-chart="${c.id}"]`)) }]));
   const points = {};
@@ -125,10 +122,10 @@ async function renderLive(page, session) {
 async function renderReview(page, session) {
   const m = session.manifest;
   const tabs = [["overview", "Overview"], ["align", "Align & compare"], ["data", "Data (DuckDB)"], ["export", "Export"]];
-  page.innerHTML = header(m) + `
+  page.innerHTML = header(m) + `<div class="page-body">
     ${session.interrupted_at_startup || m.status === "interrupted" ? `<div class="notice bad">This session was interrupted. Rows written before the interruption are kept; rows still buffered were lost.</div>` : ""}
     <nav class="tabs" role="tablist">${tabs.map(([k, label], i) => `<button role="tab" data-tab="${k}" aria-selected="${i === 0}">${label}</button>`).join("")}</nav>
-    <div id="tab"></div>`;
+    <div id="tab"></div></div>`;
   let dispose = null;
   const show = async key => {
     dispose?.();

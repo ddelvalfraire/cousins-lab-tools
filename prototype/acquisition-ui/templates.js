@@ -1,17 +1,17 @@
-import { api, esc, inputBadge, openDialog, toast } from "./util.js";
+import { api, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 
 export async function renderTemplates(page) {
   const templates = await api("/api/templates");
-  page.innerHTML = `
-    <div class="page-head"><div><h1>Experiment templates</h1>
-      <p class="sub">A template names the instruments, how they start, the derived values, the time alignment, and the charts. Screens are generated from it.</p></div></div>
+  page.innerHTML = pageHeader([["Home", "#/"]], "Experiment templates", {
+    sub: "A template names the instruments, how they start, the derived values, the time alignment, the charts, and the run-page layout. Screens are generated from it.",
+  }) + `<div class="page-body">
     ${templates.map(t => `
       <section class="card">
         <div class="card-head"><h2><a href="#/templates/${esc(t.data.id)}">${esc(t.data.name)}</a></h2><span class="muted">revision ${t.data.revision}</span></div>
         <p>${esc(t.data.summary)}</p>
         <p class="small muted">Roles: ${t.enabled_roles.map(r => esc(t.data.roles[r].label)).join(" · ")}</p>
         <div class="actions"><button class="primary" data-start="${esc(t.data.id)}">Start run</button><a class="button" href="#/templates/${esc(t.data.id)}">Configure</a></div>
-      </section>`).join("")}`;
+      </section>`).join("")}</div>`;
   page.querySelectorAll("[data-start]").forEach(b => (b.onclick = () => startRunDialog(b.dataset.start, templates)));
 }
 
@@ -25,14 +25,11 @@ export async function renderTemplate(page, id, revision) {
   const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
   const plan = view.protocol_plans;
 
-  page.innerHTML = `
-    <div class="page-head">
-      <div><div class="crumbs"><a href="#/templates">Experiment templates</a></div>
-        <h1>${esc(data.name)}</h1>
-        <p class="sub">${esc(data.id)} · revision ${data.revision}${data.revision !== latest ? ` (latest is <a href="#/templates/${esc(id)}">r${latest}</a>)` : ""}
-          · revisions ${view.revisions.map(r => `<a href="#/templates/${esc(id)}/r${r}">r${r}</a>`).join(" ")}</p></div>
-      <div class="actions"><button id="save" class="primary" disabled>Save as revision ${latest + 1}</button><button id="start">Start run with r${data.revision}</button></div>
-    </div>
+  page.innerHTML = pageHeader([["Home", "#/"], ["Experiment templates", "#/templates"]], data.name, {
+    sub: `${esc(data.id)} · revision ${data.revision}${data.revision !== latest ? ` (latest is <a href="#/templates/${esc(id)}">r${latest}</a>)` : ""}
+          · revisions ${view.revisions.map(r => `<a href="#/templates/${esc(id)}/r${r}">r${r}</a>`).join(" ")}`,
+    actions: `<button id="save" disabled>${icon("save")}Save as revision ${latest + 1}</button><button id="start" class="primary">${icon("play")}Start run with r${data.revision}</button>`,
+  }) + `<div class="page-body">
     <p>${esc(data.summary)}</p>
     <section class="card">
       <div class="card-head"><h2>Instruments and group start</h2><span class="small muted">Changing these changes the run. Saved revisions are immutable; sessions keep the revision they used.</span></div>
@@ -87,7 +84,7 @@ export async function renderTemplate(page, id, revision) {
       <textarea id="yaml" rows="24">${esc(view.yaml)}</textarea>
       <p class="error-text" id="yaml-error"></p>
       <div class="actions"><button id="save-yaml">Validate and save as revision ${latest + 1}</button></div>
-    </details>`;
+    </details></div>`;
 
   const save = page.querySelector("#save");
   const drawTimeline = () => {

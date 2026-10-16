@@ -1,10 +1,10 @@
-import { api, esc, inputBadge } from "./util.js";
+import { api, esc, inputBadge, pageHeader } from "./util.js";
 
 export async function renderInstruments(page) {
   const instruments = await api("/api/instruments");
-  page.innerHTML = `
-    <div class="page-head"><div><h1>Instruments</h1>
-      <p class="sub">A profile configures an existing adapter: file paths, ports, channel names, aliases. A new protocol or file format needs a new adapter class that implements the instrument contract.</p></div></div>
+  page.innerHTML = pageHeader([["Home", "#/"]], "Instruments", {
+    sub: "A profile configures an existing adapter: file paths, ports, channel names, aliases. A new protocol or file format needs a new adapter class that implements the instrument contract.",
+  }) + `<div class="page-body">
     ${instruments.map(p => `
       <section class="card">
         <div class="card-head"><h2>${esc(p.label)}</h2><span>${inputBadge(p.input_kind)} <code>${esc(p.id)}</code></span></div>
@@ -23,5 +23,5 @@ export async function renderInstruments(page) {
           <div class="table-wrap"><table><thead><tr><th>Column</th><th>Type</th><th>Unit</th><th>Meaning</th></tr></thead><tbody>
           ${p.columns.map(c => `<tr><td><code>${esc(c.name)}</code></td><td>${esc(c.type)}</td><td>${esc(c.unit)}</td><td>${esc(c.description)}</td></tr>`).join("")}
           </tbody></table></div></details>
-      </section>`).join("")}`;
+      </section>`).join("")}</div>`;
 }

@@ -1,24 +1,39 @@
-const PALETTE = ["#1f5fd1", "#d4590f", "#17794a", "#6941c6", "#0e7090", "#b42318"];
+import { cssVar } from "./util.js";
+
+const PALETTE_VARS = ["--accent", "--trace-blue", "--trace-violet", "--trace-amber", "--success", "--destructive-text"];
 
 export function makeChart(el) {
   const chart = echarts.init(el, null, { renderer: "canvas" });
-  const resize = () => chart.resize();
-  window.addEventListener("resize", resize);
-  return { chart, dispose: () => { window.removeEventListener("resize", resize); chart.dispose(); } };
+  const observer = new ResizeObserver(() => chart.resize());
+  observer.observe(el);
+  return { chart, dispose: () => { observer.disconnect(); chart.dispose(); } };
 }
 
-/** series: [{name, points: [[x, y]...]}], markers: [{x, label}], xFormatter for clock axes. The card header shows the unit. */
-export function lineOption({ series, markers = [], xName, xFormatter, animation = false }) {
+/**
+ * series: [{name, points: [[x, y]...]}], markers: [{x, label}], cursor: x of the replay playhead.
+ * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
+ */
+export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false }) {
+  const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
+  const marks = [
+    ...markers.map(m => ({ xAxis: m.x, name: m.label, lineStyle: { color: muted, type: "dashed", width: 1 } })),
+    ...(cursor == null ? [] : [{ xAxis: cursor, name: "Playhead", lineStyle: { color: text, type: "solid", width: 1.5 } }]),
+  ];
   return {
-    animation,
-    color: PALETTE,
-    grid: { left: 64, right: 24, top: 36, bottom: 56 },
-    legend: { top: 0, type: "scroll" },
+    animation: false,
+    color: PALETTE_VARS.map(cssVar),
+    textStyle: { fontFamily: cssVar("--font-body"), color: text },
+    grid: { left: 56, right: 16, top: compact ? 28 : 36, bottom: compact ? 36 : 56 },
+    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
     tooltip: { trigger: "axis", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
-    xAxis: { type: "value", name: xName, nameLocation: "middle", nameGap: 32, scale: true,
-             axisLabel: xFormatter ? { formatter: xFormatter } : {} },
-    yAxis: { type: "value", scale: true },
-    dataZoom: [{ type: "inside" }, { type: "slider", height: 16, bottom: 4 }],
+    xAxis: {
+      type: "value", name: compact ? "" : xName, nameLocation: "middle", nameGap: 32, scale: true,
+      min: window?.start, max: window?.end, nameTextStyle: { color: muted },
+      axisLabel: { color: muted, hideOverlap: true, ...(xFormatter ? { formatter: xFormatter } : {}) },
+      axisLine: { lineStyle: { color: line } }, splitLine: { lineStyle: { color: line, type: "dashed" } },
+    },
+    yAxis: { type: "value", scale: true, axisLabel: { color: muted }, splitLine: { lineStyle: { color: line, type: "dashed" } } },
+    dataZoom: compact ? [{ type: "inside", filterMode: "none" }] : [{ type: "inside", filterMode: "none" }, { type: "slider", height: 16, bottom: 4, filterMode: "none" }],
     series: series.map((s, i) => ({
       name: s.name,
       type: "line",
@@ -26,10 +41,7 @@ export function lineOption({ series, markers = [], xName, xFormatter, animation 
       sampling: "lttb",
       lineStyle: { width: 1.5 },
       data: s.points,
-      markLine: i === 0 && markers.length
-        ? { symbol: "none", silent: true, label: { show: false }, lineStyle: { color: "#98a2b3", type: "dashed", width: 1 },
-            data: markers.map(m => ({ xAxis: m.x, name: m.label })) }
-        : undefined,
+      markLine: i === 0 && marks.length ? { symbol: "none", silent: true, label: { show: false }, data: marks } : undefined,
     })),
   };
 }

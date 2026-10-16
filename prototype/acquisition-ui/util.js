@@ -14,7 +14,17 @@ export const esc = value =>
 
 const INPUT_LABELS = { hardware: "Hardware", simulated: "Simulated", replay: "Replay", import: "Imported" };
 export const inputBadge = kind => `<span class="badge ${esc(kind)}">${esc(INPUT_LABELS[kind] || kind)}</span>`;
-export const statusBadge = status => `<span class="badge status-${esc(status)}">${esc(String(status).replaceAll("_", " "))}</span>`;
+const STATUS_TONES = {
+  running: ["active", "chart"], starting: ["pending", "clock"], waiting: ["pending", "clock"], preparing: ["pending", "clock"],
+  stopping: ["pending", "clock"], completed_with_failures: ["pending", "alert"], not_started: ["neutral", "stop"],
+  completed: ["good", "check"], imported: ["good", "check"], ready: ["good", "check"], source_ended: ["good", "check"],
+  failed: ["bad", "alert"], not_ready: ["bad", "alert"], interrupted: ["bad", "alert"], cancelled: ["bad", "stop"],
+};
+export const statusLabel = status => String(status).replaceAll("_", " ").replace(/^./, c => c.toUpperCase());
+export function statusBadge(status) {
+  const [tone, ico] = STATUS_TONES[status] || ["neutral", "info"];
+  return `<span class="badge tone-${tone}">${icon(ico)}${esc(statusLabel(status))}</span>`;
+}
 
 export function toast(message) {
   const el = document.getElementById("toast");
@@ -54,3 +64,37 @@ export function openDialog(html, onSubmit) {
   dialog.showModal();
   return dialog;
 }
+
+const ICONS = {
+  home: "m3 10 9-7 9 7v10H3Z M9 20v-7h6v7", grid: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
+  device: "M6 3h12v18H6z M9 7h6 M9 11h6 M10 17h4", chart: "M3 3v18h18 M6 15l4-5 4 3 6-8", folder: "M3 6h7l2 3h9v11H3z",
+  gear: "m9 3-.7 3-2 .9-2.7-.9-1.5 2.6 2 2.1v2.5l-2 2.1 1.5 2.6 2.7-.9 2 .9.7 3h3l.7-3 2-.9 2.7.9 1.5-2.6-2-2.1v-2.5l2-2.1-1.5-2.6-2.7.9-2-.9-.7-3z M14.5 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+  left: "m14 6-6 6 6 6", right: "m10 6 6 6-6 6", plus: "M12 5v14 M5 12h14", close: "m6 6 12 12 M18 6 6 18",
+  play: "m8 4 12 8-12 8z", pause: "M8 5v14 M16 5v14", stop: "M5 5h14v14H5z", check: "m5 12 4 4L19 6",
+  alert: "m12 3 10 18H2z M12 9v4 M12 17h.01", clock: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 7v5l3 2",
+  download: "M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5", save: "M3 3h15l3 3v15H3z M7 3v6h10V3 M7 21v-8h10v8",
+  undo: "M8 4 3 9l5 5 M3 9h11a7 7 0 0 1 0 14", grip: "M8 5h.01 M16 5h.01 M8 12h.01 M16 12h.01 M8 19h.01 M16 19h.01",
+  resize: "m13 20 7-7 M7 20 13 14", table: "M3 3h18v18H3z M3 9h18 M9 3v18 M3 15h18", hash: "M5 9h14 M4 15h14 M10 3 6 21 M18 3l-4 18",
+  sliders: "M3 6h6 M13 6h8 M3 18h12 M19 18h2 M9 3v6 M15 15v6 M3 12h12 M19 12h2 M15 9v6", power: "M12 2v10 M6 5a9 9 0 1 0 12 0",
+  file: "M5 3h9l5 5v13H5z M14 3v6h5 M8 13h8 M8 17h6", flag: "M5 21V4 M5 4h11l-2 4 2 4H5", refresh: "M20 7v5h-5 M4 17v-5h5 M5 7a8 8 0 0 1 14-2l1 2 M4 17l1 2a8 8 0 0 0 14-2",
+  info: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 11v6 M12 7h.01", link: "m10 8 3-3a4 4 0 0 1 6 6l-3 3 M14 16l-3 3a4 4 0 0 1-6-6l3-3 M8 16l8-8",
+};
+export const icon = name => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICONS[name] || ICONS.grid}"/></svg>`;
+
+/** crumbs: [[label, href], ...] ending at the current page, which is shown without a link. */
+export function pageHeader(crumbs, title, { actions = "", sub = "" } = {}) {
+  const items = crumbs.map(([label, href]) => `<li><a href="${esc(href)}">${esc(label)}</a>${icon("right")}</li>`).join("");
+  return `
+    <header class="page-header">
+      <div><nav class="breadcrumbs" aria-label="Breadcrumb"><ol>${items}<li aria-current="page">${esc(title)}</li></ol></nav>
+        <h1>${esc(title)}</h1>${sub ? `<p class="sub">${sub}</p>` : ""}</div>
+      <div class="actions">${actions}</div>
+    </header>`;
+}
+
+export const APPEARANCE_KEY = "cousins-appearance";
+export function applyAppearance(mode = localStorage.getItem(APPEARANCE_KEY) || "system") {
+  const dark = mode === "dark" || (mode === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+export const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
