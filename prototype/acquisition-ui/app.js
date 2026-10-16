@@ -15,7 +15,7 @@ const NAV = [
 const routes = [
   [/^#?\/?$/, "sessions", renderSessions],
   [/^#\/templates$/, "templates", renderTemplates],
-  [/^#\/templates\/([\w-]+)(?:\/r(\d+))?$/, "templates", renderTemplate],
+  [/^#\/templates\/([\w-]+)(?:\/r(\d+))?(?:\/(layout))?$/, "templates", renderTemplate],
   [/^#\/instruments$/, "instruments", renderInstruments],
   [/^#\/sessions\/([\w-]+)$/, "sessions", renderSession],
   [/^#\/sessions\/([\w-]+)\/capture$/, "sessions", renderCapture],

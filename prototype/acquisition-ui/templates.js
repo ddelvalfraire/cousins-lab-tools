@@ -1,4 +1,5 @@
 import { api, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
+import { mountEditor } from "./editor.js";
 
 export async function renderTemplates(page) {
   const templates = await api("/api/templates");
@@ -15,7 +16,7 @@ export async function renderTemplates(page) {
   page.querySelectorAll("[data-start]").forEach(b => (b.onclick = () => startRunDialog(b.dataset.start, templates)));
 }
 
-export async function renderTemplate(page, id, revision) {
+export async function renderTemplate(page, id, revision, tab) {
   const [view, instruments] = await Promise.all([
     api(`/api/templates/${id}${revision ? `?revision=${revision}` : ""}`),
     api("/api/instruments"),
@@ -30,6 +31,10 @@ export async function renderTemplate(page, id, revision) {
           · revisions ${view.revisions.map(r => `<a href="#/templates/${esc(id)}/r${r}">r${r}</a>`).join(" ")}`,
     actions: `<button id="save" disabled>${icon("save")}Save as revision ${latest + 1}</button><button id="start" class="primary">${icon("play")}Start run with r${data.revision}</button>`,
   }) + `<div class="page-body">
+    <nav class="tabs" role="tablist">${[["setup", "Setup"], ["layout", "Run-page layout"]].map(([k, label]) =>
+      `<button role="tab" data-page-tab="${k}" aria-selected="${k === (tab || "setup")}">${label}</button>`).join("")}</nav>
+    <div class="layout-editor" data-tab-panel="layout" hidden></div>
+    <div class="setup" data-tab-panel="setup">
     <p>${esc(data.summary)}</p>
     <section class="card">
       <div class="card-head"><h2>Instruments and group start</h2><span class="small muted">Changing these changes the run. Saved revisions are immutable; sessions keep the revision they used.</span></div>
@@ -84,7 +89,18 @@ export async function renderTemplate(page, id, revision) {
       <textarea id="yaml" rows="24">${esc(view.yaml)}</textarea>
       <p class="error-text" id="yaml-error"></p>
       <div class="actions"><button id="save-yaml">Validate and save as revision ${latest + 1}</button></div>
-    </details></div>`;
+    </details></div></div>`;
+
+  const showTab = key => {
+    page.querySelectorAll("[data-page-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.pageTab === key));
+    page.querySelectorAll("[data-tab-panel]").forEach(p => (p.hidden = p.dataset.tabPanel !== key));
+    const editor = page.querySelector('[data-tab-panel="layout"]');
+    if (key === "layout" && !editor.childElementCount) {
+      mountEditor(editor, view, { onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
+    }
+  };
+  page.querySelectorAll("[data-page-tab]").forEach(b => (b.onclick = () => showTab(b.dataset.pageTab)));
+  showTab(tab || "setup");
 
   const save = page.querySelector("#save");
   const drawTimeline = () => {
