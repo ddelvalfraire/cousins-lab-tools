@@ -67,3 +67,20 @@ def rows_as_dicts(con: duckdb.DuckDBPyConnection, sql: str, params: list[Any] | 
     cur = con.execute(sql, params or [])
     names = [d[0] for d in cur.description]
     return [dict(zip(names, row)) for row in cur.fetchall()]
+
+
+def session_events(session_dir: Path, manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every capture event and operator marker, with its stored times and, for runs, seconds on the run clock."""
+    con = connect(session_dir)
+    views = {r[0] for r in con.execute("SELECT view_name FROM duckdb_views() WHERE NOT internal").fetchall()}
+    start = manifest.get("run", {}).get("group_start_utc")
+    x_run = f"epoch_us(t_host_utc) / 1e6 - epoch_us({sql_string(start)}::TIMESTAMPTZ) / 1e6" if start else "NULL::DOUBLE"
+    sources = [(cid, f"ev:{cid}") for cid in manifest["captures"]] + [("operator", "markers")]
+    events = []
+    for source, view in sources:
+        if view in views:
+            events += rows_as_dicts(con, f'SELECT ? AS source, kind, label, t_host_utc, clock, t_native, value, '
+                                         f'{x_run} AS x_run_s FROM "{view}" ORDER BY seq', [source])
+    for e in events:
+        e["t_host_utc"] = e["t_host_utc"].isoformat() if e["t_host_utc"] else None
+    return sorted(events, key=lambda e: (e["x_run_s"] is None, e["x_run_s"] or 0))

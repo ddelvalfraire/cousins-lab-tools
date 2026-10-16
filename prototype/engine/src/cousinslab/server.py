@@ -17,11 +17,11 @@ from urllib.parse import parse_qs, urlparse
 
 import yaml
 
-from .alignment import aligned_sql, chart_data, list_alignments, load_alignment, propose, save_alignment
+from .alignment import aligned_sql, chart_data, list_alignments, load_alignment, metric_series, propose, save_alignment
 from .ambit import AMBIT_CLOCKS, AMBIT_COLUMNS
 from .export import export_aligned, export_legacy_frames
 from .importing import import_session
-from .query import connect, rows_as_dicts
+from .query import connect, rows_as_dicts, session_events
 from .run import GroupRun
 from .session import SessionStore
 from .spool import SPOOL_CLOCKS, SPOOL_COLUMNS
@@ -63,6 +63,7 @@ class App:
             ("POST", r"/api/imports", self.create_import),
             ("GET", r"/api/sessions/(?P<sid>[\w-]+)", self.get_session),
             ("GET", r"/api/sessions/(?P<sid>[\w-]+)/live", self.live),
+            ("GET", r"/api/sessions/(?P<sid>[\w-]+)/events", self.events),
             ("POST", r"/api/sessions/(?P<sid>[\w-]+)/(?P<action>stop|cancel)", self.stop_run),
             ("POST", r"/api/sessions/(?P<sid>[\w-]+)/mark", self.mark),
             ("POST", r"/api/sessions/(?P<sid>[\w-]+)/alignment/preview", self.preview_alignment),
@@ -166,6 +167,9 @@ class App:
             raise ApiError(409, "This session is not running in this engine process")
         return run.live(json.loads(query.get("cursors", ["{}"])[0]))
 
+    def events(self, body, query, sid):
+        return session_events(self.session_dir(sid), self.manifest(sid))
+
     def stop_run(self, body, query, sid, action):
         run = self.runs.get(sid)
         if not run or run.manifest["status"] != "running":
@@ -184,15 +188,18 @@ class App:
                        body.get("manual") or {}, body.get("trial_params") or {})
 
     def preview_alignment(self, body, query, sid):
-        alignment = {**self._proposal(sid, body), "id": "preview"}
-        return {"alignment": alignment, "charts": chart_data(self.session_dir(sid), self.manifest(sid), alignment)}
+        return self._aligned_view(sid, {**self._proposal(sid, body), "id": "preview"})
 
     def save_alignment(self, body, query, sid):
         return save_alignment(self.session_dir(sid), self._proposal(sid, body))
 
     def alignment_charts(self, body, query, sid, aid):
-        alignment = load_alignment(self.session_dir(sid), aid)
-        return {"alignment": alignment, "charts": chart_data(self.session_dir(sid), self.manifest(sid), alignment)}
+        return self._aligned_view(sid, load_alignment(self.session_dir(sid), aid))
+
+    def _aligned_view(self, sid, alignment):
+        session_dir, manifest = self.session_dir(sid), self.manifest(sid)
+        return {"alignment": alignment, "charts": chart_data(session_dir, manifest, alignment),
+                "values": metric_series(session_dir, manifest, alignment)}
 
     def export(self, body, query, sid, aid):
         return export_aligned(self.session_dir(sid), self.manifest(sid), load_alignment(self.session_dir(sid), aid))

@@ -191,27 +191,38 @@ def decimate(points: list[list[float]], limit: int = MAX_POINTS_PER_SERIES) -> l
     return out
 
 
-def chart_data(session_dir: Path, manifest: dict[str, Any], alignment: dict[str, Any]) -> list[dict[str, Any]]:
-    template = Template(manifest["template"])
+def _aligned(session_dir: Path, manifest: dict[str, Any], alignment: dict[str, Any]):
     con = connect(session_dir)
     con.execute(f"CREATE VIEW aligned AS {aligned_sql(manifest, alignment)}")
     columns = {r[0] for r in con.execute("DESCRIBE aligned").fetchall()}
     labels = {m["capture"]: m["label"] for t in alignment["trials"] for m in t["members"]}
+    return con, columns, labels
+
+
+def _series(con, role: str, value: str, labels: dict[str, str]) -> list[dict[str, Any]]:
+    rows = con.execute(f'SELECT trial, capture, x_s, "{value}" FROM aligned WHERE role = ? AND "{value}" IS NOT NULL '
+                       "ORDER BY trial, capture, x_s", [role]).fetchall()
+    grouped: dict[tuple[str, str], list[list[float]]] = {}
+    for trial, capture, x, y in rows:
+        grouped.setdefault((trial, capture), []).append([x, y])
+    return [{"trial": trial, "capture": capture, "role": role, "value": value,
+             "name": f"{labels.get(capture, capture)} · {value}", "points": decimate(pts)}
+            for (trial, capture), pts in grouped.items()]
+
+
+def metric_series(session_dir: Path, manifest: dict[str, Any], alignment: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Aligned series for each value a visible metric shows, so replay can read a metric at any x."""
+    con, columns, labels = _aligned(session_dir, manifest, alignment)
+    return {value: _series(con, role, value, labels)
+            for value, role in Template(manifest["template"]).metric_bindings().items() if value in columns}
+
+
+def chart_data(session_dir: Path, manifest: dict[str, Any], alignment: dict[str, Any]) -> list[dict[str, Any]]:
+    template = Template(manifest["template"])
+    con, columns, labels = _aligned(session_dir, manifest, alignment)
     charts = []
     for chart in template.charts():
-        series = []
-        for s in chart["series"]:
-            if s["value"] not in columns:
-                continue
-            rows = con.execute(
-                f'SELECT trial, capture, x_s, "{s["value"]}" FROM aligned WHERE role = ? AND "{s["value"]}" IS NOT NULL '
-                "ORDER BY trial, capture, x_s", [s["role"]]).fetchall()
-            grouped: dict[tuple[str, str], list[list[float]]] = {}
-            for trial, capture, x, y in rows:
-                grouped.setdefault((trial, capture), []).append([x, y])
-            for (trial, capture), pts in grouped.items():
-                series.append({"trial": trial, "capture": capture, "role": s["role"], "value": s["value"],
-                               "name": f"{labels.get(capture, capture)} · {s['value']}", "points": decimate(pts)})
+        series = [x for s in chart["series"] if s["value"] in columns for x in _series(con, s["role"], s["value"], labels)]
         markers = []
         if chart.get("markers"):
             spec = chart["markers"]

@@ -1,5 +1,7 @@
 """The API the UI calls, exercised without a browser."""
 
+import time
+
 import pytest
 
 from cousinslab.server import ApiError, App
@@ -73,3 +75,22 @@ def test_overlapping_layout_edit_is_rejected_with_the_reason(app):
     with pytest.raises(ApiError) as error:
         app.save_template({"data": data}, {}, TEMPLATE)
     assert error.value.status == 422 and "'co2-chart' and 'fluorescence-chart' overlap" in str(error.value)
+
+
+def test_a_finished_run_serves_its_events_and_replay_values_without_changing_stored_files(app):
+    manifest = app.start_run({"template_id": TEMPLATE, "speed": 50}, {})
+    run = app.runs[manifest["id"]]
+    deadline = time.monotonic() + 20
+    while run.manifest["captures"]["light"]["rows"] < 200 and time.monotonic() < deadline:
+        time.sleep(0.05)
+    app.mark({"event": "closed_system"}, {}, manifest["id"])
+    run.stop()
+    session_dir = app.session_dir(manifest["id"])
+    before = {p: p.read_bytes() for p in session_dir.rglob("*.parquet")}
+
+    events = app.events({}, {}, manifest["id"])
+    assert [e["kind"] for e in events if e["source"] == "operator"] == ["closed_system"]
+    for reference in ("event", "elapsed", "clock"):
+        view = app.preview_alignment({"reference": reference}, {}, manifest["id"])
+        assert view["values"]["ubar_co2"][0]["points"] and view["values"]["fluorescence"][0]["points"]
+    assert {p: p.read_bytes() for p in session_dir.rglob("*.parquet")} == before

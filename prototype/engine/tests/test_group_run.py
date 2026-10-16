@@ -10,7 +10,7 @@ import pytest
 from cousinslab import run as run_module
 from cousinslab.alignment import propose
 from cousinslab.contract import InstrumentInfo, Readiness
-from cousinslab.query import connect
+from cousinslab.query import connect, session_events
 from cousinslab.run import GroupRun
 from cousinslab.session import SessionStore
 from cousinslab.templates import Template, TemplateStore, load_profiles
@@ -171,3 +171,16 @@ def test_a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it(tmp
     live = run.live({})
     run.stop()
     assert any(row.get("fluorescence") is not None for row in live["captures"]["light"]["rows"])
+
+
+def test_session_events_place_flashes_and_operator_markers_on_the_run_clock(tmp_path):
+    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 0}))
+    assert wait_until(lambda: run.manifest["captures"]["light"]["rows"] > 2300, timeout=30)
+    marker = run.mark("closed_system")
+    run.stop()
+    events = session_events(run.store.path(run.manifest["id"]), run.manifest)
+    operator = [e for e in events if e["source"] == "operator"]
+    assert [(e["kind"], e["x_run_s"]) for e in operator] == [("closed_system", pytest.approx(marker["x_run_s"], abs=1e-3))]
+    flashes = [e for e in events if e["kind"] == "sat_flash"]
+    assert flashes and all(e["source"] == "light" and 0 < e["x_run_s"] < marker["x_run_s"] for e in flashes)
+    assert [e["x_run_s"] for e in events] == sorted(e["x_run_s"] for e in events)

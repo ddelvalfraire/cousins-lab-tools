@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from cousinslab.alignment import aligned_sql, propose, save_alignment
+from cousinslab.alignment import aligned_sql, chart_data, metric_series, propose, save_alignment
 from cousinslab.importing import import_session
 from cousinslab.ms_workbook import read_sample_sheet
-from cousinslab.query import connect, open_session
+from cousinslab.query import connect, open_session, session_events
 from cousinslab.session import SessionStore
 from cousinslab.templates import REPO_DIR, TemplateStore
 
@@ -113,3 +113,23 @@ def test_notebook_helper_sees_the_same_aligned_view(imported):
     con = open_session(session_dir, saved["id"])
     n = con.execute("SELECT count(*) FROM aligned WHERE role = 'ms'").fetchone()[0]
     assert n == 2 * 1518
+
+
+def test_metric_values_are_served_on_the_same_axis_as_the_charts(imported):
+    session_dir, manifest = imported
+    alignment = propose(session_dir, manifest, "event", MANUAL, TRIAL_PARAMS)
+    charts = {c["id"]: c for c in chart_data(session_dir, manifest, alignment)}
+    values = metric_series(session_dir, manifest, alignment)
+    assert set(values) == {"ubar_co2", "fluorescence"}
+    assert [s["points"] for s in values["ubar_co2"]] == [s["points"] for s in charts["co2"]["series"]]
+    assert [s["trial"] for s in values["fluorescence"]] == ["light-150-pl1", "light-150-pl2"]
+
+
+def test_imported_events_keep_their_native_time_and_have_no_run_clock(imported):
+    session_dir, manifest = imported
+    flashes = [e for e in session_events(session_dir, manifest) if e["kind"] == "sat_flash"]
+    light = {cid for cid, c in manifest["captures"].items() if c["role"] == "light"}
+    assert {e["source"] for e in flashes} == light
+    assert all(e["x_run_s"] is None and e["t_host_utc"] is None and e["t_native"] > 0 for e in flashes)
+    per_capture = [[e["t_native"] for e in flashes if e["source"] == cid] for cid in sorted(light)]
+    assert all(times == sorted(times) and len(times) == 14 for times in per_capture)

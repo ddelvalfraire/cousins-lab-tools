@@ -228,20 +228,24 @@ class Template:
     def layout(self) -> dict[str, Any]:
         return normalize_layout(self.data)
 
-    def live_values(self, role: str) -> set[str]:
-        """Columns and derived values the live view of a role needs: chart series plus metric bindings."""
-        values = {s["value"] for chart in self.charts() for s in chart["series"] if s["role"] == role}
-        derived = self.data.get("derived", {})
+    def metric_bindings(self) -> dict[str, str]:
+        """Derived value -> role, for every metric an enabled role can show."""
+        derived, roles, bindings = self.data.get("derived", {}), self.enabled_roles(), {}
 
         def visit(items: list[dict[str, Any]]) -> None:
             for c in items:
-                if c["kind"] == "metric" and derived[c["value"]]["role"] == role:
-                    values.add(c["value"])
+                if c["kind"] == "metric" and derived[c["value"]]["role"] in roles:
+                    bindings[c["value"]] = derived[c["value"]]["role"]
                 visit(c.get("components") or [])
 
         for view in self.layout()["views"]:
             visit(view["components"])
-        return values
+        return bindings
+
+    def live_values(self, role: str) -> set[str]:
+        """Columns and derived values the live view of a role needs: chart series plus metric bindings."""
+        return ({s["value"] for chart in self.charts() for s in chart["series"] if s["role"] == role}
+                | {v for v, r in self.metric_bindings().items() if r == role})
 
     def hidden_components(self) -> dict[str, str]:
         """Component id -> why it is not shown. Mirrors charts(): an excluded role takes its components with it."""
