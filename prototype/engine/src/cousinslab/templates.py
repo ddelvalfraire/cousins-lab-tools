@@ -34,6 +34,10 @@ IMPORT_COLUMNS = {
 ON_FAILURE = {"continue_others", "stop_group"}
 REFERENCES = {"clock", "elapsed", "event"}
 
+GRID_COLUMNS = 12
+COMPONENT_SIZES = {"chart": (8, 4), "metric": (4, 2), "controls": (4, 3), "inputs": (6, 4), "captures": (12, 3), "group": (12, 5)}
+UNSUPPORTED_KINDS = {"calibration": "the engine has no calibration model yet"}
+
 
 class TemplateError(ValueError):
     pass
@@ -87,6 +91,102 @@ def parse_expression(text: str) -> Expression:
     return Expression(text, frozenset(v for k, v in tokens if k == "name"), tuple(tokens))
 
 
+def default_layout(data: dict[str, Any]) -> dict[str, Any]:
+    charts = [{"id": f"chart-{c['id']}", "kind": "chart", "chart": c["id"], "x": i % 2 * 6, "y": i // 2 * 4, "w": 6, "h": 4}
+              for i, c in enumerate(data.get("charts", []))]
+    bottom = (len(charts) + 1) // 2 * 4
+    return {"views": [{"id": "run", "name": "Run", "components": [
+        *charts,
+        {"id": "controls", "kind": "controls", "x": 0, "y": bottom, "w": 4, "h": 3},
+        {"id": "captures", "kind": "captures", "x": 4, "y": bottom, "w": 8, "h": 3},
+    ]}]}
+
+
+def _is_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _place(items: list[Any], prefix: str) -> list[Any]:
+    """Fill per-kind sizes, and put a component without a row below everything before it."""
+    out, bottom = [], 0
+    for i, c in enumerate(items):
+        if not isinstance(c, dict):
+            out.append(c)
+            continue
+        w, h = COMPONENT_SIZES.get(c.get("kind"), (6, 3))
+        c = {**c, "id": c.get("id") or f"{prefix}-{i + 1}"}
+        c = {**c, "x": c.get("x", 0), "y": c.get("y", bottom), "w": c.get("w", w), "h": c.get("h", h)}
+        if c["kind"] == "group":
+            c["components"] = _place(c.get("components") or [], c["id"])
+        if all(_is_int(c[k]) for k in "xywh"):
+            bottom = max(bottom, c["y"] + c["h"])
+        out.append(c)
+    return out
+
+
+def normalize_layout(data: dict[str, Any]) -> dict[str, Any]:
+    views = (data.get("layout") or default_layout(data)).get("views")
+    return {"columns": GRID_COLUMNS, "views": [
+        {**v, "id": v.get("id") or f"view-{i + 1}", "name": v.get("name") or v.get("id") or f"View {i + 1}",
+         "components": _place(v.get("components") or [], v.get("id") or f"view-{i + 1}")}
+        for i, v in enumerate(views if isinstance(views, list) else []) if isinstance(v, dict)]}
+
+
+def _overlap(a: dict[str, Any], b: dict[str, Any]) -> bool:
+    return a["x"] < b["x"] + b["w"] and b["x"] < a["x"] + a["w"] and a["y"] < b["y"] + b["h"] and b["y"] < a["y"] + a["h"]
+
+
+def _layout_errors(data: dict[str, Any]) -> list[str]:
+    if "layout" in data and not (isinstance(data["layout"], dict) and isinstance(data["layout"].get("views"), list)
+                                 and data["layout"]["views"]):
+        return ["layout.views must be a non-empty list"]
+    errors: list[str] = []
+    seen: set[str] = set()
+    charts, derived = {c["id"] for c in data.get("charts", [])}, set(data.get("derived", {}))
+
+    def check(items: list[Any], where: str) -> None:
+        placed = []
+        for c in items:
+            if not isinstance(c, dict):
+                errors.append(f"Layout {where}: each component must be a mapping")
+                continue
+            name, kind = f"Layout component {c['id']!r}", c.get("kind")
+            if c["id"] in seen:
+                errors.append(f"{name} is defined twice")
+            seen.add(c["id"])
+            if kind in UNSUPPORTED_KINDS:
+                errors.append(f"{name}: kind {kind!r} is not supported; {UNSUPPORTED_KINDS[kind]}")
+                continue
+            if kind not in COMPONENT_SIZES:
+                errors.append(f"{name}: unknown kind {kind!r}; use one of {sorted(COMPONENT_SIZES)}")
+                continue
+            if not all(_is_int(c[k]) for k in "xywh"):
+                errors.append(f"{name}: x, y, w and h must be whole numbers")
+            elif c["x"] < 0 or c["y"] < 0 or c["w"] < 1 or c["h"] < 1 or c["x"] + c["w"] > GRID_COLUMNS:
+                errors.append(f"{name} is outside the {GRID_COLUMNS}-column grid (x={c['x']}, y={c['y']}, w={c['w']}, h={c['h']})")
+            else:
+                errors.extend(f"Layout components {p['id']!r} and {c['id']!r} overlap in {where}" for p in placed if _overlap(p, c))
+                placed.append(c)
+            if c.get("role") is not None and c["role"] not in data["roles"]:
+                errors.append(f"{name}: unknown role {c['role']!r}")
+            if kind == "chart" and c.get("chart") not in charts:
+                errors.append(f"{name}: unknown chart {c.get('chart')!r}")
+            if kind == "metric" and c.get("value") not in derived:
+                errors.append(f"{name}: {c.get('value')!r} is not a derived value")
+            if kind == "inputs" and (unknown := set(c.get("parameters") or []) - set(data.get("parameters", {}))):
+                errors.append(f"{name}: unknown parameters {sorted(unknown)}")
+            if kind == "group":
+                check(c["components"], f"group {c['id']!r}")
+
+    view_ids: set[str] = set()
+    for view in normalize_layout(data)["views"]:
+        if view["id"] in view_ids:
+            errors.append(f"Layout view {view['id']!r} is defined twice")
+        view_ids.add(view["id"])
+        check(view["components"], f"view {view['id']!r}")
+    return errors
+
+
 @dataclass(frozen=True)
 class Template:
     data: dict[str, Any]
@@ -124,6 +224,30 @@ class Template:
             if series:
                 out.append({**chart, "series": series})
         return out
+
+    def layout(self) -> dict[str, Any]:
+        return normalize_layout(self.data)
+
+    def hidden_components(self) -> dict[str, str]:
+        """Component id -> why it is not shown. Mirrors charts(): an excluded role takes its components with it."""
+        roles, charts, derived = self.enabled_roles(), {c["id"] for c in self.charts()}, self.data.get("derived", {})
+        hidden: dict[str, str] = {}
+
+        def visit(items: list[dict[str, Any]]) -> None:
+            for c in items:
+                role = c.get("role") or (derived[c["value"]]["role"] if c["kind"] == "metric" else None)
+                if role and role not in roles:
+                    hidden[c["id"]] = f"Role {role} is excluded"
+                elif c["kind"] == "chart" and c["chart"] not in charts:
+                    hidden[c["id"]] = f"Every role in chart {c['chart']} is excluded"
+                elif c["kind"] == "group":
+                    visit(c["components"])
+                    if all(child["id"] in hidden for child in c["components"]):
+                        hidden[c["id"]] = "Every component in the group is hidden"
+
+        for view in self.layout()["views"]:
+            visit(view["components"])
+        return hidden
 
 
 def validate(data: dict[str, Any], profiles: dict[str, dict[str, Any]]) -> Template:
@@ -180,6 +304,7 @@ def validate(data: dict[str, Any], profiles: dict[str, dict[str, Any]]) -> Templ
         errors.append(f"alignment.event {alignment['event']!r} is not defined under events")
     if alignment.get("trial_role") and alignment["trial_role"] not in data["roles"]:
         errors.append(f"alignment.trial_role {alignment['trial_role']!r} is not a role")
+    errors.extend(_layout_errors(data))
     if errors:
         raise TemplateError("; ".join(errors))
     return Template(data)
