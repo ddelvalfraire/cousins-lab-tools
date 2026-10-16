@@ -33,9 +33,10 @@ def clock_of(cap: dict[str, Any], kind: str) -> dict[str, Any] | None:
 
 
 def sample_interval_s(con: duckdb.DuckDBPyConnection, cid: str, clock: dict[str, Any]) -> float | None:
+    """Median gap between distinct times. Frames decoded in one spool poll share a receipt time."""
     sec = clock_seconds_sql(clock)
     value = con.execute(
-        f'SELECT median(d) FROM (SELECT {sec} - lag({sec}) OVER (ORDER BY seq) AS d FROM "cap:{cid}")'
+        f'SELECT median(d) FILTER (WHERE d > 0) FROM (SELECT {sec} - lag({sec}) OVER (ORDER BY seq) AS d FROM "cap:{cid}")'
     ).fetchone()[0]
     return round(float(value), 6) if value is not None else None
 
@@ -150,6 +151,7 @@ def propose(session_dir: Path, manifest: dict[str, Any], reference: str,
         "unaligned": unaligned,
         "uncertainty_note": "One sample interval on the member's clock. Receipt latency and clock drift are not characterized.",
         "template": {"id": template.id, "revision": template.revision},
+        "inputs": {"reference": reference, "manual": manual, "trial_params": trial_params or {}},
     }
 
 

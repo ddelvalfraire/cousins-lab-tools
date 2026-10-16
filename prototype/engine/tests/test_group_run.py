@@ -44,7 +44,7 @@ def wait_until(predicate, timeout=20.0):
 
 
 def test_roles_start_after_their_delays_and_record_requested_and_actual_times(tmp_path):
-    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 1.5}))
+    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 75}))
     caps = run.manifest["captures"]
     assert wait_until(lambda: caps["light"]["rows"] > 200 and caps["ms"]["rows"] > 20)
     run.mark("closed_system")
@@ -56,9 +56,12 @@ def test_roles_start_after_their_delays_and_record_requested_and_actual_times(tm
     requested = datetime.fromisoformat(light["requested_start_utc"])
     commanded = datetime.fromisoformat(light["start_command_utc"])
     first = datetime.fromisoformat(light["first_sample_utc"])
-    assert (requested - t0).total_seconds() == pytest.approx(1.5)
+    assert light["host_delay_s"] == pytest.approx(75 / SPEED)
+    assert (requested - t0).total_seconds() == pytest.approx(75 / SPEED)
     assert 0 <= (commanded - requested).total_seconds() < 0.2
     assert first >= commanded
+    assert light["timing"]["requested_samples"] == 8010
+    assert light["timing"]["recorded_samples"] == light["rows"]
     assert run.manifest["status"] == "completed"
     assert {c["status"] for c in caps.values()} <= {"completed", "source_ended"}
 
@@ -74,7 +77,7 @@ def test_roles_start_after_their_delays_and_record_requested_and_actual_times(tm
 
 
 def test_live_session_aligns_on_the_host_clock_and_on_the_operator_marker(tmp_path):
-    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 0.5}))
+    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 25}))
     assert wait_until(lambda: run.manifest["captures"]["light"]["rows"] > 100)
     marker = run.mark("closed_system")
     time.sleep(0.3)
@@ -85,11 +88,25 @@ def test_live_session_aligns_on_the_host_clock_and_on_the_operator_marker(tmp_pa
     assert clock["unaligned"] == []
     assert {m["clock"]["kind"] for m in clock["trials"][0]["members"]} == {"host_utc"}
     assert len({m["zero"] for m in clock["trials"][0]["members"]}) == 1, "one shared clock origin, no per-capture offsets"
+    ms = next(m for m in clock["trials"][0]["members"] if m["capture"] == "ms")
+    assert ms["uncertainty_s"] >= 0.05, "spool frames arrive in polls; receipt time cannot be finer than the poll interval"
 
     event = propose(session_dir, run.manifest, "event")
     marker_epoch = datetime.fromisoformat(marker["t_host_utc"]).timestamp()
     assert [m["zero"] for t in event["trials"] for m in t["members"]] == [pytest.approx(marker_epoch, abs=1e-6)] * 2
     assert all("Operator marker" in m["method"] for t in event["trials"] for m in t["members"])
+
+
+def test_detected_flash_is_transferred_to_the_mass_spec_over_the_host_clock(tmp_path):
+    run = start(tmp_path, template_with(tmp_path, light={"start_delay_s": 0}))
+    assert wait_until(lambda: run.manifest["captures"]["light"]["rows"] > 3300, timeout=30)
+    run.stop()
+    event = propose(run.store.path(run.manifest["id"]), run.manifest, "event")
+    members = {m["capture"]: m for t in event["trials"] for m in t["members"]}
+    assert event["unaligned"] == []
+    assert members["ms"]["zero"] == members["light"]["zero"]
+    assert members["ms"]["method"].startswith("Transferred over the host clock")
+    assert members["light"]["method"] == "Detected Saturation flash 4 (receipt time)"
 
 
 def test_disabling_a_role_runs_the_remaining_roles_only(tmp_path):

@@ -161,11 +161,13 @@ class SessionStore:
         for manifest in self.list():
             if manifest["status"] not in FINISHED:
                 manifest["status"] = "interrupted"
-                for cap in manifest["captures"].values():
-                    if cap["status"] not in FINISHED:
-                        cap["status"] = "interrupted"
                 for tmp in self.path(manifest["id"]).rglob("*.parquet.tmp"):
                     tmp.unlink()
+                for cid, cap in manifest["captures"].items():
+                    if cap["status"] not in FINISHED:
+                        cap["status"] = "interrupted"
+                    segments = (self.capture_dir(manifest["id"], cid) / "samples").glob("part-*.parquet")
+                    cap["rows"] = sum(pq.read_metadata(f).num_rows for f in segments)
                 self.save(manifest)
                 found.append(manifest["id"])
         return found

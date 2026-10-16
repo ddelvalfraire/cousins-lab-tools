@@ -14,7 +14,9 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
-from .ambit import AmbitReplay
+import pyarrow.parquet as pq
+
+from .ambit import AmbitReplay, timing_summary
 from .contract import INPUT_KIND_LABELS, Event, Instrument
 from .ms_workbook import read_raw_sheet
 from .session import EVENT_COLUMNS, SegmentWriter, SessionStore, arrow_schema, event_row, iso, utc_now
@@ -114,13 +116,17 @@ class GroupRun:
                 "clocks": [c.__dict__ for c in info.clocks],
                 "aliases": info.aliases,
                 "requested_delay_s": float(cfg.get("start_delay_s", 0)),
+                "host_delay_s": float(cfg.get("start_delay_s", 0)) / self.speed,
                 "on_failure": cfg.get("on_failure", "continue_others"),
                 "readiness": {"ok": readiness.ok, "detail": readiness.detail},
                 "status": "ready" if readiness.ok else "not_ready",
                 "rows": 0,
                 "protocol_plan": plan.__dict__ if plan else None,
             }
-        self.manifest["run"] = {"speed": self.speed}
+        self.manifest["run"] = {
+            "speed": self.speed,
+            "note": "Simulated and replayed inputs: data, device counters, and start delays are compressed by the speed factor; host clock times are real.",
+        }
         if not ready:
             self.manifest["status"] = "not_ready"
             for sim in self.simulators:
@@ -133,7 +139,7 @@ class GroupRun:
         self.manifest["status"] = "running"
         self.manifest["run"]["group_start_utc"] = iso(self.t0_utc)
         for role, cap in self.captures.items():
-            delay = self.manifest["captures"][role]["requested_delay_s"]
+            delay = self.manifest["captures"][role]["host_delay_s"]
             self.manifest["captures"][role]["requested_start_utc"] = iso(self.t0_utc + timedelta(seconds=delay))
             self.manifest["captures"][role]["status"] = "waiting" if delay else "starting"
             cap.thread = threading.Thread(target=self._run_capture, args=(role,), name=f"capture-{role}", daemon=True)
@@ -143,7 +149,7 @@ class GroupRun:
 
     def _run_capture(self, role: str) -> None:
         cap, meta = self.captures[role], self.manifest["captures"][role]
-        if cap.stop.wait(meta["requested_delay_s"]):
+        if cap.stop.wait(meta["host_delay_s"]):
             meta["status"] = "not_started"
             self._save()
             return
@@ -192,6 +198,12 @@ class GroupRun:
         for sim in self.simulators:
             sim.close()
         self.markers.flush()
+        for role in self.captures:
+            plan = self.template.protocol_plan(role)
+            samples = self.store.capture_dir(self.manifest["id"], role) / "samples"
+            if plan and any(samples.glob("part-*.parquet")):
+                device_ms = pq.read_table(samples, columns=["t_device_ms"]).column("t_device_ms").to_pylist()
+                self.manifest["captures"][role]["timing"] = timing_summary([{"T": t} for t in device_ms], plan)
         statuses = {c["status"] for c in self.manifest["captures"].values()}
         self.manifest["status"] = "cancelled" if cancel else "completed_with_failures" if "failed" in statuses else "completed"
         self.manifest["run"]["stopped_utc"] = iso(utc_now())
