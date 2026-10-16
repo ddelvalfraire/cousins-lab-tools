@@ -21,9 +21,9 @@ const STATUS_TONES = {
   failed: ["bad", "alert"], not_ready: ["bad", "alert"], interrupted: ["bad", "alert"], cancelled: ["bad", "stop"],
 };
 export const statusLabel = status => String(status).replaceAll("_", " ").replace(/^./, c => c.toUpperCase());
-export function statusBadge(status) {
+export function statusBadge(status, label = statusLabel(status)) {
   const [tone, ico] = STATUS_TONES[status] || ["neutral", "info"];
-  return `<span class="badge tone-${tone}">${icon(ico)}${esc(statusLabel(status))}</span>`;
+  return `<span class="badge tone-${tone}">${icon(ico)}${esc(label)}</span>`;
 }
 
 export function toast(message) {
@@ -81,12 +81,12 @@ const ICONS = {
 };
 export const icon = name => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICONS[name] || ICONS.grid}"/></svg>`;
 
-/** crumbs: [[label, href], ...] ending at the current page, which is shown without a link. */
-export function pageHeader(crumbs, title, { actions = "", sub = "" } = {}) {
+/** crumbs: [[label, href], ...] leading to the current page, shown last without a link as `current` or the title. */
+export function pageHeader(crumbs, title, { actions = "", sub = "", current = title } = {}) {
   const items = crumbs.map(([label, href]) => `<li><a href="${esc(href)}">${esc(label)}</a>${icon("right")}</li>`).join("");
   return `
     <header class="page-header">
-      <div><nav class="breadcrumbs" aria-label="Breadcrumb"><ol>${items}<li aria-current="page">${esc(title)}</li></ol></nav>
+      <div><nav class="breadcrumbs" aria-label="Breadcrumb"><ol>${items}<li aria-current="page">${esc(current)}</li></ol></nav>
         <h1>${esc(title)}</h1>${sub ? `<p class="sub">${sub}</p>` : ""}</div>
       <div class="actions">${actions}</div>
     </header>`;

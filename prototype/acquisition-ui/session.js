@@ -1,11 +1,11 @@
-import { api, deltaSeconds, esc, fmtClock, fmtSeconds, fmtTime, hms, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
+import { api, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
-
-const LIVE_POLL_MS = 500;
+import { captureTable } from "./components.js";
 
 export async function renderSession(page, id) {
   const session = await api(`/api/sessions/${id}`);
-  return session.live ? renderLive(page, session) : renderReview(page, session);
+  if (session.live) return void location.replace(`#/sessions/${id}/capture`);
+  return renderReview(page, session);
 }
 
 function header(m, actions = "") {
@@ -16,113 +16,10 @@ function header(m, actions = "") {
   });
 }
 
-function captureTable(m) {
-  const run = m.run || {};
-  return `
-    <div class="table-wrap"><table>
-      <thead><tr><th>Capture</th><th>Input</th><th>Status</th><th>Requested start</th><th>Start command</th><th>First sample</th><th>Rows</th></tr></thead>
-      <tbody>${Object.entries(m.captures).map(([cid, c]) => `
-        <tr>
-          <td><strong>${esc(cid)}</strong><br><span class="small muted">${esc(c.label)}</span></td>
-          <td>${inputBadge(c.input_kind)}</td>
-          <td>${statusBadge(c.status)}${c.error ? `<div class="small error-text">${esc(c.error)}</div>` : ""}
-              ${c.readiness && !c.readiness.ok ? `<div class="small error-text">${esc(c.readiness.detail)}</div>` : ""}</td>
-          <td class="small">${c.requested_start_utc ? `${esc(fmtClock(c.requested_start_utc))}<br><span class="muted">+${c.requested_delay_s} s${c.host_delay_s !== c.requested_delay_s ? ` (${fmtSeconds(c.host_delay_s)} at ${run.speed}x)` : ""}</span>` : "<span class='muted'>n/a</span>"}</td>
-          <td class="small">${c.start_command_utc ? `${esc(fmtClock(c.start_command_utc))}<br><span class="muted">${fmtSeconds(deltaSeconds(c.requested_start_utc, c.start_command_utc))} after requested</span>` : ""}</td>
-          <td class="small">${c.first_sample_utc ? `${esc(fmtClock(c.first_sample_utc))}<br><span class="muted">${fmtSeconds(deltaSeconds(c.start_command_utc, c.first_sample_utc))} after command</span>` : c.input_kind === "import" ? "<span class='muted'>no clock time in file</span>" : ""}</td>
-          <td>${c.rows ?? ""}</td>
-        </tr>`).join("")}</tbody>
-    </table></div>
-    ${run.note ? `<p class="small muted">${esc(run.note)}</p>` : ""}`;
-}
-
-async function renderLive(page, session) {
-  const m = session.manifest;
-  const template = (await api(`/api/templates/${m.template.id}?revision=${m.template.revision}`));
-  const markerEvents = Object.entries(m.template.events || {}).filter(([, e]) => e.operator_marker);
-  page.innerHTML = header(m, `
-      ${markerEvents.map(([k, e]) => `<button data-mark="${esc(k)}">Mark: ${esc(e.label)}</button>`).join("")}
-      <button id="stop">Stop run</button><button class="danger" id="cancel">Cancel</button>`) + `<div class="page-body">
-    <section class="card">
-      <div class="status-strip">
-        <div class="stat"><span class="label">Run clock</span><span class="value" id="elapsed">00:00:00</span></div>
-        <div class="stat"><span class="label">Group status</span><span id="group-status">${statusBadge(m.status)}</span></div>
-        <div class="stat"><span class="label">Replay speed</span><span class="value">${m.run?.speed}x</span></div>
-      </div>
-      ${Object.values(m.captures).map(c => `<p class="small muted">${inputBadge(c.input_kind)} ${esc(c.input_note)}</p>`).join("")}
-      <div id="captures">${captureTable(m)}</div>
-    </section>
-    <div class="grid charts" id="charts">${template.charts.map(c => `
-      <section class="card"><div class="card-head"><h2>${esc(c.title)}</h2><span class="small muted">${esc(c.unit)}</span></div><div class="chart" data-chart="${esc(c.id)}"></div></section>`).join("")}
-    </div>
-    <section class="card"><h2>Events</h2><div class="log" id="log"><div class="muted">Saturation flashes and operator markers appear here.</div></div></section></div>`;
-
-  const charts = Object.fromEntries(template.charts.map(c => [c.id, { spec: c, ...makeChart(page.querySelector(`[data-chart="${c.id}"]`)) }]));
-  const points = {};
-  const markers = [];
-  const cursors = {};
-  let timer;
-
-  const draw = () => {
-    for (const { spec, chart } of Object.values(charts)) {
-      const series = spec.series.map(s => ({ name: `${s.role} · ${s.value}`, points: points[`${s.role}:${s.value}`] || [] }));
-      const chartMarkers = markers.filter(mk => mk.role === "operator" || (spec.markers && mk.role === spec.markers.role && mk.kind === spec.markers.kind));
-      chart.setOption(lineOption({ series, markers: chartMarkers, xName: "Run clock (s since group start, host clock)" }), { notMerge: true });
-    }
-  };
-
-  const poll = async () => {
-    try {
-      const live = await api(`/api/sessions/${m.id}/live?cursors=${encodeURIComponent(JSON.stringify(cursors))}`);
-      page.querySelector("#elapsed").textContent = hms(live.elapsed_s);
-      page.querySelector("#group-status").innerHTML = statusBadge(live.status);
-      page.querySelector("#captures").innerHTML = captureTable({ ...m, captures: live.manifest_captures });
-      const log = page.querySelector("#log");
-      for (const [role, cap] of Object.entries(live.captures)) {
-        cursors[role] = cap.next;
-        cursors[`${role}:events`] = cap.events_next;
-        for (const row of cap.rows) {
-          for (const [key, value] of Object.entries(row)) {
-            if (key !== "x" && value != null) (points[`${role}:${key}`] ||= []).push([row.x, value]);
-          }
-        }
-        for (const ev of cap.events) {
-          markers.push({ role, kind: ev.kind, x: ev.x_run_s, label: ev.label });
-          if (ev.kind === "sat_flash") log.insertAdjacentHTML("afterbegin", `<div>${fmtSeconds(ev.x_run_s)} · ${esc(role)} · ${esc(ev.label)}</div>`);
-        }
-      }
-      for (const mk of live.markers.slice(markers.filter(x => x.role === "operator").length)) {
-        markers.push({ role: "operator", kind: mk.kind, x: mk.x_run_s, label: mk.label });
-        log.insertAdjacentHTML("afterbegin", `<div><strong>${fmtSeconds(mk.x_run_s)} · operator · ${esc(mk.label)}</strong> (host ${esc(fmtClock(mk.t_host_utc))})</div>`);
-      }
-      draw();
-      if (["running", "stopping"].includes(live.status)) timer = setTimeout(poll, LIVE_POLL_MS);
-      else location.reload();
-    } catch (e) {
-      toast(e.message);
-      timer = setTimeout(poll, 2000);
-    }
-  };
-  poll();
-
-  page.querySelectorAll("[data-mark]").forEach(b => (b.onclick = async () => {
-    const mk = await api(`/api/sessions/${m.id}/mark`, { method: "POST", body: { event: b.dataset.mark } });
-    toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
-  }));
-  for (const [sel, action] of [["#stop", "stop"], ["#cancel", "cancel"]]) {
-    page.querySelector(sel).onclick = async () => {
-      if (action === "cancel" && !confirm("Cancel the run? Devices are sent to a safe state; data so far is kept.")) return;
-      await api(`/api/sessions/${m.id}/${action}`, { method: "POST" });
-      toast("Stopping…");
-    };
-  }
-  return () => { clearTimeout(timer); Object.values(charts).forEach(c => c.dispose()); };
-}
-
 async function renderReview(page, session) {
   const m = session.manifest;
   const tabs = [["overview", "Overview"], ["align", "Align & compare"], ["data", "Data (DuckDB)"], ["export", "Export"]];
-  page.innerHTML = header(m) + `<div class="page-body">
+  page.innerHTML = header(m, `<a class="button primary" href="#/sessions/${esc(m.id)}/capture">${icon("play")}Open recording</a>`) + `<div class="page-body">
     ${session.interrupted_at_startup || m.status === "interrupted" ? `<div class="notice bad">This session was interrupted. Rows written before the interruption are kept; rows still buffered were lost.</div>` : ""}
     <nav class="tabs" role="tablist">${tabs.map(([k, label], i) => `<button role="tab" data-tab="${k}" aria-selected="${i === 0}">${label}</button>`).join("")}</nav>
     <div id="tab"></div></div>`;

@@ -3,6 +3,7 @@ import { renderTemplates, renderTemplate } from "./templates.js";
 import { renderInstruments } from "./instruments.js";
 import { renderSession } from "./session.js";
 import { renderSettings } from "./settings.js";
+import { renderCapture } from "./capture.js";
 import { applyAppearance, esc, icon } from "./util.js";
 
 const NAV = [
@@ -17,6 +18,7 @@ const routes = [
   [/^#\/templates\/([\w-]+)(?:\/r(\d+))?$/, "templates", renderTemplate],
   [/^#\/instruments$/, "instruments", renderInstruments],
   [/^#\/sessions\/([\w-]+)$/, "sessions", renderSession],
+  [/^#\/sessions\/([\w-]+)\/capture$/, "sessions", renderCapture],
   [/^#\/settings$/, "settings", renderSettings],
 ];
 
