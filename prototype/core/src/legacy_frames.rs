@@ -4,19 +4,24 @@
 //! `t_ms` runs on across files from the acquisition start. Downloads lose files, so frames
 //! absent from the numbered sequence are reported, not treated as an error.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 use std::fs::{self, File};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SubsecRound, Utc};
 use serde_json::{Map, json};
 use zip::ZipArchive;
 use zip::result::ZipError;
 
-use crate::contract::{Cell, Event, InstrumentError, Row};
-use crate::pycompat::os_error;
+use crate::contract::{
+    Cell, Event, InputKind, Instrument, InstrumentError, InstrumentInfo, Readiness, Row, Sink,
+    StopSignal,
+};
+use crate::pycompat::{format_g, os_error};
+use crate::schemas::{legacy_frames_clocks, legacy_frames_columns};
 
 pub const MASSES: [&str; 8] = ["m32", "m34", "m36", "m44", "m45", "m46", "m47", "m49"];
 
@@ -91,7 +96,11 @@ impl fmt::Display for FramesError {
                 second,
             } => write!(f, "Frame {frame} appears twice, as {first} and {second}"),
             FramesError::NoFrames(path) => {
-                write!(f, "No frame files (<n>.csv) in {}", path.display())
+                write!(
+                    f,
+                    "No frame files (<n>.csv) with rows in {}",
+                    path.display()
+                )
             }
         }
     }
@@ -150,7 +159,7 @@ pub fn read_frames(path: &Path) -> Result<FrameRecording, FramesError> {
         }
         FrameSource::Zip(path.to_path_buf())
     };
-    if frames.is_empty() {
+    if frames.values().all(|(_, rows)| rows.is_empty()) {
         return Err(FramesError::NoFrames(path.to_path_buf()));
     }
     let missing = missing_runs(frames.values().map(|(_, rows)| rows.as_slice()));
@@ -192,6 +201,81 @@ pub fn missing_frames_event(gap: &MissingFrames, t_host_utc: Option<DateTime<Utc
         value: Some((gap.last - gap.first + 1) as f64),
         payload,
     }
+}
+
+pub const DEFAULT_MODEL: &str = "Legacy EZView frame export";
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FramesReplaySettings {
+    pub model: String,
+    /// A zip or a folder of frame files.
+    pub path: PathBuf,
+    pub speed: f64,
+}
+
+/// Replays frame files at their own `t_ms` spacing divided by `speed`.
+pub struct FramesReplay {
+    settings: FramesReplaySettings,
+}
+
+impl FramesReplay {
+    pub fn new(settings: FramesReplaySettings) -> Self {
+        FramesReplay { settings }
+    }
+}
+
+impl Instrument for FramesReplay {
+    fn describe(&self) -> InstrumentInfo {
+        InstrumentInfo {
+            adapter: "legacy_frames_replay".into(),
+            model: self.settings.model.clone(),
+            input_kind: InputKind::Replay,
+            capabilities: BTreeSet::from(["acquire".to_string()]),
+            columns: legacy_frames_columns(),
+            clocks: legacy_frames_clocks(),
+            aliases: BTreeMap::new(),
+        }
+    }
+
+    fn check_ready(&self) -> Readiness {
+        let path = &self.settings.path;
+        if !path.exists() {
+            return Readiness {
+                ok: false,
+                detail: format!("Recording not found: {}", path.display()),
+            };
+        }
+        Readiness {
+            ok: true,
+            detail: format!(
+                "Replaying {} at {}x",
+                path.file_name().unwrap_or_default().to_string_lossy(),
+                format_g(self.settings.speed)
+            ),
+        }
+    }
+
+    /// Each row gets its own receipt time; a gap's event goes out after the row before it.
+    fn run(&mut self, sink: &mut dyn Sink, stop: &StopSignal) -> Result<(), InstrumentError> {
+        let recording = read_frames(&self.settings.path)?;
+        let mut gaps = recording.missing.iter().peekable();
+        let mut previous_t = recording.rows[0].t_ms;
+        for (seq, row) in recording.rows.iter().enumerate() {
+            let delay = (row.t_ms - previous_t) as f64 / 1000.0 / self.settings.speed;
+            if stop.wait(Duration::try_from_secs_f64(delay.max(0.0)).unwrap_or(Duration::MAX)) {
+                return Ok(());
+            }
+            previous_t = row.t_ms;
+            let received = Utc::now().trunc_subsecs(6);
+            sink.rows(vec![frame_row(seq as i64, Some(received), row)]);
+            while let Some(gap) = gaps.next_if(|g| g.after_t_ms <= row.t_ms) {
+                sink.event(missing_frames_event(gap, Some(received)));
+            }
+        }
+        Ok(())
+    }
+
+    fn cancel(&self) {}
 }
 
 /// `12` for `Acquisition-3510/12.csv`; None for anything that is not a numbered CSV.

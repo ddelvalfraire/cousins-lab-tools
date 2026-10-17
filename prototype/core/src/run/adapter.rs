@@ -9,6 +9,7 @@ use serde_json::Value;
 
 use crate::ambit::{self, AmbitReplay, ReplaySettings};
 use crate::contract::{InputKind, Instrument, InstrumentError};
+use crate::legacy_frames::{self, FramesReplay, FramesReplaySettings};
 use crate::ms_workbook::{MassSpecSeries, RAW_SHEET, read_raw_sheet};
 use crate::pycompat::{format_g, os_error, str_repr, strip};
 use crate::simulate::{ChannelValues, SimulatedFrame, SpoolSimulator};
@@ -97,6 +98,25 @@ pub fn build_adapter(
                 simulator: None,
                 note,
                 sources: vec![recording],
+            })
+        }
+        "legacy_frames_replay" => {
+            let path = paths.resolve_path(text(settings, "path")?);
+            let note = format!(
+                "{}: {} at {}x. Rows and t_ms are recorded values; host times are this replay's.",
+                InputKind::Replay.label(),
+                path.file_name().unwrap_or_default().to_string_lossy(),
+                format_g(speed)
+            );
+            Ok(BuiltAdapter {
+                adapter: Box::new(FramesReplay::new(FramesReplaySettings {
+                    model: model(legacy_frames::DEFAULT_MODEL),
+                    path: path.clone(),
+                    speed,
+                })),
+                simulator: None,
+                note,
+                sources: vec![path],
             })
         }
         other => Err(InstrumentError::new(

@@ -213,6 +213,17 @@ pub fn legacy_frames_columns() -> Vec<Column> {
     columns
 }
 
+pub fn legacy_frames_clocks() -> Vec<Clock> {
+    let mut clocks = legacy_frames_import_clocks();
+    clocks.push(Clock::new(
+        "t_host_utc",
+        ClockKind::HostUtc,
+        1.0,
+        "Engine receipt time",
+    ));
+    clocks
+}
+
 pub fn legacy_frames_import_clocks() -> Vec<Clock> {
     vec![Clock::new(
         "t_ms",
@@ -227,6 +238,7 @@ pub fn adapter_columns(adapter: &str) -> Option<Vec<Column>> {
     match adapter {
         "ezview_spool" => Some(spool_columns()),
         "ambit_replay" => Some(ambit_columns()),
+        "legacy_frames_replay" => Some(legacy_frames_columns()),
         _ => None,
     }
 }
@@ -280,6 +292,7 @@ mod tests {
             (ambit_columns(), ambit_clocks()),
             (ambit_columns(), ambit_import_clocks()),
             (ms_import_columns(), ms_import_clocks()),
+            (legacy_frames_columns(), legacy_frames_clocks()),
             (legacy_frames_columns(), legacy_frames_import_clocks()),
         ] {
             for clock in clocks {

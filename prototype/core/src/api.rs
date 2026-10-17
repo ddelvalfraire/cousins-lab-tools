@@ -131,6 +131,11 @@ fn adapter_info(adapter: &str) -> Option<(Value, &'static str)> {
             schemas::ambit_clocks(),
             "Deferred. Serial protocol control (G, A, E; pulser DAC/LED) is documented but not implemented.",
         ),
+        "legacy_frames_replay" => (
+            schemas::legacy_frames_columns(),
+            schemas::legacy_frames_clocks(),
+            "None. The app replays recorded frame files; no instrument is attached.",
+        ),
         _ => return None,
     };
     Some((json!({"columns": columns, "clocks": clocks}), control))

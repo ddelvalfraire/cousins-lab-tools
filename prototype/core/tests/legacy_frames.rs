@@ -1,7 +1,14 @@
-use std::path::{Path, PathBuf};
+mod common;
 
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
+
+use common::{CollectingSink, wait_until};
 use cousinslab::api::Engine;
-use cousinslab::legacy_frames::{FrameSource, FramesError, MissingFrames, read_frames};
+use cousinslab::contract::{Cell, InputKind, Instrument, StopSignal};
+use cousinslab::legacy_frames::{
+    FrameSource, FramesError, FramesReplay, FramesReplaySettings, MissingFrames, read_frames,
+};
 use cousinslab::templates::Paths;
 use serde_json::{Value, json};
 
@@ -110,12 +117,12 @@ fn call(engine: &Engine, command: &str, args: Value) -> Value {
         .unwrap_or_else(|e| panic!("{command} failed: {e:?}"))
 }
 
-fn frames_template(engine: &Engine) {
+fn frames_template(engine: &Engine, instrument: &str) {
     let data = json!({
         "id": "legacy-frames-test",
         "revision": 1,
         "name": "Legacy frames",
-        "roles": {"ms": {"instrument": "ms2-ezview", "import": "legacy_frames"}},
+        "roles": {"ms": {"instrument": instrument, "import": "legacy_frames"}},
         "charts": [{
             "id": "raw", "title": "Raw", "unit": "mV",
             "series": [{"role": "ms", "value": "m44"}],
@@ -133,7 +140,7 @@ fn frames_template(engine: &Engine) {
 fn an_imported_zip_keeps_its_rows_and_aligns_on_t_ms() {
     let data = tempfile::tempdir().unwrap();
     let engine = Engine::open(Paths::default(), data.path()).unwrap();
-    frames_template(&engine);
+    frames_template(&engine, "ms-legacy-frames-replay");
     let zip = fixture("legacy-frames.zip");
     let manifest = call(
         &engine,
@@ -232,4 +239,150 @@ fn an_imported_zip_keeps_its_rows_and_aligns_on_t_ms() {
         .map(|m| m["x"].as_f64().unwrap())
         .collect();
     assert_eq!(markers, [0.84, 2.415]);
+}
+
+fn replay(speed: f64) -> FramesReplay {
+    FramesReplay::new(FramesReplaySettings {
+        model: "Frames".into(),
+        path: fixture("legacy-frames.zip"),
+        speed,
+    })
+}
+
+#[test]
+fn a_replay_paces_rows_by_t_ms_and_reports_each_gap_after_the_row_before_it() {
+    let mut sink = CollectingSink::default();
+    let started = Instant::now();
+    replay(10.0).run(&mut sink, &StopSignal::default()).unwrap();
+    let elapsed = started.elapsed();
+    assert!(
+        (Duration::from_millis(290)..Duration::from_secs(3)).contains(&elapsed),
+        "3045 ms of t_ms at 10x took {elapsed:?}"
+    );
+    let batches = sink.batches();
+    assert!(batches.iter().all(|batch| batch.len() == 1));
+    let rows = batches.concat();
+    assert_eq!(rows.len(), 16);
+    assert_eq!(
+        rows[7][..4],
+        [
+            Cell::Int(7),
+            rows[7][1].clone(),
+            Cell::Int(840),
+            Cell::Int(3)
+        ]
+    );
+    let received = |row: &[Cell]| match row[1] {
+        Cell::TimeUtc(t) => t,
+        ref other => panic!("t_host_utc is {other:?}"),
+    };
+    let events = sink.events();
+    let summary: Vec<_> = events
+        .iter()
+        .map(|e| {
+            (
+                e.label.as_str(),
+                e.clock.as_deref(),
+                e.t_native,
+                e.t_host_utc,
+            )
+        })
+        .collect();
+    assert_eq!(
+        summary,
+        [
+            (
+                "Frames 4 to 6 missing",
+                Some("t_ms"),
+                Some(0.84),
+                Some(received(&rows[7]))
+            ),
+            (
+                "Frame 9 missing",
+                Some("t_ms"),
+                Some(2.415),
+                Some(received(&rows[12]))
+            ),
+        ]
+    );
+    let info = replay(1.0).describe();
+    assert_eq!(
+        (info.adapter.as_str(), info.input_kind, info.clocks.len()),
+        ("legacy_frames_replay", InputKind::Replay, 2)
+    );
+}
+
+/// The built-in profile with its path pointed at the fixture, beside the other profiles.
+fn engine_replaying_the_fixture(data: &Path) -> Engine {
+    let defaults = Paths::default();
+    let instruments = data.join("instruments");
+    std::fs::create_dir_all(&instruments).unwrap();
+    for entry in std::fs::read_dir(&defaults.instruments).unwrap() {
+        let path = entry.unwrap().path();
+        let text = std::fs::read_to_string(&path).unwrap().replace(
+            "${repo}/module2/SampleData.zip",
+            &fixture("legacy-frames.zip").to_string_lossy(),
+        );
+        std::fs::write(instruments.join(path.file_name().unwrap()), text).unwrap();
+    }
+    let paths = Paths {
+        instruments,
+        ..defaults
+    };
+    Engine::open(paths, &data.join("data")).unwrap()
+}
+
+#[test]
+fn a_replay_run_ends_with_the_source_and_stores_t_ms_unchanged() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = engine_replaying_the_fixture(data.path());
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let manifest = call(
+        &engine,
+        "start_run",
+        json!({"template_id": "legacy-frames-test", "speed": 100.0}),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    assert_eq!(
+        manifest["captures"]["ms"]["input_note"],
+        "Replay of a recording: legacy-frames.zip at 100x. \
+         Rows and t_ms are recorded values; host times are this replay's."
+    );
+    let session = || call(&engine, "get_session", json!({"session_id": id}));
+    let status = || session()["manifest"]["captures"]["ms"]["status"].clone();
+    wait_until("the replay to reach its end", || status() == "source_ended");
+    call(&engine, "stop_session", json!({"session_id": id}));
+    wait_until("the run to stop", || !session()["live"].as_bool().unwrap());
+    assert_eq!(status(), "source_ended");
+    let stored = call(
+        &engine,
+        "query_session",
+        json!({"session_id": id, "sql": "SELECT t_ms, frame, t_host_utc IS NOT NULL AS received \
+               FROM \"cap:ms\" ORDER BY seq"}),
+    );
+    let t_ms: Vec<i64> = stored["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| {
+            assert_eq!(r["received"], true);
+            r["t_ms"].as_i64().unwrap()
+        })
+        .collect();
+    let recorded: Vec<i64> = read_frames(&fixture("legacy-frames.zip"))
+        .unwrap()
+        .rows
+        .iter()
+        .map(|r| r.t_ms)
+        .collect();
+    assert_eq!(t_ms, recorded);
+    let events = call(&engine, "session_events", json!({"session_id": id}));
+    let gaps: Vec<&str> = events
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "missing_frames")
+        .map(|e| e["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(gaps, ["Frames 4 to 6 missing", "Frame 9 missing"]);
 }

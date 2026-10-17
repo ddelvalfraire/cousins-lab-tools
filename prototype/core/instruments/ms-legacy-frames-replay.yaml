@@ -1,0 +1,7 @@
+id: ms-legacy-frames-replay
+label: Mass spectrometer, replay of legacy frame files
+adapter: legacy_frames_replay
+input_kind: replay
+model: Legacy EZView frame export (one CSV per frame)
+settings:
+  path: ${repo}/module2/SampleData.zip

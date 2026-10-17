@@ -36,6 +36,7 @@ fn profiles_are_keyed_by_id_and_paths_resolve_against_the_repository() {
         [
             "ambit-replay-150-pl1",
             "ambit-replay-150-pl2",
+            "ms-legacy-frames-replay",
             "ms2-ezview",
             "ms2-ezview-simulated"
         ]
@@ -44,6 +45,10 @@ fn profiles_are_keyed_by_id_and_paths_resolve_against_the_repository() {
         .as_str()
         .unwrap();
     assert!(paths.resolve_path(recording).is_file(), "{recording}");
+    let frames = profiles["ms-legacy-frames-replay"]["settings"]["path"]
+        .as_str()
+        .unwrap();
+    assert!(paths.resolve_path(frames).is_file(), "{frames}");
 }
 
 #[test]
