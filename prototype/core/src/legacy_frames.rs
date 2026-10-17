@@ -10,10 +10,12 @@ use std::fs::{self, File};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
+use chrono::{DateTime, Utc};
+use serde_json::{Map, json};
 use zip::ZipArchive;
 use zip::result::ZipError;
 
-use crate::contract::InstrumentError;
+use crate::contract::{Cell, Event, InstrumentError, Row};
 use crate::pycompat::os_error;
 
 pub const MASSES: [&str; 8] = ["m32", "m34", "m36", "m44", "m45", "m46", "m47", "m49"];
@@ -157,6 +159,39 @@ pub fn read_frames(path: &Path) -> Result<FrameRecording, FramesError> {
         missing,
         source,
     })
+}
+
+/// A row as stored, in the order of [`crate::schemas::legacy_frames_columns`].
+pub fn frame_row(seq: i64, t_host_utc: Option<DateTime<Utc>>, row: &FrameRow) -> Row {
+    let mut cells = vec![
+        Cell::Int(seq),
+        t_host_utc.map_or(Cell::Null, Cell::TimeUtc),
+        Cell::Int(row.t_ms),
+        Cell::Int(row.frame),
+    ];
+    cells.extend(row.masses.map(Cell::Float));
+    cells
+}
+
+/// One `missing_frames` event per run, placed at the last row before it on the `t_ms` clock.
+pub fn missing_frames_event(gap: &MissingFrames, t_host_utc: Option<DateTime<Utc>>) -> Event {
+    let label = if gap.first == gap.last {
+        format!("Frame {} missing", gap.first)
+    } else {
+        format!("Frames {} to {} missing", gap.first, gap.last)
+    };
+    let mut payload = Map::new();
+    payload.insert("first".into(), json!(gap.first));
+    payload.insert("last".into(), json!(gap.last));
+    Event {
+        kind: "missing_frames".into(),
+        label,
+        t_host_utc,
+        clock: Some("t_ms".into()),
+        t_native: Some(gap.after_t_ms as f64 / 1000.0),
+        value: Some((gap.last - gap.first + 1) as f64),
+        payload,
+    }
 }
 
 /// `12` for `Acquisition-3510/12.csv`; None for anything that is not a numbered CSV.

@@ -14,9 +14,13 @@ use indexmap::IndexMap;
 
 use crate::ambit::{detect_events, read_ambit_csv, sample_row, timing_summary};
 use crate::contract::{Column, Event, InputKind, InstrumentError, Row};
+use crate::legacy_frames::{frame_row, missing_frames_event, read_frames};
 use crate::ms_workbook::{RAW_SHEET, read_raw_sheet};
 use crate::pycompat::str_repr;
-use crate::schemas::{ambit_columns, ambit_import_clocks, ms_import_clocks, ms_import_columns};
+use crate::schemas::{
+    ambit_columns, ambit_import_clocks, legacy_frames_columns, legacy_frames_import_clocks,
+    ms_import_clocks, ms_import_columns,
+};
 use crate::session::{
     Capture, CaptureStatus, Manifest, SegmentWriter, SessionError, SessionKind, SessionStatus,
     SessionStore, Source, event_columns, event_row, sha256, slug,
@@ -82,6 +86,7 @@ impl From<std::io::Error> for ImportError {
 enum Importer {
     MsWorkbook,
     AmbitCsv,
+    LegacyFrames,
 }
 
 struct Planned<'a> {
@@ -104,6 +109,7 @@ fn plan<'a>(template: &Template, files: &'a [ImportFile]) -> Result<Vec<Planned<
             let importer = match role.get("import").and_then(|v| v.as_str()) {
                 Some("ms_workbook") => Importer::MsWorkbook,
                 Some("ambit_csv") => Importer::AmbitCsv,
+                Some("legacy_frames") => Importer::LegacyFrames,
                 other => {
                     return Err(ImportError::UnknownImporter(
                         other.unwrap_or("None").to_string(),
@@ -231,6 +237,21 @@ pub fn import_session(
                 let rows = (0..)
                     .zip(&recording.rows)
                     .map(|(seq, sample)| sample_row(seq, None, sample))
+                    .collect();
+                (rows, events)
+            }
+            Importer::LegacyFrames => {
+                let recording = read_frames(source).map_err(|e| ImportError::Read(e.into()))?;
+                capture.columns = legacy_frames_columns();
+                capture.clocks = legacy_frames_import_clocks();
+                let rows = (0..)
+                    .zip(&recording.rows)
+                    .map(|(seq, row)| frame_row(seq, None, row))
+                    .collect();
+                let events = recording
+                    .missing
+                    .iter()
+                    .map(|gap| missing_frames_event(gap, None))
                     .collect();
                 (rows, events)
             }

@@ -187,6 +187,41 @@ pub fn ms_import_clocks() -> Vec<Clock> {
     )]
 }
 
+/// The same for replay and import, so a template's names exist on both sides.
+pub fn legacy_frames_columns() -> Vec<Column> {
+    use ColumnType::*;
+    let mut columns = vec![
+        Column::new("seq", Int64, "", "Row number within this capture"),
+        Column::new(
+            "t_host_utc",
+            TimestampUtc,
+            "",
+            "When the engine received the row (host clock); null on import",
+        ),
+        Column::new(
+            "t_ms",
+            Int64,
+            "ms",
+            "Frame file time column: milliseconds since the acquisition started",
+        ),
+        Column::new("frame", Int64, "", "Number n of the frame file n.csv"),
+    ];
+    for mass in crate::legacy_frames::MASSES {
+        let description = format!("Mass {}", &mass[1..]);
+        columns.push(Column::new(mass, Float64, "mV", &description));
+    }
+    columns
+}
+
+pub fn legacy_frames_import_clocks() -> Vec<Clock> {
+    vec![Clock::new(
+        "t_ms",
+        ClockKind::Elapsed,
+        0.001,
+        "Acquisition elapsed time from the frame files",
+    )]
+}
+
 /// Columns a live adapter writes, keyed by the profile's `adapter`.
 pub fn adapter_columns(adapter: &str) -> Option<Vec<Column>> {
     match adapter {
@@ -201,6 +236,7 @@ pub fn import_columns(importer: &str) -> Option<Vec<Column>> {
     match importer {
         "ms_workbook" => Some(ms_import_columns()),
         "ambit_csv" => Some(ambit_columns()),
+        "legacy_frames" => Some(legacy_frames_columns()),
         _ => None,
     }
 }
@@ -244,6 +280,7 @@ mod tests {
             (ambit_columns(), ambit_clocks()),
             (ambit_columns(), ambit_import_clocks()),
             (ms_import_columns(), ms_import_clocks()),
+            (legacy_frames_columns(), legacy_frames_import_clocks()),
         ] {
             for clock in clocks {
                 assert!(

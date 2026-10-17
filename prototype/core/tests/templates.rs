@@ -218,7 +218,7 @@ fn shapes_the_python_engine_crashed_on_are_rejected_with_a_reason() {
         (
             "/roles/ms/import",
             json!("netcdf"),
-            "Role ms: unknown import 'netcdf'; use one of ['ambit_csv', 'ms_workbook']",
+            "Role ms: unknown import 'netcdf'; use one of ['ambit_csv', 'legacy_frames', 'ms_workbook']",
         ),
         (
             "/parameters/ambit_offset/value",

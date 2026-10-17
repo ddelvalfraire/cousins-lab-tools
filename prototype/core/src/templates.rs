@@ -25,7 +25,7 @@ use crate::schemas;
 const ON_FAILURE: [&str; 2] = ["continue_others", "stop_group"];
 const REFERENCES: [&str; 3] = ["clock", "elapsed", "event"];
 const CHART_AXES: [&str; 2] = ["run", "source"];
-const IMPORTERS: [&str; 2] = ["ambit_csv", "ms_workbook"];
+const IMPORTERS: [&str; 3] = ["ambit_csv", "legacy_frames", "ms_workbook"];
 const DEFAULT_FLASH_RED_LEVEL: i64 = 2500;
 static SAVE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 static EMPTY: LazyLock<Map<String, Value>> = LazyLock::new(Map::new);

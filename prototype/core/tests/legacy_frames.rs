@@ -1,6 +1,9 @@
 use std::path::{Path, PathBuf};
 
+use cousinslab::api::Engine;
 use cousinslab::legacy_frames::{FrameSource, FramesError, MissingFrames, read_frames};
+use cousinslab::templates::Paths;
+use serde_json::{Value, json};
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -99,4 +102,134 @@ fn the_module2_sample_zip_reads_with_its_four_missing_runs() {
     assert_eq!((first.frame, first.t_ms), (1, 105));
     assert_eq!((last.frame, last.t_ms), (11229, 9_966_004));
     assert!(recording.rows.windows(2).all(|w| w[0].t_ms < w[1].t_ms));
+}
+
+fn call(engine: &Engine, command: &str, args: Value) -> Value {
+    engine
+        .call(command, args)
+        .unwrap_or_else(|e| panic!("{command} failed: {e:?}"))
+}
+
+fn frames_template(engine: &Engine) {
+    let data = json!({
+        "id": "legacy-frames-test",
+        "revision": 1,
+        "name": "Legacy frames",
+        "roles": {"ms": {"instrument": "ms2-ezview", "import": "legacy_frames"}},
+        "charts": [{
+            "id": "raw", "title": "Raw", "unit": "mV",
+            "series": [{"role": "ms", "value": "m44"}],
+            "markers": {"role": "ms", "kind": "missing_frames"},
+        }],
+    });
+    call(
+        engine,
+        "save_template",
+        json!({"template_id": "legacy-frames-test", "data": data}),
+    );
+}
+
+#[test]
+fn an_imported_zip_keeps_its_rows_and_aligns_on_t_ms() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    frames_template(&engine);
+    let zip = fixture("legacy-frames.zip");
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-frames-test", "files": [{"role": "ms", "path": zip}]}),
+    );
+    let id = manifest["id"].as_str().unwrap();
+    let capture = &manifest["captures"]["ms-legacy-frames"];
+    assert_eq!(capture["rows"], 16);
+    assert_eq!(capture["input_kind"], "import");
+    assert_eq!(
+        capture["clocks"],
+        json!([{"column": "t_ms", "kind": "elapsed", "seconds_per_unit": 0.001,
+                "description": "Acquisition elapsed time from the frame files"}])
+    );
+    let columns: Vec<(&str, &str, &str)> = capture["columns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| {
+            let text = |key: &str| c[key].as_str().unwrap();
+            (text("name"), text("type"), text("unit"))
+        })
+        .collect();
+    let mut expected = vec![
+        ("seq", "int64", ""),
+        ("t_host_utc", "timestamp_utc", ""),
+        ("t_ms", "int64", "ms"),
+        ("frame", "int64", ""),
+    ];
+    expected.extend(
+        ["m32", "m34", "m36", "m44", "m45", "m46", "m47", "m49"].map(|m| (m, "float64", "mV")),
+    );
+    assert_eq!(columns, expected);
+    assert_eq!(
+        capture["sources"][0]["sha256"],
+        "941ebc6ed4b0f5d34c04a9c4bfc3a0eb14c0df46add25e19bd69aa0d47d4ff6e"
+    );
+
+    let stored = call(
+        &engine,
+        "query_session",
+        json!({"session_id": id, "sql":
+            "SELECT seq, t_host_utc, t_ms, frame, m44 FROM \"cap:ms-legacy-frames\" ORDER BY seq"}),
+    );
+    let rows = stored["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 16);
+    assert_eq!(
+        rows[13],
+        json!({"seq": 13, "t_host_utc": null, "t_ms": 2940, "frame": 10, "m44": -314.808})
+    );
+    assert!(rows.iter().all(|r| r["t_host_utc"].is_null()));
+
+    let events = call(&engine, "session_events", json!({"session_id": id}));
+    let events: Vec<(&str, &str, f64, f64)> = events
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| {
+            let text = |key: &str| e[key].as_str().unwrap();
+            (
+                text("kind"),
+                text("label"),
+                e["t_native"].as_f64().unwrap(),
+                e["value"].as_f64().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        events,
+        [
+            ("missing_frames", "Frames 4 to 6 missing", 0.84, 3.0),
+            ("missing_frames", "Frame 9 missing", 2.415, 1.0),
+        ]
+    );
+
+    let preview = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "elapsed"}),
+    );
+    let chart = &preview["charts"][0];
+    let points = chart["series"][0]["points"].as_array().unwrap();
+    assert_eq!(points.len(), 16);
+    for (point, row) in points.iter().zip(rows) {
+        assert_eq!(
+            point[0].as_f64(),
+            Some(row["t_ms"].as_i64().unwrap() as f64 / 1000.0)
+        );
+        assert_eq!(point[1], row["m44"]);
+    }
+    let markers: Vec<f64> = chart["markers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|m| m["x"].as_f64().unwrap())
+        .collect();
+    assert_eq!(markers, [0.84, 2.415]);
 }
