@@ -347,7 +347,7 @@ impl Engine {
         Ok(out)
     }
 
-    /// Reference recordings the import dialog offers, from `reference/instruments`.
+    /// Recordings the import dialog offers, from `reference/instruments` and the legacy sample zip.
     fn list_recordings(&self) -> Value {
         let mut files = Vec::new();
         collect_files(
@@ -362,9 +362,16 @@ impl Engine {
                 .map(|p| p.display().to_string())
                 .collect()
         };
+        let sample = self.paths.repo.join("module2").join("SampleData.zip");
+        let frames: Vec<String> = sample
+            .is_file()
+            .then(|| sample.display().to_string())
+            .into_iter()
+            .collect();
         json!({
             "ms_workbook": named(|n| n.ends_with(".xlsx")),
             "ambit_csv": named(|n| n.starts_with("Ambit") && n.ends_with(".csv")),
+            "legacy_frames": frames,
         })
     }
 

@@ -1,4 +1,5 @@
 import { call, esc, fileName, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
+import { importSlots } from "./importing.js";
 import { startRunDialog } from "./templates.js";
 
 export async function renderSessions(page) {
@@ -26,35 +27,40 @@ export async function renderSessions(page) {
   page.querySelector("#import").onclick = () => importDialog(templates);
 }
 
-const plantLabel = path => fileName(path).replace(/^Ambit raw data_sample_/, "").replace(/\.csv$/, "").replace("_", "-");
-
 async function importDialog(templates) {
   const recordings = await call("list_recordings");
-  const options = list => list.map(p => `<option value="${esc(p)}">${esc(fileName(p))}</option>`).join("");
-  const ambit = recordings.ambit_csv;
-  openDialog(`
+  const options = (list, chosen) => list.map(p => `<option value="${esc(p)}"${p === chosen ? " selected" : ""}>${esc(fileName(p))}</option>`).join("");
+  const chosen = id => templates.find(t => t.data.id === id).data;
+  const dialog = openDialog(`
     <form>
       <h2>Import recordings</h2>
       <p class="muted small">Imported files keep only the clocks they contain. These files record elapsed time and a device counter, not clock time.</p>
       <label class="field">Template
         <select name="template">${templates.map(t => `<option value="${esc(t.data.id)}">${esc(t.data.name)} r${t.data.revision}</option>`).join("")}</select>
       </label>
-      <label class="field">Session name <input name="name" value="Sample 150 · plants 1 and 2 (recorded)"></label>
-      <label class="field">Mass spectrometer workbook (role ms)
-        <select name="ms">${options(recordings.ms_workbook)}</select></label>
-      ${ambit.map((p, i) => `
-        <div class="inline">
-          <label class="field" style="flex:1">Ambit recording ${i + 1} (role light)
-            <select name="light${i}"><option value="">Not included</option>${options(ambit).replace(`value="${esc(p)}"`, `value="${esc(p)}" selected`)}</select></label>
-          <label class="field">Label <input name="label${i}" value="${esc(plantLabel(p))}"></label>
-        </div>`).join("")}
+      <label class="field">Session name <input name="name"></label>
+      <div class="import-slots"></div>
       <p class="error-text"></p>
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Import</button></div>
     </form>`, async form => {
-      const files = [{ role: "ms", path: form.get("ms"), label: "workbook" }];
-      ambit.forEach((_, i) => form.get(`light${i}`) && files.push({ role: "light", path: form.get(`light${i}`), label: form.get(`label${i}`) }));
-      const template = templates.find(t => t.data.id === form.get("template")).data;
+      const template = chosen(form.get("template"));
+      const files = importSlots(template, recordings)
+        .map((slot, i) => ({ role: slot.role, path: form.get(`path${i}`), label: form.get(`label${i}`) }))
+        .filter(f => f.path);
       const manifest = await call("import_files", { template_id: template.id, revision: template.revision, name: form.get("name"), files });
       location.hash = `#/sessions/${manifest.id}`;
     });
+  const form = dialog.querySelector("form");
+  const showSlots = () => {
+    const template = chosen(form.elements.template.value);
+    form.elements.name.value = `${template.name} (recorded)`;
+    form.querySelector(".import-slots").innerHTML = importSlots(template, recordings).map((slot, i) => `
+      <div class="inline">
+        <label class="field" style="flex:1">${esc(slot.title)}
+          <select name="path${i}"><option value="">Not included</option>${options(slot.files, slot.path)}</select></label>
+        <label class="field">Label <input name="label${i}" value="${esc(slot.label)}"></label>
+      </div>`).join("");
+  };
+  form.elements.template.onchange = showSlots;
+  showSlots();
 }

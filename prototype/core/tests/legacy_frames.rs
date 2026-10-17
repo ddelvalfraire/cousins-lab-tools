@@ -386,3 +386,16 @@ fn a_replay_run_ends_with_the_source_and_stores_t_ms_unchanged() {
         .collect();
     assert_eq!(gaps, ["Frames 4 to 6 missing", "Frame 9 missing"]);
 }
+
+#[test]
+fn the_import_dialog_is_offered_the_module2_sample_zip() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    let recordings = call(&engine, "list_recordings", json!({}));
+    let sample = Paths::default().repo.join("module2").join("SampleData.zip");
+    assert_eq!(
+        recordings["legacy_frames"],
+        json!([sample.display().to_string()])
+    );
+    assert_eq!(recordings["ms_workbook"].as_array().unwrap().len(), 1);
+}
