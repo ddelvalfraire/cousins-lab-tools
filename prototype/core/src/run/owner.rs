@@ -26,7 +26,8 @@ use crate::contract::StopSignal;
 use crate::protocol::ProtocolPlan;
 use crate::pycompat::format_g;
 use crate::session::{
-    CaptureStatus, Manifest, SessionError, SessionStatus, SessionStore, segments, utc_now,
+    CaptureStatus, Manifest, OnFailure, SessionError, SessionStatus, SessionStore, segments,
+    utc_now,
 };
 use crate::simulate::SpoolSimulator;
 
@@ -186,6 +187,15 @@ impl Owner {
                     }
                 };
                 self.captures[role].ended = true;
+                if capture.status == CaptureStatus::Failed
+                    && capture.on_failure == Some(OnFailure::StopGroup)
+                {
+                    self.manifest.stopped_by =
+                        Some(format!("{role} failed and its policy is stop_group"));
+                    for other in self.captures.values() {
+                        other.stop.set();
+                    }
+                }
             }
         }
         true

@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread;
 
 use arrow::array::AsArray;
@@ -34,6 +35,19 @@ fn template_with(data_dir: &Path, changes: Value) -> Template {
         }
     }
     validate(data, &profiles()).unwrap()
+}
+
+static RUNS: RwLock<()> = RwLock::new(());
+
+/// Tests that assert a timing bound or a race-free order hold this alone, the way pytest runs
+/// every test on its own. Without it, the CPU spent by parallel runs is what they measure.
+fn alone() -> RwLockWriteGuard<'static, ()> {
+    RUNS.write().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Other tests that start a group run share the lock with each other.
+fn shared() -> RwLockReadGuard<'static, ()> {
+    RUNS.read().unwrap_or_else(PoisonError::into_inner)
 }
 
 fn store(data_dir: &Path) -> Arc<SessionStore> {
@@ -142,6 +156,7 @@ fn strings(dir: &Path, name: &str) -> Vec<String> {
 enum Behaviour {
     UntilStopped,
     IgnoresStopFor(Duration),
+    Fails,
 }
 
 /// A light-role adapter whose loop the test controls, and which notes being cancelled.
@@ -174,6 +189,9 @@ impl Instrument for TestAdapter {
         match self.behaviour {
             Behaviour::UntilStopped => while !stop.wait(Duration::from_millis(10)) {},
             Behaviour::IgnoresStopFor(stall) => thread::sleep(stall),
+            Behaviour::Fails => {
+                return Err(InstrumentError::new("ConnectionError", "device unplugged"));
+            }
         }
         Ok(())
     }
@@ -364,6 +382,7 @@ fn an_unknown_adapter_is_refused_with_the_python_message() {
 
 #[test]
 fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
+    let _alone = alone();
     let data = tempfile::tempdir().unwrap();
     let run = start(
         data.path(),
@@ -464,6 +483,7 @@ fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
 
 #[test]
 fn disabling_a_role_runs_the_remaining_roles_only() {
+    let _shared = shared();
     let data = tempfile::tempdir().unwrap();
     let run = start(
         data.path(),
@@ -566,6 +586,7 @@ fn hardware_profile_reports_why_it_is_not_ready() {
 
 #[test]
 fn cancel_asks_each_adapter_for_a_safe_state_and_ends_cancelled() {
+    let _shared = shared();
     let data = tempfile::tempdir().unwrap();
     let cancelled = Arc::new(AtomicBool::new(false));
     let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
@@ -581,11 +602,12 @@ fn cancel_asks_each_adapter_for_a_safe_state_and_ends_cancelled() {
 
 #[test]
 fn a_capture_still_running_after_the_join_timeout_is_recorded_as_interrupted() {
+    let _alone = alone();
     let data = tempfile::tempdir().unwrap();
     let cancelled = Arc::new(AtomicBool::new(false));
     let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
     let build = light_as(
-        Behaviour::IgnoresStopFor(Duration::from_secs(3)),
+        Behaviour::IgnoresStopFor(Duration::from_secs(5)),
         &cancelled,
     );
     let run = launch(
@@ -593,20 +615,20 @@ fn a_capture_still_running_after_the_join_timeout_is_recorded_as_interrupted() {
         template,
         &profiles(),
         &*build,
-        Duration::from_millis(200),
+        Duration::from_secs(1),
     );
     assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
     let stopped = Instant::now();
     let manifest = stop(&run, false);
     assert!(
-        stopped.elapsed() < Duration::from_secs(2),
+        stopped.elapsed() < Duration::from_secs(4),
         "the stop waited for the stuck capture"
     );
     let light = &manifest.captures["light"];
     assert_eq!(light.status, CaptureStatus::Interrupted);
     assert_eq!(
         light.error.as_deref(),
-        Some("Capture had not ended 0.2 s after the stop request")
+        Some("Capture had not ended 1 s after the stop request")
     );
     assert_eq!(manifest.captures["ms"].status, CaptureStatus::Completed);
     assert_eq!(manifest.status, SessionStatus::CompletedWithFailures);
@@ -615,6 +637,7 @@ fn a_capture_still_running_after_the_join_timeout_is_recorded_as_interrupted() {
 
 #[test]
 fn the_final_status_waits_for_a_slow_capture_to_end() {
+    let _alone = alone();
     let data = tempfile::tempdir().unwrap();
     let cancelled = Arc::new(AtomicBool::new(false));
     let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
@@ -634,6 +657,7 @@ fn the_final_status_waits_for_a_slow_capture_to_end() {
 
 #[test]
 fn detected_flashes_are_stored_with_their_receipt_times() {
+    let _shared = shared();
     let data = tempfile::tempdir().unwrap();
     let run = start(
         data.path(),
@@ -660,4 +684,40 @@ fn detected_flashes_are_stored_with_their_receipt_times() {
             .iter()
             .all(|&t| t0.timestamp_micros() < t && t < finished.timestamp_micros())
     );
+}
+
+fn failure_policy(policy: &str, ms_status: CaptureStatus) {
+    let _alone = alone();
+    let data = tempfile::tempdir().unwrap();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let template = template_with(
+        data.path(),
+        json!({"light": {"start_delay_s": 0, "on_failure": policy}}),
+    );
+    let build = light_as(Behaviour::Fails, &cancelled);
+    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    assert!(wait_until(20.0, || run.manifest().captures["light"].status
+        == CaptureStatus::Failed));
+    thread::sleep(Duration::from_millis(500));
+    let manifest = run.manifest();
+    assert_eq!(
+        manifest.captures["light"].error.as_deref(),
+        Some("ConnectionError: device unplugged")
+    );
+    assert_eq!(manifest.captures["ms"].status, ms_status);
+    let stopped_by =
+        (policy == "stop_group").then_some("light failed and its policy is stop_group");
+    assert_eq!(manifest.stopped_by.as_deref(), stopped_by);
+    let manifest = stop(&run, false);
+    assert_eq!(manifest.status, SessionStatus::CompletedWithFailures);
+}
+
+#[test]
+fn failure_policy_continue_others_keeps_the_other_roles_running() {
+    failure_policy("continue_others", CaptureStatus::Running);
+}
+
+#[test]
+fn failure_policy_stop_group_stops_every_role() {
+    failure_policy("stop_group", CaptureStatus::Completed);
 }
