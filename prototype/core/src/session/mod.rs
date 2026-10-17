@@ -12,8 +12,10 @@
 //! A Parquet file is unreadable until its footer is written, so each segment is written to a
 //! temporary name and renamed when complete. A crash loses at most the unflushed rows.
 
+mod segment;
 mod time;
 
+use std::fmt;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::Path;
@@ -21,7 +23,48 @@ use std::path::Path;
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 
+pub use segment::{FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, segment_rows, segments};
 pub use time::{iso, iso_time, iso_time_opt, parse_iso, utc_now};
+
+#[derive(Debug)]
+pub enum SessionError {
+    Io(io::Error),
+    Parquet(parquet::errors::ParquetError),
+    Arrow(arrow::error::ArrowError),
+    /// A row whose cells do not match the writer's columns.
+    BadRow(String),
+}
+
+impl fmt::Display for SessionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SessionError::Io(e) => write!(f, "{e}"),
+            SessionError::Parquet(e) => write!(f, "{e}"),
+            SessionError::Arrow(e) => write!(f, "{e}"),
+            SessionError::BadRow(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl std::error::Error for SessionError {}
+
+impl From<io::Error> for SessionError {
+    fn from(e: io::Error) -> Self {
+        SessionError::Io(e)
+    }
+}
+
+impl From<parquet::errors::ParquetError> for SessionError {
+    fn from(e: parquet::errors::ParquetError) -> Self {
+        SessionError::Parquet(e)
+    }
+}
+
+impl From<arrow::error::ArrowError> for SessionError {
+    fn from(e: arrow::error::ArrowError) -> Self {
+        SessionError::Arrow(e)
+    }
+}
 
 /// Lowercase ASCII words joined by `-`, at most 40 characters, `session` when nothing is left.
 pub fn slug(text: &str) -> String {
