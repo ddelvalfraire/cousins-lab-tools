@@ -6,7 +6,7 @@ use std::thread;
 
 use arrow::array::AsArray;
 use arrow::datatypes::{DataType, Int64Type, TimestampMicrosecondType};
-use chrono::{Local, TimeZone};
+use chrono::{Local, SubsecRound, TimeZone};
 use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde_json::{Value, json};
@@ -61,6 +61,7 @@ fn launch(
     profiles: &Profiles,
     build: &BuildAdapter,
     join_timeout: Duration,
+    clock: HostClock,
 ) -> GroupRun {
     GroupRun::launch(Launch {
         store: store(data_dir),
@@ -71,17 +72,19 @@ fn launch(
         name: "group test",
         build,
         join_timeout,
+        clock,
     })
     .unwrap()
 }
 
-fn start(data_dir: &Path, template: Template) -> GroupRun {
+fn start(data_dir: &Path, template: Template, clock: HostClock) -> GroupRun {
     let run = launch(
         data_dir,
         template,
         &profiles(),
         &build_adapter,
         JOIN_TIMEOUT,
+        clock,
     );
     let manifest = run.manifest();
     assert_eq!(
@@ -91,6 +94,14 @@ fn start(data_dir: &Path, template: Template) -> GroupRun {
         manifest.captures
     );
     run
+}
+
+/// UTC read off the monotonic clock from one starting point. On this WSL machine the wall
+/// clock steps about 0.5 s forward every 32 s while the run waits on the monotonic clock, so
+/// a 1.5 s start delay that straddles a step would read as 0.5 s late.
+fn steady_clock() -> HostClock {
+    let (base, at) = (utc_now(), Instant::now());
+    Arc::new(move || (base + chrono::Duration::from_std(at.elapsed()).unwrap()).trunc_subsecs(6))
 }
 
 fn wait_until(timeout_s: f64, mut done: impl FnMut() -> bool) -> bool {
@@ -387,6 +398,7 @@ fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
     let run = start(
         data.path(),
         template_with(data.path(), json!({"light": {"start_delay_s": 75}})),
+        steady_clock(),
     );
     assert!(wait_until(20.0, || {
         let m = run.manifest();
@@ -488,6 +500,7 @@ fn disabling_a_role_runs_the_remaining_roles_only() {
     let run = start(
         data.path(),
         template_with(data.path(), json!({"light": {"enabled": false}})),
+        Arc::new(utc_now),
     );
     assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 10));
     let manifest = stop(&run, false);
@@ -508,6 +521,7 @@ fn not_ready_instrument_prevents_the_whole_group_from_starting() {
         &profiles(),
         &build_adapter,
         JOIN_TIMEOUT,
+        Arc::new(utc_now),
     );
     let manifest = run.manifest();
     assert_eq!(manifest.status, SessionStatus::NotReady);
@@ -537,6 +551,7 @@ fn a_group_that_is_not_ready_never_starts_its_spool_simulator() {
         &profiles,
         &build_adapter,
         JOIN_TIMEOUT,
+        Arc::new(utc_now),
     );
     let manifest = run.manifest();
     assert_eq!(manifest.status, SessionStatus::NotReady);
@@ -591,7 +606,14 @@ fn cancel_asks_each_adapter_for_a_safe_state_and_ends_cancelled() {
     let cancelled = Arc::new(AtomicBool::new(false));
     let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
     let build = light_as(Behaviour::UntilStopped, &cancelled);
-    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    let run = launch(
+        data.path(),
+        template,
+        &profiles(),
+        &*build,
+        JOIN_TIMEOUT,
+        Arc::new(utc_now),
+    );
     assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
     let manifest = stop(&run, true);
     assert_eq!(manifest.status, SessionStatus::Cancelled);
@@ -616,6 +638,7 @@ fn a_capture_still_running_after_the_join_timeout_is_recorded_as_interrupted() {
         &profiles(),
         &*build,
         Duration::from_secs(1),
+        Arc::new(utc_now),
     );
     assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
     let stopped = Instant::now();
@@ -645,7 +668,14 @@ fn the_final_status_waits_for_a_slow_capture_to_end() {
         Behaviour::IgnoresStopFor(Duration::from_millis(800)),
         &cancelled,
     );
-    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    let run = launch(
+        data.path(),
+        template,
+        &profiles(),
+        &*build,
+        JOIN_TIMEOUT,
+        Arc::new(utc_now),
+    );
     assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
     let manifest = stop(&run, false);
     let light = &manifest.captures["light"];
@@ -662,6 +692,7 @@ fn detected_flashes_are_stored_with_their_receipt_times() {
     let run = start(
         data.path(),
         template_with(data.path(), json!({"light": {"start_delay_s": 0}})),
+        Arc::new(utc_now),
     );
     assert!(wait_until(30.0, || run.manifest().captures["light"].rows > 2300));
     let manifest = stop(&run, false);
@@ -695,7 +726,14 @@ fn failure_policy(policy: &str, ms_status: CaptureStatus) {
         json!({"light": {"start_delay_s": 0, "on_failure": policy}}),
     );
     let build = light_as(Behaviour::Fails, &cancelled);
-    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    let run = launch(
+        data.path(),
+        template,
+        &profiles(),
+        &*build,
+        JOIN_TIMEOUT,
+        Arc::new(utc_now),
+    );
     assert!(wait_until(20.0, || run.manifest().captures["light"].status
         == CaptureStatus::Failed));
     thread::sleep(Duration::from_millis(500));

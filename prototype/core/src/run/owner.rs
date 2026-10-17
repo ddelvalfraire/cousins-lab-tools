@@ -19,15 +19,14 @@ use indexmap::IndexMap;
 use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 
-use super::RunError;
 use super::markers::MarkerLog;
+use super::{HostClock, RunError};
 use crate::ambit::timing_summary;
 use crate::contract::StopSignal;
 use crate::protocol::ProtocolPlan;
 use crate::pycompat::format_g;
 use crate::session::{
     CaptureStatus, Manifest, OnFailure, SessionError, SessionStatus, SessionStore, segments,
-    utc_now,
 };
 use crate::simulate::SpoolSimulator;
 
@@ -106,6 +105,7 @@ pub(super) struct Owner {
     /// The protocol each role runs, for the timing summary at stop.
     pub plans: BTreeMap<String, ProtocolPlan>,
     pub join_timeout: Duration,
+    pub clock: HostClock,
 }
 
 impl Owner {
@@ -262,7 +262,7 @@ impl Owner {
             SessionStatus::Completed
         };
         if let Some(run) = &mut self.manifest.run {
-            run.stopped_utc = Some(utc_now());
+            run.stopped_utc = Some((self.clock)());
         }
         self.save();
         self.publish();

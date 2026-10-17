@@ -116,6 +116,10 @@ fn profile<'a>(
         .ok_or_else(|| RunError::UnknownInstrument(id.into()))
 }
 
+/// The host's UTC clock, for the times the run records itself. Tests that bound a gap between
+/// two of them substitute a clock that cannot step.
+type HostClock = Arc<dyn Fn() -> DateTime<Utc> + Send + Sync>;
+
 /// Builds the adapter for one role. Runs use [`build_adapter`]; tests substitute their own.
 type BuildAdapter =
     dyn Fn(&Value, &str, &Template, &Path, f64, &Paths) -> Result<BuiltAdapter, InstrumentError>;
@@ -136,6 +140,7 @@ struct Started {
     owner: mpsc::Sender<Message>,
     t0_utc: DateTime<Utc>,
     markers: Arc<Mutex<MarkerLog>>,
+    clock: HostClock,
 }
 
 struct Launch<'a> {
@@ -147,6 +152,7 @@ struct Launch<'a> {
     name: &'a str,
     build: &'a BuildAdapter,
     join_timeout: Duration,
+    clock: HostClock,
 }
 
 /// One enabled role between preparation and its thread.
@@ -185,6 +191,7 @@ impl GroupRun {
             name,
             build: &build_adapter,
             join_timeout: JOIN_TIMEOUT,
+            clock: Arc::new(utc_now),
         })
     }
 
@@ -198,6 +205,7 @@ impl GroupRun {
             name,
             build,
             join_timeout,
+            clock,
         } = request;
         let mut manifest = store.create(name, SessionKind::Run, template.data().clone())?;
         let mut prepared = Vec::new();
@@ -274,7 +282,7 @@ impl GroupRun {
             })));
         }
         store.save(&manifest)?;
-        GroupRun::begin(store, manifest, template, prepared, join_timeout)
+        GroupRun::begin(store, manifest, template, prepared, join_timeout, clock)
     }
 
     /// Takes the group start, starts the simulators, then each capture's thread. Each thread
@@ -285,6 +293,7 @@ impl GroupRun {
         template: Template,
         prepared: Vec<Prepared>,
         join_timeout: Duration,
+        clock: HostClock,
     ) -> Result<GroupRun, RunError> {
         let markers = Arc::new(Mutex::new(MarkerLog::new(&store.path(&manifest.id))?));
         let (owner_tx, owner_rx) = mpsc::channel();
@@ -317,7 +326,7 @@ impl GroupRun {
             tasks.push((p.built.adapter, output));
         }
 
-        let (t0, t0_utc) = (Instant::now(), utc_now());
+        let (t0, t0_utc) = (Instant::now(), clock());
         for simulator in &mut simulators {
             simulator.start().map_err(SessionError::Io)?;
         }
@@ -342,6 +351,7 @@ impl GroupRun {
                 adapter,
                 start_at: t0 + delay,
                 cancel: Arc::clone(&cancel),
+                clock: Arc::clone(&clock),
                 output,
             };
             let thread = thread::Builder::new()
@@ -374,6 +384,7 @@ impl GroupRun {
             markers: Arc::clone(&markers),
             plans,
             join_timeout,
+            clock: Arc::clone(&clock),
         };
         let id = owner.manifest.id.clone();
         thread::Builder::new()
@@ -388,6 +399,7 @@ impl GroupRun {
                 owner: owner_tx,
                 t0_utc,
                 markers,
+                clock,
             }),
         })))
     }
@@ -436,7 +448,7 @@ impl GroupRun {
         let label = self.0.template.data()["events"][event_id]["label"]
             .as_str()
             .unwrap_or(event_id);
-        let now = utc_now();
+        let now = (started.clock)();
         let marker = Marker {
             kind: event_id.into(),
             label: label.into(),

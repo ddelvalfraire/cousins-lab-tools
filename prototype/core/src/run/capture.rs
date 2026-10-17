@@ -10,14 +10,16 @@ use std::time::Instant;
 
 use chrono::{DateTime, Utc};
 
+use super::HostClock;
 use super::owner::{Message, Outcome, Report};
 use crate::contract::{Cell, Event, Instrument, Row, Sink, StopSignal};
-use crate::session::{SegmentWriter, SessionError, event_row, utc_now};
+use crate::session::{SegmentWriter, SessionError, event_row};
 
 pub(super) struct CaptureTask {
     pub adapter: Box<dyn Instrument>,
     pub start_at: Instant,
     pub cancel: Arc<AtomicBool>,
+    pub clock: HostClock,
     pub output: Output,
 }
 
@@ -41,6 +43,7 @@ impl CaptureTask {
             mut adapter,
             start_at,
             cancel,
+            clock,
             mut output,
         } = self;
         let stop = output.stop.clone();
@@ -48,7 +51,7 @@ impl CaptureTask {
             end(&*adapter, &cancel, &output, Report::NotStarted);
             return;
         }
-        output.report(Report::Started { at: utc_now() });
+        output.report(Report::Started { at: clock() });
         let result = adapter.run(&mut output, &stop);
         let flushed = output
             .samples
@@ -68,7 +71,7 @@ impl CaptureTask {
         let ended = Report::Ended {
             outcome,
             rows: output.rows,
-            at: utc_now(),
+            at: clock(),
         };
         end(&*adapter, &cancel, &output, ended);
     }
