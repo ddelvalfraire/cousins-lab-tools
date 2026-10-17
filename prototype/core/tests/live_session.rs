@@ -7,7 +7,7 @@ use std::time::Duration;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Utc};
 use cousinslab::contract::{Cell, Column, ColumnType, Event, InputKind};
 use cousinslab::export::export_legacy_frames;
-use cousinslab::query::{SessionDb, session_events};
+use cousinslab::query::{SessionDb, run_query, session_events};
 use cousinslab::schemas::spool_columns;
 use cousinslab::session::{
     Capture, CaptureStatus, Manifest, RunInfo, SegmentWriter, SessionKind, SessionStore,
@@ -307,4 +307,28 @@ fn legacy_frames_apply_only_to_spool_captures() {
             "Legacy frame export applies to EZView spool captures"
         );
     }
+}
+
+#[test]
+fn query_rows_write_times_as_python_str_did() {
+    let data = tempfile::tempdir().unwrap();
+    let store = SessionStore::new(data.path()).unwrap();
+    let manifest = run_session(&store);
+    let result = run_query(
+        &store.path(&manifest.id),
+        &manifest,
+        None,
+        "SELECT label, t_host_utc, t_host_utc::TIMESTAMP AS naive, t_native FROM markers",
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::to_string(&result.rows).unwrap(),
+        serde_json::to_string(&json!([{
+            "label": "Needle out",
+            "t_host_utc": "2026-10-16 22:09:52.500000+00:00",
+            "naive": "2026-10-16 22:09:52.500000",
+            "t_native": null
+        }]))
+        .unwrap()
+    );
 }

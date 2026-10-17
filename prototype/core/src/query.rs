@@ -10,10 +10,13 @@ use std::fmt;
 use std::io;
 use std::path::Path;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
+use duckdb::arrow::datatypes::DataType;
 use duckdb::{Config, Connection};
 use serde::Serialize;
+use serde_json::{Map, Value};
 
+use crate::alignment::{Alignment, aligned_sql};
 use crate::contract::{Clock, ClockKind};
 use crate::pycompat::{float_repr, str_repr};
 use crate::session::{Manifest, SessionError, iso, iso_time_opt, segments};
@@ -28,6 +31,8 @@ pub enum AnalysisError {
     AlignmentNotFound(String),
     /// A request that names something the session does not have.
     Invalid(String),
+    /// A researcher's SQL failed, as `<Kind>Exception: <message>`.
+    Query(String),
 }
 
 impl fmt::Display for AnalysisError {
@@ -37,7 +42,9 @@ impl fmt::Display for AnalysisError {
             AnalysisError::Session(e) => write!(f, "{e}"),
             AnalysisError::Template(e) => write!(f, "{e}"),
             AnalysisError::AlignmentNotFound(id) => write!(f, "Not found: {}", str_repr(id)),
-            AnalysisError::Invalid(message) => write!(f, "{message}"),
+            AnalysisError::Invalid(message) | AnalysisError::Query(message) => {
+                write!(f, "{message}")
+            }
         }
     }
 }
@@ -234,4 +241,124 @@ pub fn session_events(
         (a, b) => a.is_none().cmp(&b.is_none()),
     });
     Ok(events)
+}
+
+pub const MAX_QUERY_ROWS: usize = 500;
+
+/// What a researcher's query returned: at most [`MAX_QUERY_ROWS`] rows.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct QueryResult {
+    pub views: Vec<String>,
+    pub rows: Vec<Map<String, Value>>,
+    pub truncated: bool,
+}
+
+/// Runs one researcher's SELECT over the session's views, and `aligned` when an alignment is
+/// given. The text goes to DuckDB's `query()` as a string literal, which parses it as exactly
+/// one SELECT, so it cannot end the wrapper and run a second statement such as `COPY`.
+pub fn run_query(
+    session_dir: &Path,
+    manifest: &Manifest,
+    alignment: Option<&Alignment>,
+    sql: &str,
+) -> Result<QueryResult, AnalysisError> {
+    let mut db = SessionDb::open(session_dir, manifest)?;
+    if let Some(alignment) = alignment {
+        db.create_view("aligned", &aligned_sql(manifest, alignment)?)?;
+    }
+    let views = db.views().map(String::from).collect();
+    let text = sql.trim_end().trim_end_matches(';');
+    let wrapped = format!(
+        "SELECT * FROM query({}) LIMIT {}",
+        sql_string(text),
+        MAX_QUERY_ROWS + 1
+    );
+    let user_error = |e: duckdb::Error| AnalysisError::Query(python_error(&e.to_string()));
+    let mut stmt = db.connection().prepare(&wrapped).map_err(user_error)?;
+    let mut rows = stmt.query([]).map_err(user_error)?;
+    let stmt = rows.as_ref().expect("a query has its statement");
+    let names = stmt.column_names();
+    let zoned: Vec<bool> = (0..names.len())
+        .map(|i| matches!(stmt.column_type(i), DataType::Timestamp(_, Some(_))))
+        .collect();
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().map_err(user_error)? {
+        let mut object = Map::new();
+        for (i, name) in names.iter().enumerate() {
+            let cell = row.get_ref(i).map_err(user_error)?.to_owned();
+            object.insert(name.clone(), json_value(cell, zoned[i]));
+        }
+        out.push(object);
+    }
+    let truncated = out.len() > MAX_QUERY_ROWS;
+    out.truncate(MAX_QUERY_ROWS);
+    Ok(QueryResult {
+        views,
+        rows: out,
+        truncated,
+    })
+}
+
+/// `<Kind>Exception: <message>`, the way the Python DuckDB client names its errors, from
+/// DuckDB's `<Kind> Error: <message>`.
+fn python_error(message: &str) -> String {
+    let Some((kind, _)) = message.split_once(" Error: ") else {
+        return format!("Error: {message}");
+    };
+    let name: String = kind
+        .split(' ')
+        .map(|word| {
+            let mut chars = word.chars();
+            chars
+                .next()
+                .map_or(String::new(), |c| c.to_uppercase().chain(chars).collect())
+        })
+        .collect();
+    format!("{name}Exception: {message}")
+}
+
+/// A cell as Python's `json.dumps(default=str)` wrote it: numbers stay numbers, decimals and
+/// times become `str()` text. NaN and infinities, which Python wrote as bare `NaN`, are null.
+fn json_value(cell: duckdb::types::Value, zoned: bool) -> Value {
+    use duckdb::types::Value as Db;
+    match cell {
+        Db::Null => Value::Null,
+        Db::Boolean(b) => b.into(),
+        Db::TinyInt(n) => n.into(),
+        Db::SmallInt(n) => n.into(),
+        Db::Int(n) => n.into(),
+        Db::BigInt(n) => n.into(),
+        Db::UTinyInt(n) => n.into(),
+        Db::USmallInt(n) => n.into(),
+        Db::UInt(n) => n.into(),
+        Db::UBigInt(n) => n.into(),
+        Db::HugeInt(n) => i64::try_from(n).map_or_else(|_| n.to_string().into(), Value::from),
+        Db::UHugeInt(n) => u64::try_from(n).map_or_else(|_| n.to_string().into(), Value::from),
+        Db::Float(f) => serde_json::Number::from_f64(f.into()).map_or(Value::Null, Value::Number),
+        Db::Double(f) => serde_json::Number::from_f64(f).map_or(Value::Null, Value::Number),
+        Db::Decimal(d) => d.to_string().into(),
+        Db::Text(s) => s.into(),
+        Db::Enum(s) => s.into(),
+        Db::Timestamp(unit, t) => {
+            let micros = unit.to_micros(t);
+            let time = DateTime::from_timestamp_micros(micros).map(|t| t.naive_utc());
+            time.map_or(Value::Null, |t| {
+                let text = python_str(t);
+                if zoned { format!("{text}+00:00") } else { text }.into()
+            })
+        }
+        Db::List(items) | Db::Array(items) => {
+            Value::Array(items.into_iter().map(|v| json_value(v, zoned)).collect())
+        }
+        other => format!("{other:?}").into(),
+    }
+}
+
+/// `str(datetime)`: microseconds only when there are some.
+fn python_str(t: NaiveDateTime) -> String {
+    if t.and_utc().timestamp_subsec_micros() == 0 {
+        t.format("%Y-%m-%d %H:%M:%S").to_string()
+    } else {
+        t.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+    }
 }

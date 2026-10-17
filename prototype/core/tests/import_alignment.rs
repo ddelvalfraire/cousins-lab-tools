@@ -17,7 +17,7 @@ use cousinslab::alignment::{
 use cousinslab::export::export_aligned;
 use cousinslab::importing::{ImportError, ImportFile, import_session};
 use cousinslab::ms_workbook::read_sample_sheet;
-use cousinslab::query::{SessionDb, session_events};
+use cousinslab::query::{AnalysisError, SessionDb, run_query, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
 use cousinslab::templates::{Paths, Template, TemplateStore};
 use serde_json::{Value, json};
@@ -578,5 +578,85 @@ fn aligned_export_writes_pythons_csv_and_a_sidecar() {
     assert_eq!(
         sidecar["columns"], python,
         "Python's columns, with x_uncertainty_s a DOUBLE"
+    );
+}
+
+#[test]
+fn a_query_sees_the_aligned_view_and_stops_at_the_row_limit() {
+    let imported = imported();
+    let dir = imported.session_dir();
+    let saved = save_alignment(&dir, proposal("event", true)).unwrap();
+    let all = run_query(
+        &dir,
+        &imported.manifest,
+        Some(&saved),
+        r#"SELECT * FROM "cap:ms-workbook""#,
+    )
+    .unwrap();
+    assert_eq!(
+        all.views,
+        [
+            "aligned",
+            "cap:light-150-pl1",
+            "cap:light-150-pl2",
+            "cap:ms-workbook",
+            "ev:light-150-pl1",
+            "ev:light-150-pl2"
+        ]
+    );
+    assert_eq!((all.rows.len(), all.truncated), (500, true));
+    let keys: Vec<&String> = all.rows[0].keys().collect();
+    assert_eq!(keys, ["seq", "t_elapsed_s", "m32", "m44", "m45"]);
+
+    let few = run_query(
+        &dir,
+        &imported.manifest,
+        Some(&saved),
+        "SELECT trial, count(*) AS n, max(x_uncertainty_s) AS u FROM aligned WHERE role = 'ms' GROUP BY trial ORDER BY trial;  ",
+    )
+    .unwrap();
+    assert!(!few.truncated);
+    assert_eq!(
+        serde_json::to_value(&few.rows).unwrap(),
+        json!([
+            {"trial": "light-150-pl1", "n": 1518, "u": 0.5},
+            {"trial": "light-150-pl2", "n": 1518, "u": 0.5}
+        ])
+    );
+}
+
+#[test]
+fn a_query_cannot_reach_outside_its_session_or_run_a_second_statement() {
+    let imported = imported();
+    let dir = imported.session_dir();
+    let outside = tempfile::tempdir().unwrap();
+    for target in [outside.path().join("escape.csv"), dir.join("escape.csv")] {
+        let sql = format!(
+            "SELECT 1) t; COPY (SELECT 1) TO '{}'; SELECT * FROM (SELECT 1",
+            target.display()
+        );
+        let error = run_query(&dir, &imported.manifest, None, &sql).unwrap_err();
+        assert!(matches!(error, AnalysisError::Query(_)), "{error}");
+        assert!(!target.exists(), "{}", target.display());
+    }
+    let error = run_query(
+        &dir,
+        &imported.manifest,
+        None,
+        "SELECT * FROM read_csv('/etc/passwd')",
+    )
+    .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .starts_with("PermissionException: Permission Error"),
+        "{error}"
+    );
+    let error = run_query(&dir, &imported.manifest, None, "SELEC 1").unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .starts_with("ParserException: Parser Error"),
+        "{error}"
     );
 }
