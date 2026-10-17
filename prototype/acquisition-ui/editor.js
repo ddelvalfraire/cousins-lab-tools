@@ -1,6 +1,6 @@
 // Layout editor on the template page. Edits a copy of the revision's layout; saving posts a new revision.
 
-import { call, esc, icon } from "./util.js";
+import { call, esc, icon, openDialog } from "./util.js";
 import { CATALOG, find, placeBelow, settle, SIZES, uniqueId } from "./layout.js";
 import { componentTitle } from "./components.js";
 
@@ -72,6 +72,23 @@ function defaults(kind, layout, view, template) {
     metric: { value: pick(Object.keys(template.data.derived || {}), "value") },
     group: { components: [] },
   }[kind] || {};
+}
+
+function askName(title, value, apply) {
+  const dialog = openDialog(`
+    <form><h2>${esc(title)}</h2>
+      <label class="field">Name <input name="name" value="${esc(value)}" autocomplete="off"></label>
+      <p class="error-text"></p>
+      <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">OK</button></div>
+    </form>`, form => { const name = form.get("name"); if (name) apply(name); });
+  const input = dialog.querySelector("input");
+  input.select();
+  // Enter would otherwise submit with the form's first button, which is Cancel.
+  input.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    input.form.requestSubmit(dialog.querySelector('[value="ok"]'));
+  });
 }
 
 /** draft is the template page's unsaved copy of the revision; the editor edits its layout, and saving posts all of it. */
@@ -162,19 +179,19 @@ export function mountEditor(el, template, { draft, onSaved }) {
       return changed(added.id);
     }
     if (t.closest("[data-add-view]")) {
-      const name = prompt("Name of the new view");
-      if (!name) return;
-      const id = uniqueId(layout, "view");
-      layout.views.push({ id, name, components: [] });
-      Object.assign(state, { view: id, selected: null, dirty: true });
-      return render();
+      return askName("New view", "", name => {
+        const id = uniqueId(layout, "view");
+        layout.views.push({ id, name, components: [] });
+        Object.assign(state, { view: id, selected: null, dirty: true });
+        render();
+      });
     }
     if (t.closest("[data-rename-view]")) {
-      const name = prompt("Rename view", currentView().name);
-      if (!name) return;
-      currentView().name = name;
-      state.dirty = true;
-      return render();
+      return askName("Rename view", currentView().name, name => {
+        currentView().name = name;
+        state.dirty = true;
+        render();
+      });
     }
     if (t.closest("[data-deselect]")) return void ((state.selected = null), render());
     if (t.closest("[data-remove]")) {

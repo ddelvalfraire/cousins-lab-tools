@@ -1,7 +1,7 @@
 // The capture page: a session's run page laid out by its template revision. Live while the engine runs it,
 // then the same page over the stored data.
 
-import { call, esc, fmtClock, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
+import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { visible } from "./layout.js";
@@ -154,10 +154,10 @@ async function mount(page, id, restart) {
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
       }),
       stop: logged("Stop requested", async () => { await call("stop_session", { session_id: m.id, cancel: false }); toast("Stopping…"); }),
-      cancel: async () => {
-        if (!confirm("Cancel the run? Data recorded so far is kept.")) return;
-        await logged("Cancel requested", async () => { await call("stop_session", { session_id: m.id, cancel: true }); toast("Cancelling…"); })();
-      },
+      cancel: () => openDialog(`
+        <form><h2>Cancel the run?</h2><p>Data recorded so far is kept.</p><p class="error-text"></p>
+          <div class="actions"><button value="cancel">Keep running</button><button class="danger" value="ok">Cancel run</button></div></form>`,
+        logged("Cancel requested", async () => { await call("stop_session", { session_id: m.id, cancel: true }); toast("Cancelling…"); })),
     },
   };
 
