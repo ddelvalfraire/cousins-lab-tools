@@ -14,8 +14,8 @@ use serde_json::{Map, Value};
 
 use super::Marker;
 use super::seconds_since;
+use crate::calc::{Evaluator, Program, Sample};
 use crate::contract::{Cell, Event, Row};
-use crate::expr::{Expression, Params};
 use crate::session::{Capture, CaptureStatus, SessionStatus, iso};
 use crate::templates::Template;
 
@@ -94,14 +94,22 @@ impl LiveBuffer {
     }
 }
 
+/// Where a live value comes from: the role's program, or a cell of the row.
+enum Source {
+    Output(usize),
+    /// Position in the row, None when the row has no column of that name.
+    Cell(Option<usize>),
+}
+
 /// Turns a capture's rows into live points: `x`, seconds since the group start on the host
-/// clock, then each value the template shows for the role. A derived value is computed with
-/// the template's default parameters; anything else is the column or alias of that name.
+/// clock, then each value the template shows for the role. Derived values come from the
+/// role's [`Evaluator`] with the template's default parameters; anything else is the column
+/// or alias of that name.
 pub(super) struct PointMaker {
-    columns: Vec<String>,
-    aliases: BTreeMap<String, String>,
-    values: Vec<(String, Option<Expression>)>,
-    params: Params,
+    /// Row positions of the program's columns, in program order.
+    inputs: Vec<Option<usize>>,
+    values: Vec<(String, Source)>,
+    evaluator: Evaluator,
     host_time: Option<usize>,
     pub t0: DateTime<Utc>,
 }
@@ -114,48 +122,49 @@ impl PointMaker {
         aliases: BTreeMap<String, String>,
         host_time: Option<usize>,
     ) -> Self {
+        let position = |name: &str| {
+            let column = aliases.get(name).map_or(name, String::as_str);
+            columns.iter().position(|c| c == column)
+        };
+        let program = Program::for_role(template, role);
+        let inputs = program.columns().iter().map(|c| position(c)).collect();
         let values = template
             .live_values(role)
             .into_iter()
             .map(|value| {
-                let expr = template
-                    .derived()
-                    .iter()
-                    .find(|d| d.name == value && d.role == role)
-                    .map(|d| d.expr.clone());
-                (value, expr)
+                let source = match program.values().position(|v| v == value) {
+                    Some(i) => Source::Output(i),
+                    None => Source::Cell(position(&value)),
+                };
+                (value, source)
             })
             .collect();
         PointMaker {
-            columns,
-            aliases,
+            inputs,
             values,
-            params: template.params(),
+            evaluator: program.evaluator(&template.params()),
             host_time,
             t0: DateTime::UNIX_EPOCH,
         }
     }
 
-    pub fn point(&self, row: &Row) -> Map<String, Value> {
-        let cell = |name: &str| {
-            let column = self.aliases.get(name).map_or(name, String::as_str);
-            self.columns
-                .iter()
-                .position(|c| c == column)
-                .and_then(|i| row.get(i))
-        };
+    pub fn point(&mut self, row: &Row) -> Map<String, Value> {
+        let columns: Vec<Option<f64>> = self
+            .inputs
+            .iter()
+            .map(|i| i.and_then(|i| row.get(i)).and_then(number))
+            .collect();
+        let outputs = self.evaluator.push(Sample { columns: &columns });
         let x = match self.host_time.and_then(|i| row.get(i)) {
             Some(Cell::TimeUtc(t)) => Value::from(seconds_since(self.t0, *t)),
             _ => Value::Null,
         };
         let mut point = Map::new();
         point.insert("x".into(), x);
-        for (name, expr) in &self.values {
-            let value = match expr {
-                Some(expr) => expr
-                    .eval(&self.params, |n| cell(n).and_then(number))
-                    .map_or(Value::Null, Value::from),
-                None => cell(name).map_or(Value::Null, json),
+        for (name, source) in &self.values {
+            let value = match source {
+                Source::Output(i) => outputs[*i].map_or(Value::Null, Value::from),
+                Source::Cell(i) => i.and_then(|i| row.get(i)).map_or(Value::Null, json),
             };
             point.insert(name.clone(), value);
         }
