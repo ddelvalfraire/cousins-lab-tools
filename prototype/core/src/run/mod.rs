@@ -6,13 +6,14 @@
 
 mod adapter;
 mod capture;
+mod markers;
 mod owner;
 
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -28,9 +29,14 @@ use crate::session::{
 };
 use crate::templates::{Paths, Profiles, Template};
 use capture::{CaptureTask, Output};
+use markers::MarkerLog;
 use owner::{CaptureControl, Message, Owner, Published};
 
 pub use adapter::{BuiltAdapter, SIMULATED_SPOOL, build_adapter};
+pub use markers::Marker;
+
+/// How long a stop waits for each capture to end before recording that it did not.
+pub const JOIN_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// What `run.note` tells a reader about times in a run that is not real time.
 pub const RUN_NOTE: &str = "Simulated and replayed inputs: sample spacing and start delays are \
@@ -120,9 +126,16 @@ pub struct GroupRun(Arc<Shared>);
 
 struct Shared {
     id: String,
+    template: Template,
     published: Arc<Published>,
     /// Absent when the group never started because a role was not ready.
-    owner: Option<mpsc::Sender<Message>>,
+    started: Option<Started>,
+}
+
+struct Started {
+    owner: mpsc::Sender<Message>,
+    t0_utc: DateTime<Utc>,
+    markers: Arc<Mutex<MarkerLog>>,
 }
 
 struct Launch<'a> {
@@ -133,6 +146,7 @@ struct Launch<'a> {
     speed: f64,
     name: &'a str,
     build: &'a BuildAdapter,
+    join_timeout: Duration,
 }
 
 /// One enabled role between preparation and its thread.
@@ -170,6 +184,7 @@ impl GroupRun {
             speed,
             name,
             build: &build_adapter,
+            join_timeout: JOIN_TIMEOUT,
         })
     }
 
@@ -182,6 +197,7 @@ impl GroupRun {
             speed,
             name,
             build,
+            join_timeout,
         } = request;
         let mut manifest = store.create(name, SessionKind::Run, template.data().clone())?;
         let mut prepared = Vec::new();
@@ -252,12 +268,13 @@ impl GroupRun {
             store.save(&manifest)?;
             return Ok(GroupRun(Arc::new(Shared {
                 id: manifest.id.clone(),
+                template,
                 published: Arc::new(Published::new(&manifest)),
-                owner: None,
+                started: None,
             })));
         }
         store.save(&manifest)?;
-        GroupRun::begin(store, manifest, prepared)
+        GroupRun::begin(store, manifest, template, prepared, join_timeout)
     }
 
     /// Takes the group start, starts the simulators, then each capture's thread. Each thread
@@ -265,8 +282,11 @@ impl GroupRun {
     fn begin(
         store: Arc<SessionStore>,
         mut manifest: Manifest,
+        template: Template,
         prepared: Vec<Prepared>,
+        join_timeout: Duration,
     ) -> Result<GroupRun, RunError> {
+        let markers = Arc::new(Mutex::new(MarkerLog::new(&store.path(&manifest.id))?));
         let (owner_tx, owner_rx) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
         let mut tasks = Vec::new();
@@ -339,6 +359,11 @@ impl GroupRun {
         }
         store.save(&manifest)?;
         let published = Arc::new(Published::new(&manifest));
+        let plans = template
+            .enabled_roles()
+            .into_iter()
+            .filter_map(|(role, _)| Some((role.to_string(), template.protocol_plan(role)?.clone())))
+            .collect();
         let owner = Owner {
             store,
             manifest,
@@ -346,6 +371,9 @@ impl GroupRun {
             captures: controls,
             simulators,
             cancel,
+            markers: Arc::clone(&markers),
+            plans,
+            join_timeout,
         };
         let id = owner.manifest.id.clone();
         thread::Builder::new()
@@ -354,8 +382,13 @@ impl GroupRun {
             .map_err(SessionError::Io)?;
         Ok(GroupRun(Arc::new(Shared {
             id,
+            template,
             published,
-            owner: Some(owner_tx),
+            started: Some(Started {
+                owner: owner_tx,
+                t0_utc,
+                markers,
+            }),
         })))
     }
 
@@ -385,13 +418,46 @@ impl GroupRun {
     /// final status lands when the captures have ended. `cancel` also asks each adapter to put
     /// its device in a safe state.
     pub fn stop(&self, cancel: bool) -> Result<(), RunError> {
-        let owner = self.0.owner.as_ref().ok_or(RunError::NotRunning)?;
+        let started = self.0.started.as_ref().ok_or(RunError::NotRunning)?;
         let (reply, answer) = mpsc::channel();
-        if owner.send(Message::Stop { cancel, reply }).is_err() {
+        if started.owner.send(Message::Stop { cancel, reply }).is_err() {
             return Err(RunError::NotRunning);
         }
         answer.recv().unwrap_or(Err(RunError::NotRunning))
     }
+
+    /// Records an operator marker on the host clock. The label comes from the template's
+    /// event of that id; an id the template does not define is its own label.
+    pub fn mark(&self, event_id: &str) -> Result<Marker, RunError> {
+        let started = self.0.started.as_ref().ok_or(RunError::NotRunning)?;
+        if self.manifest().status != SessionStatus::Running {
+            return Err(RunError::NotRunning);
+        }
+        let label = self.0.template.data()["events"][event_id]["label"]
+            .as_str()
+            .unwrap_or(event_id);
+        let now = utc_now();
+        let marker = Marker {
+            kind: event_id.into(),
+            label: label.into(),
+            x_run_s: seconds_since(started.t0_utc, now),
+            t_host_utc: now,
+        };
+        Ok(started.markers.lock().unwrap().record(marker)?)
+    }
+
+    /// Every marker recorded so far, in order.
+    pub fn markers(&self) -> Vec<Marker> {
+        match &self.0.started {
+            Some(started) => started.markers.lock().unwrap().recorded.clone(),
+            None => Vec::new(),
+        }
+    }
+}
+
+/// `(t - t0).total_seconds()` on microsecond times, as Python computes run-relative times.
+fn seconds_since(t0: DateTime<Utc>, t: DateTime<Utc>) -> f64 {
+    (t - t0).num_microseconds().unwrap_or(i64::MAX) as f64 / 1e6
 }
 
 fn after(t: DateTime<Utc>, delay: Duration) -> DateTime<Utc> {

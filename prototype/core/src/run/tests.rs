@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 use arrow::array::AsArray;
@@ -10,7 +11,7 @@ use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde_json::{Value, json};
 
 use super::*;
-use crate::contract::InputKind;
+use crate::contract::{InputKind, Instrument, InstrumentInfo, Readiness, Sink};
 use crate::session::segments;
 use crate::templates::{TemplateStore, load_profiles, validate};
 
@@ -45,6 +46,7 @@ fn launch(
     template: Template,
     profiles: &Profiles,
     build: &BuildAdapter,
+    join_timeout: Duration,
 ) -> GroupRun {
     GroupRun::launch(Launch {
         store: store(data_dir),
@@ -54,12 +56,19 @@ fn launch(
         speed: SPEED,
         name: "group test",
         build,
+        join_timeout,
     })
     .unwrap()
 }
 
 fn start(data_dir: &Path, template: Template) -> GroupRun {
-    let run = launch(data_dir, template, &profiles(), &build_adapter);
+    let run = launch(
+        data_dir,
+        template,
+        &profiles(),
+        &build_adapter,
+        JOIN_TIMEOUT,
+    );
     let manifest = run.manifest();
     assert_eq!(
         manifest.status,
@@ -113,6 +122,84 @@ fn column(dir: &Path, name: &str) -> Vec<i64> {
         }
     }
     values
+}
+
+fn strings(dir: &Path, name: &str) -> Vec<String> {
+    let mut values = Vec::new();
+    for part in segments(dir).unwrap() {
+        let builder = ParquetRecordBatchReaderBuilder::try_new(File::open(part).unwrap()).unwrap();
+        let mask = ProjectionMask::columns(builder.parquet_schema(), [name]);
+        for batch in builder.with_projection(mask).build().unwrap() {
+            let batch = batch.unwrap();
+            let array = batch.column(0).as_string::<i32>();
+            values.extend(array.iter().map(|v| v.unwrap_or_default().to_string()));
+        }
+    }
+    values
+}
+
+#[derive(Clone, Copy)]
+enum Behaviour {
+    UntilStopped,
+    IgnoresStopFor(Duration),
+}
+
+/// A light-role adapter whose loop the test controls, and which notes being cancelled.
+struct TestAdapter {
+    behaviour: Behaviour,
+    cancelled: Arc<AtomicBool>,
+}
+
+impl Instrument for TestAdapter {
+    fn describe(&self) -> InstrumentInfo {
+        InstrumentInfo {
+            adapter: "test".into(),
+            model: "test".into(),
+            input_kind: InputKind::Simulated,
+            capabilities: ["acquire".to_string()].into(),
+            columns: vec![],
+            clocks: vec![],
+            aliases: Default::default(),
+        }
+    }
+
+    fn check_ready(&self) -> Readiness {
+        Readiness {
+            ok: true,
+            detail: "ok".into(),
+        }
+    }
+
+    fn run(&mut self, _sink: &mut dyn Sink, stop: &StopSignal) -> Result<(), InstrumentError> {
+        match self.behaviour {
+            Behaviour::UntilStopped => while !stop.wait(Duration::from_millis(10)) {},
+            Behaviour::IgnoresStopFor(stall) => thread::sleep(stall),
+        }
+        Ok(())
+    }
+
+    fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+    }
+}
+
+/// Builds `light` as a [`TestAdapter`] and every other role as a run would.
+fn light_as(behaviour: Behaviour, cancelled: &Arc<AtomicBool>) -> Box<BuildAdapter> {
+    let cancelled = Arc::clone(cancelled);
+    Box::new(move |profile, role, template, dir, speed, paths| {
+        if role != "light" {
+            return build_adapter(profile, role, template, dir, speed, paths);
+        }
+        Ok(BuiltAdapter {
+            adapter: Box::new(TestAdapter {
+                behaviour,
+                cancelled: Arc::clone(&cancelled),
+            }),
+            simulator: None,
+            note: "test adapter".into(),
+            sources: vec![],
+        })
+    })
 }
 
 fn invalid(result: Result<(), RunError>) -> String {
@@ -286,6 +373,7 @@ fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
         let m = run.manifest();
         m.captures["light"].rows > 200 && m.captures["ms"].rows > 20
     }));
+    let marker = run.mark("closed_system").unwrap();
     thread::sleep(Duration::from_millis(500));
     let manifest = stop(&run, false);
 
@@ -351,6 +439,27 @@ fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
     );
     let spool = session.join("captures/ms/raw").join(SIMULATED_SPOOL);
     assert!(std::fs::metadata(spool).unwrap().len() > 0);
+
+    let timing = light.timing.as_ref().unwrap();
+    assert_eq!(timing["requested_samples"], 8010);
+    assert_eq!(timing["recorded_samples"], light.rows);
+    assert_eq!(manifest.captures["ms"].timing, None);
+
+    assert_eq!(marker.kind, "closed_system");
+    assert_eq!(marker.label, "Closed system (CO2 supply needle removed)");
+    assert!((marker.x_run_s - seconds(t0, marker.t_host_utc)).abs() < 1e-9);
+    assert_eq!(run.markers(), std::slice::from_ref(&marker));
+    let markers = session.join("markers");
+    assert_eq!(
+        column(&markers, "t_host_utc"),
+        [marker.t_host_utc.timestamp_micros()]
+    );
+    assert_eq!(strings(&markers, "kind"), ["closed_system"]);
+    assert_eq!(strings(&markers, "clock"), ["t_host_utc"]);
+    assert!(matches!(
+        run.mark("closed_system"),
+        Err(RunError::NotRunning)
+    ));
 }
 
 #[test]
@@ -373,7 +482,13 @@ fn disabling_a_role_runs_the_remaining_roles_only() {
 fn not_ready_instrument_prevents_the_whole_group_from_starting() {
     let data = tempfile::tempdir().unwrap();
     let template = template_with(data.path(), json!({"ms": {"instrument": "ms2-ezview"}}));
-    let run = launch(data.path(), template, &profiles(), &build_adapter);
+    let run = launch(
+        data.path(),
+        template,
+        &profiles(),
+        &build_adapter,
+        JOIN_TIMEOUT,
+    );
     let manifest = run.manifest();
     assert_eq!(manifest.status, SessionStatus::NotReady);
     let ms = manifest.captures["ms"].readiness.as_ref().unwrap();
@@ -396,7 +511,13 @@ fn a_group_that_is_not_ready_never_starts_its_spool_simulator() {
     let mut profiles = profiles();
     profiles.get_mut("ambit-replay-150-pl1").unwrap()["settings"]["recording"] =
         json!("${repo}/reference/instruments/ambit/missing.csv");
-    let run = launch(data.path(), template, &profiles, &build_adapter);
+    let run = launch(
+        data.path(),
+        template,
+        &profiles,
+        &build_adapter,
+        JOIN_TIMEOUT,
+    );
     let manifest = run.manifest();
     assert_eq!(manifest.status, SessionStatus::NotReady);
     let light = manifest.captures["light"].readiness.as_ref().unwrap();
@@ -440,5 +561,103 @@ fn hardware_profile_reports_why_it_is_not_ready() {
         ms.detail.contains("No spool file configured"),
         "{}",
         ms.detail
+    );
+}
+
+#[test]
+fn cancel_asks_each_adapter_for_a_safe_state_and_ends_cancelled() {
+    let data = tempfile::tempdir().unwrap();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
+    let build = light_as(Behaviour::UntilStopped, &cancelled);
+    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
+    let manifest = stop(&run, true);
+    assert_eq!(manifest.status, SessionStatus::Cancelled);
+    assert!(cancelled.load(Ordering::SeqCst));
+    assert_eq!(manifest.captures["light"].status, CaptureStatus::Completed);
+    assert!(matches!(run.stop(false), Err(RunError::NotRunning)));
+}
+
+#[test]
+fn a_capture_still_running_after_the_join_timeout_is_recorded_as_interrupted() {
+    let data = tempfile::tempdir().unwrap();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
+    let build = light_as(
+        Behaviour::IgnoresStopFor(Duration::from_secs(3)),
+        &cancelled,
+    );
+    let run = launch(
+        data.path(),
+        template,
+        &profiles(),
+        &*build,
+        Duration::from_millis(200),
+    );
+    assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
+    let stopped = Instant::now();
+    let manifest = stop(&run, false);
+    assert!(
+        stopped.elapsed() < Duration::from_secs(2),
+        "the stop waited for the stuck capture"
+    );
+    let light = &manifest.captures["light"];
+    assert_eq!(light.status, CaptureStatus::Interrupted);
+    assert_eq!(
+        light.error.as_deref(),
+        Some("Capture had not ended 0.2 s after the stop request")
+    );
+    assert_eq!(manifest.captures["ms"].status, CaptureStatus::Completed);
+    assert_eq!(manifest.status, SessionStatus::CompletedWithFailures);
+    assert_eq!(store(data.path()).load(run.id()).unwrap(), *manifest);
+}
+
+#[test]
+fn the_final_status_waits_for_a_slow_capture_to_end() {
+    let data = tempfile::tempdir().unwrap();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
+    let build = light_as(
+        Behaviour::IgnoresStopFor(Duration::from_millis(800)),
+        &cancelled,
+    );
+    let run = launch(data.path(), template, &profiles(), &*build, JOIN_TIMEOUT);
+    assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
+    let manifest = stop(&run, false);
+    let light = &manifest.captures["light"];
+    assert_eq!(light.status, CaptureStatus::Completed);
+    assert_eq!(manifest.status, SessionStatus::Completed);
+    let finished = manifest.run.as_ref().unwrap().stopped_utc.unwrap();
+    assert!(light.stopped_utc.unwrap() <= finished);
+}
+
+#[test]
+fn detected_flashes_are_stored_with_their_receipt_times() {
+    let data = tempfile::tempdir().unwrap();
+    let run = start(
+        data.path(),
+        template_with(data.path(), json!({"light": {"start_delay_s": 0}})),
+    );
+    assert!(wait_until(30.0, || run.manifest().captures["light"].rows > 2300));
+    let manifest = stop(&run, false);
+    let t0 = manifest.run.as_ref().unwrap().group_start_utc.unwrap();
+    let finished = manifest.run.as_ref().unwrap().stopped_utc.unwrap();
+    let events = store(data.path())
+        .capture_dir(run.id(), "light")
+        .join("events");
+    let kinds = strings(&events, "kind");
+    let received = column(&events, "t_host_utc");
+    let flashes: Vec<i64> = kinds
+        .iter()
+        .zip(&received)
+        .filter(|(kind, _)| *kind == "sat_flash")
+        .map(|(_, t)| *t)
+        .collect();
+    assert!(!flashes.is_empty(), "{kinds:?}");
+    assert!(
+        flashes
+            .iter()
+            .all(|&t| t0.timestamp_micros() < t && t < finished.timestamp_micros())
     );
 }
