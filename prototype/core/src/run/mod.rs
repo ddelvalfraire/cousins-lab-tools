@@ -5,15 +5,39 @@
 //! sample together; any relation between their samples comes from the clocks.
 
 mod adapter;
+mod capture;
+mod owner;
 
 use std::fmt;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::mpsc;
+use std::thread;
+use std::time::{Duration, Instant};
 
-use crate::contract::InstrumentError;
+use chrono::{DateTime, Utc};
+use indexmap::IndexMap;
+use serde_json::Value;
+
+use crate::contract::{Column, InstrumentError, StopSignal};
 use crate::pycompat::str_repr;
-use crate::session::SessionError;
-use crate::templates::{Profiles, Template};
+use crate::session::{
+    Capture, CaptureStatus, FLUSH_EVERY, FLUSH_ROWS, Manifest, OnFailure, RunInfo, SegmentWriter,
+    SessionError, SessionKind, SessionStatus, SessionStore, Source, event_columns, utc_now,
+};
+use crate::templates::{Paths, Profiles, Template};
+use capture::{CaptureTask, Output};
+use owner::{CaptureControl, Message, Owner, Published};
 
 pub use adapter::{BuiltAdapter, SIMULATED_SPOOL, build_adapter};
+
+/// What `run.note` tells a reader about times in a run that is not real time.
+pub const RUN_NOTE: &str = "Simulated and replayed inputs: sample spacing and start delays are \
+    divided by the speed factor, and host clock times are real. Replayed device counters such \
+    as the Ambit T are the recorded values and are not compressed, so they advance slower than \
+    the host clock by the speed factor. The simulated spool's timestamps are written with this \
+    machine's clock.";
 
 #[derive(Debug)]
 pub enum RunError {
@@ -21,6 +45,8 @@ pub enum RunError {
     Invalid(String),
     /// A role names an instrument profile that is gone.
     UnknownInstrument(String),
+    /// Stop or mark on a session that is not running. The API answers 409.
+    NotRunning,
     Instrument(InstrumentError),
     Session(SessionError),
 }
@@ -30,6 +56,7 @@ impl fmt::Display for RunError {
         match self {
             RunError::Invalid(message) => write!(f, "{message}"),
             RunError::UnknownInstrument(id) => write!(f, "Not found: {}", str_repr(id)),
+            RunError::NotRunning => write!(f, "This session is not running"),
             RunError::Instrument(e) => write!(f, "{e}"),
             RunError::Session(e) => write!(f, "{e}"),
         }
@@ -81,6 +108,307 @@ fn profile<'a>(
     profiles
         .get(id)
         .ok_or_else(|| RunError::UnknownInstrument(id.into()))
+}
+
+/// Builds the adapter for one role. Runs use [`build_adapter`]; tests substitute their own.
+type BuildAdapter =
+    dyn Fn(&Value, &str, &Template, &Path, f64, &Paths) -> Result<BuiltAdapter, InstrumentError>;
+
+/// A live or finished group run. Clones share the run; the API layer keeps one per session.
+#[derive(Clone)]
+pub struct GroupRun(Arc<Shared>);
+
+struct Shared {
+    id: String,
+    published: Arc<Published>,
+    /// Absent when the group never started because a role was not ready.
+    owner: Option<mpsc::Sender<Message>>,
+}
+
+struct Launch<'a> {
+    store: Arc<SessionStore>,
+    paths: &'a Paths,
+    template: Template,
+    profiles: &'a Profiles,
+    speed: f64,
+    name: &'a str,
+    build: &'a BuildAdapter,
+}
+
+/// One enabled role between preparation and its thread.
+struct Prepared {
+    role: String,
+    built: BuiltAdapter,
+    output_dir: PathBuf,
+    host_time: Option<usize>,
+    columns: Vec<Column>,
+}
+
+impl GroupRun {
+    /// Checks the request, creates the session, prepares every enabled role and, when all are
+    /// ready, starts them. A group with a role that is not ready is saved as `not_ready` and
+    /// starts nothing. `name` falls back to the template's name.
+    pub fn start(
+        store: Arc<SessionStore>,
+        paths: &Paths,
+        template: Template,
+        profiles: &Profiles,
+        speed: f64,
+        name: Option<&str>,
+    ) -> Result<GroupRun, RunError> {
+        check_request(&template, profiles, speed)?;
+        let fallback = template.data()["name"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string();
+        let name = name.filter(|n| !n.is_empty()).unwrap_or(&fallback);
+        GroupRun::launch(Launch {
+            store,
+            paths,
+            template,
+            profiles,
+            speed,
+            name,
+            build: &build_adapter,
+        })
+    }
+
+    fn launch(request: Launch<'_>) -> Result<GroupRun, RunError> {
+        let Launch {
+            store,
+            paths,
+            template,
+            profiles,
+            speed,
+            name,
+            build,
+        } = request;
+        let mut manifest = store.create(name, SessionKind::Run, template.data().clone())?;
+        let mut prepared = Vec::new();
+        let mut ready = true;
+        for (role, cfg) in template.enabled_roles() {
+            let profile = profile(profiles, cfg)?;
+            let dir = store.capture_dir(&manifest.id, role);
+            let built = build(profile, role, &template, &dir, speed, paths)?;
+            let info = built.adapter.describe();
+            let readiness = built.adapter.check_ready();
+            ready &= readiness.ok;
+            let delay = cfg["start_delay_s"].as_f64().unwrap_or(0.0);
+            let capture = Capture {
+                role: role.into(),
+                label: cfg["label"].as_str().unwrap_or(role).into(),
+                instrument: Some(profile.clone()),
+                adapter: Some(info.adapter.clone()),
+                model: Some(info.model.clone()),
+                input_kind: info.input_kind,
+                input_note: built.note.clone(),
+                sources: built.sources.iter().map(|p| source(p)).collect(),
+                capabilities: Some(info.capabilities.iter().cloned().collect()),
+                columns: info.columns.clone(),
+                clocks: info.clocks.clone(),
+                aliases: info.aliases.clone().into_iter().collect(),
+                requested_delay_s: Some(delay),
+                host_delay_s: Some(delay / speed),
+                on_failure: Some(
+                    serde_json::from_value(cfg["on_failure"].clone())
+                        .unwrap_or(OnFailure::ContinueOthers),
+                ),
+                status: if readiness.ok {
+                    CaptureStatus::Ready
+                } else {
+                    CaptureStatus::NotReady
+                },
+                readiness: Some(readiness),
+                rows: 0,
+                protocol_plan: template
+                    .protocol_plan(role)
+                    .map(|plan| serde_json::to_value(plan).expect("a plan is plain data")),
+                ignored_columns: None,
+                timing: None,
+                requested_start_utc: None,
+                start_command_utc: None,
+                first_sample_utc: None,
+                last_sample_utc: None,
+                error: None,
+                stopped_utc: None,
+            };
+            manifest.captures.insert(role.into(), capture);
+            prepared.push(Prepared {
+                role: role.into(),
+                host_time: info.columns.iter().position(|c| c.name == "t_host_utc"),
+                columns: info.columns,
+                output_dir: dir,
+                built,
+            });
+        }
+        manifest.run = Some(RunInfo {
+            speed,
+            note: RUN_NOTE.into(),
+            group_start_utc: None,
+            stopped_utc: None,
+        });
+        if !ready {
+            manifest.status = SessionStatus::NotReady;
+            store.save(&manifest)?;
+            return Ok(GroupRun(Arc::new(Shared {
+                id: manifest.id.clone(),
+                published: Arc::new(Published::new(&manifest)),
+                owner: None,
+            })));
+        }
+        store.save(&manifest)?;
+        GroupRun::begin(store, manifest, prepared)
+    }
+
+    /// Takes the group start, starts the simulators, then each capture's thread. Each thread
+    /// waits for its own deadline on the monotonic clock, measured from the group start.
+    fn begin(
+        store: Arc<SessionStore>,
+        mut manifest: Manifest,
+        prepared: Vec<Prepared>,
+    ) -> Result<GroupRun, RunError> {
+        let (owner_tx, owner_rx) = mpsc::channel();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let mut tasks = Vec::new();
+        let mut simulators = Vec::new();
+        for p in prepared {
+            let output = Output {
+                role: p.role.clone(),
+                samples: SegmentWriter::new(
+                    &p.output_dir.join("samples"),
+                    &p.columns,
+                    FLUSH_ROWS,
+                    FLUSH_EVERY,
+                )?,
+                events: SegmentWriter::new(
+                    &p.output_dir.join("events"),
+                    &event_columns(),
+                    FLUSH_ROWS,
+                    Duration::ZERO,
+                )?,
+                host_time: p.host_time,
+                stop: StopSignal::default(),
+                owner: owner_tx.clone(),
+                rows: 0,
+                event_seq: 0,
+                write_error: None,
+            };
+            simulators.extend(p.built.simulator);
+            tasks.push((p.built.adapter, output));
+        }
+
+        let (t0, t0_utc) = (Instant::now(), utc_now());
+        for simulator in &mut simulators {
+            simulator.start().map_err(SessionError::Io)?;
+        }
+        manifest.status = SessionStatus::Running;
+        if let Some(run) = &mut manifest.run {
+            run.group_start_utc = Some(t0_utc);
+        }
+        let mut controls = IndexMap::new();
+        for (adapter, output) in tasks {
+            let capture = &mut manifest.captures[&output.role];
+            let delay =
+                Duration::from_micros((capture.host_delay_s.unwrap_or(0.0) * 1e6).round() as u64);
+            capture.requested_start_utc = Some(after(t0_utc, delay));
+            capture.status = if delay.is_zero() {
+                CaptureStatus::Starting
+            } else {
+                CaptureStatus::Waiting
+            };
+            let role = output.role.clone();
+            let stop = output.stop.clone();
+            let task = CaptureTask {
+                adapter,
+                start_at: t0 + delay,
+                cancel: Arc::clone(&cancel),
+                output,
+            };
+            let thread = thread::Builder::new()
+                .name(format!("capture-{role}"))
+                .spawn(move || task.run())
+                .map_err(SessionError::Io)?;
+            controls.insert(
+                role,
+                CaptureControl {
+                    stop,
+                    thread: Some(thread),
+                    ended: false,
+                },
+            );
+        }
+        store.save(&manifest)?;
+        let published = Arc::new(Published::new(&manifest));
+        let owner = Owner {
+            store,
+            manifest,
+            published: Arc::clone(&published),
+            captures: controls,
+            simulators,
+            cancel,
+        };
+        let id = owner.manifest.id.clone();
+        thread::Builder::new()
+            .name(format!("run-{id}"))
+            .spawn(move || owner.run(owner_rx))
+            .map_err(SessionError::Io)?;
+        Ok(GroupRun(Arc::new(Shared {
+            id,
+            published,
+            owner: Some(owner_tx),
+        })))
+    }
+
+    pub fn id(&self) -> &str {
+        &self.0.id
+    }
+
+    /// The manifest as of the owner's last update.
+    pub fn manifest(&self) -> Arc<Manifest> {
+        self.0.published.snapshot()
+    }
+
+    /// Running or stopping: the final status has not landed yet.
+    pub fn is_running(&self) -> bool {
+        matches!(
+            self.manifest().status,
+            SessionStatus::Running | SessionStatus::Stopping
+        )
+    }
+
+    /// The last error saving the manifest, if a save has failed. The run goes on in memory.
+    pub fn save_error(&self) -> Option<String> {
+        self.0.published.save_error.lock().unwrap().clone()
+    }
+
+    /// Asks every capture to stop and returns once the session is saved as `stopping`. The
+    /// final status lands when the captures have ended. `cancel` also asks each adapter to put
+    /// its device in a safe state.
+    pub fn stop(&self, cancel: bool) -> Result<(), RunError> {
+        let owner = self.0.owner.as_ref().ok_or(RunError::NotRunning)?;
+        let (reply, answer) = mpsc::channel();
+        if owner.send(Message::Stop { cancel, reply }).is_err() {
+            return Err(RunError::NotRunning);
+        }
+        answer.recv().unwrap_or(Err(RunError::NotRunning))
+    }
+}
+
+fn after(t: DateTime<Utc>, delay: Duration) -> DateTime<Utc> {
+    t + chrono::Duration::from_std(delay).expect("a start delay fits in chrono's range")
+}
+
+fn source(path: &Path) -> Source {
+    Source {
+        path: path.display().to_string(),
+        name: path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned(),
+        sha256: None,
+        bytes: None,
+    }
 }
 
 #[cfg(test)]
