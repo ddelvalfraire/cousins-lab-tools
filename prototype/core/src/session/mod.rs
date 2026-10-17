@@ -15,6 +15,7 @@
 mod events;
 mod manifest;
 mod segment;
+mod store;
 mod time;
 
 use std::fmt;
@@ -30,6 +31,7 @@ pub use manifest::{
     Capture, CaptureStatus, Host, Manifest, OnFailure, RunInfo, SessionKind, SessionStatus, Source,
 };
 pub use segment::{FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, segment_rows, segments};
+pub use store::SessionStore;
 pub use time::{iso, iso_time, iso_time_opt, parse_iso, utc_now};
 
 #[derive(Debug)]
@@ -37,6 +39,7 @@ pub enum SessionError {
     Io(io::Error),
     Parquet(parquet::errors::ParquetError),
     Arrow(arrow::error::ArrowError),
+    Json(serde_json::Error),
     /// A row whose cells do not match the writer's columns.
     BadRow(String),
 }
@@ -47,6 +50,7 @@ impl fmt::Display for SessionError {
             SessionError::Io(e) => write!(f, "{e}"),
             SessionError::Parquet(e) => write!(f, "{e}"),
             SessionError::Arrow(e) => write!(f, "{e}"),
+            SessionError::Json(e) => write!(f, "{e}"),
             SessionError::BadRow(e) => write!(f, "{e}"),
         }
     }
@@ -69,6 +73,12 @@ impl From<parquet::errors::ParquetError> for SessionError {
 impl From<arrow::error::ArrowError> for SessionError {
     fn from(e: arrow::error::ArrowError) -> Self {
         SessionError::Arrow(e)
+    }
+}
+
+impl From<serde_json::Error> for SessionError {
+    fn from(e: serde_json::Error) -> Self {
+        SessionError::Json(e)
     }
 }
 
