@@ -404,4 +404,57 @@ mod tests {
             assert!(column.is_null(1));
         }
     }
+
+    /// Spool rows as the EZView adapter produces them: 29 cells, ch9 and ch10 null.
+    fn spool_rows(n: i64) -> Vec<Row> {
+        let start = Utc.with_ymd_and_hms(2026, 10, 16, 22, 0, 0).unwrap();
+        (0..n)
+            .map(|i| {
+                let t = start + chrono::Duration::milliseconds(500 * i);
+                let mut row = vec![
+                    Cell::Int(i),
+                    Cell::TimeUtc(t),
+                    Cell::TimeLocal(t.naive_utc()),
+                    Cell::Int(500 * i),
+                    Cell::Str("000".into()),
+                ];
+                for ch in 1..=12 {
+                    row.push(if ch == 9 || ch == 10 {
+                        Cell::Null
+                    } else {
+                        Cell::Float(ch as f64 + i as f64 / 1000.0)
+                    });
+                }
+                row.extend((1..=12).map(|ch| Cell::Int(1_000_000 * ch + i)));
+                row
+            })
+            .collect()
+    }
+
+    /// Run with `cargo test --release -- --ignored --nocapture`; the pyarrow baseline is the
+    /// same 2000 rows through the Python SegmentWriter.
+    #[test]
+    #[ignore]
+    fn time_to_append_and_flush_2000_spool_rows() {
+        let columns = crate::schemas::spool_columns();
+        let dir = tempfile::tempdir().unwrap();
+        let mut times = Vec::new();
+        for run in 0..50 {
+            let rows = spool_rows(2000);
+            let part_dir = dir.path().join(run.to_string());
+            let mut writer =
+                SegmentWriter::new(&part_dir, &columns, FLUSH_ROWS, FLUSH_EVERY).unwrap();
+            let started = Instant::now();
+            writer.append(rows).unwrap();
+            times.push(started.elapsed());
+            assert_eq!(writer.rows_written(), 2000);
+        }
+        times.sort();
+        println!(
+            "append+flush 2000 spool rows: median {:?}, min {:?}, max {:?}",
+            times[times.len() / 2],
+            times[0],
+            times[times.len() - 1]
+        );
+    }
 }
