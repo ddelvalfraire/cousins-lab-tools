@@ -1,9 +1,9 @@
-import { api, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
+import { call, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
 import { captureTable } from "./components.js";
 
 export async function renderSession(page, id) {
-  const session = await api(`/api/sessions/${id}`);
+  const session = await call("get_session", { session_id: id });
   if (session.live) return void location.replace(`#/sessions/${id}/capture`);
   return renderReview(page, session);
 }
@@ -76,11 +76,12 @@ async function alignTab(el, session) {
   const spec = m.template.alignment || {};
   const saved = session.alignments.at(-1);
   const state = saved?.inputs ? structuredClone(saved.inputs) : { reference: spec.default_reference || "event", manual: {}, trial_params: {} };
+  const inputs = () => ({ session_id: m.id, reference: state.reference, manual: state.manual, trial_params: state.trial_params });
   let charts = [];
   const disposeCharts = () => { charts.forEach(c => c.dispose()); charts = []; };
 
   const render = async () => {
-    const { alignment, charts: data } = await api(`/api/sessions/${m.id}/alignment/preview`, { method: "POST", body: state });
+    const { alignment, charts: data } = await call("preview_alignment", inputs());
     disposeCharts();
     const clockOrigin = alignment.clock_origin_utc ? new Date(alignment.clock_origin_utc).getTime() : null;
     const xName = {
@@ -141,7 +142,7 @@ async function alignTab(el, session) {
       render();
     }));
     el.querySelector("#save-alignment").onclick = async () => {
-      const saved = await api(`/api/sessions/${m.id}/alignments`, { method: "POST", body: state });
+      const saved = await call("save_alignment", inputs());
       toast(`Saved ${saved.id}`);
       session.alignments.push(saved);
     };
@@ -186,7 +187,7 @@ df = con.sql("SELECT * FROM aligned").df()</pre>
   el.querySelector("#run").onclick = async () => {
     const out = el.querySelector("#result");
     try {
-      const r = await api(`/api/sessions/${m.id}/query`, { method: "POST", body: { sql: sql.value, alignment_id: latest?.id } });
+      const r = await call("query_session", { session_id: m.id, sql: sql.value, alignment_id: latest?.id ?? null });
       const cols = r.rows.length ? Object.keys(r.rows[0]) : [];
       el.querySelector("#query-info").textContent = `${r.rows.length}${r.truncated ? "+" : ""} rows · views: ${r.views.join(", ")}`;
       out.innerHTML = `<table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${r.rows.slice(0, 200).map(row =>
@@ -216,11 +217,11 @@ function exportTab(el, session) {
   const result = el.querySelector("#export-result");
   const link = path => `<a href="/api/file?path=${encodeURIComponent(path)}">${esc(path.split("/").pop())}</a>`;
   el.querySelectorAll("[data-export]").forEach(b => (b.onclick = async () => {
-    const r = await api(`/api/sessions/${m.id}/alignments/${b.dataset.export}/export`, { method: "POST" });
+    const r = await call("export_alignment", { session_id: m.id, alignment_id: b.dataset.export });
     result.innerHTML = `Wrote ${link(r.csv)} and ${link(r.metadata)}`;
   }));
   el.querySelectorAll("[data-legacy]").forEach(b => (b.onclick = async () => {
-    const r = await api(`/api/sessions/${m.id}/legacy-frames`, { method: "POST", body: { capture: b.dataset.legacy } });
+    const r = await call("export_legacy_frames", { session_id: m.id, capture: b.dataset.legacy });
     toast(`Wrote ${r.files} frame files to ${r.folder}`);
   }));
 }
