@@ -14,6 +14,7 @@
 
 mod events;
 mod manifest;
+mod recovery;
 mod segment;
 mod store;
 mod time;
