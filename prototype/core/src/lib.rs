@@ -5,5 +5,6 @@ pub mod protocol;
 pub mod pycompat;
 pub mod repr;
 pub mod schemas;
+pub mod simulate;
 pub mod spool;
 pub mod templates;
