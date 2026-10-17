@@ -1,6 +1,6 @@
 // Layout editor on the template page. Edits a copy of the revision's layout; saving posts a new revision.
 
-import { api, esc, icon } from "./util.js";
+import { call, esc, icon } from "./util.js";
 import { CATALOG, find, placeBelow, settle, SIZES, uniqueId } from "./layout.js";
 import { componentTitle } from "./components.js";
 
@@ -232,7 +232,7 @@ export function mountEditor(el, template, { draft, onSaved }) {
 
   const save = async () => {
     try {
-      const saved = await api(`/api/templates/${template.data.id}/revisions`, { method: "POST", body: { data: draft } });
+      const saved = await call("save_template", { template_id: template.data.id, data: draft });
       onSaved(saved);
     } catch (e) {
       state.error = e.message;

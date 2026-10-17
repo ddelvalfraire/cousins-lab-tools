@@ -1,9 +1,9 @@
-import { api, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
+import { call, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
 
 export async function renderTemplates(page) {
-  const templates = await api("/api/templates");
+  const templates = await call("list_templates");
   page.innerHTML = pageHeader([["Home", "#/"]], "Experiment templates", {
     sub: "A template names the instruments, how they start, the derived values, the time alignment, the charts, and the run-page layout. Screens are generated from it.",
   }) + `<div class="page-body">
@@ -21,8 +21,8 @@ export async function renderTemplates(page) {
 
 export async function renderTemplate(page, id, revision, tab) {
   const [view, instruments] = await Promise.all([
-    api(`/api/templates/${id}${revision ? `?revision=${revision}` : ""}`),
-    api("/api/instruments"),
+    call("get_template", { template_id: id, revision: revision ? Number(revision) : null }),
+    call("list_instruments"),
   ]);
   const data = structuredClone(view.data);
   const latest = Math.max(...view.revisions);
@@ -135,17 +135,17 @@ export async function renderTemplate(page, id, revision, tab) {
     location.hash = `#/templates/${t.data.id}/r${t.data.revision}`;
   };
   save.onclick = async () => {
-    try { saved(await api(`/api/templates/${id}/revisions`, { method: "POST", body: { data } })); } catch (e) { toast(e.message); }
+    try { saved(await call("save_template", { template_id: id, data })); } catch (e) { toast(e.message); }
   };
   page.querySelector("#save-yaml").onclick = async () => {
-    try { saved(await api(`/api/templates/${id}/revisions`, { method: "POST", body: { yaml: page.querySelector("#yaml").value } })); }
+    try { saved(await call("save_template", { template_id: id, yaml: page.querySelector("#yaml").value })); }
     catch (e) { page.querySelector("#yaml-error").textContent = e.message; }
   };
   page.querySelector("#start").onclick = () => startRunDialog(id, null, data.revision);
 }
 
 export async function startRunDialog(templateId, templates, revision) {
-  templates ??= await api("/api/templates");
+  templates ??= await call("list_templates");
   const template = templates.find(t => t.data.id === templateId) || templates[0];
   const rev = revision ?? template.data.revision;
   openDialog(`
@@ -159,7 +159,7 @@ export async function startRunDialog(templateId, templates, revision) {
       <p class="error-text"></p>
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Check readiness and start</button></div>
     </form>`, async form => {
-      const manifest = await api("/api/runs", { method: "POST", body: { template_id: template.data.id, revision: rev, name: form.get("name"), speed: Number(form.get("speed")) } });
+      const manifest = await call("start_run", { template_id: template.data.id, revision: rev, speed: Number(form.get("speed")), name: form.get("name") });
       location.hash = `#/sessions/${manifest.id}`;
     });
 }

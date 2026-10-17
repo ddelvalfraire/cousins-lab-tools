@@ -1,9 +1,9 @@
-import { api, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge } from "./util.js";
+import { call, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge } from "./util.js";
 import { componentCount, layoutThumb } from "./components.js";
 import { startRunDialog } from "./templates.js";
 
 export async function renderHome(page) {
-  const [sessions, templates, instruments] = await Promise.all([api("/api/sessions"), api("/api/templates"), api("/api/instruments")]);
+  const [sessions, templates, instruments] = await Promise.all([call("list_sessions"), call("list_templates"), call("list_instruments")]);
   const live = sessions.filter(s => s.live);
   const kinds = [...new Set(instruments.map(p => p.input_kind))];
   const stat = (ico, label, value, note, href) => `

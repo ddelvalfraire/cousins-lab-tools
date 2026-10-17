@@ -1,7 +1,7 @@
-import { api, esc, icon, inputBadge, pageHeader } from "./util.js";
+import { call, esc, icon, inputBadge, pageHeader } from "./util.js";
 
 export async function renderInstruments(page) {
-  const instruments = await api("/api/instruments");
+  const instruments = await call("list_instruments");
   page.innerHTML = pageHeader([["Home", "#/"]], "Instruments", {
     sub: "A profile configures an existing adapter: file paths, ports, channel names, aliases. A new protocol or file format needs a new adapter class that implements the instrument contract.",
   }) + `<div class="page-body">
