@@ -1,7 +1,7 @@
 // The capture page: a session's run page laid out by its template revision. Live while the engine runs it,
 // then the same page over the stored data.
 
-import { api, esc, fmtClock, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
+import { call, esc, fmtClock, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { visible } from "./layout.js";
@@ -18,7 +18,7 @@ function liveSource(m, template) {
   const source = { live: true, version: 0, elapsed: 0, status: m.status, captures: m.captures, events };
 
   source.poll = async () => {
-    const live = await api(`/api/sessions/${m.id}/live?cursors=${encodeURIComponent(JSON.stringify(cursors))}`);
+    const live = await call("session_live", { session_id: m.id, cursors });
     for (const [role, cap] of Object.entries(live.captures)) {
       cursors[role] = cap.next;
       cursors[`${role}:events`] = cap.events_next;
@@ -59,7 +59,7 @@ async function replaySource(m, session, template, reference) {
   const source = { live: false, version: ++replayVersion, status: m.status, captures: m.captures, inputs, saved, events: [] };
   let aligned = { alignment: { reference: inputs.reference, unaligned: [], trials: [] }, charts: [], values: {} };
   try {
-    aligned = await api(`/api/sessions/${m.id}/alignment/preview`, { method: "POST", body: inputs });
+    aligned = await call("preview_alignment", { session_id: m.id, reference: inputs.reference, manual: inputs.manual, trial_params: inputs.trial_params });
   } catch (e) {
     source.error = e.message;
   }
@@ -127,9 +127,9 @@ function alerts(m, session, source) {
 }
 
 async function mount(page, id, restart) {
-  const session = await api(`/api/sessions/${id}`);
+  const session = await call("get_session", { session_id: id });
   const m = session.manifest;
-  const [template, instruments] = await Promise.all([api(`/api/templates/${m.template.id}?revision=${m.template.revision}`), api("/api/instruments")]);
+  const [template, instruments] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }), call("list_instruments")]);
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
   let source = session.live ? liveSource(m, template) : await replaySource(m, session, template);
@@ -150,13 +150,13 @@ async function mount(page, id, restart) {
     template, session: m,
     actions: {
       mark: logged("Mark requested", async ({ event }) => {
-        const mk = await api(`/api/sessions/${m.id}/mark`, { method: "POST", body: { event } });
+        const mk = await call("mark_session", { session_id: m.id, event });
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
       }),
-      stop: logged("Stop requested", async () => { await api(`/api/sessions/${m.id}/stop`, { method: "POST" }); toast("Stopping…"); }),
+      stop: logged("Stop requested", async () => { await call("stop_session", { session_id: m.id, cancel: false }); toast("Stopping…"); }),
       cancel: async () => {
         if (!confirm("Cancel the run? Data recorded so far is kept.")) return;
-        await logged("Cancel requested", async () => { await api(`/api/sessions/${m.id}/cancel`, { method: "POST" }); toast("Cancelling…"); })();
+        await logged("Cancel requested", async () => { await call("stop_session", { session_id: m.id, cancel: true }); toast("Cancelling…"); })();
       },
     },
   };
@@ -205,7 +205,7 @@ async function mount(page, id, restart) {
     view.panel = view.panel === tab ? null : tab;
     if (view.panel === "events" && !source.live && !storedEvents) {
       paintPanel();
-      storedEvents = await api(`/api/sessions/${m.id}/events`);
+      storedEvents = await call("session_events", { session_id: m.id });
     }
     paintPanel();
   };

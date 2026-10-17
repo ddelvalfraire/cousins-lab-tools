@@ -1,14 +1,3 @@
-export async function api(path, { method = "GET", body } = {}) {
-  const response = await fetch(path, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || response.statusText);
-  return data;
-}
-
 async function invoke(command, args) {
   const tauri = globalThis.window?.__TAURI__;
   if (!tauri) throw new Error("The engine is not connected. Open this page in the Cousins Lab app.");
