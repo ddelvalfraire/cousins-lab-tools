@@ -1,0 +1,183 @@
+{
+  "id": "20261017-000516-group-test",
+  "name": "group test",
+  "kind": "run",
+  "status": "completed",
+  "created_utc": "2026-10-17T00:05:16.439159+00:00",
+  "host": {
+    "hostname": "lab-pc",
+    "utc_offset": "-0700"
+  },
+  "template": {
+    "id": "jii-leaf-co2-fluorescence",
+    "revision": 1,
+    "note": "trimmed for the fixture"
+  },
+  "captures": {
+    "ms": {
+      "role": "ms",
+      "label": "Mass spectrometer (mass 44 = CO2)",
+      "instrument": {
+        "id": "ms2-ezview-simulated",
+        "adapter": "ezview_spool"
+      },
+      "adapter": "ezview_spool",
+      "model": "Mass spectrometer read through EZ-Tap and EZView (model not documented)",
+      "input_kind": "simulated",
+      "input_note": "Simulated input: spool written now by the simulator at 50x. A simulator writes an EZView-style spool with this machine's clock. Values are the researcher's recorded Mass 44 and Mass 45 from the start of the 150-pl1 window (row 6762) to the end of the acquisition, so the simulated instrument keeps running like the real one. Mass 32 (-404.404) is left out because the spool decoder cannot produce negative values.",
+      "sources": [
+        {
+          "path": "/lab/cousins-lab-tools/reference/instruments/mass-spec/Raw data-mass spec.xlsx",
+          "name": "Raw data-mass spec.xlsx"
+        }
+      ],
+      "capabilities": [
+        "acquire"
+      ],
+      "columns": [
+        {
+          "name": "seq",
+          "type": "int64",
+          "unit": "",
+          "description": "Frame number within this capture"
+        },
+        {
+          "name": "t_host_utc",
+          "type": "timestamp_utc",
+          "unit": "",
+          "description": "When the engine decoded the frame (host clock)"
+        }
+      ],
+      "clocks": [
+        {
+          "column": "t_source_local",
+          "kind": "source_local",
+          "seconds_per_unit": 1.0,
+          "description": "EZView frame timestamp; which PC clock writes it is unverified"
+        },
+        {
+          "column": "t_host_utc",
+          "kind": "host_utc",
+          "seconds_per_unit": 1.0,
+          "description": "Engine receipt time; includes spool write and poll delay"
+        }
+      ],
+      "aliases": {
+        "m45": "ch1",
+        "m44": "ch3"
+      },
+      "requested_delay_s": 0.0,
+      "host_delay_s": 0.0,
+      "on_failure": "continue_others",
+      "readiness": {
+        "ok": true,
+        "detail": "Spool file present: simulated-ezview-spool.txt"
+      },
+      "status": "completed",
+      "rows": 182,
+      "protocol_plan": null,
+      "requested_start_utc": "2026-10-17T00:05:23.188737+00:00",
+      "start_command_utc": "2026-10-17T00:05:23.203391+00:00",
+      "first_sample_utc": "2026-10-17T00:05:23.211200+00:00",
+      "last_sample_utc": "2026-10-17T00:05:26.236770+00:00",
+      "stopped_utc": "2026-10-17T00:05:26.257632+00:00"
+    },
+    "light": {
+      "role": "light",
+      "label": "Ambit fluorometer with red actinic LED",
+      "instrument": {
+        "id": "ambit-replay-150-pl1",
+        "adapter": "ambit_replay"
+      },
+      "adapter": "ambit_replay",
+      "model": "Ambit fluorometer (USB 1A86:55D4) with external LED pulser (USB 303A:1001)",
+      "input_kind": "replay",
+      "input_note": "Replay of a recording: Ambit raw data_sample_150_pl1.csv at 50x. Rows and device T are recorded values; host times are this replay's.",
+      "sources": [
+        {
+          "path": "/lab/cousins-lab-tools/reference/instruments/ambit/Ambit raw data_sample_150_pl1.csv",
+          "name": "Ambit raw data_sample_150_pl1.csv"
+        }
+      ],
+      "capabilities": [
+        "acquire"
+      ],
+      "columns": [
+        {
+          "name": "seq",
+          "type": "int64",
+          "unit": "",
+          "description": "Row number within this capture"
+        },
+        {
+          "name": "t_host_utc",
+          "type": "timestamp_utc",
+          "unit": "",
+          "description": "When the engine received the row (host clock)"
+        }
+      ],
+      "clocks": [
+        {
+          "column": "t_device_ms",
+          "kind": "device_relative",
+          "seconds_per_unit": 0.001,
+          "description": "Ambit counter from run start; runs short of host time in both recordings"
+        },
+        {
+          "column": "t_host_utc",
+          "kind": "host_utc",
+          "seconds_per_unit": 1.0,
+          "description": "Engine receipt time"
+        }
+      ],
+      "aliases": {},
+      "requested_delay_s": 75.0,
+      "host_delay_s": 1.5,
+      "on_failure": "continue_others",
+      "readiness": {
+        "ok": true,
+        "detail": "Replaying Ambit raw data_sample_150_pl1.csv at 50x"
+      },
+      "status": "completed",
+      "rows": 179,
+      "protocol_plan": {
+        "samples": 8010,
+        "nominal_s": 755.5,
+        "flashes": 14,
+        "segments": [
+          {
+            "start_s": 0.0,
+            "samples": 700,
+            "interval_s": 0.1,
+            "ambit_actinic": 0
+          }
+        ]
+      },
+      "requested_start_utc": "2026-10-17T00:05:24.688737+00:00",
+      "start_command_utc": "2026-10-17T00:05:24.731832+00:00",
+      "first_sample_utc": "2026-10-17T00:05:24.986880+00:00",
+      "last_sample_utc": "2026-10-17T00:05:26.241070+00:00",
+      "stopped_utc": "2026-10-17T00:05:26.288124+00:00",
+      "timing": {
+        "recorded_samples": 179,
+        "device_span_s": 17.878,
+        "first_device_ms": 9,
+        "gaps_over_150ms": 0,
+        "largest_gap_ms": 101,
+        "requested_samples": 8010,
+        "requested_s": 755.5,
+        "missing_samples": 7831,
+        "device_span_minus_requested_s": -737.622
+      }
+    }
+  },
+  "analysis": {
+    "trial_params": {}
+  },
+  "run": {
+    "speed": 50.0,
+    "note": "Simulated and replayed inputs: data, device counters, and start delays are compressed by the speed factor; host clock times are real.",
+    "group_start_utc": "2026-10-17T00:05:23.188737+00:00",
+    "stopped_utc": "2026-10-17T00:05:27.623309+00:00"
+  }
+}

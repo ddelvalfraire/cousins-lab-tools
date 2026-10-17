@@ -1,0 +1,73 @@
+{
+  "id": "20261017-000649-failing-run",
+  "name": "failing run",
+  "kind": "run",
+  "status": "completed_with_failures",
+  "created_utc": "2026-10-17T00:06:49.411027+00:00",
+  "host": {
+    "hostname": "lab-pc",
+    "utc_offset": "-0700"
+  },
+  "template": {
+    "id": "jii-leaf-co2-fluorescence",
+    "revision": 1,
+    "note": "trimmed for the fixture"
+  },
+  "captures": {
+    "light": {
+      "role": "light",
+      "label": "Ambit fluorometer with red actinic LED",
+      "instrument": {
+        "id": "ambit-replay-150-pl1",
+        "adapter": "ambit_replay"
+      },
+      "adapter": "failing",
+      "model": "test",
+      "input_kind": "simulated",
+      "input_note": "test adapter",
+      "sources": [],
+      "capabilities": [
+        "acquire"
+      ],
+      "columns": [],
+      "clocks": [],
+      "aliases": {},
+      "requested_delay_s": 0.0,
+      "host_delay_s": 0.0,
+      "on_failure": "stop_group",
+      "readiness": {
+        "ok": true,
+        "detail": "ok"
+      },
+      "status": "failed",
+      "rows": 0,
+      "protocol_plan": {
+        "samples": 8010,
+        "nominal_s": 755.5,
+        "flashes": 14,
+        "segments": [
+          {
+            "start_s": 0.0,
+            "samples": 700,
+            "interval_s": 0.1,
+            "ambit_actinic": 0
+          }
+        ]
+      },
+      "requested_start_utc": "2026-10-17T00:06:58.050528+00:00",
+      "start_command_utc": "2026-10-17T00:06:58.229787+00:00",
+      "error": "ConnectionError: device unplugged",
+      "stopped_utc": "2026-10-17T00:06:58.489266+00:00"
+    }
+  },
+  "analysis": {
+    "trial_params": {}
+  },
+  "run": {
+    "speed": 50.0,
+    "note": "Simulated and replayed inputs: data, device counters, and start delays are compressed by the speed factor; host clock times are real.",
+    "group_start_utc": "2026-10-17T00:06:58.050528+00:00",
+    "stopped_utc": "2026-10-17T00:07:11.106899+00:00"
+  },
+  "stopped_by": "light failed and its policy is stop_group"
+}

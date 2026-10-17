@@ -1,0 +1,127 @@
+{
+  "id": "20261017-000458-sample-150-import",
+  "name": "Sample 150 import",
+  "kind": "import",
+  "status": "imported",
+  "created_utc": "2026-10-17T00:04:58.831359+00:00",
+  "host": {
+    "hostname": "lab-pc",
+    "utc_offset": "-0700"
+  },
+  "template": {
+    "id": "jii-leaf-co2-fluorescence",
+    "revision": 1,
+    "note": "trimmed for the fixture"
+  },
+  "captures": {
+    "ms-workbook": {
+      "role": "ms",
+      "label": "workbook",
+      "input_kind": "import",
+      "input_note": "Imported file: Raw data-mass spec.xlsx",
+      "sources": [
+        {
+          "path": "/lab/cousins-lab-tools/reference/instruments/mass-spec/Raw data-mass spec.xlsx",
+          "name": "Raw data-mass spec.xlsx",
+          "sha256": "2e07256dc9b9ac4a0b2c68c9b4ee09fff3c687f0a2da75c15df487015b509187",
+          "bytes": 2365886
+        }
+      ],
+      "status": "imported",
+      "rows": 26859,
+      "columns": [
+        {
+          "name": "seq",
+          "type": "int64",
+          "unit": "",
+          "description": "Row number within the sheet's data"
+        },
+        {
+          "name": "t_elapsed_s",
+          "type": "float64",
+          "unit": "s",
+          "description": "Workbook Time column: seconds since that acquisition started"
+        }
+      ],
+      "clocks": [
+        {
+          "column": "t_elapsed_s",
+          "kind": "elapsed",
+          "seconds_per_unit": 1.0,
+          "description": "Seconds since the MS acquisition started; no clock time recorded"
+        }
+      ],
+      "aliases": {}
+    },
+    "light-150-pl1": {
+      "role": "light",
+      "label": "150-pl1",
+      "input_kind": "import",
+      "input_note": "Imported file: Ambit raw data_sample_150_pl1.csv",
+      "sources": [
+        {
+          "path": "/lab/cousins-lab-tools/reference/instruments/ambit/Ambit raw data_sample_150_pl1.csv",
+          "name": "Ambit raw data_sample_150_pl1.csv",
+          "sha256": "2749d79bda3902b11bcebde69436345f735f29827e7990421ae1e46ea4b33085",
+          "bytes": 442017
+        }
+      ],
+      "status": "imported",
+      "ignored_columns": [
+        "T (s)",
+        "Fluorescence"
+      ],
+      "timing": {
+        "recorded_samples": 7956,
+        "device_span_s": 756.109,
+        "first_device_ms": 9,
+        "gaps_over_150ms": 18,
+        "largest_gap_ms": 331,
+        "requested_samples": 8010,
+        "requested_s": 755.5,
+        "missing_samples": 54,
+        "device_span_minus_requested_s": 0.609
+      },
+      "protocol_plan": {
+        "samples": 8010,
+        "nominal_s": 755.5,
+        "flashes": 14,
+        "segments": [
+          {
+            "start_s": 0.0,
+            "samples": 700,
+            "interval_s": 0.1,
+            "ambit_actinic": 0
+          }
+        ]
+      },
+      "rows": 7956,
+      "columns": [
+        {
+          "name": "seq",
+          "type": "int64",
+          "unit": "",
+          "description": "Row number within this capture"
+        },
+        {
+          "name": "t_host_utc",
+          "type": "timestamp_utc",
+          "unit": "",
+          "description": "When the engine received the row (host clock)"
+        }
+      ],
+      "clocks": [
+        {
+          "column": "t_device_ms",
+          "kind": "device_relative",
+          "seconds_per_unit": 0.001,
+          "description": "Ambit counter from run start; the CSV records no clock time"
+        }
+      ],
+      "aliases": {}
+    }
+  },
+  "analysis": {
+    "trial_params": {}
+  }
+}

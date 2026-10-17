@@ -13,6 +13,7 @@
 //! temporary name and renamed when complete. A crash loses at most the unflushed rows.
 
 mod events;
+mod manifest;
 mod segment;
 mod time;
 
@@ -25,6 +26,9 @@ use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 
 pub use events::{event_columns, event_row};
+pub use manifest::{
+    Capture, CaptureStatus, Host, Manifest, OnFailure, RunInfo, SessionKind, SessionStatus, Source,
+};
 pub use segment::{FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, segment_rows, segments};
 pub use time::{iso, iso_time, iso_time_opt, parse_iso, utc_now};
 

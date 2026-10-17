@@ -13,6 +13,8 @@ serde.workspace = true
 serde_json = { workspace = true, features = ["float_roundtrip"] }
 serde_norway = "0.9.42"
 sha2 = "0.11"
+gethostname = "1"
+indexmap = { version = "2", features = ["serde"] }
 arrow = { version = "58", default-features = false }
 parquet = { version = "58", default-features = false, features = ["arrow", "snap"] }
 
