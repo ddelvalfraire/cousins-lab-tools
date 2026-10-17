@@ -315,7 +315,7 @@ fn trials_of<'a>(
         .collect()
 }
 
-/// Template parameters in template order, as Python's `template.params()` lists them.
+/// Template parameters in template order.
 fn template_params(template: &Template) -> IndexMap<String, f64> {
     template.data()["parameters"]
         .as_object()

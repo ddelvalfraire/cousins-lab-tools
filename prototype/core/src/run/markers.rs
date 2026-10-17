@@ -20,7 +20,7 @@ pub struct Marker {
 }
 
 /// The session's `markers/` segments plus the markers recorded so far. Each marker is
-/// written as its own segment at once, as Python does, so a crash cannot lose one.
+/// written as its own segment at once, so a crash cannot lose one.
 pub(super) struct MarkerLog {
     writer: SegmentWriter,
     seq: i64,

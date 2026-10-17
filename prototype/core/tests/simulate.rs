@@ -14,7 +14,6 @@ use cousinslab::simulate::{
 };
 use cousinslab::spool::{EzViewSpool, SpoolSettings};
 
-/// `FRAMES` from the Python parity tests.
 fn parity_frames() -> Vec<ChannelValues> {
     vec![
         BTreeMap::from([(3, 0.8387536992994), (1, 0.0078532281596)]),

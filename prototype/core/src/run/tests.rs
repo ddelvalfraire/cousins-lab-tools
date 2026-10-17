@@ -24,8 +24,7 @@ fn profiles() -> Profiles {
     load_profiles(&Paths::default().instruments).unwrap()
 }
 
-/// The built-in template with `changes` merged into its roles, as `template_with` does in
-/// the Python tests.
+/// The built-in template with `changes` merged into its roles.
 fn template_with(data_dir: &Path, changes: Value) -> Template {
     let store = TemplateStore::new(Paths::default(), data_dir);
     let mut data = store.get(TEMPLATE, None).unwrap().data().clone();
@@ -40,8 +39,8 @@ fn template_with(data_dir: &Path, changes: Value) -> Template {
 
 static RUNS: RwLock<()> = RwLock::new(());
 
-/// Tests that assert a timing bound or a race-free order hold this alone, the way pytest runs
-/// every test on its own. Without it, the CPU spent by parallel runs is what they measure.
+/// Tests that assert a timing bound or a race-free order hold this alone. Without it, the CPU
+/// spent by parallel runs is what they measure.
 fn alone() -> RwLockWriteGuard<'static, ()> {
     RUNS.write().unwrap_or_else(PoisonError::into_inner)
 }
@@ -55,7 +54,7 @@ fn store(data_dir: &Path) -> Arc<SessionStore> {
     Arc::new(SessionStore::new(data_dir).unwrap())
 }
 
-/// Starts a group without the request checks, as the Python tests construct `GroupRun`.
+/// Starts a group without the request checks.
 fn launch(
     data_dir: &Path,
     template: Template,
@@ -97,8 +96,8 @@ fn start(data_dir: &Path, template: Template, clock: HostClock) -> GroupRun {
     run
 }
 
-/// UTC read off the monotonic clock from one starting point. On this WSL machine the wall
-/// clock steps about 0.5 s forward every 32 s while the run waits on the monotonic clock, so
+/// UTC read off the monotonic clock from one starting point. Under WSL2 the wall clock can
+/// step about 0.5 s forward every 32 s while the run waits on the monotonic clock, so
 /// a 1.5 s start delay that straddles a step would read as 0.5 s late.
 fn steady_clock() -> HostClock {
     let (base, at) = (utc_now(), Instant::now());
@@ -116,7 +115,7 @@ fn wait_until(timeout_s: f64, mut done: impl FnMut() -> bool) -> bool {
     false
 }
 
-/// Stops the run and waits for its final status, which Python's blocking `stop` returns with.
+/// Stops the run and waits for its final status.
 fn stop(run: &GroupRun, cancel: bool) -> Arc<Manifest> {
     run.stop(cancel).unwrap();
     assert!(
@@ -862,7 +861,7 @@ fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
     assert!(caught_up.rows.is_empty() && caught_up.events.is_empty());
 }
 
-/// The plan's rule: in 20 runs at 50x, every capture gets its start command within 0.2 s of
+/// In 20 runs at 50x, every capture gets its start command within 0.2 s of
 /// its requested start. The run records both off the system clock, as in production; the clock
 /// also notes the monotonic instant of each reading, so a wall clock step between the group
 /// start and a start command shows up as the difference between the recorded gap and the

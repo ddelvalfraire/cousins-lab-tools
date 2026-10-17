@@ -39,7 +39,7 @@ pub use adapter::{BuiltAdapter, SIMULATED_SPOOL, build_adapter};
 pub use live::{Cursors, LIVE_BUFFER_ROWS, LiveCaptureView, LiveEvent, LiveView};
 pub use markers::Marker;
 
-/// How long a stop waits for each capture to end before recording that it did not.
+/// Per-capture wait at stop; a capture still running after it is recorded as interrupted.
 pub const JOIN_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// What `run.note` tells a reader about times in a run that is not real time.
@@ -55,7 +55,7 @@ pub enum RunError {
     Invalid(String),
     /// A role names an instrument profile that is gone.
     UnknownInstrument(String),
-    /// Stop or mark on a session that is not running. The API answers 409.
+    /// Stop or mark on a session that is not running.
     NotRunning,
     Instrument(InstrumentError),
     Session(SessionError),
@@ -505,7 +505,6 @@ impl GroupRun {
         }
     }
 
-    /// Every marker recorded so far, in order.
     pub fn markers(&self) -> Vec<Marker> {
         match &self.0.started {
             Some(started) => started.markers.lock().unwrap().recorded.clone(),

@@ -166,7 +166,6 @@ impl Engine {
         &self.data_dir
     }
 
-    /// Runs one command by name with its JSON arguments.
     pub fn call(&self, command: &str, args: Value) -> Result<Value> {
         match command {
             "engine_info" => reply(json!({

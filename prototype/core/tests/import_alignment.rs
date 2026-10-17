@@ -74,8 +74,7 @@ impl Imported {
     }
 }
 
-/// One import shared by every test, as the Python module fixture is: reading the workbook is
-/// the slow part.
+/// One import shared by every test: reading the workbook is the slow part.
 fn imported() -> &'static Imported {
     static IMPORTED: OnceLock<Imported> = OnceLock::new();
     IMPORTED.get_or_init(|| {

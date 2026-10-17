@@ -3,8 +3,7 @@
 //! Facts from `Python script to control Ambit system.ipynb`: the host sends `G` for each
 //! sample and the device answers `T:<ms>,S:..,R:..,F:..,B:..`. The host appends the light
 //! state it last commanded (ACT, Blue, Red). T is the device's millisecond counter; the CSV
-//! carries no clock time because START_TIME stayed in `data.attrs`. Serial control is not
-//! implemented here: running commands against the instrument needs explicit authorization.
+//! carries no clock time because START_TIME stayed in `data.attrs`.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};

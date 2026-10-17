@@ -68,7 +68,6 @@ pub(super) enum Outcome {
     Failed(String),
 }
 
-/// What the owner keeps of a capture thread after starting it.
 pub(super) struct CaptureControl {
     pub stop: StopSignal,
     pub thread: Option<JoinHandle<()>>,

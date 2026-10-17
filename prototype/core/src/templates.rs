@@ -356,8 +356,7 @@ fn repr_of(value: Option<&Value>) -> String {
     value.map_or_else(|| "None".into(), repr)
 }
 
-/// Checks the document's shape where the Python engine would have crashed; there is no
-/// point reporting finer reasons until these hold.
+/// Shape checks; finer reasons are reported only once these hold.
 fn shape_errors(data: &Value) -> Vec<String> {
     let mut errors = Vec::new();
     for key in ["id", "revision", "name", "roles"] {
@@ -815,10 +814,8 @@ impl TemplateStore {
                 message: e.to_string(),
             };
             let text = serde_norway::to_string(template.data()).map_err(|e| file_error(&e))?;
-            // Linking a finished file into place never leaves half a revision behind and fails
-            // rather than overwrite one that exists. Each attempt has its own partial file, so a
-            // concurrent save cannot remove it, and a save that loses the race for a number
-            // takes the next one.
+            // hard_link never exposes a partial file and fails if the revision exists; per-attempt
+            // partial names keep concurrent saves from deleting each other's.
             let attempt = SAVE_ATTEMPTS.fetch_add(1, Ordering::Relaxed);
             let partial = self.dir.join(id).join(format!(
                 ".rev-{next}.{}-{attempt}.partial",

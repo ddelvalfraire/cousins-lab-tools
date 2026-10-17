@@ -2,8 +2,7 @@
 //!
 //! Sheet `RawDataAcquisition67Data` holds `Time, Mass 32, Mass 44, Mass 45` every 0.5 s.
 //! Time is seconds from the start of that acquisition; the sheet records no clock time.
-//! Which program produced the 0.5 s series is unknown. Formula cells are read through the
-//! values Excel cached when the file was saved.
+//! Formula cells are read through the values Excel cached when the file was saved.
 
 use std::path::Path;
 

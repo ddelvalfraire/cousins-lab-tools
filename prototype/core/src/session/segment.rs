@@ -431,8 +431,8 @@ mod tests {
             .collect()
     }
 
-    /// Run with `cargo test --release -- --ignored --nocapture`; the pyarrow baseline is the
-    /// same 2000 rows through the Python SegmentWriter.
+    /// Run with `cargo test --release -- --ignored --nocapture`. pyarrow 26 took a median of 26
+    /// to 64 ms for the same 2000 rows on the machine the port was measured on.
     #[test]
     #[ignore]
     fn time_to_append_and_flush_2000_spool_rows() {

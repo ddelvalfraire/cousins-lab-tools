@@ -1,7 +1,7 @@
 //! `session.json`: what a session recorded, how, and how far it got.
 //!
-//! Keys and their order follow what the Python engine writes, so manifests from either engine
-//! diff cleanly. Python's `analysis.trial_params` is dropped: nothing ever filled it in, and
+//! Keys and their order follow what the Python engine writes, so manifests the Python engine
+//! wrote still load and diff cleanly. Python's `analysis.trial_params` is dropped: nothing ever filled it in, and
 //! trial parameters live in alignment records.
 
 use chrono::{DateTime, Utc};
@@ -176,8 +176,8 @@ fn some_time<M: SerializeMap>(
     some(map, key, &value.as_ref().map(Iso))
 }
 
-/// Python builds a live capture in `GroupRun.prepare` and adds times as the run goes, while an
-/// import adds rows and columns last, so the two kinds order their keys differently.
+/// Python-written manifests order live and imported capture keys differently: live captures
+/// add times as the run goes, imports add rows and columns last.
 impl Serialize for Capture {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         let mut map = s.serialize_map(None)?;

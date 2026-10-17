@@ -23,7 +23,6 @@ use crate::session::{
 };
 use crate::templates::Template;
 
-/// One file to import, for a role of the template.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ImportFile {
     pub role: String,
