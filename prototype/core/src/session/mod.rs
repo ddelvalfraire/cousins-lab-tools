@@ -12,6 +12,7 @@
 //! A Parquet file is unreadable until its footer is written, so each segment is written to a
 //! temporary name and renamed when complete. A crash loses at most the unflushed rows.
 
+mod events;
 mod segment;
 mod time;
 
@@ -23,6 +24,7 @@ use std::path::Path;
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 
+pub use events::{event_columns, event_row};
 pub use segment::{FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, segment_rows, segments};
 pub use time::{iso, iso_time, iso_time_opt, parse_iso, utc_now};
 
