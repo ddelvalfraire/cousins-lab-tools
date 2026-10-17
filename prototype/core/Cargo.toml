@@ -6,6 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+calamine = "0.36.1"
 chrono.workspace = true
 csv = "1.4.0"
 serde.workspace = true
