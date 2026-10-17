@@ -1,3 +1,4 @@
+pub mod alignment;
 pub mod ambit;
 pub mod contract;
 pub mod expr;
