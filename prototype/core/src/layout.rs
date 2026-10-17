@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 
 use serde_json::{Map, Value, json};
 
-use crate::repr::{display, list_repr, repr};
+use crate::pycompat::{display, list_repr, repr};
 use crate::templates::{array, object, truthy};
 
 pub const GRID_COLUMNS: i64 = 12;

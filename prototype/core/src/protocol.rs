@@ -8,6 +8,8 @@
 use serde::Serialize;
 use serde_json::{Map, Value};
 
+use crate::pycompat::round;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Led {
     Red,
@@ -101,7 +103,7 @@ pub fn plan(protocol: &Value) -> Result<ProtocolPlan, String> {
                 actinic,
             } => {
                 segments.push(Segment {
-                    start_s: round6(t),
+                    start_s: round(t, 6),
                     samples: n,
                     interval_s,
                     ambit_actinic: actinic,
@@ -119,14 +121,10 @@ pub fn plan(protocol: &Value) -> Result<ProtocolPlan, String> {
     }
     Ok(ProtocolPlan {
         samples,
-        nominal_s: round6(t),
+        nominal_s: round(t, 6),
         flashes,
         segments,
     })
-}
-
-fn round6(x: f64) -> f64 {
-    (x * 1e6).round() / 1e6
 }
 
 fn parse_step(step: &Value, vars: &Map<String, Value>) -> Result<Step, String> {

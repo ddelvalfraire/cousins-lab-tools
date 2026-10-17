@@ -15,7 +15,7 @@ use serde_json::{Map, Value};
 use crate::expr::{self, Expression, Params};
 use crate::layout::{self, Kind};
 use crate::protocol::{self, ProtocolPlan};
-use crate::repr::{list_repr, repr};
+use crate::pycompat::{list_repr, repr};
 use crate::schemas;
 
 const ON_FAILURE: [&str; 2] = ["continue_others", "stop_group"];
@@ -762,7 +762,7 @@ impl TemplateStore {
         {
             return Err(invalid(format!(
                 "Template ids may use only letters, digits, '_' and '-', not {}",
-                crate::repr::str_repr(id)
+                crate::pycompat::str_repr(id)
             )));
         }
         let next = self.revisions(id)?.last().map_or(1, |last| last + 1);

@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use crate::repr::{float_repr, str_repr};
+use crate::pycompat::{float_repr, str_repr};
 
 /// Template parameters by name. A name found here is a parameter, never a column.
 pub type Params = BTreeMap<String, f64>;
