@@ -11,11 +11,19 @@
 //! - Values are stored at full precision with the raw counts. The legacy CSV rounded to three
 //!   decimals; [`legacy_frame_csv`] reproduces that rounding.
 
-use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
+use std::time::Duration;
 
-use crate::contract::{Cell, InstrumentError, Row};
-use crate::pycompat::{float_repr, is_space, round, str_repr, strip};
-use crate::schemas::{CHANNEL_RANGES, FULL_SCALE_COUNTS};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, SubsecRound, Utc};
+
+use crate::contract::{
+    Cell, InputKind, Instrument, InstrumentError, InstrumentInfo, Readiness, Row, Sink, StopSignal,
+};
+use crate::pycompat::{float_repr, is_space, os_error, round, str_repr, strip};
+use crate::schemas::{CHANNEL_RANGES, FULL_SCALE_COUNTS, spool_clocks, spool_columns};
 
 pub const TERMINATOR: &str = "ffffffff";
 pub const TIMESTAMP_FORMAT: &str = "%m/%d/%y %H:%M:%S.%f";
@@ -287,6 +295,104 @@ pub fn legacy_frame_csv(frame: &SpoolFrame, t_legacy_ms: i64) -> String {
         float_repr(round(value, 3))
     }));
     cells.join(",") + "\n"
+}
+
+pub const DEFAULT_MODEL: &str = "Mass spectrometer via EZ-Tap and EZView";
+pub const DEFAULT_POLL_INTERVAL: Duration = Duration::from_millis(100);
+const NO_SPOOL: &str =
+    "No spool file configured. Set settings.spool_path in the instrument profile.";
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SpoolSettings {
+    pub model: String,
+    pub aliases: BTreeMap<String, String>,
+    pub poll_interval: Duration,
+    pub spool_path: Option<PathBuf>,
+    pub input_kind: InputKind,
+}
+
+/// Tails an EZView spool file. Reads from the beginning, as the legacy reader did.
+pub struct EzViewSpool {
+    settings: SpoolSettings,
+}
+
+impl EzViewSpool {
+    pub fn new(settings: SpoolSettings) -> Self {
+        EzViewSpool { settings }
+    }
+}
+
+impl Instrument for EzViewSpool {
+    fn describe(&self) -> InstrumentInfo {
+        InstrumentInfo {
+            adapter: "ezview_spool".into(),
+            model: self.settings.model.clone(),
+            input_kind: self.settings.input_kind,
+            capabilities: BTreeSet::from(["acquire".to_string()]),
+            columns: spool_columns(),
+            clocks: spool_clocks(),
+            aliases: self.settings.aliases.clone(),
+        }
+    }
+
+    fn check_ready(&self) -> Readiness {
+        let (ok, detail) = match &self.settings.spool_path {
+            None => (false, NO_SPOOL.to_string()),
+            Some(path) if !path.exists() => (
+                false,
+                format!(
+                    "Spool file not found: {}. Is EZView spooling?",
+                    path.display()
+                ),
+            ),
+            Some(path) => (
+                true,
+                format!(
+                    "Spool file present: {}",
+                    path.file_name().unwrap_or_default().to_string_lossy()
+                ),
+            ),
+        };
+        Readiness { ok, detail }
+    }
+
+    /// Every frame decoded in one poll shares one receipt time, as in the Python engine.
+    fn run(&mut self, sink: &mut dyn Sink, stop: &StopSignal) -> Result<(), InstrumentError> {
+        let Some(path) = &self.settings.spool_path else {
+            return Err(InstrumentError::new("AssertionError", NO_SPOOL));
+        };
+        let run_start_local = Local::now().naive_local().trunc_subsecs(6);
+        let mut spool = File::open(path).map_err(|e| os_error(&e, path))?;
+        let (mut framer, mut seq) = (SpoolFramer::default(), 0);
+        let (mut chunk, mut pending) = (Vec::new(), String::new());
+        while !stop.is_set() {
+            chunk.clear();
+            spool
+                .read_to_end(&mut chunk)
+                .map_err(|e| os_error(&e, path))?;
+            if chunk.is_empty() {
+                stop.wait(self.settings.poll_interval);
+                continue;
+            }
+            let received = Utc::now().trunc_subsecs(6);
+            pending.push_str(decode_ascii(&chunk)?);
+            let complete = pending.rfind('\n').map_or(0, |end| end + 1);
+            let mut rows = Vec::new();
+            for line in pending[..complete].split_inclusive('\n') {
+                if let Some(frame) = framer.feed(line)? {
+                    rows.push(frame_row(&frame, seq, received, run_start_local));
+                    seq += 1;
+                }
+            }
+            pending.drain(..complete);
+            if !rows.is_empty() {
+                sink.rows(rows);
+            }
+        }
+        Ok(())
+    }
+
+    fn cancel(&self) {}
 }
 
 #[cfg(test)]

@@ -3,6 +3,11 @@
 //! Legacy frame CSVs hold `repr(round(x, 3))`, readiness lines use `{speed:g}`, and error
 //! messages quote values with `repr`. These reproduce those outputs exactly.
 
+use std::io;
+use std::path::Path;
+
+use crate::contract::InstrumentError;
+
 /// `round(x, digits)`: rounds the exact binary value to the nearest decimal, ties to even.
 pub fn round(x: f64, digits: usize) -> f64 {
     if !x.is_finite() {
@@ -97,6 +102,29 @@ pub fn is_space(c: char) -> bool {
         c,
         ' ' | '\t' | '\n' | '\r' | '\x0b' | '\x0c' | '\x1c'..='\x1f'
     )
+}
+
+/// The `OSError` Python raises when opening or reading `path` fails, such as
+/// `FileNotFoundError: [Errno 2] No such file or directory: '/data/spool.txt'`.
+pub fn os_error(error: &io::Error, path: &Path) -> InstrumentError {
+    let kind = match error.kind() {
+        io::ErrorKind::NotFound => "FileNotFoundError",
+        io::ErrorKind::PermissionDenied => "PermissionError",
+        io::ErrorKind::IsADirectory => "IsADirectoryError",
+        _ => "OSError",
+    };
+    let message = match error.raw_os_error() {
+        Some(code) => {
+            let text = error.to_string();
+            let strerror = text
+                .strip_suffix(&format!(" (os error {code})"))
+                .unwrap_or(&text);
+            let path = str_repr(&path.to_string_lossy());
+            format!("[Errno {code}] {strerror}: {path}")
+        }
+        None => error.to_string(),
+    };
+    InstrumentError::new(kind, message)
 }
 
 fn non_finite(x: f64) -> Option<&'static str> {
@@ -217,6 +245,16 @@ mod tests {
         assert_eq!(str_repr("t\tq\\"), r"'t\tq\\'");
         assert_eq!(str_repr("both'\""), r#"'both\'"'"#);
         assert_eq!(str_repr("\x01é"), r"'\x01é'");
+    }
+
+    #[test]
+    fn missing_files_read_as_python_file_not_found_errors() {
+        let path = Path::new("/nonexistent/spool.txt");
+        let error = std::fs::File::open(path).unwrap_err();
+        assert_eq!(
+            os_error(&error, path).to_string(),
+            "FileNotFoundError: [Errno 2] No such file or directory: '/nonexistent/spool.txt'"
+        );
     }
 
     #[test]
