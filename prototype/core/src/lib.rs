@@ -1,6 +1,7 @@
 pub mod ambit;
 pub mod contract;
 pub mod expr;
+pub mod importing;
 pub mod layout;
 pub mod ms_workbook;
 pub mod protocol;
