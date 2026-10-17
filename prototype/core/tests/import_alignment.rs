@@ -5,15 +5,21 @@
 //! mzero 0.303 and 0.302. Entering those as explicit event times and trial parameters must
 //! reproduce both sheets, while the stored data keeps its original times.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
+use cousinslab::alignment::{
+    Alignment, Inputs, Member, Unaligned, aligned_sql, list_alignments, load_alignment, propose,
+    save_alignment,
+};
 use cousinslab::importing::{ImportError, ImportFile, import_session};
+use cousinslab::ms_workbook::read_sample_sheet;
 use cousinslab::query::{SessionDb, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
 use cousinslab::templates::{Paths, Template, TemplateStore};
-use serde_json::Value;
+use serde_json::{Value, json};
 
 const TEMPLATE: &str = "jii-leaf-co2-fluorescence";
 
@@ -234,5 +240,234 @@ fn imported_events_keep_their_native_time_and_have_no_run_clock() {
         events.len(),
         252,
         "every light change and flash, as Python lists them"
+    );
+}
+
+fn inputs(reference: &str, entered: bool) -> Inputs {
+    let mut inputs = json!({"reference": reference, "manual": {}, "trial_params": {}});
+    if entered {
+        inputs["manual"] = json!({
+            "light-150-pl1": {"ms-workbook": {"clock": "t_elapsed_s", "zero": 3701.772, "method": "Workbook 150-pl1 zero (row 7405)"}},
+            "light-150-pl2": {"ms-workbook": {"clock": "t_elapsed_s", "zero": 4840.772, "method": "Workbook 150-pl2 zero (row 9683)"}},
+        });
+        inputs["trial_params"] = json!({"light-150-pl2": {"co2_zero_mv": 0.302}});
+    }
+    serde_json::from_value(inputs).unwrap()
+}
+
+fn proposal(reference: &str, entered: bool) -> Alignment {
+    let imported = imported();
+    propose(
+        &imported.session_dir(),
+        &imported.manifest,
+        inputs(reference, entered),
+    )
+    .unwrap()
+}
+
+fn aligned_db(alignment: &Alignment) -> SessionDb {
+    let imported = imported();
+    let mut db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
+    db.create_view(
+        "aligned",
+        &aligned_sql(&imported.manifest, alignment).unwrap(),
+    )
+    .unwrap();
+    db
+}
+
+/// `pytest.approx(expected, rel, abs)`.
+fn approx(got: f64, expected: f64, rel: f64, abs: f64) -> bool {
+    (got - expected).abs() <= (rel * expected.abs()).max(abs)
+}
+
+/// Sheet times are exact half seconds; `+ 0.0` turns -0.0 into the key 0.0 has.
+fn half_second_key(x: f64) -> u64 {
+    ((x * 2.0).round_ties_even() / 2.0 + 0.0).to_bits()
+}
+
+#[test]
+fn event_alignment_reproduces_both_workbook_sheets() {
+    let imported = imported();
+    let alignment = save_alignment(&imported.session_dir(), proposal("event", true)).unwrap();
+    assert_eq!(alignment.unaligned, []);
+    let db = aligned_db(&alignment);
+    for (trial, sheet) in [("light-150-pl1", "150-pl1"), ("light-150-pl2", "150-pl2")] {
+        let expected: HashMap<u64, f64> = read_sample_sheet(&workbook(), sheet)
+            .unwrap()
+            .into_iter()
+            .map(|(x, ubar)| (half_second_key(x), ubar))
+            .collect();
+        let got: Vec<(f64, f64)> = db
+            .connection()
+            .prepare(
+                "SELECT x_s, ubar_co2 FROM aligned WHERE trial = ? AND role = 'ms' ORDER BY x_s",
+            )
+            .unwrap()
+            .query_map([trial], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert!(
+            approx(got[0].0, -320.0, 0.0, 1e-9),
+            "{trial} starts at {}",
+            got[0].0
+        );
+        assert!(approx(got[got.len() - 1].0, 438.5, 0.0, 1e-9), "{trial}");
+        assert_eq!(got.len(), 1518, "{trial}");
+        for (x, ubar) in got {
+            let want = expected[&half_second_key(x)];
+            assert!(
+                approx(ubar, want, 1e-12, 1e-9),
+                "{trial} x={x}: {ubar} vs {want}"
+            );
+        }
+    }
+}
+
+#[test]
+fn ambit_zero_is_the_detected_fourth_flash_on_the_device_clock() {
+    let alignment = proposal("event", true);
+    let light: HashMap<&str, &Member> = alignment
+        .trials
+        .iter()
+        .flat_map(|t| &t.members)
+        .filter(|m| m.role == "light")
+        .map(|m| (m.capture.as_str(), m))
+        .collect();
+    assert!(approx(light["light-150-pl1"].zero, 312.231, 1e-6, 1e-12));
+    assert!(approx(light["light-150-pl2"].zero, 304.387, 1e-6, 1e-12));
+    assert_eq!(light["light-150-pl1"].clock.column, "t_device_ms");
+    assert!(light["light-150-pl1"].method.contains("Saturation flash 4"));
+    assert!(approx(
+        light["light-150-pl1"].uncertainty_s.unwrap(),
+        0.1,
+        0.0,
+        0.002
+    ));
+}
+
+#[test]
+fn without_entered_event_times_the_mass_spec_is_left_unaligned() {
+    let alignment = proposal("event", false);
+    let reasons: HashMap<(&str, &str), &Unaligned> = alignment
+        .unaligned
+        .iter()
+        .map(|u| ((u.trial.as_str(), u.capture.as_str()), u))
+        .collect();
+    let mut keys: Vec<_> = reasons.keys().copied().collect();
+    keys.sort();
+    assert_eq!(
+        keys,
+        [
+            ("light-150-pl1", "ms-workbook"),
+            ("light-150-pl2", "ms-workbook")
+        ]
+    );
+    assert!(reasons.values().all(|u| u.needs_event_time));
+    assert!(
+        alignment
+            .trials
+            .iter()
+            .flat_map(|t| &t.members)
+            .all(|m| m.role == "light")
+    );
+}
+
+#[test]
+fn clock_alignment_is_refused_when_no_clock_time_was_recorded() {
+    let alignment = proposal("clock", false);
+    assert_eq!(alignment.trials[0].members, []);
+    assert_eq!(alignment.unaligned.len(), 3);
+    assert!(
+        alignment
+            .unaligned
+            .iter()
+            .all(|u| u.reason.contains("Records no clock time"))
+    );
+}
+
+#[test]
+fn elapsed_alignment_uses_each_instruments_own_start() {
+    let alignment = proposal("elapsed", false);
+    let zeros: HashMap<&str, (f64, &str)> = alignment
+        .trials
+        .iter()
+        .flat_map(|t| &t.members)
+        .map(|m| (m.capture.as_str(), (m.zero, m.clock.column.as_str())))
+        .collect();
+    assert_eq!(zeros["ms-workbook"], (0.0, "t_elapsed_s"));
+    assert_eq!(zeros["light-150-pl1"], (0.0, "t_device_ms"));
+}
+
+#[test]
+fn a_saved_alignment_loads_back_into_the_same_aligned_view() {
+    let imported = imported();
+    let saved = save_alignment(&imported.session_dir(), proposal("event", true)).unwrap();
+    let loaded = load_alignment(&imported.session_dir(), saved.id.as_deref().unwrap()).unwrap();
+    assert_eq!(loaded, saved);
+    let n: i64 = aligned_db(&loaded)
+        .connection()
+        .query_row("SELECT count(*) FROM aligned WHERE role = 'ms'", [], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    assert_eq!(n, 2 * 1518);
+    assert!(
+        list_alignments(&imported.session_dir())
+            .unwrap()
+            .contains(&saved)
+    );
+}
+
+/// Python's proposals with integers written as floats: the window [-320, 438.5] is the only
+/// place the two engines write a number differently.
+fn as_floats(value: Value) -> Value {
+    match value {
+        Value::Number(n) => n.as_f64().map_or(Value::Number(n), Value::from),
+        Value::Array(items) => Value::Array(items.into_iter().map(as_floats).collect()),
+        Value::Object(map) => {
+            Value::Object(map.into_iter().map(|(k, v)| (k, as_floats(v))).collect())
+        }
+        other => other,
+    }
+}
+
+#[test]
+fn proposals_match_the_python_engine_key_for_key() {
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/python-proposals.json");
+    let python: Value = serde_json::from_str(&fs::read_to_string(fixture).unwrap()).unwrap();
+    for (name, reference, entered) in [
+        ("event", "event", true),
+        ("event_without_entered_times", "event", false),
+        ("clock", "clock", false),
+        ("elapsed", "elapsed", false),
+    ] {
+        let ours = as_floats(serde_json::to_value(proposal(reference, entered)).unwrap());
+        let theirs = as_floats(python[name].clone());
+        assert_eq!(
+            serde_json::to_string(&ours).unwrap(),
+            serde_json::to_string(&theirs).unwrap(),
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn aligned_sql_is_pythons_with_the_uncertainty_cast_to_double() {
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/python-aligned.sql");
+    let python = fs::read_to_string(fixture).unwrap();
+    let alignment = Alignment {
+        id: Some("aln-20261017-044254-event".into()),
+        ..proposal("event", true)
+    };
+    let expected = python
+        .trim_end()
+        .replace(" 0.5 AS x_uncertainty_s", " 0.5::DOUBLE AS x_uncertainty_s")
+        .replace(" 0.1 AS x_uncertainty_s", " 0.1::DOUBLE AS x_uncertainty_s");
+    assert_eq!(
+        aligned_sql(&imported().manifest, &alignment).unwrap(),
+        expected
     );
 }
