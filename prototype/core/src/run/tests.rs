@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Mutex, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread;
 
 use arrow::array::AsArray;
@@ -860,4 +860,75 @@ fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
     );
     let caught_up = buffer.view(total + 7, 9, CaptureStatus::Running);
     assert!(caught_up.rows.is_empty() && caught_up.events.is_empty());
+}
+
+/// The plan's rule: in 20 runs at 50x, every capture gets its start command within 0.2 s of
+/// its requested start. The run records both off the system clock, as in production; the clock
+/// also notes the monotonic instant of each reading, so a wall clock step between the group
+/// start and a start command shows up as the difference between the recorded gap and the
+/// monotonic one. Run with
+/// `cargo test --release --lib start_gap -- --ignored --nocapture`.
+#[test]
+#[ignore = "timing probe of 20 runs; run in release mode"]
+fn start_gap_stays_under_a_fifth_of_a_second_over_twenty_runs_at_50x() {
+    let _alone = alone();
+    let data = tempfile::tempdir().unwrap();
+    let template = template_with(data.path(), json!({}));
+    let readings = Arc::new(Mutex::new(Vec::<(DateTime<Utc>, Instant)>::new()));
+    let log = Arc::clone(&readings);
+    let clock: HostClock = Arc::new(move || {
+        let now = utc_now();
+        log.lock().unwrap().push((now, Instant::now()));
+        now
+    });
+    let instant_of = |t: DateTime<Utc>| {
+        let readings = readings.lock().unwrap();
+        readings.iter().find(|(wall, _)| *wall == t).unwrap().1
+    };
+    let mut recorded: BTreeMap<String, Vec<f64>> = BTreeMap::new();
+    let mut late: BTreeMap<String, Vec<f64>> = BTreeMap::new();
+    for _ in 0..20 {
+        let run = start(data.path(), template.clone(), Arc::clone(&clock));
+        assert!(wait_until(20.0, || {
+            let m = run.manifest();
+            m.captures.values().all(|c| c.start_command_utc.is_some())
+        }));
+        let manifest = stop(&run, false);
+        let t0 = manifest.run.as_ref().unwrap().group_start_utc.unwrap();
+        for c in manifest.captures.values() {
+            let commanded = c.start_command_utc.unwrap();
+            let gap = seconds(c.requested_start_utc.unwrap(), commanded);
+            let waited = instant_of(commanded) - instant_of(t0);
+            let lateness = waited.as_secs_f64() - seconds(t0, c.requested_start_utc.unwrap());
+            recorded.entry(c.role.clone()).or_default().push(gap);
+            late.entry(c.role.clone()).or_default().push(lateness);
+        }
+    }
+    let summary = |values: &[f64]| {
+        let mut sorted = values.to_vec();
+        sorted.sort_by(f64::total_cmp);
+        let n = sorted.len();
+        format!(
+            "n {n}, min {:.6}, median {:.6}, max {:.6}",
+            sorted[0],
+            sorted[n / 2],
+            sorted[n - 1]
+        )
+    };
+    for role in recorded.keys() {
+        println!("{role}: recorded gap s, {}", summary(&recorded[role]));
+        println!("{role}: monotonic lateness s, {}", summary(&late[role]));
+        let steps: Vec<f64> = recorded[role]
+            .iter()
+            .zip(&late[role])
+            .map(|(gap, lateness)| gap - lateness)
+            .filter(|step| step.abs() > 0.01)
+            .collect();
+        println!("{role}: wall clock steps inside the wait, s: {steps:?}");
+        assert!(
+            late[role].iter().all(|l| (0.0..0.2).contains(l)),
+            "{role}: {:?}",
+            late[role]
+        );
+    }
 }
