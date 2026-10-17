@@ -615,6 +615,40 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     })
 }
 
+/// The template a session recorded, which passed [`validate`] when the session was created.
+/// Profiles are not consulted again because they may have changed since; only the derived
+/// expressions and protocol plans are rebuilt from the snapshot.
+pub fn from_snapshot(data: Value) -> Result<Template, TemplateError> {
+    let protocols = object(&data, "protocols");
+    let mut plans = BTreeMap::new();
+    for (name, role) in object(&data, "roles") {
+        let Some(wanted) = role.get("protocol").and_then(Value::as_str) else {
+            continue;
+        };
+        let protocol = protocols
+            .get(wanted)
+            .ok_or_else(|| TemplateError(format!("Role {name}: unknown protocol {wanted:?}")))?;
+        let plan = protocol::plan(protocol)
+            .map_err(|e| TemplateError(format!("Role {name}: protocol {wanted:?}: {e}")))?;
+        plans.insert(name.clone(), plan);
+    }
+    let mut derived = Vec::new();
+    for (key, d) in object(&data, "derived") {
+        let text = d.get("expr").and_then(Value::as_str).unwrap_or_default();
+        let expr = expr::parse(text).map_err(|e| TemplateError(format!("Derived {key}: {e}")))?;
+        derived.push(DerivedValue {
+            name: key.clone(),
+            role: d["role"].as_str().unwrap_or_default().into(),
+            expr,
+        });
+    }
+    Ok(Template {
+        data,
+        derived,
+        plans,
+    })
+}
+
 #[derive(Debug)]
 pub enum StoreError {
     NotFound(String),

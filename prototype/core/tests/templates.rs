@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use cousinslab::templates::{Paths, load_profiles, read_yaml, validate};
+use cousinslab::templates::{Paths, from_snapshot, load_profiles, read_yaml, validate};
 use serde_json::{Value, json};
 
 const TEMPLATE: &str = "jii-leaf-co2-fluorescence";
@@ -236,4 +236,32 @@ fn shapes_the_python_engine_crashed_on_are_rejected_with_a_reason() {
         *data.pointer_mut(pointer).unwrap() = value;
         assert_eq!(rejection(data), message, "{pointer}");
     }
+}
+
+#[test]
+fn a_session_snapshot_rebuilds_the_validated_template_without_profiles() {
+    let profiles = load_profiles(&Paths::default().instruments).unwrap();
+    let validated = validate(builtin(), &profiles).unwrap();
+    assert_eq!(from_snapshot(builtin()).unwrap(), validated);
+
+    let mut retired = builtin();
+    retired["roles"]["ms"]["instrument"] = json!("a-profile-deleted-since");
+    assert!(validate(retired.clone(), &profiles).is_err());
+    let snapshot = from_snapshot(retired).unwrap();
+    assert_eq!(snapshot.derived(), validated.derived());
+    assert_eq!(
+        snapshot.protocol_plan("light"),
+        validated.protocol_plan("light")
+    );
+}
+
+#[test]
+fn a_snapshot_with_an_unparseable_expression_is_rejected() {
+    let mut data = builtin();
+    data["derived"]["ubar_co2"]["expr"] = json!("m44 ** 2");
+    let error = from_snapshot(data).unwrap_err().0;
+    assert!(
+        error.starts_with("Derived ubar_co2: Unsupported syntax"),
+        "{error}"
+    );
 }
