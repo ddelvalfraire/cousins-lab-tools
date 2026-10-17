@@ -9,6 +9,7 @@ use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde_json::{Map, Value};
 
@@ -22,6 +23,7 @@ const ON_FAILURE: [&str; 2] = ["continue_others", "stop_group"];
 const REFERENCES: [&str; 3] = ["clock", "elapsed", "event"];
 const IMPORTERS: [&str; 2] = ["ambit_csv", "ms_workbook"];
 const DEFAULT_FLASH_RED_LEVEL: i64 = 2500;
+static SAVE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 static EMPTY: LazyLock<Map<String, Value>> = LazyLock::new(Map::new);
 
 /// Where built-in templates, instrument profiles and the repository root live.
@@ -799,24 +801,39 @@ impl TemplateStore {
                 crate::pycompat::str_repr(id)
             )));
         }
-        let next = self.revisions(id)?.last().map_or(1, |last| last + 1);
-        fields.insert("revision".into(), Value::from(next));
-        let template = validate(data, &self.profiles()?).map_err(StoreError::Invalid)?;
-        let target = self.dir.join(id).join(format!("rev-{next}.yaml"));
-        let file_error = |e: &dyn fmt::Display| FileError {
-            path: target.clone(),
+        let profiles = self.profiles()?;
+        fs::create_dir_all(self.dir.join(id)).map_err(|e| FileError {
+            path: self.dir.join(id),
             message: e.to_string(),
-        };
-        let text = serde_norway::to_string(template.data()).map_err(|e| file_error(&e))?;
-        fs::create_dir_all(self.dir.join(id)).map_err(|e| file_error(&e))?;
-        // Linking a finished file into place never leaves half a revision behind, and
-        // fails rather than overwrite one that already exists.
-        let partial = self.dir.join(id).join(format!(".rev-{next}.yaml.partial"));
-        fs::write(&partial, text).map_err(|e| file_error(&e))?;
-        let linked = fs::hard_link(&partial, &target);
-        let _ = fs::remove_file(&partial);
-        linked.map_err(|e| file_error(&e))?;
-        Ok(template)
+        })?;
+        loop {
+            let next = self.revisions(id)?.last().map_or(1, |last| last + 1);
+            data["revision"] = Value::from(next);
+            let template = validate(data.clone(), &profiles).map_err(StoreError::Invalid)?;
+            let target = self.dir.join(id).join(format!("rev-{next}.yaml"));
+            let file_error = |e: &dyn fmt::Display| FileError {
+                path: target.clone(),
+                message: e.to_string(),
+            };
+            let text = serde_norway::to_string(template.data()).map_err(|e| file_error(&e))?;
+            // Linking a finished file into place never leaves half a revision behind and fails
+            // rather than overwrite one that exists. Each attempt has its own partial file, so a
+            // concurrent save cannot remove it, and a save that loses the race for a number
+            // takes the next one.
+            let attempt = SAVE_ATTEMPTS.fetch_add(1, Ordering::Relaxed);
+            let partial = self.dir.join(id).join(format!(
+                ".rev-{next}.{}-{attempt}.partial",
+                std::process::id()
+            ));
+            fs::write(&partial, text).map_err(|e| file_error(&e))?;
+            let linked = fs::hard_link(&partial, &target);
+            let _ = fs::remove_file(&partial);
+            match linked {
+                Ok(()) => return Ok(template),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+                Err(e) => return Err(file_error(&e).into()),
+            }
+        }
     }
 
     /// As `save_revision`, from the YAML text the editor shows. Text that is not YAML is a

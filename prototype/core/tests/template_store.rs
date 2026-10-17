@@ -212,3 +212,41 @@ fn listing_gives_the_latest_revision_of_each_template() {
         .collect();
     assert_eq!(listed, [(TEMPLATE.to_string(), 2)]);
 }
+
+#[test]
+fn concurrent_edits_each_become_their_own_revision() {
+    let (store, data_dir) = store();
+    let base = latest(&store);
+    let start = std::sync::Barrier::new(8);
+    let mut revisions: Vec<i64> = std::thread::scope(|scope| {
+        let saves: Vec<_> = (0..8)
+            .map(|n| {
+                let (store, base, start) = (&store, &base, &start);
+                scope.spawn(move || {
+                    let mut data = base.clone();
+                    data["name"] = json!(format!("Edit {n}"));
+                    start.wait();
+                    store.save_revision(TEMPLATE, data).unwrap().revision()
+                })
+            })
+            .collect();
+        saves.into_iter().map(|s| s.join().unwrap()).collect()
+    });
+    revisions.sort();
+    assert_eq!(revisions, (2..=9).collect::<Vec<_>>());
+    let names: std::collections::BTreeSet<String> = (2..=9)
+        .map(|r| {
+            store.get(TEMPLATE, Some(r)).unwrap().data()["name"]
+                .as_str()
+                .unwrap()
+                .into()
+        })
+        .collect();
+    assert_eq!(names.len(), 8, "every edit is stored once");
+    let folder = data_dir.path().join("templates").join(TEMPLATE);
+    assert_eq!(
+        std::fs::read_dir(folder).unwrap().count(),
+        8,
+        "no partial files are left"
+    );
+}
