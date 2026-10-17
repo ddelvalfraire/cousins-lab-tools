@@ -9,6 +9,20 @@ export async function api(path, { method = "GET", body } = {}) {
   return data;
 }
 
+async function invoke(command, args) {
+  const tauri = globalThis.window?.__TAURI__;
+  if (!tauri) throw new Error("The engine is not connected. Open this page in the Cousins Lab app.");
+  try {
+    return await tauri.core.invoke(command, args);
+  } catch (e) {
+    throw new Error(e?.message ?? String(e));
+  }
+}
+
+/** Runs one command of the engine's command table; a rejection `{kind, message}` becomes `Error(message)`. */
+export const call = (command, args = {}) => invoke("api", { command, args });
+export const showInFolder = path => invoke("show_in_folder", { path });
+
 export const esc = value =>
   String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
