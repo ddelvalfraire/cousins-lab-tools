@@ -6,15 +6,21 @@
 //! carries no clock time because START_TIME stayed in `data.attrs`. Serial control is not
 //! implemented here: running commands against the instrument needs explicit authorization.
 
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SubsecRound, Utc};
 use serde::Serialize;
 use serde_json::Map;
 
-use crate::contract::{Cell, Event, InstrumentError, Row};
+use crate::contract::{
+    Cell, Event, InputKind, Instrument, InstrumentError, InstrumentInfo, Readiness, Row, Sink,
+    StopSignal,
+};
 use crate::protocol::ProtocolPlan;
-use crate::pycompat::{os_error, round, str_repr, strip};
+use crate::pycompat::{format_g, os_error, round, str_repr, strip};
+use crate::schemas::{ambit_clocks, ambit_columns};
 
 pub const FIELDS: [&str; 8] = ["T", "S", "R", "F", "B", "ACT", "Blue", "Red"];
 pub const HEADER_ALIASES: [(&str, &str); 1] = [("T (ms)", "T")];
@@ -269,6 +275,92 @@ pub fn timing_summary(device_ms: &[i64], plan: Option<&ProtocolPlan>) -> TimingS
             device_span_minus_requested_s: round(span_s - plan.nominal_s, 3),
         }),
     }
+}
+
+pub const DEFAULT_MODEL: &str = "Ambit fluorometer with external LED pulser";
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReplaySettings {
+    pub model: String,
+    pub csv_path: PathBuf,
+    pub speed: f64,
+    pub flash_red_level: i64,
+}
+
+/// Replays a recorded Ambit CSV at its own device-time spacing divided by `speed`.
+pub struct AmbitReplay {
+    settings: ReplaySettings,
+}
+
+impl AmbitReplay {
+    pub fn new(settings: ReplaySettings) -> Self {
+        AmbitReplay { settings }
+    }
+}
+
+impl Instrument for AmbitReplay {
+    fn describe(&self) -> InstrumentInfo {
+        InstrumentInfo {
+            adapter: "ambit_replay".into(),
+            model: self.settings.model.clone(),
+            input_kind: InputKind::Replay,
+            capabilities: BTreeSet::from(["acquire".to_string()]),
+            columns: ambit_columns(),
+            clocks: ambit_clocks(),
+            aliases: BTreeMap::new(),
+        }
+    }
+
+    fn check_ready(&self) -> Readiness {
+        let path = &self.settings.csv_path;
+        if !path.exists() {
+            return Readiness {
+                ok: false,
+                detail: format!("Recording not found: {}", path.display()),
+            };
+        }
+        Readiness {
+            ok: true,
+            detail: format!(
+                "Replaying {} at {}x",
+                path.file_name().unwrap_or_default().to_string_lossy(),
+                format_g(self.settings.speed)
+            ),
+        }
+    }
+
+    /// Each row gets its own receipt time; events go out after the row whose `T` reaches them.
+    fn run(&mut self, sink: &mut dyn Sink, stop: &StopSignal) -> Result<(), InstrumentError> {
+        let recording = read_ambit_csv(&self.settings.csv_path)?;
+        let mut events = detect_events(&recording.rows, self.settings.flash_red_level)
+            .into_iter()
+            .peekable();
+        let mut previous_t = recording
+            .rows
+            .first()
+            .ok_or_else(|| InstrumentError::new("IndexError", "list index out of range"))?
+            .t_ms;
+        for (seq, row) in recording.rows.iter().enumerate() {
+            let delay = (row.t_ms - previous_t) as f64 / 1000.0 / self.settings.speed;
+            if stop.wait(Duration::try_from_secs_f64(delay.max(0.0)).unwrap_or(Duration::MAX)) {
+                return Ok(());
+            }
+            previous_t = row.t_ms;
+            let received = Utc::now().trunc_subsecs(6);
+            sink.rows(vec![sample_row(seq as i64, Some(received), row)]);
+            while let Some(event) =
+                events.next_if(|e| e.t_native.is_some_and(|t| t * 1000.0 <= row.t_ms as f64))
+            {
+                sink.event(Event {
+                    t_host_utc: Some(received),
+                    ..event
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn cancel(&self) {}
 }
 
 #[cfg(test)]
