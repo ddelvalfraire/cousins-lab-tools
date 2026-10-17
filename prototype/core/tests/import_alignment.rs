@@ -11,8 +11,8 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use cousinslab::alignment::{
-    Alignment, Inputs, Member, Unaligned, aligned_sql, list_alignments, load_alignment, propose,
-    save_alignment,
+    Alignment, Inputs, Member, Series, Unaligned, aligned_sql, chart_data, list_alignments,
+    load_alignment, metric_series, propose, save_alignment,
 };
 use cousinslab::importing::{ImportError, ImportFile, import_session};
 use cousinslab::ms_workbook::read_sample_sheet;
@@ -20,6 +20,7 @@ use cousinslab::query::{SessionDb, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
 use cousinslab::templates::{Paths, Template, TemplateStore};
 use serde_json::{Value, json};
+use sha2::Digest;
 
 const TEMPLATE: &str = "jii-leaf-co2-fluorescence";
 
@@ -470,4 +471,55 @@ fn aligned_sql_is_pythons_with_the_uncertainty_cast_to_double() {
         aligned_sql(&imported().manifest, &alignment).unwrap(),
         expected
     );
+}
+
+/// SHA-256 of Python's `chart_data` for the entered-zero event alignment, as compact JSON.
+const PYTHON_CHARTS_SHA256: &str =
+    "b66160425b6e2901f7a21875735cedf46e6e1191b948b0e672211153dd9208fe";
+
+#[test]
+fn chart_data_is_pythons_point_for_point() {
+    let imported = imported();
+    let alignment = proposal("event", true);
+    let charts = chart_data(&imported.session_dir(), &imported.manifest, &alignment).unwrap();
+    let shape: Vec<(&str, Vec<usize>, usize)> = charts
+        .iter()
+        .map(|c| {
+            (
+                c.id.as_str(),
+                c.series.iter().map(|s| s.points.len()).collect(),
+                c.markers.len(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        shape,
+        [
+            ("co2", vec![1518, 1518], 0),
+            ("fluorescence", vec![4000, 4000], 28),
+            ("mass44", vec![1518, 1518], 0)
+        ]
+    );
+    let json = serde_json::to_string(&charts).unwrap();
+    let digest = sha2::Sha256::digest(json.as_bytes());
+    let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    assert_eq!(hex, PYTHON_CHARTS_SHA256);
+}
+
+#[test]
+fn metric_values_are_served_on_the_same_axis_as_the_charts() {
+    let imported = imported();
+    let alignment = proposal("event", true);
+    let charts = chart_data(&imported.session_dir(), &imported.manifest, &alignment).unwrap();
+    let values = metric_series(&imported.session_dir(), &imported.manifest, &alignment).unwrap();
+    let names: Vec<&String> = values.keys().collect();
+    assert_eq!(names, ["fluorescence", "ubar_co2"]);
+    let co2 = charts.iter().find(|c| c.id == "co2").unwrap();
+    let points = |series: &[Series]| series.iter().map(|s| s.points.clone()).collect::<Vec<_>>();
+    assert_eq!(points(&values["ubar_co2"]), points(&co2.series));
+    let trials: Vec<&str> = values["fluorescence"]
+        .iter()
+        .map(|s| s.trial.as_str())
+        .collect();
+    assert_eq!(trials, ["light-150-pl1", "light-150-pl2"]);
 }

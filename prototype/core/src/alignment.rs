@@ -11,6 +11,8 @@
 //!
 //! A capture with no way to place it is listed as unaligned with the reason, never guessed.
 
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
@@ -631,6 +633,223 @@ pub fn aligned_sql(manifest: &Manifest, alignment: &Alignment) -> Result<String,
     Ok(parts.join(" UNION ALL BY NAME "))
 }
 
+pub const MAX_POINTS_PER_SERIES: usize = 4000;
+
+/// Keeps each bucket's min and max so short events such as flashes stay visible.
+pub fn decimate(points: Vec<[f64; 2]>, limit: usize) -> Vec<[f64; 2]> {
+    if points.len() <= limit {
+        return points;
+    }
+    let buckets = limit / 2;
+    let size = points.len() as f64 / buckets as f64;
+    let mut out = Vec::with_capacity(limit);
+    for b in 0..buckets {
+        let bucket = &points[(b as f64 * size) as usize..((b + 1) as f64 * size) as usize];
+        let (mut lo, mut hi) = (0, 0);
+        for (i, p) in bucket.iter().enumerate() {
+            if p[1] < bucket[lo][1] {
+                lo = i;
+            }
+            if p[1] > bucket[hi][1] {
+                hi = i;
+            }
+        }
+        match bucket {
+            [] => {}
+            _ if lo == hi => out.push(bucket[lo]),
+            _ => {
+                let mut pair = [bucket[lo], bucket[hi]];
+                pair.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+                out.extend(pair);
+            }
+        }
+    }
+    out
+}
+
+/// One capture's points of one value, in one trial.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Series {
+    pub trial: String,
+    pub capture: String,
+    pub role: String,
+    pub value: String,
+    pub name: String,
+    pub points: Vec<[f64; 2]>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Marker {
+    pub trial: String,
+    pub label: String,
+    pub x: f64,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Chart {
+    pub id: String,
+    pub title: String,
+    pub unit: String,
+    pub series: Vec<Series>,
+    pub markers: Vec<Marker>,
+}
+
+/// The session's views plus `aligned`, with its column names and each member's label.
+struct AlignedView {
+    db: SessionDb,
+    columns: BTreeSet<String>,
+    labels: HashMap<String, String>,
+}
+
+impl AlignedView {
+    fn open(
+        session_dir: &Path,
+        manifest: &Manifest,
+        alignment: &Alignment,
+    ) -> Result<Self, AnalysisError> {
+        let mut db = SessionDb::open(session_dir, manifest)?;
+        db.create_view("aligned", &aligned_sql(manifest, alignment)?)?;
+        let columns = db
+            .connection()
+            .prepare("SELECT column_name FROM (DESCRIBE aligned)")?
+            .query_map([], |r| r.get(0))?
+            .collect::<Result<_, _>>()?;
+        let labels = alignment
+            .trials
+            .iter()
+            .flat_map(|t| &t.members)
+            .map(|m| (m.capture.clone(), m.label.clone()))
+            .collect();
+        Ok(AlignedView {
+            db,
+            columns,
+            labels,
+        })
+    }
+
+    fn series(&self, role: &str, value: &str) -> Result<Vec<Series>, AnalysisError> {
+        let column = ident(value);
+        let mut stmt = self.db.connection().prepare(&format!(
+            "SELECT trial, capture, x_s, {column}::DOUBLE FROM aligned \
+             WHERE role = ? AND {column} IS NOT NULL AND x_s IS NOT NULL ORDER BY trial, capture, x_s"
+        ))?;
+        let mut rows = stmt.query([role])?;
+        let mut grouped: Vec<(String, String, Vec<[f64; 2]>)> = Vec::new();
+        while let Some(row) = rows.next()? {
+            let (trial, capture): (String, String) = (row.get(0)?, row.get(1)?);
+            let point = [row.get(2)?, row.get(3)?];
+            match grouped.last_mut() {
+                Some((t, c, points)) if *t == trial && *c == capture => points.push(point),
+                _ => grouped.push((trial, capture, vec![point])),
+            }
+        }
+        Ok(grouped
+            .into_iter()
+            .map(|(trial, capture, points)| {
+                let label = self.labels.get(&capture).unwrap_or(&capture);
+                Series {
+                    name: format!("{label} · {value}"),
+                    trial,
+                    capture,
+                    role: role.into(),
+                    value: value.into(),
+                    points: decimate(points, MAX_POINTS_PER_SERIES),
+                }
+            })
+            .collect())
+    }
+
+    /// Events of `kind` on the members of `role`, on each member's aligned axis.
+    fn markers(
+        &self,
+        alignment: &Alignment,
+        role: &str,
+        kind: &str,
+    ) -> Result<Vec<Marker>, AnalysisError> {
+        let mut markers = Vec::new();
+        for trial in &alignment.trials {
+            for m in trial.members.iter().filter(|m| m.role == role) {
+                let view = format!("ev:{}", m.capture);
+                if !self.db.has_view(&view) {
+                    continue;
+                }
+                let sec = match m.clock.kind {
+                    ClockKind::HostUtc => "epoch_us(t_host_utc) / 1e6",
+                    _ => "t_native",
+                };
+                let mut stmt = self.db.connection().prepare(&format!(
+                    "SELECT label, {sec} - ? FROM {} WHERE kind = ? ORDER BY seq",
+                    ident(&view)
+                ))?;
+                let mut rows = stmt.query(duckdb::params![m.zero, kind])?;
+                while let Some(row) = rows.next()? {
+                    if let Some(x) = row.get::<_, Option<f64>>(1)? {
+                        markers.push(Marker {
+                            trial: trial.id.clone(),
+                            label: row.get(0)?,
+                            x,
+                        });
+                    }
+                }
+            }
+        }
+        Ok(markers)
+    }
+}
+
+/// Aligned series for each value a visible metric shows, so replay can read a metric at any x.
+pub fn metric_series(
+    session_dir: &Path,
+    manifest: &Manifest,
+    alignment: &Alignment,
+) -> Result<BTreeMap<String, Vec<Series>>, AnalysisError> {
+    let view = AlignedView::open(session_dir, manifest, alignment)?;
+    from_snapshot(manifest.template.clone())?
+        .metric_bindings()
+        .into_iter()
+        .filter(|(value, _)| view.columns.contains(value))
+        .map(|(value, role)| Ok((value.clone(), view.series(&role, &value)?)))
+        .collect()
+}
+
+/// Every template chart with an enabled role, its series on the aligned axis and its markers.
+pub fn chart_data(
+    session_dir: &Path,
+    manifest: &Manifest,
+    alignment: &Alignment,
+) -> Result<Vec<Chart>, AnalysisError> {
+    let template = from_snapshot(manifest.template.clone())?;
+    let view = AlignedView::open(session_dir, manifest, alignment)?;
+    let text = |v: &Value| v.as_str().unwrap_or_default().to_string();
+    template
+        .charts()
+        .iter()
+        .map(|chart| {
+            let mut series = Vec::new();
+            for s in chart["series"].as_array().into_iter().flatten() {
+                let value = text(&s["value"]);
+                if view.columns.contains(&value) {
+                    series.extend(view.series(&text(&s["role"]), &value)?);
+                }
+            }
+            let markers = match (
+                chart["markers"]["role"].as_str(),
+                chart["markers"]["kind"].as_str(),
+            ) {
+                (Some(role), Some(kind)) => view.markers(alignment, role, kind)?,
+                _ => Vec::new(),
+            };
+            Ok(Chart {
+                id: text(&chart["id"]),
+                title: text(&chart["title"]),
+                unit: text(&chart["unit"]),
+                series,
+                markers,
+            })
+        })
+        .collect()
+}
+
 fn alignments_dir(session_dir: &Path) -> std::path::PathBuf {
     session_dir.join("alignments")
 }
@@ -840,5 +1059,31 @@ mod tests {
             "Not found: 'aln-missing'"
         );
         assert_eq!(list_alignments(&dir.path().join("no-session")).unwrap(), []);
+    }
+    #[test]
+    fn decimation_keeps_each_buckets_extremes_as_python_does() {
+        let points: Vec<[f64; 2]> = (0..1003i64)
+            .map(|i| [i as f64 * 0.5, ((i * 7919) % 101) as f64 - 50.0])
+            .collect();
+        let expected = [
+            [0.0, -50.0],
+            [16.0, 50.0],
+            [101.0, -50.0],
+            [117.0, 50.0],
+            [202.0, -50.0],
+            [218.0, 50.0],
+            [303.0, -50.0],
+            [319.0, 50.0],
+            [404.0, -50.0],
+            [420.0, 50.0],
+        ];
+        assert_eq!(decimate(points.clone(), 10), expected);
+        assert_eq!(decimate(points[..10].to_vec(), 10), points[..10]);
+        let flat = vec![[0.0, 1.0], [1.0, 1.0], [2.0, 1.0]];
+        assert_eq!(
+            decimate(flat, 2),
+            [[0.0, 1.0]],
+            "a flat bucket keeps one point"
+        );
     }
 }
