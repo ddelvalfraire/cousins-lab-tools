@@ -1,4 +1,4 @@
-import { call, esc, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
+import { call, esc, fileName, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
 import { startRunDialog } from "./templates.js";
 
 export async function renderSessions(page) {
@@ -26,11 +26,11 @@ export async function renderSessions(page) {
   page.querySelector("#import").onclick = () => importDialog(templates);
 }
 
-const plantLabel = path => path.split("/").pop().replace(/^Ambit raw data_sample_/, "").replace(/\.csv$/, "").replace("_", "-");
+const plantLabel = path => fileName(path).replace(/^Ambit raw data_sample_/, "").replace(/\.csv$/, "").replace("_", "-");
 
 async function importDialog(templates) {
   const recordings = await call("list_recordings");
-  const options = list => list.map(p => `<option value="${esc(p)}">${esc(p.split("/").pop())}</option>`).join("");
+  const options = list => list.map(p => `<option value="${esc(p)}">${esc(fileName(p))}</option>`).join("");
   const ambit = recordings.ambit_csv;
   openDialog(`
     <form>

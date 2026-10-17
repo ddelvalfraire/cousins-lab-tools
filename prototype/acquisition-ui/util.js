@@ -16,6 +16,8 @@ export const pathRow = path =>
 export const bindReveal = root =>
   root.querySelectorAll("[data-reveal]").forEach(b => (b.onclick = () => showInFolder(b.dataset.reveal).catch(e => toast(e.message))));
 
+/** The last part of a path the engine sent, which uses \ on Windows and / elsewhere. */
+export const fileName = path => String(path).split(/[\\/]/).pop();
 export const esc = value =>
   String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
