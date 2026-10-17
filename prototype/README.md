@@ -1,20 +1,25 @@
 # Acquisition prototype: JII leaf-disc CO2 and fluorescence
 
-A working proof of concept for the refactor. One experiment template drives the screens.
-A Python engine owns instruments, timing, and storage, and the browser UI only calls its
-HTTP API. No hardware is connected. Every input is labelled as simulated, replayed, or
-imported.
+A working proof of concept for the refactor. One experiment template drives the screens. A
+Rust engine owns instruments, timing, and storage, and a Tauri window shows the UI. The UI
+reaches the engine only through one table of named commands. No hardware is connected. Every
+input is labelled as simulated, replayed, or imported.
 
 ```
 prototype/
-  acquisition-ui/   static UI (no build step), served by the engine, with node tests for its pure modules
-  engine/           Python package `cousinslab`, its template, instrument profiles, and tests
-  docs/screenshots/ before and after screenshots of the run and review pages
+  core/             Rust crate `cousinslab`: the engine, its template, instrument profiles, and tests
+  desktop/          Rust crate `cousinslab-desktop`: the Tauri v2 window around the engine
+  acquisition-ui/   static UI (no build step) with node tests for its pure modules
+  docs/screenshots/ screenshots of the run and review pages
 ```
 
 The UI follows the look and layout of the first proof of concept (commit `e99400c`): sidebar,
 breadcrumbs, a run page laid out on a 12-column grid, view tabs, a status strip, a time-range
-toolbar, replay, and a diagnostics panel. Every value on it comes from the engine API.
+toolbar, replay, and a diagnostics panel. Every value on it comes from the engine.
+
+The engine was first written in Python. It was ported to Rust when the team chose Rust and
+Tauri, and the Python package was then removed. The Rust tests repeat every check the Python
+tests made, against the same reference files.
 
 ## The workflow it represents
 
@@ -29,24 +34,57 @@ This is Diego's sample 150 run, reconstructed from the committed references:
   the workbook's injection-curve slope. Fluorescence is `(S - 815.52) / R`. Each plant is
   compared around the closed-system moment.
 
-Everything above lives in `engine/templates/jii-leaf-co2-fluorescence.yaml`, with the
-source cell for each value.
+Everything above lives in `core/templates/jii-leaf-co2-fluorescence.yaml`, with the source
+cell for each value.
+
+## How the pieces talk
+
+`core/src/api.rs` holds `Engine::call(command, args)`, a single match over command names such
+as `list_templates`, `start_run`, `session_live`, `preview_alignment`, and `query_session`.
+Each command parses its arguments into a struct. Every failure comes back as `{kind, message}`
+with `kind` one of `not_found`, `invalid`, `conflict`, or `internal`.
+
+- The desktop app registers one Tauri command, `api`, that runs `Engine::call` on a blocking
+  thread, and `show_in_folder`, which reveals an export in Explorer and refuses paths outside
+  the data folder.
+- The UI calls `call(command, args)` in `acquisition-ui/util.js`, which goes through
+  `window.__TAURI__.core.invoke("api", ...)`.
+- `core/examples/dev_server.rs` serves the same UI and the same `Engine::call` on 127.0.0.1
+  for checks in an ordinary browser. It is a development tool, not part of the app.
 
 ## Run it
 
-Needs [uv](https://docs.astral.sh/uv/). From `prototype/engine`:
+Rust 1.90 or later. The engine's tests run anywhere:
 
 ```
-uv sync
-uv run pytest                        # 58 tests
-uv run cousinslab --data /tmp/demo   # http://127.0.0.1:8765; without --data, data goes to engine/data/
+cd prototype
+cargo test                                  # 190 tests, 3 ignored timing probes
+cd acquisition-ui && node --test tests/*.test.mjs   # 16 tests, Node 22 or later
 ```
 
-The UI's grid geometry and time-range helpers have their own tests, from `prototype/acquisition-ui`:
+The first build compiles DuckDB from source, which takes 15 minutes or more. Later builds
+reuse it.
+
+The desktop app needs WebView2 on Windows (built in on Windows 11), or `webkit2gtk-4.1` on
+Linux, which Ubuntu 22.04 and later package. On Windows, from `prototype`:
 
 ```
-node --test tests/*.test.mjs         # 9 tests, Node 22 or later
+cargo build -p cousinslab-desktop --features custom-protocol
+set COUSINSLAB_DATA=C:\temp\cousinslab-demo
+target\debug\cousinslab-desktop.exe
 ```
+
+Without `COUSINSLAB_DATA`, sessions go to the app's data folder. Instrument profiles read the
+reference recordings from the repository's `reference/instruments`, so run the app from a
+checkout.
+
+To use a browser instead, from `prototype`:
+
+```
+cargo run -p cousinslab --example dev_server -- --data /tmp/cousinslab-demo
+```
+
+Then open http://127.0.0.1:8765.
 
 ## The run page is template configuration
 
@@ -68,10 +106,10 @@ overlapping a sibling, unknown charts, derived values, roles, or parameters, a m
 role other than its derived value's, and malformed views or components. A template
 without a layout gets one view with every chart, then controls and the capture table.
 
-A component bound to an excluded role is hidden, the same way charts are. The API returns the
-reason per component (`hidden_components`), and the layout editor shows hidden components dimmed
-with that reason so a save never drops them. A layout edit is saved as a new revision, and a
-session keeps the layout of the revision it ran with.
+A component bound to an excluded role is hidden, the same way charts are. The engine returns
+the reason per component (`hidden_components`), and the layout editor shows hidden components
+dimmed with that reason so a save never drops them. A layout edit is saved as a new revision,
+and a session keeps the layout of the revision it ran with.
 
 ## Demonstration guide
 
@@ -102,8 +140,8 @@ requested timing, the parameters, the derived values, the alignment event, and t
 - On the capture page, *Reference* switches between the shared event, elapsed time, and clock
   time. *Play interval*, restart, the seek slider, and *Speed* replay the stored data. Metrics
   show the value at the playhead. None of this writes to the session.
-- *Review & export* opens the session page. *Align & compare* offers *Clock time*. It works here because both captures recorded
-  host clock time. *Shared event* uses the operator marker.
+- *Review & export* opens the session page. *Align & compare* offers *Clock time*. It works
+  here because both captures recorded host clock time. *Shared event* uses the operator marker.
 - *Overview* shows Protocol 2's requested timing against what the Ambit replay recorded.
 
 **4. Configuration change.**
@@ -119,8 +157,9 @@ requested timing, the parameters, the derived values, the alignment event, and t
 - *Clock time* is refused, with the reason given for each capture.
 - *Shared event* places each Ambit run at its detected 4th flash. It lists the mass spec
   as unaligned until you enter its event time.
-- Enter 3701.772 for 150-pl1 and 4840.772 for 150-pl2. These are the workbook's own zero
-  rows, 7405 and 9683. Then set pl2's `co2_zero_mv` to 0.302 and save.
+- Enter 3701.772 for 150-pl1 and 4840.772 for 150-pl2, then *Apply entered times*. These are
+  the workbook's own zero rows, 7405 and 9683. Then set pl2's `co2_zero_mv` to 0.302 and save.
+  Wait for each step's charts to redraw before the next one (see the limitations).
 - The CO2 and fluorescence charts now overlay both plants. They were recorded about 19
   minutes apart.
 - *Open recording* replays both plants on the saved alignment. Each metric lists one value per
@@ -130,8 +169,10 @@ requested timing, the parameters, the derived values, the alignment event, and t
 - *Data* runs DuckDB over the session's Parquet files. The ASOF example pairs each Ambit
   sample with the latest CO2 reading and shows how old that reading is.
 - *Export* writes `aligned.csv` with one header row and every original time column, plus
-  `aligned.json` with the alignment, template revision, units, and source hashes.
-- For spool captures, it also writes legacy one-frame CSVs that module 1 can read.
+  `aligned.json` with the alignment, template revision, units, and source hashes. Each path
+  has a *Show in folder* button.
+- For spool captures, the engine also writes legacy one-frame CSVs that module 1 can read
+  (command `export_legacy_frames`).
 
 **7. Layout edit.** On the template, open *Run-page layout*. Drag the capture table's handle
 onto the top row; the charts, metrics, and controls move down. Save as the next revision (r5)
@@ -140,36 +181,50 @@ r1 to r4 keep their own layout.
 
 ## Acceptance criteria and results
 
+Test names are in `core/src` and `core/tests`. "Window" means the Tauri app on Windows 11,
+driven over the WebView2 debugging port. "Browser" means the same UI against `dev_server`.
+
 | # | Criterion | Evidence |
 |---|---|---|
-| 1 | The spool adapter decodes what `readEZView.py` decodes | `test_spool_parity.py` runs the unchanged legacy function with a frozen clock. Output is byte-identical when a blank line separates frames. Module 1's `File` reader parses the exported frames. |
-| 2 | Screens come from the template; a config change alters the run without screen code | Template r2 (delay 120 s) and r3 (Ambit excluded) were saved in the UI. r3's run page showed only the MS capture and the CO2 and Mass 44 charts. `test_disabling_a_role_runs_the_remaining_roles_only`. |
-| 3 | Grouped start with per-role delays; readiness gate; failure policy | `test_group_run.py` covers requested versus commanded versus first-sample times, a not-ready profile blocking the whole group, and both failure policies. In the UI, r2's Ambit started 27 ms after its requested time. |
-| 4 | Parquet with original timestamps and units; crash recovery | Spool timestamp, host receipt time, legacy ms, and the device counter are all stored. Units are in the field metadata. Killing the engine mid-run left a session that came back as `interrupted` with readable segments. `test_session_recovery.py`. |
-| 5 | Real-data alignment reproduces the researcher's sheets; insufficient timing is refused | `test_import_alignment.py` reproduces sheets `150-pl1` and `150-pl2` (1,518 rows each) to 1e-9 and refuses clock-time alignment. A mutation check (zero shifted 0.5 s) makes it fail. |
-| 6 | Live captures align on actual clock time, and on an event, with explicit offsets | `test_live_session_aligns_on_the_host_clock_and_on_the_operator_marker` and `test_detected_flash_is_transferred_to_the_mass_spec_over_the_host_clock`. |
-| 7 | DuckDB analytics and CSV export carry provenance | Checked in the UI: the ASOF query runs, and `aligned.csv` plus `aligned.json` were downloaded. |
-| 8 | Requested versus actual Ambit timing | pl1 requested 8,010 samples over 755.5 s. It recorded 7,956 samples, with the device counter spanning 756.109 s. Shown on *Overview*. |
-| 9 | The run page layout is template configuration, validated and versioned | `test_layout.py` covers per-kind defaults, stacking, the default layout, and rejection of unknown kinds, calibration, out-of-grid, overlap, unknown bindings, and duplicate ids. `test_api.py` covers a layout edit saved as r2 with r1 unchanged, and an overlapping edit refused with the reason. |
-| 10 | The default layout matches the original arrangement | CO2 and fluorescence charts side by side, both metrics and the controls beside them, the capture table below (`after-run-live-1440.png`). |
-| 11 | Components bound to an excluded role disappear | `test_components_bound_to_an_excluded_role_are_hidden_and_the_rest_stay`, `test_template_view_carries_the_layout_and_what_an_excluded_role_hides`. In the browser, r3's run page showed no fluorescence chart or metric (`after-run-r3-ambit-excluded-1440.png`). |
-| 12 | A layout edit in a new revision rearranges the run page without JS changes | Saved from the editor as r5 with the capture table on top; the r5 run page showed it (`after-run-r5-layout-edit-1440.png`) while an r1 session kept the original arrangement. |
-| 13 | Time range and replay do not rewrite stored data | `test_a_finished_run_serves_its_events_and_replay_values_without_changing_stored_files` compares the Parquet bytes. In the browser, the run's 183 Parquet files had the same SHA-256 before and after replaying on clock, elapsed, and event. |
-| 14 | Metrics show values even without a chart, live and in replay | `test_a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it`, `test_metric_values_are_served_on_the_same_axis_as_the_charts`. |
-| 15 | Diagnostics come from engine records | `test_session_events_place_flashes_and_operator_markers_on_the_run_clock`, `test_imported_events_keep_their_native_time_and_have_no_run_clock`. Checked in the browser for a run and an import. |
+| 1 | The spool adapter decodes what `readEZView.py` decodes | `separated_layout_is_byte_identical_to_legacy` compares against frames the unchanged legacy function wrote with a frozen clock (fixtures in `core/tests/fixtures/spool`). `packed_layout_new_reader_keeps_frames_legacy_drops`, `legacy_frames_of_a_stored_spool_capture_match_the_legacy_reader`. |
+| 2 | Screens come from the template; a config change alters the run without screen code | r2 (delay 120 s) and r3 (Ambit excluded) saved in the browser; r3's run page showed only the MS (`rust-r3-ms-only-1440.png`). `disabling_a_role_runs_the_remaining_roles_only`. |
+| 3 | Grouped start with per-role delays; readiness gate; failure policy | `roles_start_after_their_delays_and_record_requested_and_actual_times`, `not_ready_instrument_prevents_the_whole_group_from_starting`, both `failure_policy_*` tests. In the browser run, light's start command came 0.000 s after its requested time and its first sample 0.051 s after the command. |
+| 4 | Parquet with original timestamps and units; crash recovery | `segments_keep_arrow_types_nulls_and_field_metadata`; pyarrow 26 reads the files with `timestamp[us, tz=UTC]` and the unit metadata. `running_session_is_marked_interrupted_with_rows_recounted`, `captures_that_already_finished_keep_their_status`. |
+| 5 | Real-data alignment reproduces the researcher's sheets; insufficient timing is refused | `event_alignment_reproduces_both_workbook_sheets` (1,518 rows each, 1e-9) and `clock_alignment_is_refused_when_no_clock_time_was_recorded`. The `aligned.csv` exported in the window and in the browser matched sheets `150-pl1` and `150-pl2` with a largest µbar difference of 0.0. |
+| 6 | Live captures align on clock time and on an event, with explicit offsets | `live_session_aligns_on_the_host_clock_and_on_the_operator_marker`, `detected_flash_is_transferred_to_the_mass_spec_over_the_host_clock`. |
+| 7 | DuckDB analytics and CSV export carry provenance | The ASOF query ran in the window and the browser. `aligned_export_writes_pythons_csv_and_a_sidecar`. |
+| 8 | Requested versus actual Ambit timing | `pl1_timing_summary_matches_python`: 8,010 samples requested over 755.5 s; 7,956 recorded over 756.109 s. |
+| 9 | The run page layout is template configuration, validated and versioned | `invalid_layouts_are_rejected_with_the_reason` (every Python case), `layout_edit_becomes_a_new_revision_and_the_old_layout_is_unchanged`, `overlapping_layout_edit_is_rejected_with_the_reason`. |
+| 10 | The default layout matches the original arrangement | `template_view_carries_the_layout_and_what_an_excluded_role_hides`; `tauri-run-live-1440.png`. |
+| 11 | Components bound to an excluded role disappear | `components_bound_to_an_excluded_role_are_hidden_and_the_rest_stay`; r3 in the browser. |
+| 12 | A layout edit in a new revision rearranges the run page without JS changes | Saved from the editor in the browser as r5 with the capture table on top; the r5 run page showed it (`rust-r5-layout-edit-1440.png`). |
+| 13 | Time range and replay do not rewrite stored data | `a_finished_run_serves_its_events_and_replay_values_without_changing_stored_files` compares the Parquet bytes after replaying on all three references. |
+| 14 | Metrics show values even without a chart, live and in replay | `a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it`, `metric_values_are_served_on_the_same_axis_as_the_charts`. |
+| 15 | Diagnostics come from engine records | `session_events_place_flashes_and_operator_markers_on_the_run_clock`, `imported_events_keep_their_native_time_and_have_no_run_clock`. |
+| 16 | The UI reaches the engine only through the command table | `acquisition-ui` has no `fetch` or `/api` call; `tests/api.test.mjs`. `failures_come_back_with_a_kind_the_ui_can_tell_apart`. |
+| 17 | A researcher's query stays inside its session | `a_query_cannot_reach_outside_its_session_or_run_a_second_statement`, `a_session_connection_never_installs_or_loads_an_extension`. In the window, reading `C:/Windows/win.ini` was refused. |
 
-## Before and after
+## Screenshots
 
-Screenshots from a 20x simulated run of r1, taken in a browser against the running engine. The
-original prototype's capture page is `docs/screenshots/original-capture-1440.png`.
+From the window on Windows 11 (the system was in dark mode):
 
-| Page | Before | After |
+| Page | 1440 x 900 | 1024 x 768 |
 |---|---|---|
-| Run, 1440 x 900 | [before-run-1440](docs/screenshots/before-run-1440.png) | [live](docs/screenshots/after-run-live-1440.png), [replay](docs/screenshots/after-run-replay-1440.png) |
-| Run, 1024 x 768 | [before-run-1024](docs/screenshots/before-run-1024.png) | [live](docs/screenshots/after-run-live-1024.png), [replay](docs/screenshots/after-run-replay-1024.png) |
-| Review, 1440 x 900 | [before-review-1440](docs/screenshots/before-review-1440.png) | [after-review-1440](docs/screenshots/after-review-1440.png) |
-| Review, 1024 x 768 | [before-review-1024](docs/screenshots/before-review-1024.png) | [after-review-1024](docs/screenshots/after-review-1024.png) |
-| Layout editor and edits | none | [editor](docs/screenshots/after-layout-editor-1440.png), [r3 without Ambit](docs/screenshots/after-run-r3-ambit-excluded-1440.png), [r5 capture table on top](docs/screenshots/after-run-r5-layout-edit-1440.png) |
+| Home | [tauri-home](docs/screenshots/tauri-home-1440.png) | |
+| Run, live | [tauri-run-live](docs/screenshots/tauri-run-live-1440.png) | |
+| Run, replay | [tauri-run-replay](docs/screenshots/tauri-run-replay-1440.png) | [tauri-run-replay](docs/screenshots/tauri-run-replay-1024.png) |
+| Review, both plants on the event | [tauri-review-overlay](docs/screenshots/tauri-review-overlay-1440.png) | [tauri-review-overlay](docs/screenshots/tauri-review-overlay-1024.png) |
+| Settings, data folder | [tauri-settings](docs/screenshots/tauri-settings-1440.png) | |
+
+From the browser against `dev_server`: [run live](docs/screenshots/rust-run-live-1440.png),
+[replay](docs/screenshots/rust-run-replay-1440.png),
+[replay at 1024](docs/screenshots/rust-run-replay-1024.png),
+[r3 without the Ambit](docs/screenshots/rust-r3-ms-only-1440.png),
+[alignment](docs/screenshots/rust-review-align-1440.png),
+[overlay at 1024](docs/screenshots/rust-review-overlay-1024.png), and
+[r5 with the capture table on top](docs/screenshots/rust-r5-layout-edit-1440.png).
+The `before-*`, `after-*`, and `original-*` screenshots are from the Python engine and the
+first proof of concept.
 
 ## What the evidence showed
 
@@ -186,24 +241,59 @@ original prototype's capture page is `docs/screenshots/original-capture-1440.png
 - **The 4th-flash inference held up on real data.** With the workbook's zero rows, both
   plants' CO2 drawdowns start at 0 s, with the Ambit placed on its detected 4th flash. The
   researcher still needs to confirm it.
+- **The port found defects in the Python engine.** A negative parameter after a minus sign
+  produced `--`, which starts a SQL comment and cut off the rest of the expression. Capture
+  threads changed the manifest while another thread saved it, which crashed once with
+  "dictionary changed size during iteration". Text that closed the query wrapper could run a
+  second statement, such as `COPY` into the session folder. Two alignment saves in one
+  second overwrote each other. The Rust engine fixes each one, with a test.
+- **DuckDB downloads extensions unless told not to.** With default settings it fetched its
+  ICU extension from the internet the first time a time-zone function ran. An offline lab PC
+  would fail there. The engine turns extension installs and loads off, and nothing it does
+  needs ICU.
+
+## Deliberate differences from the Python engine
+
+- Errors carry a kind. A missing argument is `invalid` (Python answered 404), an unknown
+  alignment is `not_found` (Python answered 500), and bad YAML is `invalid` (Python answered
+  500).
+- Session and alignment ids that collide within one second get `-2`, `-3`, and so on.
+- One thread owns each run's manifest; capture threads report to it.
+- The spool simulator starts at the group start, after the readiness check.
+- A capture still running 10 s after a stop is recorded as `interrupted`, and the final status
+  waits for every capture.
+- After a crash, captures that had already finished keep their status.
+- `x_uncertainty_s` is a DOUBLE, so queries return a number, not a string.
+- Template validation rejects malformed arithmetic and shapes that made Python crash, with a
+  reason.
+- `session.json` and saved template YAML mean the same as before but are not byte-identical
+  (number formatting, YAML quoting). The legacy frame CSVs and the `aligned.csv` header are
+  byte-identical.
 
 ## Limitations and what is not verified
 
 - **No hardware.** Neither the EZView spool format nor Ambit serial timing has been checked
   against the instruments. The simulator follows the format `readEZView.py` parses.
-- **Replay speed.** Simulated runs compress data, device counters, and start delays by the
-  speed factor. Clock times in those sessions are real host times of the replay, not of the
-  original experiment.
+- **The window is verified on Windows 11 only.** Linux and macOS builds of the desktop crate
+  are untested; the WSL machine used here has no `webkit2gtk-4.1`.
+- **Profiles read files from the repository.** `${repo}` in an instrument profile resolves to
+  the checkout the app was built from. A packaged app would need the reference files bundled.
+- **Slow previews in debug builds.** An alignment preview takes 4 to 7 s in a Windows debug
+  build. In the window, saving while previews were still redrawing stored an alignment without
+  the entered event times and parameter once; with each redraw finished first, the save was
+  correct. The cause in the alignment tab is not yet found. Release builds are faster (about
+  0.3 s per preview on Linux).
+- **Replay speed.** Simulated runs compress sample spacing and start delays by the speed
+  factor. Replayed Ambit device counters keep their recorded values. Clock times in those
+  sessions are real host times of the replay, not of the original experiment.
 - **Simulated placement.** In simulated runs, where the Ambit falls relative to the mass
   spec comes from the configured delay, not from the historical experiment.
-- **No Tauri shell.** The engine serves the UI on 127.0.0.1 and the UI uses relative API
-  paths, so a Tauri sidecar setup could load it unchanged. That is untested.
 - **Live alignment uncertainty.** This is one sample or receipt interval. Receipt latency
   and clock drift are not characterized.
+- **The clock on this WSL machine jumps.** Its wall clock stepped about 0.51 s forward every
+  32 s against the monotonic clock. A recorded start gap that spans a step reads 0.5 s late.
 - **Where the run page still differs from the original.**
   - When a role is excluded, its components leave holes; the grid is not compacted.
-  - The interval toolbar wraps under the view tabs at 1440 px, where the original kept it on
-    one row.
   - Replay charts draw the template's event markers but not the operator marker; on the event
     reference the marker is the zero line.
   - The Events tab shows stored times (run clock, host clock, or native clock), not x on the
@@ -224,9 +314,13 @@ original prototype's capture page is `docs/screenshots/original-capture-1440.png
 
 - **Device control.** Ambit and pulser serial control: `G`, `A`, `E`, plus the pulser's
   DAC and LED commands, with safe-off on cancel. The commands are documented in the plan,
-  but running them needs authorization.
-- **Shell and notebooks.** The Tauri shell and sidecar packaging, and in-app Jupyter. A
-  notebook can already call `cousinslab.open_session(path, alignment_id)`, which is tested.
+  but running them needs authorization. The instrument contract's `cancel` cannot yet reach an
+  adapter while it runs; hardware control needs that first.
+- **Packaging and notebooks.** An installer with the reference files bundled, and in-app
+  Jupyter. Notebooks can read a session's Parquet files with pandas, pyarrow, or DuckDB; the
+  Python `open_session` helper went away with the Python engine.
+- **Live updates.** The capture page polls every 500 ms. A Tauri channel could push updates
+  instead.
 - **Other sources and tools.** The module 1 frame-folder source, a protocol editor, the
   legacy calculations (mean bars, calibration, atom% 49), and recovering unflushed rows
   from the raw spool copy.
