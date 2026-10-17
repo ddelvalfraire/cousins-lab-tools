@@ -1,14 +1,19 @@
-//! A live session's DuckDB views and its events on the run clock.
+//! A live session's DuckDB views, its events on the run clock, and its legacy frame export.
 
+use std::fs;
+use std::path::PathBuf;
 use std::time::Duration;
 
-use chrono::{DateTime, TimeDelta, TimeZone, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Utc};
 use cousinslab::contract::{Cell, Column, ColumnType, Event, InputKind};
+use cousinslab::export::export_legacy_frames;
 use cousinslab::query::{SessionDb, session_events};
+use cousinslab::schemas::spool_columns;
 use cousinslab::session::{
     Capture, CaptureStatus, Manifest, RunInfo, SegmentWriter, SessionKind, SessionStore,
     event_columns, event_row,
 };
+use cousinslab::spool::{decode_ascii, frame_row, read_frames};
 use serde_json::json;
 
 fn t0() -> DateTime<Utc> {
@@ -243,4 +248,63 @@ fn a_session_connection_never_installs_or_loads_an_extension() {
         ),
         "{message}"
     );
+}
+
+fn frozen_start() -> NaiveDateTime {
+    NaiveDate::from_ymd_opt(2026, 9, 30)
+        .unwrap()
+        .and_hms_opt(9, 0, 0)
+        .unwrap()
+}
+
+fn spool_fixture(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/spool")
+        .join(name)
+}
+
+#[test]
+fn legacy_frames_of_a_stored_spool_capture_match_the_legacy_reader() {
+    let data = tempfile::tempdir().unwrap();
+    let store = SessionStore::new(data.path()).unwrap();
+    let mut manifest = run_session(&store);
+    let bytes = fs::read(spool_fixture("separated.txt")).unwrap();
+    let frames = read_frames(decode_ascii(&bytes).unwrap()).unwrap();
+    let rows = (0..)
+        .zip(&frames)
+        .map(|(seq, f)| frame_row(f, seq, t0(), frozen_start()))
+        .collect();
+    let mut spool = capture("ms", spool_columns(), &[("m44", "ch3")]);
+    spool.rows = frames.len() as u64;
+    manifest.captures.insert("spool".into(), spool);
+    store.save(&manifest).unwrap();
+    let dir = store.path(&manifest.id);
+    write(&dir.join("captures/spool/samples"), &spool_columns(), rows);
+
+    let export = export_legacy_frames(&dir, &manifest, "spool").unwrap();
+    assert_eq!(export.folder, dir.join("exports/legacy-frames-spool"));
+    assert_eq!(export.files, 5);
+    for k in 0..5 {
+        let name = format!("{k}.csv");
+        assert_eq!(
+            fs::read_to_string(export.folder.join(&name)).unwrap(),
+            fs::read_to_string(spool_fixture("legacy-separated").join(&name)).unwrap(),
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn legacy_frames_apply_only_to_spool_captures() {
+    let data = tempfile::tempdir().unwrap();
+    let store = SessionStore::new(data.path()).unwrap();
+    let mut manifest = run_session(&store);
+    manifest.captures["light"].adapter = Some("ambit_replay".into());
+    for cid in ["light", "nope"] {
+        let error = export_legacy_frames(&store.path(&manifest.id), &manifest, cid).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Legacy frame export applies to EZView spool captures"
+        );
+    }
 }

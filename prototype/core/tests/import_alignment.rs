@@ -14,6 +14,7 @@ use cousinslab::alignment::{
     Alignment, Inputs, Member, Series, Unaligned, aligned_sql, chart_data, list_alignments,
     load_alignment, metric_series, propose, save_alignment,
 };
+use cousinslab::export::export_aligned;
 use cousinslab::importing::{ImportError, ImportFile, import_session};
 use cousinslab::ms_workbook::read_sample_sheet;
 use cousinslab::query::{SessionDb, session_events};
@@ -522,4 +523,60 @@ fn metric_values_are_served_on_the_same_axis_as_the_charts() {
         .map(|s| s.trial.as_str())
         .collect();
     assert_eq!(trials, ["light-150-pl1", "light-150-pl2"]);
+}
+
+/// SHA-256 of the `aligned.csv` the Python engine exported for this import and these inputs,
+/// with its alignment id replaced by `ALN`. Both engines run DuckDB 1.5.6's CSV writer.
+const PYTHON_ALIGNED_CSV_SHA256: &str =
+    "5742c5c588a8f0cf789e44281e433c4cbd4d484c3d7a8a84c9e938e337be801f";
+
+#[test]
+fn aligned_export_writes_pythons_csv_and_a_sidecar() {
+    let imported = imported();
+    let session_dir = imported.session_dir();
+    let saved = save_alignment(&session_dir, proposal("event", true)).unwrap();
+    let id = saved.id.clone().unwrap();
+    let export = export_aligned(&session_dir, &imported.manifest, &saved).unwrap();
+    assert_eq!(
+        export.csv,
+        session_dir.join("exports").join(&id).join("aligned.csv")
+    );
+
+    let csv = fs::read_to_string(&export.csv).unwrap();
+    assert_eq!(
+        csv.lines().next().unwrap(),
+        "alignment_id,trial,capture,role,x_s,x_uncertainty_s,ubar_co2,seq,t_elapsed_s,m32,m44,m45,\
+         fluorescence,t_host_utc,t_device_ms,S,R,F,B,ACT,Blue,Red"
+    );
+    let normalized = csv.replace(&format!("\n{id},"), "\nALN,");
+    let digest = sha2::Sha256::digest(normalized.as_bytes());
+    let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    assert_eq!(hex, PYTHON_ALIGNED_CSV_SHA256);
+
+    let sidecar: Value =
+        serde_json::from_str(&fs::read_to_string(&export.metadata).unwrap()).unwrap();
+    let keys: Vec<&String> = sidecar.as_object().unwrap().keys().collect();
+    assert_eq!(
+        keys,
+        [
+            "session",
+            "template",
+            "alignment",
+            "captures",
+            "columns",
+            "notes"
+        ]
+    );
+    assert_eq!(sidecar["alignment"], serde_json::to_value(&saved).unwrap());
+    assert_eq!(sidecar["template"], json!({"id": TEMPLATE, "revision": 1}));
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/python-aligned-columns.json");
+    let python = fs::read_to_string(fixture)
+        .unwrap()
+        .replace(r#""type": "DECIMAL(2,1)""#, r#""type": "DOUBLE""#);
+    let python: Value = serde_json::from_str(&python).unwrap();
+    assert_eq!(
+        sidecar["columns"], python,
+        "Python's columns, with x_uncertainty_s a DOUBLE"
+    );
 }

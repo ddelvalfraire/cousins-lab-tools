@@ -1,6 +1,7 @@
 pub mod alignment;
 pub mod ambit;
 pub mod contract;
+pub mod export;
 pub mod expr;
 pub mod importing;
 pub mod layout;
