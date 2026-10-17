@@ -171,6 +171,14 @@ mod tests {
             .collect();
         assert!(leftovers.is_empty(), "{leftovers:?}");
         assert_eq!(count_and_max_seq(&samples), (25, 24));
+        let db = crate::query::SessionDb::open(&store.path(&manifest.id), &recovered).unwrap();
+        let seen: (i64, i64) = db
+            .connection()
+            .query_row(r#"SELECT count(*), max(seq) FROM "cap:ms""#, [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!(seen, (25, 24), "DuckDB reads only the finished parts");
     }
 
     #[test]

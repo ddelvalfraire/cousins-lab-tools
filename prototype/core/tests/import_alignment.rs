@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use cousinslab::importing::{ImportError, ImportFile, import_session};
+use cousinslab::query::{SessionDb, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
 use cousinslab::templates::{Paths, Template, TemplateStore};
 use serde_json::Value;
@@ -57,6 +58,12 @@ fn template(data_dir: &Path) -> Template {
 struct Imported {
     store: SessionStore,
     manifest: Manifest,
+}
+
+impl Imported {
+    fn session_dir(&self) -> PathBuf {
+        self.store.path(&self.manifest.id)
+    }
 }
 
 /// One import shared by every test, as the Python module fixture is: reading the workbook is
@@ -176,4 +183,56 @@ fn an_empty_label_falls_back_to_the_file_stem() {
     let (cid, capture) = manifest.captures.first().unwrap();
     assert_eq!(cid, "light-ambit-raw-data-sample-150-pl1");
     assert_eq!(capture.label, "Ambit raw data_sample_150_pl1");
+}
+
+#[test]
+fn original_timestamps_are_stored_unchanged() {
+    let imported = imported();
+    let db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
+    let con = db.connection();
+    let ms: (f64, f64, i64) = con
+        .query_row(
+            r#"SELECT min(t_elapsed_s), max(t_elapsed_s), count(*) FROM "cap:ms-workbook""#,
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .unwrap();
+    assert_eq!(ms, (0.272, 13429.272, 26859));
+    let light: (i64, i64) = con
+        .query_row(
+            r#"SELECT min(t_device_ms), max(t_device_ms) FROM "cap:light-150-pl1""#,
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(light, (9, 756118));
+}
+
+#[test]
+fn imported_events_keep_their_native_time_and_have_no_run_clock() {
+    let imported = imported();
+    let events = session_events(&imported.session_dir(), &imported.manifest).unwrap();
+    let flashes: Vec<_> = events.iter().filter(|e| e.kind == "sat_flash").collect();
+    let sources: std::collections::BTreeSet<&str> =
+        flashes.iter().map(|e| e.source.as_str()).collect();
+    assert_eq!(sources, ["light-150-pl1", "light-150-pl2"].into());
+    assert!(
+        flashes
+            .iter()
+            .all(|e| e.x_run_s.is_none() && e.t_host_utc.is_none() && e.t_native.unwrap() > 0.0)
+    );
+    for cid in sources {
+        let times: Vec<f64> = flashes
+            .iter()
+            .filter(|e| e.source == cid)
+            .map(|e| e.t_native.unwrap())
+            .collect();
+        assert_eq!(times.len(), 14, "{cid}");
+        assert!(times.is_sorted(), "{cid}");
+    }
+    assert_eq!(
+        events.len(),
+        252,
+        "every light change and flash, as Python lists them"
+    );
 }
