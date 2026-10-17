@@ -1,4 +1,4 @@
-import { call, esc, fmtTime, icon, inputBadge, pageHeader, statusBadge, toast } from "./util.js";
+import { call, esc, fmtTime, icon, inputBadge, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
 import { captureTable } from "./components.js";
 
@@ -212,16 +212,21 @@ function exportTab(el, session) {
     </section>
     ${spool.length ? `<section class="card"><h2>Legacy frame CSVs</h2>
       <p class="small">Headerless one-frame files in the column order and rounding of <code>readEZView.py</code>, for modules 1 to 3.</p>
-      <div class="actions">${spool.map(([cid]) => `<button data-legacy="${esc(cid)}">Export ${esc(cid)}</button>`).join("")}</div></section>` : ""}
+      <div class="actions">${spool.map(([cid]) => `<button data-legacy="${esc(cid)}">Export ${esc(cid)}</button>`).join("")}</div>
+      <div id="legacy-result" class="small"></div></section>` : ""}
     <section class="card"><h2>Parquet</h2><p class="small">Stored as written: <code>sessions/${esc(m.id)}/captures/&lt;capture&gt;/samples/part-*.parquet</code>, with units in the field metadata.</p></section>`;
   const result = el.querySelector("#export-result");
-  const link = path => `<a href="/api/file?path=${encodeURIComponent(path)}">${esc(path.split("/").pop())}</a>`;
+  const showPaths = (target, note, paths) => {
+    target.innerHTML = `<p>${esc(note)}</p>${paths.map(p => `
+      <div class="inline"><code>${esc(p)}</code><button class="quiet" data-reveal="${esc(p)}">${icon("folder")}Show in folder</button></div>`).join("")}`;
+    target.querySelectorAll("[data-reveal]").forEach(b => (b.onclick = () => showInFolder(b.dataset.reveal).catch(e => toast(e.message))));
+  };
   el.querySelectorAll("[data-export]").forEach(b => (b.onclick = async () => {
     const r = await call("export_alignment", { session_id: m.id, alignment_id: b.dataset.export });
-    result.innerHTML = `Wrote ${link(r.csv)} and ${link(r.metadata)}`;
+    showPaths(result, "Wrote the CSV and its metadata sidecar.", [r.csv, r.metadata]);
   }));
   el.querySelectorAll("[data-legacy]").forEach(b => (b.onclick = async () => {
     const r = await call("export_legacy_frames", { session_id: m.id, capture: b.dataset.legacy });
-    toast(`Wrote ${r.files} frame files to ${r.folder}`);
+    showPaths(el.querySelector("#legacy-result"), `Wrote ${r.files} frame files.`, [r.folder]);
   }));
 }
