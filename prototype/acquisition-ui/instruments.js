@@ -29,7 +29,7 @@ export async function renderInstruments(page) {
             </tbody></table></details>
         </td></tr>`).join("")}
       </tbody></table></div>
-    <p class="small muted">Registering or testing a device is not part of this prototype: profiles are YAML files in <code>engine/instruments/</code>, and readiness is checked when a run starts.</p>
+    <p class="small muted">Registering or testing a device is not part of this prototype: profiles are YAML files that ship with the engine, and readiness is checked when a run starts.</p>
   </div>`;
   page.querySelectorAll("[data-inspect]").forEach(b => (b.onclick = () => {
     const row = page.querySelector(`[data-detail="${CSS.escape(b.dataset.inspect)}"]`);

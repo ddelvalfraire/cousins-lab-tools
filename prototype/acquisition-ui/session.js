@@ -1,4 +1,4 @@
-import { call, esc, fmtTime, icon, inputBadge, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
+import { bindReveal, call, esc, fmtTime, icon, inputBadge, pageHeader, pathRow, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
 import { captureTable } from "./components.js";
 
@@ -164,6 +164,8 @@ ORDER BY light.trial, light.x_s`,
   ]] : []),
 ];
 
+const join = (dir, ...parts) => [dir.replace(/[\\/]+$/, ""), ...parts].join(dir.includes("\\") ? "\\" : "/");
+
 async function dataTab(el, session) {
   const m = session.manifest;
   const latest = session.alignments.at(-1);
@@ -177,11 +179,15 @@ async function dataTab(el, session) {
       <div class="table-wrap" id="result"></div>
     </section>
     <section class="card"><h2>From a notebook</h2>
-      <p class="small">The same views are available in Python. In-app Jupyter is deferred; this is what a notebook would call.</p>
-      <pre>from cousinslab import open_session
-con = open_session("${esc(m.id)}"${latest ? `, "${esc(latest.id)}"` : ""})  # path to the session folder
-df = con.sql("SELECT * FROM aligned").df()</pre>
+      <p class="small">Each capture's samples and events are Parquet files in this session's folder, so a notebook can read them with pandas, pyarrow or DuckDB.
+        The <code>aligned</code> view is built here; export an aligned CSV on the Export tab to take the same rows to a notebook.</p>
+      <div class="small" id="session-folder"></div>
     </section>`;
+  const folder = el.querySelector("#session-folder");
+  call("engine_info").then(info => {
+    folder.innerHTML = pathRow(join(info.data_dir, "sessions", m.id));
+    bindReveal(folder);
+  }, e => (folder.textContent = e.message));
   const sql = el.querySelector("#sql");
   el.querySelectorAll("[data-example]").forEach(b => (b.onclick = () => (sql.value = examples[b.dataset.example][1])));
   el.querySelector("#run").onclick = async () => {
@@ -217,9 +223,8 @@ function exportTab(el, session) {
     <section class="card"><h2>Parquet</h2><p class="small">Stored as written: <code>sessions/${esc(m.id)}/captures/&lt;capture&gt;/samples/part-*.parquet</code>, with units in the field metadata.</p></section>`;
   const result = el.querySelector("#export-result");
   const showPaths = (target, note, paths) => {
-    target.innerHTML = `<p>${esc(note)}</p>${paths.map(p => `
-      <div class="inline"><code>${esc(p)}</code><button class="quiet" data-reveal="${esc(p)}">${icon("folder")}Show in folder</button></div>`).join("")}`;
-    target.querySelectorAll("[data-reveal]").forEach(b => (b.onclick = () => showInFolder(b.dataset.reveal).catch(e => toast(e.message))));
+    target.innerHTML = `<p>${esc(note)}</p>${paths.map(pathRow).join("")}`;
+    bindReveal(target);
   };
   el.querySelectorAll("[data-export]").forEach(b => (b.onclick = async () => {
     const r = await call("export_alignment", { session_id: m.id, alignment_id: b.dataset.export });

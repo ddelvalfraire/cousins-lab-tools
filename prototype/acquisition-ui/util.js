@@ -11,6 +11,10 @@ async function invoke(command, args) {
 /** Runs one command of the engine's command table; a rejection `{kind, message}` becomes `Error(message)`. */
 export const call = (command, args = {}) => invoke("api", { command, args });
 export const showInFolder = path => invoke("show_in_folder", { path });
+export const pathRow = path =>
+  `<div class="inline"><code>${esc(path)}</code><button class="quiet" data-reveal="${esc(path)}">${icon("folder")}Show in folder</button></div>`;
+export const bindReveal = root =>
+  root.querySelectorAll("[data-reveal]").forEach(b => (b.onclick = () => showInFolder(b.dataset.reveal).catch(e => toast(e.message))));
 
 export const esc = value =>
   String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
