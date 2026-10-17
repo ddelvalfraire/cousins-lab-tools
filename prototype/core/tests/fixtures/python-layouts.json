@@ -1,0 +1,255 @@
+{
+  "builtin": {
+    "columns": 12,
+    "views": [
+      {
+        "id": "acquisition",
+        "name": "Acquisition",
+        "components": [
+          {
+            "id": "co2-chart",
+            "kind": "chart",
+            "chart": "co2",
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 5
+          },
+          {
+            "id": "fluorescence-chart",
+            "kind": "chart",
+            "chart": "fluorescence",
+            "x": 4,
+            "y": 0,
+            "w": 4,
+            "h": 5
+          },
+          {
+            "id": "co2-now",
+            "kind": "metric",
+            "value": "ubar_co2",
+            "x": 8,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "id": "fluorescence-now",
+            "kind": "metric",
+            "value": "fluorescence",
+            "x": 10,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "id": "controls",
+            "kind": "controls",
+            "x": 8,
+            "y": 2,
+            "w": 4,
+            "h": 3
+          },
+          {
+            "id": "captures",
+            "kind": "captures",
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 3
+          }
+        ]
+      },
+      {
+        "id": "signals",
+        "name": "Mass 44 and parameters",
+        "components": [
+          {
+            "id": "mass44-chart",
+            "kind": "chart",
+            "chart": "mass44",
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 4
+          },
+          {
+            "id": "parameters",
+            "kind": "inputs",
+            "title": "Parameters in this revision",
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          }
+        ]
+      }
+    ]
+  },
+  "without_layout": {
+    "columns": 12,
+    "views": [
+      {
+        "id": "run",
+        "name": "Run",
+        "components": [
+          {
+            "id": "chart-co2",
+            "kind": "chart",
+            "chart": "co2",
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 4
+          },
+          {
+            "id": "chart-fluorescence",
+            "kind": "chart",
+            "chart": "fluorescence",
+            "x": 6,
+            "y": 0,
+            "w": 6,
+            "h": 4
+          },
+          {
+            "id": "chart-mass44",
+            "kind": "chart",
+            "chart": "mass44",
+            "x": 0,
+            "y": 4,
+            "w": 6,
+            "h": 4
+          },
+          {
+            "id": "controls",
+            "kind": "controls",
+            "x": 0,
+            "y": 8,
+            "w": 4,
+            "h": 3
+          },
+          {
+            "id": "captures",
+            "kind": "captures",
+            "x": 4,
+            "y": 8,
+            "w": 8,
+            "h": 3
+          }
+        ]
+      }
+    ]
+  },
+  "unnamed_and_unplaced": {
+    "columns": 12,
+    "views": [
+      {
+        "components": [
+          {
+            "kind": "chart",
+            "chart": "co2",
+            "id": "view-1-1",
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 4
+          },
+          {
+            "kind": "group",
+            "components": [
+              {
+                "kind": "metric",
+                "value": "ubar_co2",
+                "id": "view-1-2-1",
+                "x": 0,
+                "y": 0,
+                "w": 4,
+                "h": 2
+              },
+              {
+                "kind": "controls",
+                "id": "view-1-2-2",
+                "x": 0,
+                "y": 2,
+                "w": 4,
+                "h": 3
+              }
+            ],
+            "id": "view-1-2",
+            "x": 0,
+            "y": 4,
+            "w": 12,
+            "h": 5
+          },
+          {
+            "id": "caps",
+            "kind": "captures",
+            "x": 0,
+            "y": 9,
+            "w": 12,
+            "h": 3
+          }
+        ],
+        "id": "view-1",
+        "name": "View 1"
+      },
+      {
+        "name": "Second",
+        "components": [
+          {
+            "kind": "inputs",
+            "parameters": [
+              "ambit_offset"
+            ],
+            "id": "view-2-1",
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 4
+          }
+        ],
+        "id": "view-2"
+      }
+    ]
+  },
+  "unnamed_and_unplaced_input": {
+    "views": [
+      {
+        "components": [
+          {
+            "kind": "chart",
+            "chart": "co2"
+          },
+          {
+            "kind": "group",
+            "components": [
+              {
+                "kind": "metric",
+                "value": "ubar_co2"
+              },
+              {
+                "kind": "controls"
+              }
+            ]
+          },
+          {
+            "id": "caps",
+            "kind": "captures",
+            "x": 0
+          }
+        ]
+      },
+      {
+        "name": "Second",
+        "components": [
+          {
+            "kind": "inputs",
+            "parameters": [
+              "ambit_offset"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

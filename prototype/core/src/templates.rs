@@ -1,4 +1,4 @@
-//! Experiment templates and instrument profiles: loading and validation.
+//! Experiment templates and instrument profiles: loading, validation and what a run shows.
 //!
 //! A template stays the YAML document it was written as, a `serde_json::Value`, so a session
 //! can snapshot it and the UI can edit it as is. `validate` checks it by hand and keeps the
@@ -13,6 +13,7 @@ use std::sync::LazyLock;
 use serde_json::{Map, Value};
 
 use crate::expr::{self, Expression, Params};
+use crate::layout::{self, Kind};
 use crate::protocol::{self, ProtocolPlan};
 use crate::repr::{list_repr, repr};
 use crate::schemas;
@@ -197,7 +198,7 @@ impl Template {
 
     /// Charts with their series cut to enabled roles; a chart left with none is dropped.
     pub fn charts(&self) -> Vec<Value> {
-        let enabled: BTreeSet<&str> = self.enabled_roles().into_iter().map(|(r, _)| r).collect();
+        let enabled = self.enabled_names();
         array(&self.data, "charts")
             .iter()
             .filter_map(|chart| {
@@ -213,6 +214,112 @@ impl Template {
                 })
             })
             .collect()
+    }
+
+    pub fn layout(&self) -> Value {
+        layout::normalize(&self.data)
+    }
+
+    fn derived_role(&self, metric: &Value) -> Option<&str> {
+        let value = metric.get("value")?.as_str()?;
+        object(&self.data, "derived")
+            .get(value)?
+            .get("role")?
+            .as_str()
+    }
+
+    /// Derived value to role, for every metric an enabled role can show.
+    pub fn metric_bindings(&self) -> BTreeMap<String, String> {
+        fn visit(
+            t: &Template,
+            enabled: &BTreeSet<&str>,
+            items: &[Value],
+            out: &mut BTreeMap<String, String>,
+        ) {
+            for c in items {
+                if layout::kind_of(c) == Some(Kind::Metric)
+                    && let Some(role) = t.derived_role(c).filter(|r| enabled.contains(r))
+                {
+                    out.insert(c["value"].as_str().unwrap_or_default().into(), role.into());
+                }
+                visit(t, enabled, array(c, "components"), out);
+            }
+        }
+        let enabled = self.enabled_names();
+        let mut bindings = BTreeMap::new();
+        for view in array(&self.layout(), "views") {
+            visit(self, &enabled, array(view, "components"), &mut bindings);
+        }
+        bindings
+    }
+
+    /// Columns and derived values a role's live view needs: chart series plus metrics.
+    pub fn live_values(&self, role: &str) -> BTreeSet<String> {
+        let charted = self.charts().into_iter().flat_map(|chart| {
+            array(&chart, "series")
+                .iter()
+                .filter(|s| s["role"] == role)
+                .filter_map(|s| s["value"].as_str().map(String::from))
+                .collect::<Vec<_>>()
+        });
+        let bound = self
+            .metric_bindings()
+            .into_iter()
+            .filter(|(_, r)| r == role)
+            .map(|(value, _)| value);
+        charted.chain(bound).collect()
+    }
+
+    /// Component id to why it is not shown: an excluded role takes its components with it.
+    pub fn hidden_components(&self) -> BTreeMap<String, String> {
+        let enabled = self.enabled_names();
+        let charts: BTreeSet<String> = self
+            .charts()
+            .iter()
+            .filter_map(|c| c["id"].as_str().map(String::from))
+            .collect();
+        let mut hidden = BTreeMap::new();
+        for view in array(&self.layout(), "views") {
+            self.hide(array(view, "components"), &enabled, &charts, &mut hidden);
+        }
+        hidden
+    }
+
+    fn hide(
+        &self,
+        items: &[Value],
+        enabled: &BTreeSet<&str>,
+        charts: &BTreeSet<String>,
+        hidden: &mut BTreeMap<String, String>,
+    ) {
+        for c in items {
+            let id = c["id"].as_str().unwrap_or_default().to_string();
+            let kind = layout::kind_of(c);
+            let role = match c.get("role").filter(|r| truthy(r)) {
+                Some(role) => role.as_str(),
+                None if kind == Some(Kind::Metric) => self.derived_role(c),
+                None => None,
+            };
+            let chart = c.get("chart").and_then(Value::as_str).unwrap_or_default();
+            if let Some(role) = role.filter(|r| !r.is_empty() && !enabled.contains(r)) {
+                hidden.insert(id, format!("Role {role} is excluded"));
+            } else if kind == Some(Kind::Chart) && !charts.contains(chart) {
+                hidden.insert(id, format!("Every role in chart {chart} is excluded"));
+            } else if kind == Some(Kind::Group) {
+                let children = array(c, "components");
+                self.hide(children, enabled, charts, hidden);
+                let all_hidden = children
+                    .iter()
+                    .all(|child| child["id"].as_str().is_some_and(|i| hidden.contains_key(i)));
+                if all_hidden {
+                    hidden.insert(id, "Every component in the group is hidden".into());
+                }
+            }
+        }
+    }
+
+    fn enabled_names(&self) -> BTreeSet<&str> {
+        self.enabled_roles().into_iter().map(|(r, _)| r).collect()
     }
 }
 
@@ -497,6 +604,7 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         errors.push(format!("alignment.trial_role {} is not a role", repr(role)));
     }
 
+    errors.extend(layout::errors(&data));
     if !errors.is_empty() {
         return Err(TemplateError(errors.join("; ")));
     }
