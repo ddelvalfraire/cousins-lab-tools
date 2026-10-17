@@ -36,15 +36,14 @@ pub struct Paths {
 
 impl Default for Paths {
     fn default() -> Self {
-        let prototype = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .expect("the crate sits inside prototype/");
+        let core = Path::new(env!("CARGO_MANIFEST_DIR"));
         Paths {
-            templates: prototype.join("engine/templates"),
-            instruments: prototype.join("engine/instruments"),
-            repo: prototype
-                .parent()
-                .expect("prototype/ sits inside the repository")
+            templates: core.join("templates"),
+            instruments: core.join("instruments"),
+            repo: core
+                .ancestors()
+                .nth(2)
+                .expect("the crate sits at prototype/core in the repository")
                 .to_path_buf(),
         }
     }
