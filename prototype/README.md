@@ -313,8 +313,8 @@ first proof of concept.
 ## Deferred
 
 - **Device control.** Ambit and pulser serial control: `G`, `A`, `E`, plus the pulser's
-  DAC and LED commands, with safe-off on cancel. The commands are documented in the plan,
-  but running them needs authorization. The instrument contract's `cancel` cannot yet reach an
+  DAC and LED commands, with safe-off on cancel. The commands are documented in the control
+  notebook, but none have been sent to the instruments; that waits on the lab. The instrument contract's `cancel` cannot yet reach an
   adapter while it runs; hardware control needs that first.
 - **Packaging and notebooks.** An installer with the reference files bundled, and in-app
   Jupyter. Notebooks can read a session's Parquet files with pandas, pyarrow, or DuckDB; the
