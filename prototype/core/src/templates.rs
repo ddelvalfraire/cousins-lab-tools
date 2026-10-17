@@ -614,3 +614,181 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         plans,
     })
 }
+
+#[derive(Debug)]
+pub enum StoreError {
+    NotFound(String),
+    /// A revision tried to move the template to another id.
+    IdChanged,
+    Invalid(TemplateError),
+    File(FileError),
+}
+
+impl fmt::Display for StoreError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            StoreError::NotFound(id) => write!(f, "No template {id}"),
+            StoreError::IdChanged => f.write_str(
+                "The template id cannot change in a revision. Copy it under a new id instead.",
+            ),
+            StoreError::Invalid(e) => e.fmt(f),
+            StoreError::File(e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for StoreError {}
+
+impl From<FileError> for StoreError {
+    fn from(e: FileError) -> Self {
+        StoreError::File(e)
+    }
+}
+
+fn invalid(message: impl Into<String>) -> StoreError {
+    StoreError::Invalid(TemplateError(message.into()))
+}
+
+type Revisions = BTreeMap<String, BTreeMap<i64, Value>>;
+
+/// Built-in templates plus every saved edit, each edit an immutable
+/// `<data>/templates/<id>/rev-<N>.yaml`. Files are keyed by the id and revision they hold.
+pub struct TemplateStore {
+    paths: Paths,
+    dir: PathBuf,
+}
+
+impl TemplateStore {
+    pub fn new(paths: Paths, data_dir: &Path) -> Self {
+        TemplateStore {
+            paths,
+            dir: data_dir.join("templates"),
+        }
+    }
+
+    fn files(&self) -> Result<Vec<PathBuf>, FileError> {
+        let mut files = if self.paths.templates.is_dir() {
+            yaml_files(&self.paths.templates)?
+        } else {
+            Vec::new()
+        };
+        if self.dir.is_dir() {
+            for template_dir in fs::read_dir(&self.dir).map_err(|e| FileError {
+                path: self.dir.clone(),
+                message: e.to_string(),
+            })? {
+                let template_dir = template_dir.map_err(|e| FileError {
+                    path: self.dir.clone(),
+                    message: e.to_string(),
+                })?;
+                if template_dir.path().is_dir() {
+                    files.extend(yaml_files(&template_dir.path())?.into_iter().filter(|p| {
+                        p.file_name()
+                            .and_then(|n| n.to_str())
+                            .is_some_and(|n| n.starts_with("rev-"))
+                    }));
+                }
+            }
+        }
+        Ok(files)
+    }
+
+    fn all(&self) -> Result<Revisions, StoreError> {
+        let mut found = Revisions::new();
+        for path in self.files()? {
+            let data = read_yaml(&path)?;
+            let (Some(id), Some(revision)) = (
+                data.get("id").and_then(Value::as_str),
+                data.get("revision").and_then(Value::as_i64),
+            ) else {
+                return Err(FileError {
+                    path,
+                    message: "A stored template needs a text id and a whole-number revision".into(),
+                }
+                .into());
+            };
+            found
+                .entry(id.to_string())
+                .or_default()
+                .insert(revision, data);
+        }
+        Ok(found)
+    }
+
+    fn profiles(&self) -> Result<Profiles, StoreError> {
+        Ok(load_profiles(&self.paths.instruments)?)
+    }
+
+    /// The latest revision of every template.
+    pub fn list(&self) -> Result<Vec<Template>, StoreError> {
+        let profiles = self.profiles()?;
+        self.all()?
+            .into_values()
+            .filter_map(|mut revs| revs.pop_last().map(|(_, data)| data))
+            .map(|data| validate(data, &profiles).map_err(StoreError::Invalid))
+            .collect()
+    }
+
+    /// One revision, the latest when `revision` is None.
+    pub fn get(&self, id: &str, revision: Option<i64>) -> Result<Template, StoreError> {
+        let mut revs = self.all()?.remove(id).unwrap_or_default();
+        let data = match revision {
+            Some(revision) => revs.remove(&revision),
+            None => revs.pop_last().map(|(_, data)| data),
+        }
+        .ok_or_else(|| StoreError::NotFound(id.to_string()))?;
+        validate(data, &self.profiles()?).map_err(StoreError::Invalid)
+    }
+
+    pub fn revisions(&self, id: &str) -> Result<Vec<i64>, StoreError> {
+        Ok(self
+            .all()?
+            .remove(id)
+            .map(|revs| revs.into_keys().collect())
+            .unwrap_or_default())
+    }
+
+    /// Stores `data` as the next revision of template `id`, after validating it.
+    pub fn save_revision(&self, id: &str, mut data: Value) -> Result<Template, StoreError> {
+        let Some(fields) = data.as_object_mut() else {
+            return Err(invalid("A template must be a mapping"));
+        };
+        if fields.get("id").and_then(Value::as_str) != Some(id) {
+            return Err(StoreError::IdChanged);
+        }
+        if !id
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err(invalid(format!(
+                "Template ids may use only letters, digits, '_' and '-', not {}",
+                crate::repr::str_repr(id)
+            )));
+        }
+        let next = self.revisions(id)?.last().map_or(1, |last| last + 1);
+        fields.insert("revision".into(), Value::from(next));
+        let template = validate(data, &self.profiles()?).map_err(StoreError::Invalid)?;
+        let target = self.dir.join(id).join(format!("rev-{next}.yaml"));
+        let file_error = |e: &dyn fmt::Display| FileError {
+            path: target.clone(),
+            message: e.to_string(),
+        };
+        let text = serde_norway::to_string(template.data()).map_err(|e| file_error(&e))?;
+        fs::create_dir_all(self.dir.join(id)).map_err(|e| file_error(&e))?;
+        // Linking a finished file into place never leaves half a revision behind, and
+        // fails rather than overwrite one that already exists.
+        let partial = self.dir.join(id).join(format!(".rev-{next}.yaml.partial"));
+        fs::write(&partial, text).map_err(|e| file_error(&e))?;
+        let linked = fs::hard_link(&partial, &target);
+        let _ = fs::remove_file(&partial);
+        linked.map_err(|e| file_error(&e))?;
+        Ok(template)
+    }
+
+    /// As `save_revision`, from the YAML text the editor shows. Text that is not YAML is a
+    /// validation error, not a failure of the store.
+    pub fn save_yaml(&self, id: &str, text: &str) -> Result<Template, StoreError> {
+        let data = parse_yaml(text).map_err(invalid)?;
+        self.save_revision(id, data)
+    }
+}
