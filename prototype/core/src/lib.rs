@@ -7,6 +7,7 @@ pub mod export;
 pub mod expr;
 pub mod importing;
 pub mod layout;
+pub mod legacy_frames;
 pub mod ms_workbook;
 pub mod params;
 pub mod protocol;

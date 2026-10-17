@@ -18,6 +18,7 @@ indexmap = { version = "2", features = ["serde"] }
 arrow = { version = "58", default-features = false }
 parquet = { version = "58", default-features = false, features = ["arrow", "snap"] }
 duckdb = { version = "=1.10506.1", features = ["bundled", "parquet", "chrono"] }
+zip = { version = "8.6", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
