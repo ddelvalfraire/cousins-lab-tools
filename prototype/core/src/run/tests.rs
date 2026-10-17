@@ -9,8 +9,9 @@ use arrow::datatypes::{DataType, Int64Type, TimestampMicrosecondType};
 use chrono::{Local, SubsecRound, TimeZone};
 use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 
+use super::live::LiveBuffer;
 use super::*;
 use crate::contract::{InputKind, Instrument, InstrumentInfo, Readiness, Sink};
 use crate::session::segments;
@@ -758,4 +759,105 @@ fn failure_policy_continue_others_keeps_the_other_roles_running() {
 #[test]
 fn failure_policy_stop_group_stops_every_role() {
     failure_policy("stop_group", CaptureStatus::Completed);
+}
+
+#[test]
+fn a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it() {
+    let _shared = shared();
+    let data = tempfile::tempdir().unwrap();
+    let mut doc = template_with(data.path(), json!({"light": {"start_delay_s": 0}}))
+        .data()
+        .clone();
+    doc["charts"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|c| c["id"] != "fluorescence");
+    doc["layout"] = json!({"views": [{"id": "run", "components": [
+        {"id": "now", "kind": "metric", "value": "fluorescence"}]}]});
+    let template = validate(doc, &profiles()).unwrap();
+    let run = start(data.path(), template, Arc::new(utc_now));
+    assert!(wait_until(20.0, || run.manifest().captures["light"].rows > 20));
+    let live = run.live(&Cursors::new());
+    let marker = run.mark("closed_system").unwrap();
+    assert!(wait_until(
+        20.0,
+        || run.live(&Cursors::new()).captures["light"].next > live.captures["light"].next
+    ));
+    let cursors = Cursors::from([
+        ("light".to_string(), live.captures["light"].next),
+        ("ms".to_string(), live.captures["ms"].next),
+    ]);
+    let later = run.live(&cursors);
+    let manifest = stop(&run, false);
+
+    let light = &live.captures["light"];
+    assert_eq!(live.status, SessionStatus::Running);
+    assert_eq!(light.rows.len() as u64, light.next);
+    assert!(light.rows.iter().any(|row| !row["fluorescence"].is_null()));
+    let samples = store(data.path())
+        .capture_dir(run.id(), "light")
+        .join("samples");
+    let (s, r) = (column(&samples, "S"), column(&samples, "R"));
+    for (i, row) in light.rows.iter().enumerate() {
+        let expected = (s[i] as f64 - 815.52) / r[i] as f64;
+        assert_eq!(row["fluorescence"].as_f64(), Some(expected), "row {i}");
+        assert!(row["x"].as_f64().unwrap() >= 0.0);
+    }
+
+    let newer = &later.captures["light"];
+    assert_eq!(newer.rows.len() as u64, newer.next - light.next);
+    assert_eq!(newer.rows_total, newer.next);
+    assert_eq!(later.markers, [marker]);
+    assert_eq!(later.manifest_captures["light"].role, "light");
+    assert!(later.elapsed_s > 0.0);
+    assert_eq!(
+        manifest.captures["light"].rows,
+        column(&samples, "S").len() as u64
+    );
+}
+
+#[test]
+fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
+    let buffer = LiveBuffer::default();
+    let point = |i: usize| Map::from_iter([("x".to_string(), json!(i))]);
+    for chunk in (0..LIVE_BUFFER_ROWS + 10).collect::<Vec<_>>().chunks(1000) {
+        buffer.push_rows(chunk.iter().map(|&i| point(i)).collect());
+    }
+    for kind in ["light_on", "sat_flash", "light_off"] {
+        buffer.push_event(LiveEvent {
+            kind: kind.into(),
+            label: kind.into(),
+            x_run_s: None,
+            value: None,
+        });
+    }
+    let total = (LIVE_BUFFER_ROWS + 10) as u64;
+    let all = buffer.view(0, 0, CaptureStatus::Running);
+    assert_eq!(
+        (all.next, all.rows_total, all.rows.len()),
+        (total, total, LIVE_BUFFER_ROWS)
+    );
+    assert_eq!(all.rows[0]["x"], 10, "the 10 oldest rows fell off");
+    let recent = buffer.view(total - 5, 2, CaptureStatus::Running);
+    let xs: Vec<&Value> = recent.rows.iter().map(|r| &r["x"]).collect();
+    assert_eq!(
+        xs,
+        [
+            &json!(total - 5),
+            &json!(total - 4),
+            &json!(total - 3),
+            &json!(total - 2),
+            &json!(total - 1)
+        ]
+    );
+    assert_eq!(
+        (
+            recent.events.len(),
+            recent.events[0].kind.as_str(),
+            recent.events_next
+        ),
+        (1, "light_off", 3)
+    );
+    let caught_up = buffer.view(total + 7, 9, CaptureStatus::Running);
+    assert!(caught_up.rows.is_empty() && caught_up.events.is_empty());
 }

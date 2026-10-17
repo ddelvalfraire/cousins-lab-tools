@@ -6,9 +6,11 @@
 
 mod adapter;
 mod capture;
+mod live;
 mod markers;
 mod owner;
 
+use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -29,10 +31,12 @@ use crate::session::{
 };
 use crate::templates::{Paths, Profiles, Template};
 use capture::{CaptureTask, Output};
+use live::{LiveBuffer, PointMaker};
 use markers::MarkerLog;
 use owner::{CaptureControl, Message, Owner, Published};
 
 pub use adapter::{BuiltAdapter, SIMULATED_SPOOL, build_adapter};
+pub use live::{Cursors, LIVE_BUFFER_ROWS, LiveCaptureView, LiveEvent, LiveView};
 pub use markers::Marker;
 
 /// How long a stop waits for each capture to end before recording that it did not.
@@ -132,12 +136,14 @@ struct Shared {
     id: String,
     template: Template,
     published: Arc<Published>,
+    live: IndexMap<String, Arc<LiveBuffer>>,
     /// Absent when the group never started because a role was not ready.
     started: Option<Started>,
 }
 
 struct Started {
     owner: mpsc::Sender<Message>,
+    t0: Instant,
     t0_utc: DateTime<Utc>,
     markers: Arc<Mutex<MarkerLog>>,
     clock: HostClock,
@@ -162,6 +168,8 @@ struct Prepared {
     output_dir: PathBuf,
     host_time: Option<usize>,
     columns: Vec<Column>,
+    aliases: BTreeMap<String, String>,
+    live: Arc<LiveBuffer>,
 }
 
 impl GroupRun {
@@ -261,6 +269,8 @@ impl GroupRun {
                 role: role.into(),
                 host_time: info.columns.iter().position(|c| c.name == "t_host_utc"),
                 columns: info.columns,
+                aliases: info.aliases,
+                live: Arc::default(),
                 output_dir: dir,
                 built,
             });
@@ -278,6 +288,7 @@ impl GroupRun {
                 id: manifest.id.clone(),
                 template,
                 published: Arc::new(Published::new(&manifest)),
+                live: live_buffers(&prepared),
                 started: None,
             })));
         }
@@ -300,7 +311,10 @@ impl GroupRun {
         let cancel = Arc::new(AtomicBool::new(false));
         let mut tasks = Vec::new();
         let mut simulators = Vec::new();
+        let live = live_buffers(&prepared);
         for p in prepared {
+            let names = p.columns.iter().map(|c| c.name.clone()).collect();
+            let points = PointMaker::new(&template, &p.role, names, p.aliases, p.host_time);
             let output = Output {
                 role: p.role.clone(),
                 samples: SegmentWriter::new(
@@ -318,6 +332,8 @@ impl GroupRun {
                 host_time: p.host_time,
                 stop: StopSignal::default(),
                 owner: owner_tx.clone(),
+                live: p.live,
+                points,
                 rows: 0,
                 event_seq: 0,
                 write_error: None,
@@ -335,7 +351,8 @@ impl GroupRun {
             run.group_start_utc = Some(t0_utc);
         }
         let mut controls = IndexMap::new();
-        for (adapter, output) in tasks {
+        for (adapter, mut output) in tasks {
+            output.points.t0 = t0_utc;
             let capture = &mut manifest.captures[&output.role];
             let delay =
                 Duration::from_micros((capture.host_delay_s.unwrap_or(0.0) * 1e6).round() as u64);
@@ -395,8 +412,10 @@ impl GroupRun {
             id,
             template,
             published,
+            live,
             started: Some(Started {
                 owner: owner_tx,
+                t0,
                 t0_utc,
                 markers,
                 clock,
@@ -458,6 +477,34 @@ impl GroupRun {
         Ok(started.markers.lock().unwrap().record(marker)?)
     }
 
+    /// What changed since `cursors`, in the shape the UI polls. Status and captures come from
+    /// the same manifest snapshot.
+    pub fn live(&self, cursors: &Cursors) -> LiveView {
+        let manifest = self.manifest();
+        let captures = self
+            .0
+            .live
+            .iter()
+            .map(|(role, buffer)| {
+                let rows = cursors.get(role).copied().unwrap_or(0);
+                let events = cursors.get(&format!("{role}:events")).copied().unwrap_or(0);
+                let status = manifest.captures[role].status;
+                (role.clone(), buffer.view(rows, events, status))
+            })
+            .collect();
+        LiveView {
+            status: manifest.status,
+            elapsed_s: self
+                .0
+                .started
+                .as_ref()
+                .map_or(0.0, |s| s.t0.elapsed().as_secs_f64()),
+            captures,
+            markers: self.markers(),
+            manifest_captures: manifest.captures.clone(),
+        }
+    }
+
     /// Every marker recorded so far, in order.
     pub fn markers(&self) -> Vec<Marker> {
         match &self.0.started {
@@ -470,6 +517,13 @@ impl GroupRun {
 /// `(t - t0).total_seconds()` on microsecond times, as Python computes run-relative times.
 fn seconds_since(t0: DateTime<Utc>, t: DateTime<Utc>) -> f64 {
     (t - t0).num_microseconds().unwrap_or(i64::MAX) as f64 / 1e6
+}
+
+fn live_buffers(prepared: &[Prepared]) -> IndexMap<String, Arc<LiveBuffer>> {
+    prepared
+        .iter()
+        .map(|p| (p.role.clone(), Arc::clone(&p.live)))
+        .collect()
 }
 
 fn after(t: DateTime<Utc>, delay: Duration) -> DateTime<Utc> {

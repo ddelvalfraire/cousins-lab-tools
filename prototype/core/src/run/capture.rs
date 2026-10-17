@@ -11,6 +11,7 @@ use std::time::Instant;
 use chrono::{DateTime, Utc};
 
 use super::HostClock;
+use super::live::{LiveBuffer, PointMaker};
 use super::owner::{Message, Outcome, Report};
 use crate::contract::{Cell, Event, Instrument, Row, Sink, StopSignal};
 use crate::session::{SegmentWriter, SessionError, event_row};
@@ -32,6 +33,8 @@ pub(super) struct Output {
     pub host_time: Option<usize>,
     pub stop: StopSignal,
     pub owner: Sender<Message>,
+    pub live: Arc<LiveBuffer>,
+    pub points: PointMaker,
     pub rows: u64,
     pub event_seq: i64,
     pub write_error: Option<String>,
@@ -129,10 +132,12 @@ impl Sink for Output {
             None
         };
         let last = self.host_time(last_row);
+        let points = rows.iter().map(|row| self.points.point(row)).collect();
         self.rows += rows.len() as u64;
         if let Err(e) = self.samples.append(rows) {
             self.failed_to_write(&e);
         }
+        self.live.push_rows(points);
         self.report(Report::Rows {
             total: self.rows,
             first,
@@ -146,5 +151,6 @@ impl Sink for Output {
         if let Err(e) = self.events.append(vec![row]) {
             self.failed_to_write(&e);
         }
+        self.live.push_event(self.points.event(&event));
     }
 }
