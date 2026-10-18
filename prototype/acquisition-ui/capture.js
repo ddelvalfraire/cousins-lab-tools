@@ -130,7 +130,9 @@ function alerts(m, session, source, analysis) {
   }
   if (source.error) out.push(["bad", source.error]);
   for (const u of source.alignment?.unaligned || []) out.push(["warn", `${u.capture} is not on this axis: ${u.reason}`]);
-  return out.map(([tone, text]) => `<div class="alert-strip ${tone}">${icon("alert")}<span>${esc(text)}</span></div>`).join("");
+  // One capture can be unaligned against several others; say it once.
+  const unique = out.filter(([, text], i) => out.findIndex(([, t]) => t === text) === i);
+  return unique.map(([tone, text]) => `<div class="alert-strip ${tone}">${icon("alert")}<span>${esc(text)}</span></div>`).join("");
 }
 
 async function mount(page, id, restart) {
