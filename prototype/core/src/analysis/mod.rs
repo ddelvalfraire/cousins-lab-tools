@@ -35,6 +35,7 @@ pub use store::{Action, Record, RecordId, append, load_records};
 use view::view_of;
 pub use view::{
     AnalysisView, ColumnView, Origin, ParameterView, RowView, StepReading, StepView, TableView,
+    XySeries, XyView,
 };
 
 /// One operator action as the UI sends it.

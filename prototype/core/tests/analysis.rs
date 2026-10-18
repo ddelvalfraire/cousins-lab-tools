@@ -689,3 +689,56 @@ fn a_table_exports_as_csv_with_each_rows_parameters_in_the_sidecar() {
         "a later calibration leaves the row alone"
     );
 }
+
+#[test]
+fn xy_charts_carry_calibration_points_with_the_fit_line_and_table_rows() {
+    let (engine, _dir, id) = imported(template());
+    let fresh = call(&engine, "analysis", json!({"session_id": id}));
+    assert_eq!(
+        fresh["xy"],
+        json!({
+            "line_cal": {"series": [{"name": "line", "color": "#00fa9a", "points": [], "line": null}]},
+            "samples": {"series": [{"name": "Ratio", "color": null, "points": [], "line": null}]},
+        })
+    );
+    let (x0, x1) = (
+        (211.692 + 191.442 + 171.192) / 3.0,
+        (-314.808 + -335.058 + -355.308) / 3.0,
+    );
+    record(&engine, &id, reading("line.p0", [0.2, 0.45]));
+    let one = record(&engine, &id, reading("line.p1", [2.9, 3.2]));
+    let series = &one["xy"]["line_cal"]["series"][0];
+    assert_eq!(series["points"], json!([[x0, 0.0], [x1, 1.0]]));
+    let line = series["line"].as_array().unwrap();
+    let (lo, hi) = (&line[0], &line[1]);
+    assert_eq!((lo[0].as_f64(), hi[0].as_f64()), (Some(x1), Some(x0)));
+    assert!((lo[1].as_f64().unwrap() - 1.0).abs() < 1e-12, "{line:?}");
+    assert!(hi[1].as_f64().unwrap().abs() < 1e-12, "{line:?}");
+
+    record(&engine, &id, reading("zero", [0.2, 0.45]));
+    record(&engine, &id, reading("sample.co2", [2.9, 3.2]));
+    record(&engine, &id, reading("sample.o2", [2.9, 3.2]));
+    let added = record(
+        &engine,
+        &id,
+        json!({"action": "add_row", "measurement": "sample"}),
+    );
+    let row = &added["tables"]["sample"]["rows"][0]["results"];
+    assert_eq!(
+        added["xy"]["samples"]["series"][0]["points"],
+        json!([[row["co2_zeroed"], row["ratio"]]])
+    );
+    record(&engine, &id, reading("sample.co2", [2.9, 3.2]));
+    record(&engine, &id, reading("sample.o2", [2.9, 3.2]));
+    let twice = record(
+        &engine,
+        &id,
+        json!({"action": "add_row", "measurement": "sample"}),
+    );
+    let point = json!([row["co2_zeroed"], row["ratio"]]);
+    assert_eq!(
+        twice["xy"]["samples"]["series"][0]["points"],
+        json!([point, point]),
+        "equal x values each keep their own point"
+    );
+}

@@ -271,10 +271,10 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
         fit.n = pairs.len();
         if let Some(line) = line_fit(&pairs).filter(|_| pairs.len() >= *min_points) {
             fit.slope = Some(line.slope);
+            fit.intercept = Some(line.intercept);
             fit.r2 = line.r2;
             let mut outputs = vec![(slope, line.slope)];
             if let Some(name) = intercept {
-                fit.intercept = Some(line.intercept);
                 outputs.push((name, line.intercept));
             }
             for (name, value) in outputs {

@@ -5,11 +5,12 @@ use serde::Serialize;
 
 use crate::params::ParamSource;
 use crate::session::iso_time;
-use crate::templates::Template;
+use crate::templates::{Template, is_xy};
 
+use super::fold::AnalysisState;
 use super::fold::{Draft, FitState, StepState, TableRow, draft, fold};
 use super::reading::{Range, ReadingValue};
-use super::spec::StepKind;
+use super::spec::{AnalysisSpec, CalibrationKind, StepKind};
 use super::store::{Record, RecordId};
 
 /// Where a parameter's value came from, or why it has none.
@@ -45,6 +46,78 @@ pub struct AnalysisView {
     /// Every measurement's next row, in template order.
     pub drafts: IndexMap<String, Draft>,
     pub tables: IndexMap<String, TableView>,
+    /// Every xy chart by id, its series computed here so the UI plots them as given.
+    pub xy: IndexMap<String, XyView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct XySeries {
+    pub name: String,
+    pub color: Option<String>,
+    /// `[x, y]`: a calibration point's reading and known value, or a table row's results.
+    pub points: Vec<[f64; 2]>,
+    /// A line calibration's fit across the x range of its points, once it has one.
+    pub line: Option<[[f64; 2]; 2]>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct XyView {
+    pub series: Vec<XySeries>,
+}
+
+/// The series of one xy chart from the folded state.
+fn xy_series(
+    series: &serde_json::Value,
+    spec: &AnalysisSpec,
+    state: &AnalysisState,
+) -> Option<XySeries> {
+    let text = |key: &str| series[key].as_str().map(String::from);
+    if let Some(id) = series["calibration"].as_str() {
+        let calibration = spec.calibrations.get(id)?;
+        let CalibrationKind::Line {
+            reading, points, ..
+        } = &calibration.kind
+        else {
+            return None;
+        };
+        let xy: Vec<[f64; 2]> = points
+            .iter()
+            .filter_map(|(point, p)| {
+                let step = state.steps.get(&format!("{id}.{point}"))?;
+                Some([step.values.get(&reading.of)?.value?, p.known])
+            })
+            .collect();
+        let fit = state.fits.get(id);
+        let line =
+            fit.and_then(|f| Some((f.slope?, f.intercept?)))
+                .and_then(|(slope, intercept)| {
+                    let lo = xy.iter().map(|p| p[0]).reduce(f64::min)?;
+                    let hi = xy.iter().map(|p| p[0]).reduce(f64::max)?;
+                    Some([[lo, intercept + slope * lo], [hi, intercept + slope * hi]])
+                });
+        return Some(XySeries {
+            name: text("label").unwrap_or_else(|| calibration.label.clone()),
+            color: text("color"),
+            points: xy,
+            line,
+        });
+    }
+    let id = series["measurement"].as_str()?;
+    let measurement = spec.measurements.get(id)?;
+    let (x, y) = (series["x"].as_str()?, series["y"].as_str()?);
+    let points = state
+        .tables
+        .get(id)
+        .into_iter()
+        .flatten()
+        .filter_map(|row| Some([(*row.results.get(x)?)?, (*row.results.get(y)?)?]))
+        .collect();
+    Some(XySeries {
+        name: text("label").unwrap_or_else(|| measurement.label.clone()),
+        color: text("color"),
+        points,
+        line: None,
+    })
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -191,6 +264,21 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
         };
         tables.insert(id.clone(), table);
     }
+    let xy = template
+        .charts()
+        .iter()
+        .filter(|chart| is_xy(chart))
+        .map(|chart| {
+            let series = chart["series"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|s| xy_series(s, template.analysis(), &state))
+                .collect();
+            let id = chart["id"].as_str().unwrap_or_default().to_string();
+            (id, XyView { series })
+        })
+        .collect();
     AnalysisView {
         rev: state.rev,
         parameters,
@@ -198,5 +286,6 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
         fits: state.fits,
         drafts,
         tables,
+        xy,
     }
 }
