@@ -71,6 +71,16 @@ pub enum Action {
         /// The parameters derived values were computed with.
         params: Params,
     },
+    /// A results table row: the draft's readings and results as they were, with the
+    /// parameters the results used. Later calibrations do not change it.
+    AddRow {
+        measurement: String,
+        labels: IndexMap<String, String>,
+        /// The reading records the row took; they leave the draft for good.
+        readings: Vec<RecordId>,
+        results: IndexMap<String, Option<f64>>,
+        params: Params,
+    },
     /// A typed parameter value; None clears an earlier entry.
     Entry {
         parameter: String,

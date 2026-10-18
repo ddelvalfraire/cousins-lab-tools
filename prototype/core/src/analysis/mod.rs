@@ -23,7 +23,7 @@ use crate::query::{AnalysisError, SessionDb};
 use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
-pub use fold::{AnalysisState, FitState, StepState, fold};
+pub use fold::{AnalysisState, Draft, FitState, StepState, TableRow, draft, fold};
 pub use reading::{Range, RangeError, ReadingValue, read_range};
 pub use spec::{
     AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
