@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, parameterRows, parseEntry, parseTyped, readingRows, readingsTitle, selectionLines, stepProgress, stepReadings, templateSteps, typedStart } from "../analysis.js";
+import { appliedSummary, calibrationMenu, capturesFor, loadHint, parameterRows, parseEntry, parseTyped, readingRows, readingsTitle, selectionLines, stepProgress, stepReadings, templateSteps, typedStart } from "../analysis.js";
 import { inputsBody, readingsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
@@ -218,4 +218,31 @@ test("a readings tile counts its read steps and takes its title from the one cal
   assert.equal(readingsTitle(["sample.co2", "sample.o2"], data), "Sample");
   assert.equal(readingsTitle(["co2.ul1", "co2_zero"], data), "Readings", "two owners");
   assert.equal(readingsTitle(["gone.x"], data), "Readings");
+});
+
+test("the Calibrations menu shows for templates with calibrations and exports once a calibration step or entry holds a value", () => {
+  const data = { calibrations: { zero: {} } };
+  const view = (steps, parameters = {}) => ({ steps, parameters });
+  assert.equal(calibrationMenu({}, null, null).show, false);
+  assert.equal(calibrationMenu(data, null, null).show, true);
+  const measured = view({ "sample.co2": { kind: "measure", source: "read" }, zero: { kind: "set", source: null } }, { t: { source: "computed" } });
+  assert.deepEqual([calibrationMenu(data, measured, null).canExport, calibrationMenu(data, measured, null).exportWhy],
+    [false, "Nothing calibrated in this session yet"], "a measurement reading is not a calibration");
+  assert.equal(calibrationMenu(data, view({ zero: { kind: "set", source: "typed" } }), null).canExport, true);
+  assert.equal(calibrationMenu(data, view({}, { temp_c: { source: "entered" } }), null).canExport, true);
+  assert.equal(calibrationMenu(data, null, null).sources, null, "still loading");
+  const sources = [{ session_id: "s-2", name: "", created_utc: "2026-10-18T10:00:00Z", revision: 1, steps: 1, parameters: 2 },
+    { session_id: "s-1", name: "Monday", created_utc: "2026-10-17T10:00:00Z", revision: 1, steps: 6, parameters: 1 }];
+  assert.deepEqual(calibrationMenu(data, null, sources).sources, [
+    { id: "s-2", name: "s-2", created: "2026-10-18T10:00:00Z", meta: "1 step, 2 parameters" },
+    { id: "s-1", name: "Monday", created: "2026-10-17T10:00:00Z", meta: "6 steps, 1 parameter" },
+  ]);
+});
+
+test("a copy or load says how many values it saved and lists what it left out; the load dialog names the legacy file only for module 1", () => {
+  assert.deepEqual(appliedSummary({ records: ["rec-000001"], notes: [] }, "Copied"), { text: "Copied 1 value", notes: [] });
+  const notes = ["BiCarb Cal 6 holds no value; not loaded"];
+  assert.deepEqual(appliedSummary({ records: ["a", "b"], notes }, "Loaded"), { text: "Loaded 2 values", notes });
+  assert.match(loadHint("legacy-module1-rubisco"), /^A calibration file exported from a session of this template, or a calibration CSV saved by the legacy module 1 screen\. /);
+  assert.match(loadHint("legacy-module2-co2-o2"), /^A calibration file exported from a session of this template\. The path/);
 });

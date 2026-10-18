@@ -193,3 +193,32 @@ export function templateSteps(data) {
   }
   return steps;
 }
+
+const count = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/**
+ * The capture page's Calibrations menu: whether the template has calibrations at all, whether the session holds
+ * any to export (a calibration step with a value, or an entered parameter, as the engine counts them), and the
+ * sessions calibration_sources lists, newest first. `sources` is null while that list loads.
+ */
+export function calibrationMenu(data, view, sources) {
+  const steps = Object.values(view?.steps ?? {});
+  const held = steps.some(s => s.kind !== "measure" && s.source) || Object.values(view?.parameters ?? {}).some(p => p.source === "entered");
+  return {
+    show: Object.keys(data?.calibrations ?? {}).length > 0,
+    canExport: held,
+    exportWhy: held ? "" : "Nothing calibrated in this session yet",
+    sources: sources?.map(s => ({ id: s.session_id, name: s.name || s.session_id, created: s.created_utc,
+      meta: `${count(s.steps, "step")}, ${count(s.parameters, "parameter")}` })) ?? null,
+  };
+}
+
+/** What a copy or load saved, in a sentence, and what it left out, one line each. */
+export const appliedSummary = (applied, verb) => ({ text: `${verb} ${count(applied.records.length, "value")}`, notes: applied.notes ?? [] });
+
+// The legacy calibration files the engine reads, by template id (core/src/analysis/legacy_calfile.rs).
+const LEGACY_FILES = { "legacy-module1-rubisco": "a calibration CSV saved by the legacy module 1 screen" };
+
+/** What the Load calibration file dialog accepts for a session of `templateId`. */
+export const loadHint = templateId => `A calibration file exported from a session of this template${LEGACY_FILES[templateId] ? `, or ${LEGACY_FILES[templateId]}` : ""}. `
+  + "The path is on the computer that runs the engine. Each value is saved as a new record that names the file.";

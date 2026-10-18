@@ -1,7 +1,7 @@
 // The capture page: a session's run page laid out by its template revision. Live while the engine runs it,
 // then the same page over the stored data.
 
-import { call, esc, fmtClock, icon, openDialog, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
+import { call, esc, fmtClock, fmtTime, icon, openDialog, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { sessionSummary } from "./status.js";
@@ -9,7 +9,7 @@ import { runPageItems, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
-import { capturesFor, parseEntry, parseTyped, stepReadings, tableRecords, tableTsv, typedStart } from "./analysis.js";
+import { appliedSummary, calibrationMenu, capturesFor, loadHint, parseEntry, parseTyped, stepReadings, tableRecords, tableTsv, typedStart } from "./analysis.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -123,6 +123,23 @@ function statusMenu(m, source, counts) {
     ${m.kind === "import" ? "" : `<div class="menu-footer"><span>If a device fails</span><span>${policy}</span></div>`}`;
 }
 
+/** The card behind the header's Calibrations button: copy from another session, export, and load a file. */
+function calibrationsCard(menu, exported) {
+  const sources = menu.sources == null ? '<span class="menu-meta menu-note">Looking for sessions…</span>'
+    : menu.sources.length ? menu.sources.map(s => `
+      <button class="menu-row capture-row" data-cal="copy" data-session="${esc(s.id)}">${icon("refresh")}
+        <span class="menu-label"><strong>${esc(s.name)}</strong><span class="menu-meta">${esc(fmtTime(s.created))} · ${esc(s.meta)}</span></span></button>`).join("")
+    : '<span class="menu-meta menu-note">No other session of this template holds calibrations.</span>';
+  return `
+    <div class="menu-section"><span class="menu-heading">Use calibrations from another session</span>${sources}</div>
+    <div class="menu-section">
+      <button class="menu-row" data-cal="export" ${menu.canExport ? "" : `disabled title="${esc(menu.exportWhy)}"`}>${icon("download")}<span class="menu-label">Export calibrations</span></button>
+      ${exported ? `<div class="menu-path"><code title="${esc(exported.csv)}">${esc(exported.csv)}</code><button class="quiet small" data-cal="reveal">${icon("folder")}Show in folder</button></div>` : ""}
+      <button class="menu-row" data-cal="load">${icon("file")}<span class="menu-label">Load calibration file…</span></button>
+    </div>
+    <div class="menu-footer"><span>Copied and loaded values are new records; Remove on a step brings back its earlier value.</span></div>`;
+}
+
 function alerts(m, session, source, analysis) {
   const out = [];
   if (analysis.error) out.push(["bad", analysis.error]);
@@ -188,8 +205,12 @@ async function mount(page, id, restart) {
   const record = async (args, saved = () => {}) => {
     const next = await call("record_analysis", { session_id: m.id, request_id: crypto.randomUUID(), ...args });
     if (stopped) return;
-    Object.assign(analysis, { view: next, version: analysis.version + 1 });
     saved();
+    await showView(next);
+  };
+  /** Paints a new analysis view from the engine, and recomputes the review charts under its parameters. */
+  const showView = async next => {
+    Object.assign(analysis, { view: next, version: analysis.version + 1 });
     refreshPreviews();
     // Review charts follow the session's current parameters too; live ones follow params_rev.
     if (source.live) return;
@@ -410,10 +431,14 @@ async function mount(page, id, restart) {
     </div>`;
 
   const t = m.template;
+  const calMenu = { sources: null, exported: null };
+  const hasCalibrations = calibrationMenu(template.data, null, null).show;
   page.innerHTML = pageHeader([["Home", "#/"], ["Sessions", "#/sessions"], [m.name, `#/sessions/${m.id}`]], m.name, {
     current: "Capture",
     sub: `<a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · ${statusBadge(m.status)}`,
-    actions: `<div class="status-menu"><button class="status-trigger" data-status-toggle aria-expanded="false" aria-controls="session-status"></button>
+    actions: (hasCalibrations ? `<div class="status-menu cal-menu"><button class="status-trigger" data-cal-toggle aria-expanded="false" aria-controls="session-calibrations">${icon("sliders")}Calibrations${icon("down")}</button>
+        <div class="status-popover" id="session-calibrations" data-cal-popover hidden></div></div>` : "")
+      + `<div class="status-menu"><button class="status-trigger" data-status-toggle aria-expanded="false" aria-controls="session-status"></button>
         <div class="status-popover" id="session-status" data-status-popover hidden></div></div>` + (session.live
       ? `<button class="danger" data-header="stop">${icon("stop")}Stop run</button>`
       : `<a class="button" href="#/sessions/${esc(m.id)}">${icon("file")}Review &amp; export</a>`),
@@ -450,10 +475,85 @@ async function mount(page, id, restart) {
     const row = event.target.closest("[data-panel-open]");
     if (row) { showStatus(false); if (view.panel !== row.dataset.panelOpen) openPanel(row.dataset.panelOpen); }
   });
+  const calPopover = q("[data-cal-popover]"), calTrigger = q("[data-cal-toggle]");
+  const paintCalibrations = () => {
+    if (calPopover) calPopover.innerHTML = calibrationsCard(calibrationMenu(template.data, analysis.view, calMenu.sources), calMenu.exported);
+  };
+  const showCalibrations = async open => {
+    if (!calPopover) return;
+    calPopover.hidden = !open;
+    calTrigger.setAttribute("aria-expanded", open);
+    if (!open) return;
+    calMenu.sources = null;
+    paintCalibrations();
+    calMenu.sources = await call("calibration_sources", { session_id: m.id }).catch(e => (toast(e.message), []));
+    if (!stopped) paintCalibrations();
+  };
+  /** A copy or a load saved records: show the new view, and what was left out when anything was. */
+  const applied = (result, verb) => {
+    const summary = appliedSummary(result, verb);
+    actions.push({ when: new Date().toISOString(), source: "engine", text: [summary.text, ...summary.notes].join(". "), tone: summary.notes.length ? "warn" : "info" });
+    toast(summary.text);
+    // After the dialog that asked for it has closed, since both use the one dialog element.
+    if (summary.notes.length) setTimeout(() => openDialog(`<form><h2>${esc(summary.text)}</h2><p>Left out:</p><ul class="note-list">${summary.notes.map(n => `<li>${esc(n)}</li>`).join("")}</ul>
+        <p class="error-text"></p><div class="actions"><button class="primary" value="ok">OK</button></div></form>`, () => {}));
+    return showView(result);
+  };
+  const calActions = {
+    copy: ({ session: from }) => {
+      const s = calibrationMenu(template.data, analysis.view, calMenu.sources).sources?.find(x => x.id === from);
+      showCalibrations(false);
+      openDialog(`
+        <form><h2>Use calibrations from ${esc(s?.name ?? from)}?</h2>
+          <p>Its ${esc(s?.meta ?? "calibrations")} are saved here as new records and replace this session's values for those steps and
+            parameters. Nothing here is deleted.</p><p class="error-text"></p>
+          <div class="actions"><button value="cancel">Keep these</button><button class="primary" value="ok">Use calibrations</button></div></form>`,
+      logged("Calibration copy requested", async () => {
+        const result = await call("copy_calibrations", { session_id: m.id, from_session_id: from, request_id: crypto.randomUUID() });
+        if (!stopped) await applied(result, "Copied");
+      }));
+    },
+    export: logged("Calibration export requested", async () => {
+      calMenu.exported = await call("export_calibrations", { session_id: m.id });
+      paintCalibrations();
+    }),
+    reveal: () => showInFolder(calMenu.exported.csv).catch(e => toast(e.message)),
+    load: () => {
+      showCalibrations(false);
+      const dialog = openDialog(`
+        <form><h2>Load a calibration file</h2>
+          <label class="field">File path<input name="path" autocomplete="off"></label>
+          <p class="small muted">${esc(loadHint(m.template.id))}</p>
+          <p class="error-text"></p>
+          <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Load</button></div></form>`,
+      async form => {
+        const path = String(form.get("path")).trim();
+        if (!path) throw new Error("Type the path of a calibration file");
+        const result = await call("load_calibrations", { session_id: m.id, path, request_id: crypto.randomUUID() });
+        if (!stopped) await applied(result, "Loaded");
+      });
+      // Enter in the field would press the first button, Cancel.
+      const form = dialog.querySelector("form");
+      form.elements.path.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        form.requestSubmit(form.querySelector('button[value="ok"]'));
+      });
+      form.elements.path.focus();
+    },
+  };
+  calTrigger?.addEventListener("click", event => { event.stopPropagation(); showCalibrations(calPopover.hidden); });
+  calPopover?.addEventListener("click", event => {
+    const el = event.target.closest("[data-cal]");
+    if (el && !el.disabled) calActions[el.dataset.cal](el.dataset);
+  });
   // The page is mounted again on every visit; these die with it.
   const outside = new AbortController();
-  document.addEventListener("click", event => event.target.closest?.(".status-menu") || showStatus(false), { signal: outside.signal });
-  document.addEventListener("keydown", event => event.key === "Escape" && showStatus(false), { signal: outside.signal });
+  document.addEventListener("click", event => {
+    if (!event.target.closest?.(".status-menu")) showStatus(false);
+    if (!event.target.closest?.(".cal-menu")) calPopover && showCalibrations(false);
+  }, { signal: outside.signal });
+  document.addEventListener("keydown", event => event.key === "Escape" && (showStatus(false), calPopover && showCalibrations(false)), { signal: outside.signal });
   const DOCK_KEY = "cousins-transport-hidden";
   const dockHidden = hidden => {
     q("[data-dock]").classList.toggle("collapsed", hidden);
