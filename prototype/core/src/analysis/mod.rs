@@ -6,6 +6,7 @@
 //! a value the engine did not compute.
 
 mod fold;
+mod reading;
 pub(crate) mod spec;
 mod store;
 
@@ -21,6 +22,7 @@ use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
 pub use fold::{AnalysisState, fold};
+pub use reading::{Range, RangeError, ReadingValue, read_range};
 pub use spec::{
     AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
     ResultSpec, Stat, StepKind, StepSpec,

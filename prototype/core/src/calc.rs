@@ -383,6 +383,12 @@ pub fn slope(points: impl Iterator<Item = (f64, f64)> + Clone) -> Option<f64> {
         .filter(|s| s.is_finite())
 }
 
+/// The arithmetic mean; None for no values.
+pub fn mean(values: impl Iterator<Item = f64>) -> Option<f64> {
+    let (n, sum) = values.fold((0usize, 0.0), |(n, sum), v| (n + 1, sum + v));
+    (n > 0).then(|| sum / n as f64).filter(|m| m.is_finite())
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -525,6 +531,13 @@ mod tests {
         assert_eq!(slope(std::iter::empty()), None);
         assert_eq!(slope([(2.0, 1.0), (2.0, 5.0)].into_iter()), None);
         assert_eq!(slope([(0.0, 5.0), (1.0, 3.0)].into_iter()), Some(-2.0));
+    }
+
+    #[test]
+    fn mean_is_none_without_values() {
+        assert_eq!(mean([1.0, 2.0, 6.0].into_iter()), Some(3.0));
+        assert_eq!(mean(std::iter::empty()), None);
+        assert_eq!(mean([1.0e308, 1.0e308].into_iter()), None);
     }
 
     #[test]
