@@ -17,7 +17,7 @@ use crate::alignment::{
     self, Alignment, Inputs, Manual, Reference, TrialParams, chart_data, list_alignments,
     load_alignment, metric_series, propose,
 };
-use crate::analysis;
+use crate::analysis::{self, Request};
 use crate::export::{export_aligned, export_legacy_frames};
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
@@ -103,7 +103,9 @@ impl From<ImportError> for ApiError {
 impl From<AnalysisError> for ApiError {
     fn from(e: AnalysisError) -> Self {
         let kind = match e {
-            AnalysisError::AlignmentNotFound(_) => ErrorKind::NotFound,
+            AnalysisError::AlignmentNotFound(_) | AnalysisError::RecordNotFound(_) => {
+                ErrorKind::NotFound
+            }
             AnalysisError::Invalid(_) | AnalysisError::Query(_) => ErrorKind::Invalid,
             AnalysisError::Db(_) | AnalysisError::Session(_) | AnalysisError::Template(_) => {
                 ErrorKind::Internal
@@ -264,6 +266,15 @@ impl Engine {
                 reply(analysis::view(
                     &self.session_dir(&id)?,
                     &self.manifest(&id)?,
+                )?)
+            }
+            "record_analysis" => {
+                let a: RecordArgs = parse(args)?;
+                reply(analysis::record(
+                    &self.session_dir(&a.session_id)?,
+                    &self.manifest(&a.session_id)?,
+                    a.request_id,
+                    a.request,
                 )?)
             }
             "query_session" => {
@@ -627,6 +638,14 @@ struct AlignmentRef {
 struct LegacyArgs {
     session_id: String,
     capture: String,
+}
+
+#[derive(Deserialize)]
+struct RecordArgs {
+    session_id: String,
+    request_id: Option<String>,
+    #[serde(flatten)]
+    request: Request,
 }
 
 #[derive(Deserialize)]

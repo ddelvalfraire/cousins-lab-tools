@@ -31,6 +31,8 @@ pub enum AnalysisError {
     Template(TemplateError),
     /// No saved alignment has this id.
     AlignmentNotFound(String),
+    /// No analysis record has this id.
+    RecordNotFound(String),
     /// A request that names something the session does not have.
     Invalid(String),
     /// A researcher's SQL failed, as `<Kind>Exception: <message>`.
@@ -44,6 +46,7 @@ impl fmt::Display for AnalysisError {
             AnalysisError::Session(e) => write!(f, "{e}"),
             AnalysisError::Template(e) => write!(f, "{e}"),
             AnalysisError::AlignmentNotFound(id) => write!(f, "Not found: {}", str_repr(id)),
+            AnalysisError::RecordNotFound(id) => write!(f, "No record {id}"),
             AnalysisError::Invalid(message) | AnalysisError::Query(message) => {
                 write!(f, "{message}")
             }
