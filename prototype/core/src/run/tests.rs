@@ -9,9 +9,9 @@ use arrow::datatypes::{DataType, Int64Type, TimestampMicrosecondType};
 use chrono::{Local, SubsecRound, TimeZone};
 use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
-use serde_json::{Map, Value, json};
+use serde_json::{Value, json};
 
-use super::live::LiveBuffer;
+use super::live::{LiveBuffer, RawPoint};
 use super::*;
 use crate::calc::Program;
 use crate::contract::{Cell, InputKind, Instrument, InstrumentInfo, Readiness, Sink};
@@ -881,7 +881,10 @@ fn a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it() {
 #[test]
 fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
     let buffer = LiveBuffer::default();
-    let point = |i: usize| Map::from_iter([("x".to_string(), json!(i))]);
+    let point = |i: usize| RawPoint {
+        x: json!(i),
+        ..RawPoint::default()
+    };
     for chunk in (0..LIVE_BUFFER_ROWS + 10).collect::<Vec<_>>().chunks(1000) {
         buffer.push_rows(chunk.iter().map(|&i| point(i)).collect());
     }

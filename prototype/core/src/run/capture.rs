@@ -132,7 +132,7 @@ impl Sink for Output {
             None
         };
         let last = self.host_time(last_row);
-        let points = rows.iter().map(|row| self.points.point(row)).collect();
+        let points = rows.iter().map(|row| self.points.raw(row)).collect();
         self.rows += rows.len() as u64;
         if let Err(e) = self.samples.append(rows) {
             self.failed_to_write(&e);

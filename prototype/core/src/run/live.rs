@@ -2,7 +2,8 @@
 //!
 //! Each capture has its own buffer behind its own lock. The buffers are not the manifest;
 //! they hold only what the live charts need, and the oldest points fall off after
-//! [`LIVE_BUFFER_ROWS`].
+//! [`LIVE_BUFFER_ROWS`]. A buffer keeps each row's program inputs beside its point and owns
+//! the evaluator, so the buffer alone decides which parameters its points are computed with.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::sync::Mutex;
@@ -58,18 +59,30 @@ pub(super) struct LiveBuffer(Mutex<LiveState>);
 
 #[derive(Default)]
 struct LiveState {
+    raw: VecDeque<RawPoint>,
     points: VecDeque<Map<String, Value>>,
     received: u64,
     events: Vec<LiveEvent>,
+    evaluation: Evaluation,
 }
 
 impl LiveBuffer {
-    pub fn push_rows(&self, points: Vec<Map<String, Value>>) {
-        let mut state = self.0.lock().unwrap();
-        state.received += points.len() as u64;
-        state.points.extend(points);
+    /// The evaluation this capture's rows go through, before its first row.
+    pub fn attach(&self, evaluation: Evaluation) {
+        self.0.lock().unwrap().evaluation = evaluation;
+    }
+
+    pub fn push_rows(&self, rows: Vec<RawPoint>) {
+        let mut guard = self.0.lock().unwrap();
+        let state = &mut *guard;
+        state.received += rows.len() as u64;
+        for raw in rows {
+            state.points.push_back(state.evaluation.point(&raw));
+            state.raw.push_back(raw);
+        }
         let excess = state.points.len().saturating_sub(LIVE_BUFFER_ROWS);
         state.points.drain(..excess);
+        state.raw.drain(..excess);
     }
 
     pub fn push_event(&self, event: LiveEvent) {
@@ -94,29 +107,71 @@ impl LiveBuffer {
     }
 }
 
-/// Where a live value comes from: the role's program, or a cell of the row.
+/// Where a live value comes from: the role's program, or a cell copied from the row.
 enum Source {
     Output(usize),
-    /// Position in the row, None when the row has no column of that name.
-    Cell(Option<usize>),
+    Cell(usize),
 }
 
-/// Turns a capture's rows into live points: `x`, seconds since the group start on the host
-/// clock, `t`, seconds on the capture's own clock when it records one, then each value the
-/// template shows for the role. Derived values come from the role's [`Evaluator`] with the
-/// template's default parameters; anything else is the column or alias of that name.
+/// One row as the live buffer keeps it: the host-time `x`, the source-clock seconds, the
+/// program's inputs, and the cells shown as they are.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub(super) struct RawPoint {
+    pub x: Value,
+    pub t_s: Option<f64>,
+    pub columns: Vec<Option<f64>>,
+    pub cells: Vec<Value>,
+}
+
+/// Turns raw points into live points: `x`, `t`, then each value the template shows for the
+/// role. Derived values come from the role's [`Evaluator`].
+#[derive(Default)]
+pub(super) struct Evaluation {
+    /// None when the role computes nothing.
+    evaluator: Option<Evaluator>,
+    values: Vec<(String, Source)>,
+}
+
+impl Evaluation {
+    fn point(&mut self, raw: &RawPoint) -> Map<String, Value> {
+        let outputs = match &mut self.evaluator {
+            Some(evaluator) => evaluator.push(Sample {
+                t_s: raw.t_s,
+                columns: &raw.columns,
+            }),
+            None => Vec::new(),
+        };
+        let mut point = Map::new();
+        point.insert("x".into(), raw.x.clone());
+        point.insert("t".into(), raw.t_s.map_or(Value::Null, Value::from));
+        for (name, source) in &self.values {
+            let value = match source {
+                Source::Output(i) => outputs[*i].map_or(Value::Null, Value::from),
+                Source::Cell(i) => raw.cells[*i].clone(),
+            };
+            point.insert(name.clone(), value);
+        }
+        point
+    }
+}
+
+/// Reads what the live view needs out of a capture's rows: host-time `x`, seconds on the
+/// capture's own clock when it records one, the program's inputs, and the cells shown as
+/// they are.
 pub(super) struct PointMaker {
     /// Row positions of the program's columns, in program order.
     inputs: Vec<Option<usize>>,
     /// Row position of the source clock and its seconds per unit, when the capture has one.
     clock: Option<(usize, f64)>,
-    values: Vec<(String, Source)>,
-    evaluator: Evaluator,
+    /// Row positions of the values copied as they are; None when the row has no such column.
+    cells: Vec<Option<usize>>,
     host_time: Option<usize>,
     pub t0: DateTime<Utc>,
 }
 
 impl PointMaker {
+    /// The reader for the capture thread and the evaluation for its live buffer, with the
+    /// template's default parameters.
     pub fn new(
         template: &Template,
         role: &str,
@@ -124,7 +179,7 @@ impl PointMaker {
         aliases: BTreeMap<String, String>,
         host_time: Option<usize>,
         clocks: &[Clock],
-    ) -> Result<Self, CalcError> {
+    ) -> Result<(Self, Evaluation), CalcError> {
         let position = |name: &str| {
             let column = aliases.get(name).map_or(name, String::as_str);
             columns.iter().position(|c| c == column)
@@ -134,29 +189,37 @@ impl PointMaker {
         let clock = program
             .clock()
             .and_then(|c| Some((position(&c.column)?, c.seconds_per_unit)));
+        let mut cells = Vec::new();
         let values = template
             .live_values(role)
             .into_iter()
             .map(|value| {
                 let source = match program.values().position(|v| v == value) {
                     Some(i) => Source::Output(i),
-                    None => Source::Cell(position(&value)),
+                    None => {
+                        cells.push(position(&value));
+                        Source::Cell(cells.len() - 1)
+                    }
                 };
                 (value, source)
             })
             .collect();
-        Ok(PointMaker {
+        let evaluation = Evaluation {
+            evaluator: Some(program.evaluator(&template.params())),
+            values,
+        };
+        let maker = PointMaker {
             inputs,
             clock,
-            values,
-            evaluator: program.evaluator(&template.params()),
+            cells,
             host_time,
             t0: DateTime::UNIX_EPOCH,
-        })
+        };
+        Ok((maker, evaluation))
     }
 
-    pub fn point(&mut self, row: &Row) -> Map<String, Value> {
-        let columns: Vec<Option<f64>> = self
+    pub fn raw(&self, row: &Row) -> RawPoint {
+        let columns = self
             .inputs
             .iter()
             .map(|i| i.and_then(|i| row.get(i)).and_then(number))
@@ -164,25 +227,21 @@ impl PointMaker {
         let t_s = self
             .clock
             .and_then(|(i, per_unit)| Some(number(row.get(i)?)? * per_unit));
-        let outputs = self.evaluator.push(Sample {
-            t_s,
-            columns: &columns,
-        });
         let x = match self.host_time.and_then(|i| row.get(i)) {
             Some(Cell::TimeUtc(t)) => Value::from(seconds_since(self.t0, *t)),
             _ => Value::Null,
         };
-        let mut point = Map::new();
-        point.insert("x".into(), x);
-        point.insert("t".into(), t_s.map_or(Value::Null, Value::from));
-        for (name, source) in &self.values {
-            let value = match source {
-                Source::Output(i) => outputs[*i].map_or(Value::Null, Value::from),
-                Source::Cell(i) => i.and_then(|i| row.get(i)).map_or(Value::Null, json),
-            };
-            point.insert(name.clone(), value);
+        let cells = self
+            .cells
+            .iter()
+            .map(|i| i.and_then(|i| row.get(i)).map_or(Value::Null, json))
+            .collect();
+        RawPoint {
+            x,
+            t_s,
+            columns,
+            cells,
         }
-        point
     }
 
     pub fn event(&self, event: &Event) -> LiveEvent {
