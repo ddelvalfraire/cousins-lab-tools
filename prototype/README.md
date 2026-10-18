@@ -114,8 +114,10 @@ without a layout gets one view with every chart, then controls and the capture t
 A component bound to an excluded role is hidden, the same way charts are. The engine returns
 the reason per component (`hidden_components`), and the layout editor shows hidden components
 dimmed with that reason so a save never drops them. On the run page a component widens into
-empty columns beside it, so neither the template's gaps nor a hidden component leave holes in a
-row; a view with `fill: false` keeps the exact geometry. A layout edit is saved as a new revision,
+empty columns beside it and lengthens into empty rows below it, and rows nothing uses close up,
+so neither the template's gaps nor a hidden component leave holes; a view with `fill: false`
+keeps the exact geometry. Run controls show only while the session is running: on a finished
+run or an import their buttons can do nothing, and the header's status card shows the captures. A layout edit is saved as a new revision,
 and a session keeps the layout of the revision it ran with.
 
 ## Legacy module presets
@@ -400,8 +402,6 @@ first proof of concept.
 - **The clock on this WSL machine jumps.** Its wall clock stepped about 0.51 s forward every
   32 s against the monotonic clock. A recorded start gap that spans a step reads 0.5 s late.
 - **Where the run page still differs from the original.**
-  - When a role is excluded, the components beside its tiles widen into the space, but rows it
-    leaves empty are not closed up.
   - Replay charts draw the template's event markers but not the operator marker; on the event
     reference the marker is the zero line.
   - The Events tab shows stored times (run clock, host clock, or native clock), not x on the
@@ -431,5 +431,5 @@ first proof of concept.
   instead.
 - **Other sources and tools.** Importing a folder of legacy frame files (the zip works), a
   protocol editor, and recovering unflushed rows from the raw spool copy.
-- **Layout.** Closing up rows left empty by excluded roles, dragging between groups, and deleting
+- **Layout.** Dragging between groups, and deleting
   views.

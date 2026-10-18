@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CATALOG, fillGaps, find, overlaps, placeBelow, settle, SIZES, uniqueId, visible } from "../layout.js";
+import { CATALOG, closeRows, fillDown, fillGaps, find, overlaps, runPageItems, placeBelow, settle, SIZES, uniqueId, visible } from "../layout.js";
 
 const grid = () => [
   { id: "co2", kind: "chart", x: 0, y: 0, w: 4, h: 5 },
@@ -71,4 +71,36 @@ test("a component widens into the empty columns beside it, and the first in a ba
   assert.deepEqual(fillGaps(centred).map(c => [c.id, c.x, c.w]), [["mean", 0, 12], ["chart", 0, 12]], "rows it does not share do not block it");
   const group = [{ id: "g", x: 0, y: 0, w: 12, h: 5, components: [{ id: "a", x: 2, y: 0, w: 4, h: 2 }] }];
   assert.deepEqual(fillGaps(group)[0].components.map(c => [c.x, c.w]), [[0, 12]], "groups are filled inside");
+});
+
+test("a session that is not running drops its run controls and the band they leave closes up", () => {
+  const view = { components: [
+    { id: "chart", kind: "chart", x: 0, y: 0, w: 12, h: 7 },
+    { id: "controls", kind: "controls", x: 0, y: 7, w: 12, h: 2 },
+    { id: "steps", kind: "readings", x: 0, y: 9, w: 3, h: 7 },
+    { id: "table", kind: "table", x: 8, y: 9, w: 4, h: 7 },
+  ] };
+  const idle = runPageItems(view, {}, { live: false });
+  assert.deepEqual(idle.map(c => [c.id, c.x, c.y, c.w]), [["chart", 0, 0, 12], ["steps", 0, 7, 8], ["table", 8, 7, 4]]);
+  const live = runPageItems(view, {}, { live: true });
+  assert.deepEqual(live.map(c => [c.id, c.y]), [["chart", 0], ["controls", 7], ["steps", 9], ["table", 9]], "a running session keeps them");
+  assert.deepEqual(runPageItems({ ...view, fill: false }, { table: "role light is excluded" }, { live: true }).map(c => [c.id, c.w]),
+    [["chart", 12], ["controls", 12], ["steps", 3]], "fill: false keeps widths; excluded roles still hide");
+  assert.deepEqual(closeRows([{ id: "a", x: 0, y: 3, w: 2, h: 1 }]).map(c => c.y), [0], "rows above everything close too");
+});
+
+test("a component lengthens into rows a hidden neighbour left below it, within its band", () => {
+  const view = { components: [
+    { id: "co2", kind: "chart", x: 0, y: 0, w: 8, h: 5 },
+    { id: "co2-now", kind: "metric", x: 8, y: 0, w: 2, h: 2 },
+    { id: "fluo-now", kind: "metric", x: 10, y: 0, w: 2, h: 2 },
+    { id: "controls", kind: "controls", x: 8, y: 2, w: 4, h: 3 },
+    { id: "captures", kind: "captures", x: 0, y: 5, w: 12, h: 3 },
+  ] };
+  const idle = runPageItems(view, {}, { live: false });
+  assert.deepEqual(idle.map(c => [c.id, c.y, c.h]), [["co2", 0, 5], ["co2-now", 0, 5], ["fluo-now", 0, 5], ["captures", 5, 3]]);
+  const live = runPageItems(view, {}, { live: true });
+  assert.deepEqual(live.map(c => c.h), [5, 2, 2, 3, 3], "nothing grows over a tile that is shown");
+  assert.deepEqual(fillDown([{ id: "a", x: 0, y: 0, w: 4, h: 2 }, { id: "b", x: 4, y: 0, w: 4, h: 6 }, { id: "c", x: 0, y: 4, w: 4, h: 2 }]).map(c => c.h),
+    [4, 6, 2], "stops at the next component in its columns");
 });

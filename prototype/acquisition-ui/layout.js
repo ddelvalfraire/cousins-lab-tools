@@ -88,3 +88,37 @@ export function fillGaps(items, columns = COLUMNS) {
   }
   return placed;
 }
+
+/** Move components up past rows nothing occupies, so a hidden full-width tile leaves no empty band. */
+export function closeRows(items) {
+  const used = new Set(items.flatMap(c => Array.from({ length: c.h }, (_, i) => c.y + i)));
+  const empty = Array.from({ length: Math.max(0, ...used) }, (_, r) => r).filter(r => !used.has(r));
+  return items.map(c => ({ ...c, y: c.y - empty.filter(r => r < c.y).length, ...(c.components ? { components: closeRows(c.components) } : {}) }));
+}
+
+/**
+ * What a view shows on the run page: the template's components minus those hidden for an excluded role
+ * and, when the session is not running, the run controls (they can do nothing then, and the header's
+ * status card shows the captures). Empty rows close up, and unless the view says `fill: false`
+ * components widen into empty columns.
+ */
+export function runPageItems(view, hidden, { live }) {
+  const idle = live ? {} : Object.fromEntries([...walk(view.components)].filter(([c]) => c.kind === "controls").map(([c]) => [c.id, true]));
+  const shown = closeRows(visible(view.components, { ...hidden, ...idle }));
+  return view.fill === false ? shown : fillDown(fillGaps(shown));
+}
+
+const columnsMeet = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w;
+
+/**
+ * Lengthen each component into empty rows below it, no further than the next component in its columns
+ * and the bottom of the band it shares rows with: the space a hidden tile left under its neighbours.
+ */
+export function fillDown(items) {
+  return items.map(c => {
+    const below = items.filter(o => o !== c && columnsMeet(o, c) && o.y >= c.y + c.h).map(o => o.y);
+    const band = Math.max(...items.filter(o => rowsMeet(o, c)).map(o => o.y + o.h));
+    const bottom = Math.min(band, ...below);
+    return { ...c, h: Math.max(c.h, bottom - c.y), ...(c.components ? { components: fillDown(c.components) } : {}) };
+  });
+}

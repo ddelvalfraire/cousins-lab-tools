@@ -5,7 +5,7 @@ import { call, esc, fmtClock, icon, openDialog, pageHeader, showInFolder, status
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { sessionSummary } from "./status.js";
-import { fillGaps, visible, walk } from "./layout.js";
+import { runPageItems, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
@@ -142,11 +142,7 @@ async function mount(page, id, restart) {
     call("list_instruments"), call("analysis", { session_id: id }).catch(e => ({ error: e.message }))]);
   // view: the engine's analysis view; previews: preview_reading per step for the selection; capture: role -> chosen capture.
   const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, labels: {}, exported: {}, version: 0, token: 0 };
-  // A view keeps its exact gaps only when its template says `fill: false`.
-  const views = template.layout.views.map(v => {
-    const shown = visible(v.components, template.hidden_components);
-    return { ...v, components: v.fill === false ? shown : fillGaps(shown) };
-  });
+  const views = template.layout.views.map(v => ({ ...v, components: runPageItems(v, template.hidden_components, { live: session.live }) }));
   const state = { view: views[0].id };
   const currentView = () => views.find(v => v.id === state.view);
   let source = session.live ? liveSource(m, template, currentView) : await replaySource(m, session, template);
