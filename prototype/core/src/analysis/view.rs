@@ -11,7 +11,7 @@ use super::fold::AnalysisState;
 use super::fold::{Draft, Filled, FitState, StepState, TableRow, draft, fold};
 use super::reading::{Range, ReadingValue};
 use super::spec::{AnalysisSpec, CalibrationKind, StepKind};
-use super::store::{Record, RecordId};
+use super::store::{Provenance, Record, RecordId};
 
 /// Where a parameter's value came from, or why it has none.
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -196,13 +196,16 @@ pub struct StepView {
     pub kind: &'static str,
     /// A calibration point's known value.
     pub known: Option<f64>,
-    /// `read` or `typed`, from the record that fills the step; None while nothing does.
+    /// `read`, `typed` or `copied`, from the record that fills the step; None while nothing
+    /// does.
     pub source: Option<&'static str>,
     pub record: Option<RecordId>,
     /// Reading name to value from that record, whichever its source.
     pub values: IndexMap<String, Option<f64>>,
     /// The statistics behind the values when the step was read.
     pub reading: Option<StepReading>,
+    /// The session and record the values were copied from.
+    pub from: Option<Provenance>,
 }
 
 pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
@@ -250,13 +253,18 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
                 role: step.role.clone(),
                 kind,
                 known,
-                source: filled.map(|s| match s.filled {
+                source: filled.map(|s| match &s.filled {
                     Filled::Read { .. } => "read",
-                    Filled::Typed { .. } => "typed",
+                    Filled::Typed { from: None, .. } => "typed",
+                    Filled::Typed { from: Some(_), .. } => "copied",
                 }),
                 record: filled.map(|s| s.record.clone()),
                 values: filled.map(StepState::values).unwrap_or_default(),
                 reading: filled.and_then(StepReading::of),
+                from: filled.and_then(|s| match &s.filled {
+                    Filled::Typed { from, .. } => from.clone(),
+                    Filled::Read { .. } => None,
+                }),
             };
             (id.clone(), view)
         })

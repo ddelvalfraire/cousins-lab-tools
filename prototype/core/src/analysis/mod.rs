@@ -5,6 +5,7 @@
 //! the session's template and computing whatever the record holds, so the UI can never supply
 //! a value the engine did not compute.
 
+mod carry;
 mod export;
 mod fold;
 mod reading;
@@ -24,6 +25,7 @@ use crate::query::{AnalysisError, SessionDb};
 use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
+pub use carry::{Applied, Carried, calibration_state, copy_calibrations};
 pub use export::{TableExport, export_table};
 pub use fold::{AnalysisState, Draft, Filled, FitState, StepState, TableRow, draft, fold};
 pub use reading::{Range, RangeError, ReadingValue, read_range};
@@ -31,7 +33,7 @@ pub use spec::{
     AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
     ResultSpec, Stat, StepKind, StepSpec,
 };
-pub use store::{Action, Record, RecordId, append, load_records};
+pub use store::{Action, Provenance, Record, RecordId, append, load_records};
 use view::view_of;
 pub use view::{
     AnalysisView, ColumnView, Origin, ParameterView, RowView, StepReading, StepView, TableView,
@@ -213,7 +215,11 @@ fn action_for(
                     names.join(", ")
                 )));
             }
-            Ok(Action::Typed { step, values })
+            Ok(Action::Typed {
+                step,
+                values,
+                from: None,
+            })
         }
         Request::Entry { parameter, value } => {
             let spec = template
@@ -226,7 +232,11 @@ fn action_for(
                     "Parameter {parameter} cannot be typed in; only parameters with entry: true can"
                 )));
             }
-            Ok(Action::Entry { parameter, value })
+            Ok(Action::Entry {
+                parameter,
+                value,
+                from: None,
+            })
         }
         Request::AddRow {
             measurement,

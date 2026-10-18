@@ -26,7 +26,7 @@ use crate::run::{Cursors, GroupRun, RunError, Sources};
 use crate::schemas;
 use crate::session::{Manifest, SessionError, SessionStatus, SessionStore, iso};
 use crate::templates::{
-    Paths, StoreError, Template, TemplateStore, compatible_profiles, load_profiles,
+    Paths, StoreError, Template, TemplateStore, compatible_profiles, from_snapshot, load_profiles,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -289,16 +289,24 @@ impl Engine {
                     a.request_id,
                     a.request,
                 )?;
-                if let Some(run) = self.run(&a.session_id) {
-                    let params: Params = recorded
-                        .view
-                        .parameters
-                        .iter()
-                        .filter_map(|(name, p)| Some((name.clone(), p.value?)))
-                        .collect();
-                    run.set_params(&params, recorded.view.rev);
-                }
+                self.follow(&a.session_id, &recorded.view);
                 reply(recorded)
+            }
+            "copy_calibrations" => {
+                let a: CopyArgs = parse(args)?;
+                let applied = analysis::copy_calibrations(
+                    &self.session_dir(&a.session_id)?,
+                    &self.manifest(&a.session_id)?,
+                    &self.session_dir(&a.from_session_id)?,
+                    &self.manifest(&a.from_session_id)?,
+                    a.request_id,
+                )?;
+                self.follow(&a.session_id, &applied.view);
+                reply(applied)
+            }
+            "calibration_sources" => {
+                let id = parse::<SessionRef>(args)?.session_id;
+                reply(self.calibration_sources(&id)?)
             }
             "preview_reading" => {
                 let a: PreviewArgs = parse(args)?;
@@ -345,6 +353,49 @@ impl Engine {
             (Ok(path), Ok(root)) => path.starts_with(root),
             _ => false,
         }
+    }
+
+    /// Gives a run this process drives the parameters of a new analysis view.
+    fn follow(&self, session_id: &str, view: &analysis::AnalysisView) {
+        if let Some(run) = self.run(session_id) {
+            let params: Params = view
+                .parameters
+                .iter()
+                .filter_map(|(name, p)| Some((name.clone(), p.value?)))
+                .collect();
+            run.set_params(&params, view.rev);
+        }
+    }
+
+    /// The other sessions of this session's template that hold calibrations, newest first.
+    fn calibration_sources(&self, id: &str) -> Result<Vec<Value>> {
+        let template = self.manifest(id)?.template["id"].clone();
+        let mut out = Vec::new();
+        for m in self.sessions.list()? {
+            if m.id == id || m.template["id"] != template {
+                continue;
+            }
+            let snapshot = from_snapshot(m.template.clone()).map_err(AnalysisError::from)?;
+            let log = analysis::load_records(&self.session_dir(&m.id)?)?;
+            let carried = analysis::calibration_state(&snapshot, &log);
+            let steps = carried
+                .iter()
+                .filter(|c| matches!(c, analysis::Carried::Step { .. }))
+                .count();
+            if carried.is_empty() {
+                continue;
+            }
+            out.push(json!({
+                "session_id": m.id,
+                "name": m.name,
+                "created_utc": iso(m.created_utc),
+                "revision": m.template["revision"],
+                "steps": steps,
+                "parameters": carried.len() - steps,
+            }));
+        }
+        out.sort_by(|a, b| b["created_utc"].as_str().cmp(&a["created_utc"].as_str()));
+        Ok(out)
     }
 
     fn list_templates(&self) -> Result<Vec<Value>> {
@@ -701,6 +752,13 @@ struct RecordArgs {
     request_id: Option<String>,
     #[serde(flatten)]
     request: Request,
+}
+
+#[derive(Deserialize)]
+struct CopyArgs {
+    session_id: String,
+    from_session_id: String,
+    request_id: Option<String>,
 }
 
 #[derive(Deserialize)]

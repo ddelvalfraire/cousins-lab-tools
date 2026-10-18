@@ -86,14 +86,27 @@ pub enum Action {
     Typed {
         step: String,
         values: IndexMap<String, f64>,
+        /// Set when the engine copied the values rather than the operator typing them.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        from: Option<Provenance>,
     },
     /// A typed parameter value; None clears an earlier entry.
     Entry {
         parameter: String,
         value: Option<f64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        from: Option<Provenance>,
     },
     /// Hides the named records from the fold. Nothing is deleted.
     Retract { records: Vec<RecordId> },
+}
+
+/// Where a copied value came from.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Provenance {
+    /// The record of another session of the same template that held the value.
+    Session { session: String, record: RecordId },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -206,6 +219,7 @@ mod tests {
         Action::Entry {
             parameter: parameter.into(),
             value: Some(value),
+            from: None,
         }
     }
 

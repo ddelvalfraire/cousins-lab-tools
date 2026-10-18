@@ -155,6 +155,7 @@ fn the_view_lists_every_parameter_with_its_value_and_where_it_came_from() {
     let entry = Action::Entry {
         parameter: "temp_c".into(),
         value: Some(25.0),
+        from: None,
     };
     append(&session_dir, template, None, entry, utc_now()).unwrap();
     let view = call(&engine, "analysis", json!({"session_id": id}));
@@ -345,7 +346,7 @@ fn a_reading_is_saved_with_its_values_and_a_set_calibration_fills_its_parameter(
     assert_eq!(
         fresh["steps"]["zero"],
         json!({"label": "Zero", "owner": "zero", "role": "ms", "kind": "set", "known": null,
-               "source": null, "record": null, "values": {}, "reading": null})
+               "source": null, "record": null, "values": {}, "reading": null, "from": null})
     );
     let first = (211.692 + 191.442 + 171.192) / 3.0;
     let saved = record(&engine, &id, reading("zero", [0.2, 0.45]));
@@ -815,4 +816,149 @@ fn a_typed_value_fills_a_step_until_a_later_reading_and_says_where_it_came_from(
         "Step line.p0 has no reading m32; it reads m44"
     );
     assert!(refuse(typed("zero", json!({"zero_p": "a"}))).starts_with("Bad arguments: "));
+}
+
+fn import_again(engine: &Engine, template: &str) -> String {
+    let manifest = call(
+        engine,
+        "import_files",
+        json!({"template_id": template,
+               "files": [{"role": "ms", "path": fixture("legacy-frames.zip")}]}),
+    );
+    manifest["id"].as_str().unwrap().to_string()
+}
+
+fn stored(dir: &tempfile::TempDir, id: &str, record: &Value) -> Value {
+    let file = dir
+        .path()
+        .join("sessions")
+        .join(id)
+        .join(format!("analysis/{}.json", record.as_str().unwrap()));
+    serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap()
+}
+
+#[test]
+fn calibrations_copy_from_another_session_of_the_template_and_name_their_source() {
+    let (engine, dir, from) = imported(template());
+    let typed =
+        |step: &str, values: Value| json!({"action": "typed", "step": step, "values": values});
+    record(&engine, &from, reading("zero", [0.2, 0.45]));
+    record(&engine, &from, reading("zero", [2.9, 3.2]));
+    record(&engine, &from, typed("line.p0", json!({"m44": 10.0})));
+    record(&engine, &from, typed("line.p1", json!({"m44": 20.0})));
+    record(
+        &engine,
+        &from,
+        json!({"action": "entry", "parameter": "temp_c", "value": 21}),
+    );
+    record(&engine, &from, reading("sample.co2", [2.9, 3.2]));
+    record(
+        &engine,
+        &from,
+        json!({"action": "add_row", "measurement": "sample"}),
+    );
+    let source = record(&engine, &from, reading("sample.co2", [0.2, 0.45]));
+    let to = import_again(&engine, TEMPLATE);
+    assert_eq!(
+        call(&engine, "calibration_sources", json!({"session_id": to})),
+        json!([{"session_id": from, "name": "Imported recording", "created_utc": source_created(&engine, &from),
+                "revision": 1, "steps": 3, "parameters": 1}])
+    );
+
+    let copied = call(
+        &engine,
+        "copy_calibrations",
+        json!({"session_id": to, "from_session_id": from, "request_id": "copy-1"}),
+    );
+    assert_eq!(
+        copied["records"],
+        json!(["rec-000001", "rec-000002", "rec-000003", "rec-000004"])
+    );
+    assert_eq!(copied["notes"], json!([]));
+    let zero = &copied["steps"]["zero"];
+    assert_eq!(zero["source"], "copied");
+    assert_eq!(zero["values"], source["steps"]["zero"]["values"]);
+    assert_eq!(
+        zero["from"],
+        json!({"session": from, "record": "rec-000002"})
+    );
+    assert_eq!(copied["steps"]["line.p1"]["from"]["record"], "rec-000004");
+    for name in ["zero_p", "gain_p", "base_p", "temp_c", "o2_scale"] {
+        assert_eq!(
+            copied["parameters"][name]["value"], source["parameters"][name]["value"],
+            "{name}"
+        );
+    }
+    assert_eq!(copied["parameters"]["temp_c"]["record"], "rec-000004");
+    assert_eq!(
+        stored(&dir, &to, &json!("rec-000004"))["from"],
+        json!({"session": from, "record": "rec-000005"})
+    );
+    assert_eq!(
+        copied["steps"]["sample.co2"]["source"],
+        Value::Null,
+        "drafts stay behind"
+    );
+    assert_eq!(
+        copied["tables"]["sample"]["rows"],
+        json!([]),
+        "rows stay behind"
+    );
+
+    let again = call(
+        &engine,
+        "copy_calibrations",
+        json!({"session_id": to, "from_session_id": from, "request_id": "copy-1"}),
+    );
+    assert_eq!(again["records"], copied["records"]);
+    assert_eq!(
+        record_files(&dir, &to),
+        4,
+        "a repeated request saves nothing"
+    );
+
+    let refuse = |args: Value| refused(&engine, "copy_calibrations", args).message;
+    assert_eq!(
+        refuse(json!({"session_id": to, "from_session_id": to})),
+        "A session cannot copy calibrations from itself"
+    );
+    let empty = import_again(&engine, TEMPLATE);
+    assert_eq!(
+        refuse(json!({"session_id": to, "from_session_id": empty})),
+        format!("Session {empty} has no calibrations to copy")
+    );
+    let mut other = template();
+    other["id"] = json!("other-test");
+    call(
+        &engine,
+        "save_template",
+        json!({"template_id": "other-test", "data": other}),
+    );
+    let elsewhere = import_again(&engine, "other-test");
+    let error = refused(
+        &engine,
+        "copy_calibrations",
+        json!({"session_id": elsewhere, "from_session_id": from}),
+    );
+    assert_eq!(error.kind, ErrorKind::Invalid);
+    assert_eq!(
+        error.message,
+        format!(
+            "Session {from} uses template analysis-test; this session uses other-test. Calibrations copy only between sessions of the same template"
+        )
+    );
+    assert_eq!(record_files(&dir, &elsewhere), 0);
+    assert_eq!(
+        call(
+            &engine,
+            "calibration_sources",
+            json!({"session_id": elsewhere})
+        ),
+        json!([])
+    );
+}
+
+fn source_created(engine: &Engine, id: &str) -> Value {
+    let session = call(engine, "get_session", json!({"session_id": id}));
+    session["manifest"]["created_utc"].clone()
 }

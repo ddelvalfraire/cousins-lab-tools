@@ -14,7 +14,7 @@ use crate::templates::Template;
 
 use super::reading::{Range, ReadingValue};
 use super::spec::{AnalysisSpec, CalibrationKind, Measurement, StepKind};
-use super::store::{Action, Record, RecordId};
+use super::store::{Action, Provenance, Record, RecordId};
 
 /// A line calibration's fit over the points that hold a reading.
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
@@ -38,6 +38,7 @@ pub enum Filled {
     },
     Typed {
         values: IndexMap<String, f64>,
+        from: Option<Provenance>,
     },
 }
 
@@ -58,7 +59,7 @@ impl StepState {
                 .iter()
                 .map(|(name, v)| (name.clone(), v.value))
                 .collect(),
-            Filled::Typed { values } => values
+            Filled::Typed { values, .. } => values
                 .iter()
                 .map(|(name, v)| (name.clone(), Some(*v)))
                 .collect(),
@@ -68,7 +69,7 @@ impl StepState {
     pub fn value(&self, name: &str) -> Option<f64> {
         match &self.filled {
             Filled::Read { values, .. } => values.get(name)?.value,
-            Filled::Typed { values } => values.get(name).copied(),
+            Filled::Typed { values, .. } => values.get(name).copied(),
         }
     }
 }
@@ -230,15 +231,17 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
                     values: values.clone(),
                 },
             ),
-            Action::Typed { step, values } => fill(
+            Action::Typed { step, values, from } => fill(
                 step,
                 Filled::Typed {
                     values: values.clone(),
+                    from: from.clone(),
                 },
             ),
             Action::Entry {
                 parameter,
                 value: Some(value),
+                ..
             } => {
                 state.params.insert(parameter.clone(), *value);
                 let record = record.id.to_string();
@@ -249,6 +252,7 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
             Action::Entry {
                 parameter,
                 value: None,
+                ..
             } => {
                 state.params.remove(parameter);
                 state.sources.remove(parameter);
@@ -391,12 +395,28 @@ mod tests {
     fn typed(seq: u64, step: &str, name: &str, value: f64) -> Record {
         let values = IndexMap::from([(name.to_string(), value)]);
         let step = step.into();
-        record(seq, None, Action::Typed { step, values })
+        record(
+            seq,
+            None,
+            Action::Typed {
+                step,
+                values,
+                from: None,
+            },
+        )
     }
 
     fn entry(seq: u64, value: Option<f64>) -> Record {
         let parameter = "temp_c".into();
-        record(seq, None, Action::Entry { parameter, value })
+        record(
+            seq,
+            None,
+            Action::Entry {
+                parameter,
+                value,
+                from: None,
+            },
+        )
     }
 
     fn retract(seq: u64, records: &[u64]) -> Record {
@@ -451,6 +471,7 @@ mod tests {
         let action = |value| Action::Entry {
             parameter: "temp_c".into(),
             value: Some(value),
+            from: None,
         };
         let log = [
             record(1, Some("a"), action(20.0)),
