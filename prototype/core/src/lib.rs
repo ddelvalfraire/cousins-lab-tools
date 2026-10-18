@@ -1,5 +1,6 @@
 pub mod alignment;
 pub mod ambit;
+pub mod analysis;
 pub mod api;
 pub mod calc;
 pub mod contract;
