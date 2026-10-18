@@ -3,6 +3,7 @@
 import { call, esc, icon, openDialog } from "./util.js";
 import { CATALOG, find, placeBelow, settle, SIZES, uniqueId } from "./layout.js";
 import { componentTitle } from "./components.js";
+import { templateSteps } from "./analysis.js";
 
 const SECTIONS = ["Visualize", "Configure", "Operate", "Arrange"];
 const KIND_ICON = Object.fromEntries(CATALOG.map(c => [c.kind, c.icon]));
@@ -15,6 +16,8 @@ function binding(c, template) {
     controls: () => (c.role ? `Role ${c.role}` : "Every role"),
     captures: () => (c.role ? `Role ${c.role}` : "Every role"),
     inputs: () => (c.parameters?.length ? c.parameters.join(", ") : "Every parameter"),
+    readings: () => (c.steps || []).join(", "),
+    table: () => `Measurement ${c.measurement}`,
     group: () => `${c.components.length} components`,
   }[c.kind]?.() ?? "";
 }
@@ -47,6 +50,9 @@ function inspector(c, template) {
     ${c.kind === "chart" ? field("Chart", select("chart", d.charts.map(ch => [ch.id, ch.title]), c.chart)) : ""}
     ${c.kind === "metric" ? field("Derived value", select("value", Object.entries(d.derived).map(([k, v]) => [k, `${v.label} (${v.role}, ${v.unit})`]), c.value)) : ""}
     ${["controls", "captures"].includes(c.kind) ? field("Role", select("role", roles, c.role)) : ""}
+    ${c.kind === "readings" ? `<fieldset class="field"><legend>Steps (one role per tile)</legend>${templateSteps(d).map(s =>
+      `<label class="check"><input type="checkbox" data-step="${esc(s.ref)}" ${c.steps?.includes(s.ref) ? "checked" : ""}>${esc(s.label)} <span class="small muted">${esc(s.ref)}</span></label>`).join("")}</fieldset>` : ""}
+    ${c.kind === "table" ? field("Measurement", select("measurement", Object.entries(d.measurements || {}).map(([k, m]) => [k, m.label || k]), c.measurement)) : ""}
     ${c.kind === "inputs" ? `<fieldset class="field"><legend>Parameters (none ticked shows all)</legend>${Object.keys(d.parameters || {}).map(k =>
       `<label class="check"><input type="checkbox" data-param="${esc(k)}" ${c.parameters?.includes(k) ? "checked" : ""}>${esc(k)}</label>`).join("")}</fieldset>` : ""}
     <div class="inspector-geometry">${["x", "y", "w", "h"].map(k => field(k.toUpperCase(), `<input type="number" min="${k === "w" || k === "h" ? 1 : 0}" data-field="${k}" value="${c[k]}">`)).join("")}</div>
@@ -71,6 +77,8 @@ function defaults(kind, layout, view, template) {
     chart: { chart: pick(template.data.charts.map(c => c.id), "chart") },
     metric: { value: pick(Object.keys(template.data.derived || {}), "value") },
     group: { components: [] },
+    readings: { steps: (steps => steps.filter(s => s.owner === steps[0]?.owner).map(s => s.ref))(templateSteps(template.data)) },
+    table: { measurement: Object.keys(template.data.measurements || {})[0] },
   }[kind] || {};
 }
 
@@ -222,7 +230,9 @@ export function mountEditor(el, template, { draft, onSaved }) {
     const t = event.target;
     const c = state.selected && find(layout, state.selected)?.component;
     if (!c || !t.closest(".inspector")) return;
-    if (t.dataset.param) {
+    if (t.dataset.step) {
+      c.steps = [...el.querySelectorAll("[data-step]:checked")].map(i => i.dataset.step);
+    } else if (t.dataset.param) {
       c.parameters = [...el.querySelectorAll("[data-param]:checked")].map(i => i.dataset.param);
       if (!c.parameters.length) delete c.parameters;
     } else if (["x", "y", "w", "h"].includes(t.dataset.field)) {

@@ -7,9 +7,10 @@ export const CATALOG = [
   { kind: "chart", name: "Chart", section: "Visualize", icon: "chart", description: "A template chart over the run clock or alignment" },
   { kind: "metric", name: "Metric", section: "Visualize", icon: "hash", description: "The latest value of a derived value, with its unit" },
   { kind: "captures", name: "Capture table", section: "Visualize", icon: "table", description: "Requested start, start command, first sample, rows" },
-  { kind: "inputs", name: "Parameters", section: "Configure", icon: "sliders", description: "The revision's parameters, read only during a run" },
-  { kind: "calibration", name: "Calibration table", section: "Configure", icon: "table", description: "Not available: the engine has no calibration model yet", disabled: true },
+  { kind: "inputs", name: "Parameters", section: "Configure", icon: "sliders", description: "Effective parameter values and where they came from; entry parameters can be typed in" },
   { kind: "controls", name: "Run controls", section: "Operate", icon: "power", description: "Mark, Stop, Cancel, readiness, capture status" },
+  { kind: "readings", name: "Readings", section: "Operate", icon: "flag", description: "A button per calibration or measurement step that reads the selected range" },
+  { kind: "table", name: "Results table", section: "Operate", icon: "table", description: "A measurement's next row, Add to table, Export, Copy, Clear, and its rows" },
   { kind: "group", name: "Component group", section: "Arrange", icon: "grid", description: "A nested grid" },
 ];
 

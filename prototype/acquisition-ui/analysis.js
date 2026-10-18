@@ -98,3 +98,17 @@ export function tableTsv(table) {
 
 /** The records Clear table retracts: every row still in the table. */
 export const tableRecords = table => (table?.rows || []).map(r => r.record);
+
+/** The step references a template's readings tiles may list, in template order: what the layout editor offers. */
+export function templateSteps(data) {
+  const steps = [];
+  for (const [id, c] of Object.entries(data.calibrations || {})) {
+    if (c.line) for (const [pt, p] of Object.entries(c.line.points || {})) steps.push({ ref: `${id}.${pt}`, owner: id, label: p.label || pt, role: c.role });
+    else steps.push({ ref: id, owner: id, label: c.label || id, role: c.role });
+  }
+  for (const [id, m] of Object.entries(data.measurements || {})) {
+    if (m.steps) for (const [st, s] of Object.entries(m.steps)) steps.push({ ref: `${id}.${st}`, owner: id, label: s.label || st, role: m.role });
+    else steps.push({ ref: id, owner: id, label: m.label || id, role: m.role });
+  }
+  return steps;
+}

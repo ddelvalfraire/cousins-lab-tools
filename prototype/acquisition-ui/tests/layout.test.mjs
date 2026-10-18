@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { find, overlaps, placeBelow, settle, uniqueId, visible } from "../layout.js";
+import { CATALOG, find, overlaps, placeBelow, settle, SIZES, uniqueId, visible } from "../layout.js";
 
 const grid = () => [
   { id: "co2", kind: "chart", x: 0, y: 0, w: 4, h: 5 },
@@ -48,4 +48,12 @@ test("hidden components are dropped at every depth and ids stay unique", () => {
   assert.deepEqual(shown.at(-1).components, []);
   assert.equal(find(layout, "metric-1").list, layout.views[0].components[5].components);
   assert.equal(uniqueId(layout, "metric"), "metric-2");
+});
+
+test("the catalog offers readings and table tiles in place of the old calibration entry, each with a size", () => {
+  const kinds = CATALOG.map(c => c.kind);
+  assert.ok(kinds.includes("readings") && kinds.includes("table"));
+  assert.ok(!kinds.includes("calibration"));
+  assert.deepEqual(CATALOG.filter(c => c.disabled), []);
+  assert.deepEqual(kinds.filter(k => !SIZES[k]), []);
 });

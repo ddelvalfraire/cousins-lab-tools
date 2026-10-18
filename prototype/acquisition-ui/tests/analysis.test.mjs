@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, parameterRows, parseEntry, readingRows } from "../analysis.js";
+import { capturesFor, parameterRows, parseEntry, readingRows, templateSteps } from "../analysis.js";
 import { inputsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
@@ -95,4 +95,25 @@ test("entry parameters render a field that sends on change; the others render re
   assert.equal([...html.matchAll(/<input[^>]*data-change="entry"/g)].length, 3);
   assert.match(html, /data-parameter="co2_t"\s+value="25"/);
   assert.match(html, /data-parameter="o2_cal"\s+value="" placeholder="1.35"/);
+});
+
+test("the editor offers every step reference of the template, in template order", () => {
+  const data = {
+    calibrations: {
+      co2: { label: "CO2 Calibrations", role: "ms", line: { reading: { stat: "mean", of: "m44" }, points: { zero: { label: "CO2 Cal Zero", known: 0 }, ul1: { known: 1 } } } },
+      co2_zero: { label: "CO2 Zero", role: "ms", set: { co2_zero_mv: { stat: "mean", of: "m44" } } },
+    },
+    measurements: {
+      sample: { label: "Sample", role: "ms", steps: { co2: { label: "CO2 Sample", readings: {} } }, results: {} },
+      rate_mean: { label: "Get Mean", role: "ms", readings: { mean_rate: { stat: "mean", of: "r" } }, results: {} },
+    },
+  };
+  assert.deepEqual(templateSteps(data).map(s => [s.ref, s.owner, s.label, s.role]), [
+    ["co2.zero", "co2", "CO2 Cal Zero", "ms"],
+    ["co2.ul1", "co2", "ul1", "ms"],
+    ["co2_zero", "co2_zero", "CO2 Zero", "ms"],
+    ["sample.co2", "sample", "CO2 Sample", "ms"],
+    ["rate_mean", "rate_mean", "Get Mean", "ms"],
+  ]);
+  assert.deepEqual(templateSteps({}), []);
 });
