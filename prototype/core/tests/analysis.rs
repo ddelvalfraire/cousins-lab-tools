@@ -594,3 +594,78 @@ fn a_table_row_keeps_what_it_was_added_with_after_a_later_calibration() {
     assert_eq!(cleared["tables"]["sample"]["rows"], json!([]));
     assert_eq!(refuse(add(json!({}))), "Draft has no readings");
 }
+
+#[test]
+fn a_table_exports_as_csv_with_each_rows_parameters_in_the_sidecar() {
+    let (engine, _dir, id) = imported(template());
+    let export = || {
+        call(
+            &engine,
+            "export_table",
+            json!({"session_id": id, "measurement": "sample"}),
+        )
+    };
+    let e = refused(
+        &engine,
+        "export_table",
+        json!({"session_id": id, "measurement": "sample"}),
+    );
+    assert_eq!(e.message, "Table sample has no rows to export");
+    record(&engine, &id, reading("zero", [0.2, 0.45]));
+    record(&engine, &id, reading("sample.co2", [2.9, 3.2]));
+    record(&engine, &id, reading("sample.o2", [2.9, 3.2]));
+    let added = record(
+        &engine,
+        &id,
+        json!({"action": "add_row", "measurement": "sample", "labels": {"name": "leaf, 1"}}),
+    );
+    let row = &added["tables"]["sample"]["rows"][0];
+    let paths = export();
+    let csv_path = PathBuf::from(paths["csv"].as_str().unwrap());
+    assert!(csv_path.ends_with("exports/table-sample-rec-000004/table.csv"));
+    let text = std::fs::read_to_string(&csv_path).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "record,created_utc,name,co2_zeroed,ratio");
+    let (co2, ratio) = (
+        row["results"]["co2_zeroed"].as_f64().unwrap(),
+        row["results"]["ratio"].as_f64().unwrap(),
+    );
+    assert_eq!(
+        lines[1],
+        format!(
+            "rec-000004,{},\"leaf, 1\",{co2:?},{ratio:?}",
+            row["created_utc"].as_str().unwrap()
+        )
+    );
+    assert_eq!(lines.len(), 2);
+    let sidecar: Value = serde_json::from_str(
+        &std::fs::read_to_string(paths["metadata"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sidecar["through_record"], "rec-000004");
+    assert_eq!(
+        sidecar["rows"][0]["readings"],
+        json!(["rec-000002", "rec-000003"])
+    );
+    let zero = (211.692 + 191.442 + 171.192) / 3.0;
+    assert_eq!(sidecar["rows"][0]["params"]["zero_p"], zero);
+    assert_eq!(sidecar["columns"][1]["expr"], "co2_mv - zero_p");
+
+    std::fs::write(&csv_path, "kept").unwrap();
+    assert_eq!(export(), paths, "the same log exports to the same folder");
+    assert_eq!(std::fs::read_to_string(&csv_path).unwrap(), "kept");
+    record(&engine, &id, reading("zero", [0.7, 0.9]));
+    let later = export();
+    assert!(
+        later["csv"]
+            .as_str()
+            .unwrap()
+            .contains("table-sample-rec-000005")
+    );
+    let again = std::fs::read_to_string(later["csv"].as_str().unwrap()).unwrap();
+    assert_eq!(
+        again.lines().nth(1),
+        Some(lines[1]),
+        "a later calibration leaves the row alone"
+    );
+}

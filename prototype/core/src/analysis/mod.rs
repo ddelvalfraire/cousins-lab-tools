@@ -5,6 +5,7 @@
 //! the session's template and computing whatever the record holds, so the UI can never supply
 //! a value the engine did not compute.
 
+mod export;
 mod fold;
 mod reading;
 pub(crate) mod spec;
@@ -23,6 +24,7 @@ use crate::query::{AnalysisError, SessionDb};
 use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
+pub use export::{TableExport, export_table};
 pub use fold::{AnalysisState, Draft, FitState, StepState, TableRow, draft, fold};
 pub use reading::{Range, RangeError, ReadingValue, read_range};
 pub use spec::{

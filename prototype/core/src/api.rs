@@ -298,6 +298,14 @@ impl Engine {
                     a.range_s,
                 )?)
             }
+            "export_table" => {
+                let a: TableArgs = parse(args)?;
+                reply(analysis::export_table(
+                    &self.session_dir(&a.session_id)?,
+                    &self.manifest(&a.session_id)?,
+                    &a.measurement,
+                )?)
+            }
             "query_session" => {
                 let a: QueryArgs = parse(args)?;
                 let dir = self.session_dir(&a.session_id)?;
@@ -675,6 +683,12 @@ struct PreviewArgs {
     step: String,
     capture: String,
     range_s: analysis::Range,
+}
+
+#[derive(Deserialize)]
+struct TableArgs {
+    session_id: String,
+    measurement: String,
 }
 
 #[derive(Deserialize)]
