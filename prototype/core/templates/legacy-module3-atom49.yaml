@@ -75,5 +75,5 @@ layout:
         - {id: rate-chart, kind: chart, chart: atom49_rate, x: 6, y: 0, w: 6, h: 9}
         - {id: raw-chart, kind: chart, chart: raw, x: 0, y: 9, w: 12, h: 7}
         - {id: controls, kind: controls, x: 0, y: 16, w: 12, h: 2}
-        - {id: mean-steps, kind: readings, role: ms, steps: [rate_mean], x: 4, y: 18, w: 4, h: 2}
-        - {id: mean-table, kind: table, measurement: rate_mean, x: 4, y: 20, w: 4, h: 7}
+        - {id: mean-steps, kind: readings, role: ms, steps: [rate_mean], x: 0, y: 18, w: 4, h: 7}
+        - {id: mean-table, kind: table, measurement: rate_mean, x: 4, y: 18, w: 8, h: 7}

@@ -135,9 +135,9 @@ Pressure and Pressure Derivative across the top, the raw masses full width, and 
 O2 block, and results table along the bottom. Module 1 has the Assay Buffer and HCL calibration
 charts and the velocity chart on top, eight raw masses, and the O2, CO2, BiCarb, blank and
 extract buttons beside the results table. Module 3 has Atom49% and its rate of change on top,
-the raw masses, and Get Mean with its table centred below. The buttons and inputs work
-differently: Plot All, Start, Pause and the speed slider become Start run and the time-range
-toolbar, the mass checkboxes become the chart legend, and a reading is taken over a range
+the raw masses, and Get Mean beside its table below (legacy centred the two in a narrow
+column). The buttons and inputs work differently: Plot All, Start, Pause and the speed slider
+become Start run, the time-range toolbar and the floating replay bar, the mass checkboxes become the chart legend, and a reading is taken over a range
 selected on a chart rather than between two bars.
 
 **What the presets show about the design.**
