@@ -86,6 +86,7 @@ const ICONS = {
   resize: "m13 20 7-7 M7 20 13 14", table: "M3 3h18v18H3z M3 9h18 M9 3v18 M3 15h18", hash: "M5 9h14 M4 15h14 M10 3 6 21 M18 3l-4 18",
   sliders: "M3 6h6 M13 6h8 M3 18h12 M19 18h2 M9 3v6 M15 15v6 M3 12h12 M19 12h2 M15 9v6", power: "M12 2v10 M6 5a9 9 0 1 0 12 0",
   file: "M5 3h9l5 5v13H5z M14 3v6h5 M8 13h8 M8 17h6", flag: "M5 21V4 M5 4h11l-2 4 2 4H5", refresh: "M20 7v5h-5 M4 17v-5h5 M5 7a8 8 0 0 1 14-2l1 2 M4 17l1 2a8 8 0 0 0 14-2",
+  edit: "M4 20h4L19 9l-4-4L4 16z M14 6l4 4",
   info: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 11v6 M12 7h.01", link: "m10 8 3-3a4 4 0 0 1 6 6l-3 3 M14 16l-3 3a4 4 0 0 1-6-6l3-3 M8 16l8-8",
 };
 export const icon = name => `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICONS[name] || ICONS.grid}"/></svg>`;

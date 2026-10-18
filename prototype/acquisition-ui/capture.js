@@ -9,7 +9,7 @@ import { runPageItems, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
-import { capturesFor, parseEntry, tableRecords, tableTsv } from "./analysis.js";
+import { capturesFor, parseEntry, parseTyped, stepReadings, tableRecords, tableTsv, typedStart } from "./analysis.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -145,8 +145,11 @@ async function mount(page, id, restart) {
   const m = session.manifest;
   const [template, instruments, analysisView] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }),
     call("list_instruments"), call("analysis", { session_id: id }).catch(e => ({ error: e.message }))]);
-  // view: the engine's analysis view; previews: preview_reading per step for the selection; capture: role -> chosen capture.
-  const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, labels: {}, exported: {}, version: 0, token: 0 };
+  // view: the engine's analysis view; previews: preview_reading per step for the selection; capture: role -> chosen capture;
+  // editing: {step, texts} while a step's value is typed, its start in `typedFrom`.
+  const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, labels: {}, exported: {},
+    editing: null, typedFrom: null, version: 0, token: 0 };
+  const readingNames = stepReadings(template.data);
   const views = template.layout.views.map(v => ({ ...v, components: runPageItems(v, template.hidden_components, { live: session.live }) }));
   const state = { view: views[0].id };
   const currentView = () => views.find(v => v.id === state.view);
@@ -196,6 +199,8 @@ async function mount(page, id, restart) {
     paint();
   };
 
+  const saveTypedValue = logged("Typed value saved", record);
+
   const ctx = {
     template, session: m,
     actions: {
@@ -208,6 +213,29 @@ async function mount(page, id, restart) {
         if (typed.error) throw new Error(typed.error);
         await record({ action: "entry", parameter, value: typed.value });
       }),
+      typeStep: ({ step }) => {
+        analysis.editing = typedStart(step, analysis.view.steps[step], readingNames[step]);
+        analysis.typedFrom = { ...analysis.editing.texts };
+        analysis.version++;
+        paint();
+      },
+      typed: ({ typed, reading }, text) => { if (analysis.editing?.step === typed) analysis.editing.texts[reading] = text; },
+      cancelTyped: () => {
+        if (!analysis.editing) return;
+        analysis.editing = null;
+        analysis.version++;
+        paint();
+      },
+      saveTyped: ({ typed: step }) => {
+        const editing = analysis.editing;
+        if (editing?.step !== step) return;
+        const parsed = parseTyped(editing.texts, analysis.typedFrom);
+        if (parsed.error) return toast(parsed.error);
+        analysis.editing = null;
+        analysis.version++;
+        paint();
+        if (!parsed.cancel) saveTypedValue({ action: "typed", step, values: parsed.values });
+      },
       label: ({ measurement, key }, text) => { (analysis.labels[measurement] ??= {})[key] = text; },
       addRow: logged("Add to table requested", async ({ measurement }) => {
         await record({ action: "add_row", measurement, labels: analysis.labels[measurement] || {} }, () => delete analysis.labels[measurement]);

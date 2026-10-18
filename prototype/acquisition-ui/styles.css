@@ -126,6 +126,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .badge.tone-active { background: var(--accent-tint); color: var(--accent); }
 .badge.tone-pending { background: var(--warning-tint); color: var(--warning-text); }
 .badge.tone-bad { background: var(--danger-tint); color: var(--destructive-text); }
+.badge.tone-linked { background: var(--violet-tint); color: var(--trace-violet); }
 
 .notice { border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
 .notice > div { flex: 1; }
@@ -377,6 +378,11 @@ button.danger-text { color: var(--destructive-text); }
 .step-actions button.small { min-height: 30px; padding: 3px 12px; }
 .step-actions button.icon-only.small { padding: 5px; }
 .step-actions .icon { width: 16px; height: 16px; }
+.step-value .step-source { font-size: 11px; line-height: 16px; padding: 0 6px; margin-left: 4px; }
+.step-list li.typing .step-value { overflow: visible; white-space: normal; margin-top: 4px; }
+.typed-fields { display: flex; flex-wrap: wrap; gap: 6px; }
+.typed-field > span { border-left: 0; border-right: 1px solid var(--border-soft); }
+.typed-field input.entry { width: 7em; text-align: left; }
 
 /* Parameters: label and note on the left, value with unit and source on the right. */
 .param-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }

@@ -4,7 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
-import { capturesFor, fmtValue, parameterRows, readingRows, readingsTitle, selectionLines, stepProgress, tableModel } from "./analysis.js";
+import { capturesFor, fmtValue, parameterRows, readingRows, readingsTitle, selectionLines, stepProgress, stepReadings, tableModel } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -78,12 +78,27 @@ export function inputsBody(c, ctx, rows) {
     <p class="tile-footnote">${icon("info")}<span>Revision ${ctx.session.template.revision} gives the defaults. Typed values, readings and fits are saved to this session.</span></p>`;
 }
 
-/** analysis: the page's {view, previews, capture}; capture maps a role to the capture chosen for it. */
-function readingsBody(c, ctx, analysis, selection) {
+const STEP_TONES = { typed: "tone-active", copied: "tone-linked", loaded: "tone-linked" };
+
+function stepValue(r) {
+  if (r.typing) {
+    return `<span class="typed-fields" data-typed-for="${esc(r.step)}" title="Enter saves, Esc cancels">${r.typing.map(f => `
+      <label class="input-unit typed-field">${r.typing.length > 1 ? `<span>${esc(f.name)}</span>` : ""}<input class="entry" inputmode="decimal" autocomplete="off"
+        data-typed="${esc(r.step)}" data-reading="${esc(f.name)}" data-input="typed" aria-label="${esc(`${r.label} ${f.name}`)}" value="${esc(f.text)}"></label>`).join("")}</span>`;
+  }
+  const known = r.known != null ? ` <span class="known">known ${fmtValue(r.known)}</span>` : "";
+  if (!r.saved) return `<span class="muted">Not read</span>${known}`;
+  return `<strong>${esc(r.saved.short)}</strong>${r.saved.detail ? ` <span class="muted">${esc(r.saved.detail)}</span>` : ""}
+    <span class="badge step-source ${STEP_TONES[r.source.source] ?? ""}" title="${esc(r.source.title)}">${esc(r.source.tag)}</span>${known}`;
+}
+
+/** analysis: the page's {view, previews, capture, editing}; capture maps a role to the capture chosen for it. */
+export function readingsBody(c, ctx, analysis, selection) {
   const role = c.role ?? analysis.view?.steps?.[c.steps[0]]?.role;
   const cids = capturesFor(ctx.session.captures, role);
   const capture = analysis.capture[role] ?? cids[0] ?? null;
-  const rows = readingRows(c.steps, analysis.view, { selection, capture, previews: analysis.previews });
+  const names = stepReadings(ctx.template.data);
+  const rows = readingRows(c.steps, analysis.view, { selection, capture, previews: analysis.previews, names, editing: analysis.editing });
   const whys = [...new Set(rows.map(r => r.read.why).filter(Boolean))];
   const progress = stepProgress(rows);
   const lines = selectionLines(rows);
@@ -98,15 +113,15 @@ function readingsBody(c, ctx, analysis, selection) {
       `<span class="${l.error ? "error-text" : ""}">${esc(l.text)}</span>`).join("")}</div></div>`
       : whys.length ? `<p class="hint">${icon("info")}<span>${whys.map(esc).join(" ")}</span></p>` : ""}
     <ul class="step-list">${rows.map(r => `
-      <li data-step="${esc(r.step)}" class="${r.saved ? "done" : ""}">
+      <li data-step="${esc(r.step)}" class="${[r.saved && "done", r.typing && "typing"].filter(Boolean).join(" ")}">
         <span class="step-status" aria-hidden="true">${r.saved ? icon("check") : ""}</span>
         <span class="step-label" ${r.known != null ? `title="Known value ${fmtValue(r.known)}"` : ""}>${esc(r.label)}</span>
         <div class="step-actions">
           <button class="small ${r.saved ? "" : "primary"}" data-action="read" data-step="${esc(r.step)}" aria-label="Read ${esc(r.label)}" ${r.read.disabled ? "disabled" : ""}>${r.saved ? "Redo" : "Read"}</button>
-          ${r.remove ? `<button class="quiet icon-only small" data-action="retract" data-records="${esc(r.remove)}" aria-label="Remove ${esc(r.label)}" title="Remove this reading">${icon("close")}</button>` : ""}
+          ${r.typable && !r.typing ? `<button class="quiet icon-only small" data-action="typeStep" data-step="${esc(r.step)}" aria-label="Type a value for ${esc(r.label)}" title="Type a value">${icon("edit")}</button>` : ""}
+          ${r.remove ? `<button class="quiet icon-only small" data-action="retract" data-records="${esc(r.remove)}" aria-label="Remove ${esc(r.label)}" title="Remove this value">${icon("close")}</button>` : ""}
         </div>
-        <span class="step-value" ${r.saved ? `title="${esc(r.saved.values.join(", "))}"` : ""}>${r.saved
-          ? `<strong>${esc(r.saved.short)}</strong> <span class="muted">${esc(r.saved.detail)}</span>` : '<span class="muted">Not read</span>'}${r.known != null ? ` <span class="known">known ${fmtValue(r.known)}</span>` : ""}</span>
+        <span class="step-value" ${r.saved && !r.typing ? `title="${esc(r.saved.values.join(", "))}"` : ""}>${stepValue(r)}</span>
       </li>`).join("")}</ul>`;
 }
 
@@ -224,8 +239,20 @@ export function mountGrid(root, items, ctx) {
   delegate("click", "action", el => [el.dataset]);
   delegate("change", "change", el => [el.dataset, el.value]);
   delegate("input", "input", el => [el.dataset, el.value]);
+  // A typed step value saves on Enter or when focus leaves the step's fields, and Escape drops it.
+  root.addEventListener("keydown", event => {
+    const el = event.target.closest?.("[data-typed]");
+    if (!el || !root.contains(el) || !["Enter", "Escape"].includes(event.key)) return;
+    event.preventDefault();
+    ctx.actions?.[event.key === "Enter" ? "saveTyped" : "cancelTyped"]?.(el.dataset);
+  }, { signal: listening.signal });
+  root.addEventListener("focusout", event => {
+    const el = event.target.closest?.("[data-typed]");
+    if (!el || !root.contains(el) || el.closest("[data-typed-for]")?.contains(event.relatedTarget)) return;
+    ctx.actions?.saveTyped?.(el.dataset);
+  }, { signal: listening.signal });
 
-  let stateKey = null, analysisKey = null, paramsKey = null;
+  let stateKey = null, analysisKey = null, paramsKey = null, typingShown = null;
   const tableKeys = {};
   return {
     paint(frame) {
@@ -264,8 +291,18 @@ export function mountGrid(root, items, ctx) {
       const akey = JSON.stringify([frame.analysis?.version, frame.select?.range]);
       if (frame.analysis && akey !== analysisKey) {
         analysisKey = akey;
+        const typing = frame.analysis.editing;
         for (const c of all.filter(c => c.kind === "readings")) {
-          root.querySelector(`[data-readings-for="${CSS.escape(c.id)}"]`).innerHTML = readingsBody(c, ctx, frame.analysis, frame.select?.range);
+          const here = typing && c.steps.includes(typing.step);
+          // Repainting the tile being typed in would drop the caret; it repaints once the edit ends.
+          if (here && typingShown === typing) continue;
+          const el = root.querySelector(`[data-readings-for="${CSS.escape(c.id)}"]`);
+          el.innerHTML = readingsBody(c, ctx, frame.analysis, frame.select?.range);
+          if (here) {
+            typingShown = typing;
+            el.querySelector("[data-typed]")?.focus();
+            el.querySelector("[data-typed]")?.select();
+          }
         }
       }
       // Keyed on the values alone, so a preview or poll does not wipe a field while it is being typed in.

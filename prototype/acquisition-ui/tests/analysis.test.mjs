@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, parameterRows, parseEntry, readingRows, readingsTitle, selectionLines, stepProgress, templateSteps } from "../analysis.js";
-import { inputsBody } from "../components.js";
+import { capturesFor, parameterRows, parseEntry, parseTyped, readingRows, readingsTitle, selectionLines, stepProgress, stepReadings, templateSteps, typedStart } from "../analysis.js";
+import { inputsBody, readingsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
 const analysis = {
   rev: 2,
   steps: {
-    "co2.ul1": { label: "CO2 Cal 1 µl", owner: "co2", role: "ms", kind: "point", known: 1,
-      reading: { record: "rec-000002", created_utc: "2026-10-18T10:00:00+00:00", capture: "ms-x", range_s: [0.2, 0.45], values: m44(191.442, 3) } },
-    co2_zero: { label: "CO2 Zero", owner: "co2_zero", role: "ms", kind: "set", known: null, reading: null },
-    "sample.co2": { label: "CO2 Sample", owner: "sample", role: "ms", kind: "measure", known: null, reading: null },
+    "co2.ul1": { label: "CO2 Cal 1 µl", owner: "co2", role: "ms", kind: "point", known: 1, source: "read", record: "rec-000002", values: { m44: 191.442 },
+      reading: { record: "rec-000002", created_utc: "2026-10-18T10:00:00+00:00", capture: "ms-x", range_s: [0.2, 0.45], values: m44(191.442, 3) }, from: null },
+    co2_zero: { label: "CO2 Zero", owner: "co2_zero", role: "ms", kind: "set", known: null, source: null, record: null, values: {}, reading: null, from: null },
+    "sample.co2": { label: "CO2 Sample", owner: "sample", role: "ms", kind: "measure", known: null, source: null, record: null, values: {}, reading: null, from: null },
   },
 };
 const steps = ["co2.ul1", "co2_zero", "sample.co2"];
@@ -23,7 +23,75 @@ test("each step shows its saved reading, its known value when it is a line point
     ["sample.co2", "CO2 Sample", null, null],
   ]);
   assert.deepEqual(rows[0].saved, { record: "rec-000002", range_s: [0.2, 0.45], values: ["mean m44 191.442 · 3 rows"], short: "191.442", detail: "3 rows" });
+  assert.deepEqual(rows[0].source, { source: "read", tag: "Read", title: "rec-000002" });
   assert.equal(rows[1].saved, null);
+  assert.equal(rows[1].source, null);
+});
+
+const filled = (source, values, from = null) => ({ label: "CO2 Zero", owner: "co2_zero", role: "ms", kind: "set", known: null,
+  source, record: "rec-000007", values, reading: null, from });
+
+test("a typed, copied or loaded step shows its values with where they came from, and Remove takes back that record", () => {
+  const view = { steps: {
+    typed: filled("typed", { m44: -18.8, m45: 2.5 }),
+    copied: filled("copied", { m44: 39.2 }, { session: "s-0001", record: "rec-000003" }),
+    loaded: filled("loaded", { m44: 1.5 }, { file: "/cal/day1.csv" }),
+  } };
+  const rows = readingRows(["typed", "copied", "loaded"], view, { selection: null, capture: "ms-x" });
+  assert.deepEqual(rows[0].saved, { record: "rec-000007", range_s: null, values: ["m44 -18.8", "m45 2.5"], short: "-18.8, 2.5", detail: "" });
+  assert.deepEqual(rows.map(r => r.source), [
+    { source: "typed", tag: "Typed", title: "rec-000007" },
+    { source: "copied", tag: "Copied", title: "Copied from session s-0001, rec-000003" },
+    { source: "loaded", tag: "Loaded", title: "Loaded from /cal/day1.csv" },
+  ]);
+  assert.deepEqual(rows.map(r => r.remove), ["rec-000007", "rec-000007", "rec-000007"]);
+  assert.deepEqual(stepProgress(rows), { done: 3, total: 3 }, "a typed value counts as done");
+});
+
+test("typing a step starts from its values at full precision, one field per reading name the template gives it", () => {
+  const data = {
+    calibrations: {
+      co2: { line: { reading: { stat: "mean", of: "m44" }, points: { zero: { known: 0 }, ul1: { known: 1 } } } },
+      co2_zero: { set: { co2_zero_m44: { stat: "mean", of: "m44" }, co2_zero_m45: { stat: "mean", of: "m45" } } },
+    },
+    measurements: {
+      sample: { steps: { co2: { readings: { co2_mv: { stat: "mean", of: "m44" } } } } },
+      rate_mean: { readings: { mean_rate: { stat: "mean", of: "r" } } },
+    },
+  };
+  const names = stepReadings(data);
+  assert.deepEqual(names, { "co2.zero": ["m44"], "co2.ul1": ["m44"], co2_zero: ["co2_zero_m44", "co2_zero_m45"], "sample.co2": ["co2_mv"], rate_mean: ["mean_rate"] });
+  const step = filled("read", { co2_zero_m44: -18.80123456789 });
+  const start = typedStart("co2_zero", step, names.co2_zero);
+  assert.deepEqual(start, { step: "co2_zero", texts: { co2_zero_m44: "-18.80123456789", co2_zero_m45: "" } });
+  const rows = readingRows(["co2_zero", "co2.zero"], { steps: { co2_zero: step, "co2.zero": filled(null, {}) } }, { selection: null, capture: "ms-x", names, editing: start });
+  assert.deepEqual(rows[0].typing, [{ name: "co2_zero_m44", text: "-18.80123456789" }, { name: "co2_zero_m45", text: "" }]);
+  assert.equal(rows[1].typing, null);
+  assert.deepEqual(rows.map(r => r.typable), [true, true]);
+});
+
+test("a typed edit saves only the fields that hold numbers, refuses text, and saves nothing when unchanged or empty", () => {
+  const start = { a: "-18.8", b: "" };
+  assert.deepEqual(parseTyped({ a: " -18.5 ", b: "" }, start), { values: { a: -18.5 } });
+  assert.deepEqual(parseTyped({ a: "-18.8", b: "2e-3" }, start), { values: { a: -18.8, b: 0.002 } });
+  assert.deepEqual(parseTyped({ a: "-18.8 ", b: "" }, start), { cancel: true }, "unchanged");
+  assert.deepEqual(parseTyped({ a: "", b: "" }, start), { cancel: true }, "cleared: Remove does that");
+  assert.deepEqual(parseTyped({ a: "abc", b: "" }, start), { error: '"abc" is not a number' });
+  assert.deepEqual(parseTyped({ a: "Infinity" }, {}), { error: '"Infinity" is not a number' });
+});
+
+test("a readings tile shows the source badge with its origin on hover, an edit button per step, and fields while typing", () => {
+  const view = { steps: { co2_zero: filled("copied", { m44: 39.2 }, { session: "s-0001", record: "rec-000003" }) } };
+  const ctx = { session: { captures: { "ms-x": { role: "ms" } } }, template: { data: { calibrations: { co2_zero: { set: { m44: {} } } } } } };
+  const tile = { steps: ["co2_zero"], role: "ms" };
+  const shown = readingsBody(tile, ctx, { view, previews: {}, capture: {}, editing: null }, null);
+  assert.match(shown, /class="badge step-source tone-linked" title="Copied from session s-0001, rec-000003">Copied</);
+  assert.match(shown, /data-action="typeStep" data-step="co2_zero"/);
+  assert.doesNotMatch(shown, /data-typed=/);
+  const typing = readingsBody(tile, ctx, { view, previews: {}, capture: {}, editing: { step: "co2_zero", texts: { m44: "39.2" } } }, null);
+  assert.match(typing, /data-typed="co2_zero" data-reading="m44" data-input="typed" aria-label="CO2 Zero m44" value="39.2"/);
+  assert.doesNotMatch(typing, /data-action="typeStep"/, "no edit button while typing");
+  assert.doesNotMatch(typing, /step-source/);
 });
 
 test("reading buttons are disabled without a selection or without a capture of the step's role", () => {

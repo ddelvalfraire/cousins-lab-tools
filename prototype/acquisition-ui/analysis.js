@@ -10,29 +10,82 @@ export const capturesFor = (captures, role) => Object.entries(captures || {}).fi
 /** "mean m44 191.442 · 3 rows" for one reading value. */
 export const readingText = v => `${v.stat} ${v.of} ${fmtValue(v.value)} · ${v.n} ${v.n === 1 ? "row" : "rows"}`;
 
+const STEP_SOURCES = { read: "Read", typed: "Typed", copied: "Copied", loaded: "Loaded" };
+
+/** Where a step's value came from, as a badge: the record, or for a copy or a load where it was taken from. */
+export function stepSource(step) {
+  if (!step?.source) return null;
+  const from = step.from;
+  const title = step.source === "copied" ? `Copied from session ${from.session}, ${from.record}`
+    : step.source === "loaded" ? `Loaded from ${from.file}` : step.record;
+  return { source: step.source, tag: STEP_SOURCES[step.source] ?? step.source, title };
+}
+
 /**
  * One row per step of a readings tile. `capture` is the capture a reading would read, `previews` maps a step
- * to the preview_reading result for the current selection ({values} or {error}).
+ * to the preview_reading result for the current selection ({values} or {error}). `names` maps a step to its
+ * reading names (see stepReadings) and `editing` is {step, texts} while a value is being typed.
  */
-export function readingRows(steps, analysis, { selection, capture, previews = {} }) {
+export function readingRows(steps, analysis, { selection, capture, previews = {}, names = {}, editing = null }) {
   return steps.map(ref => {
     const step = analysis?.steps?.[ref];
     const reading = step?.reading ?? null;
+    const values = step?.values ?? {};
     const why = !step ? "This step is not in the session's template"
       : !capture ? `No capture records role ${step.role}`
       : !selection ? "Select a range on a chart first" : "";
+    const rows = n => `${n} ${n === 1 ? "row" : "rows"}`;
     return {
       step: ref,
       label: step?.label ?? ref,
       known: step?.known ?? null,
-      saved: reading && { record: reading.record, range_s: reading.range_s, values: Object.values(reading.values).map(readingText),
-        short: Object.values(reading.values).map(v => fmtValue(v.value)).join(", "),
-        detail: Object.values(reading.values).map(v => `${v.n} ${v.n === 1 ? "row" : "rows"}`).join(", ") },
+      saved: step?.source ? { record: step.record, range_s: reading?.range_s ?? null,
+        values: reading ? Object.values(reading.values).map(readingText) : Object.entries(values).map(([n, v]) => `${n} ${fmtValue(v)}`),
+        short: Object.values(values).map(fmtValue).join(", "),
+        detail: reading ? Object.values(reading.values).map(v => rows(v.n)).join(", ") : "" } : null,
+      source: stepSource(step),
       preview: previews[ref] && (previews[ref].error ? { error: previews[ref].error } : { values: Object.values(previews[ref].values).map(readingText) }),
       read: { disabled: !!why, why },
-      remove: reading?.record ?? null,
+      remove: step?.record ?? null,
+      typable: !!step,
+      typing: step && editing?.step === ref ? (names[ref] ?? Object.keys(values)).map(name => ({ name, text: editing.texts[name] ?? "" })) : null,
     };
   });
+}
+
+/** Reading names per step reference, from the template data: what a typed value may fill. */
+export function stepReadings(data) {
+  const out = {};
+  for (const [id, c] of Object.entries(data?.calibrations || {})) {
+    if (c.line) for (const pt of Object.keys(c.line.points || {})) out[`${id}.${pt}`] = [c.line.reading.of];
+    else out[id] = Object.keys(c.set || {});
+  }
+  for (const [id, m] of Object.entries(data?.measurements || {})) {
+    if (m.steps) for (const [st, s] of Object.entries(m.steps)) out[`${id}.${st}`] = Object.keys(s.readings || {});
+    else out[id] = Object.keys(m.readings || {});
+  }
+  return out;
+}
+
+/** The fields a typed edit of `step` starts with: the step's current values at full precision. */
+export const typedStart = (ref, step, names) =>
+  ({ step: ref, texts: Object.fromEntries((names ?? Object.keys(step?.values ?? {})).map(n => [n, step?.values?.[n] == null ? "" : String(step.values[n])])) });
+
+/**
+ * What a typed edit saves: {values} for the fields that hold a number, {error} for one that holds something else,
+ * or {cancel} when nothing changed or every field is empty (Remove clears a step).
+ */
+export function parseTyped(texts, start) {
+  const values = {};
+  for (const [name, text] of Object.entries(texts)) {
+    const t = String(text).trim();
+    if (t === "") continue;
+    const value = Number(t);
+    if (!Number.isFinite(value)) return { error: `"${t}" is not a number` };
+    values[name] = value;
+  }
+  const same = Object.keys(texts).every(n => String(texts[n]).trim() === String(start?.[n] ?? "").trim());
+  return same || !Object.keys(values).length ? { cancel: true } : { values };
 }
 
 /** How many of a tile's steps hold a reading, for its progress bar. */
