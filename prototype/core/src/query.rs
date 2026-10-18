@@ -12,12 +12,14 @@ use std::path::Path;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use duckdb::arrow::datatypes::DataType;
-use duckdb::{Config, Connection};
+use duckdb::{Config, Connection, ToSql};
 use serde::Serialize;
 use serde_json::{Map, Value};
 
 use crate::alignment::{Alignment, aligned_sql};
+use crate::calc::{Program, Sample};
 use crate::contract::{Clock, ClockKind};
+use crate::expr::Params;
 use crate::pycompat::{float_repr, str_repr};
 use crate::session::{Manifest, SessionError, iso, iso_time_opt, segments};
 use crate::templates::TemplateError;
@@ -100,6 +102,14 @@ pub fn ident(name: &str) -> String {
     format!("\"{}\"", name.replace('"', "\"\""))
 }
 
+/// One stored row's derived values, as a program computed them.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ComputedRow {
+    pub seq: i64,
+    /// In the program's output order; None where the value has no number.
+    pub values: Vec<Option<f64>>,
+}
+
 /// An in-memory DuckDB connection with the session's views, and the names of those views.
 pub struct SessionDb {
     con: Connection,
@@ -165,6 +175,66 @@ impl SessionDb {
         self.con
             .execute_batch(&format!("CREATE VIEW {} AS {select}", ident(name)))?;
         self.views.insert(name.to_string());
+        Ok(())
+    }
+
+    /// Runs `program` over every stored row of `capture` in `seq` order, with `params`. A
+    /// column that is not numeric reads as None, as it does live.
+    pub fn evaluate(
+        &self,
+        program: &Program,
+        params: &Params,
+        capture: &str,
+    ) -> Result<Vec<ComputedRow>, AnalysisError> {
+        let columns: String = program
+            .columns()
+            .iter()
+            .map(|c| format!(", TRY_CAST({} AS DOUBLE)", ident(c)))
+            .collect();
+        let mut stmt = self.con.prepare(&format!(
+            "SELECT seq{columns} FROM {} ORDER BY seq",
+            ident(&format!("cap:{capture}"))
+        ))?;
+        let mut rows = stmt.query([])?;
+        let mut eval = program.evaluator(params);
+        let mut out = Vec::new();
+        let mut cells = vec![None; program.columns().len()];
+        while let Some(row) = rows.next()? {
+            for (i, cell) in cells.iter_mut().enumerate() {
+                *cell = row.get::<_, Option<f64>>(i + 1)?;
+            }
+            out.push(ComputedRow {
+                seq: row.get(0)?,
+                values: eval.push(Sample { columns: &cells }),
+            });
+        }
+        Ok(out)
+    }
+
+    /// An in-memory table `name` with `seq BIGINT` and one DOUBLE per value, filled from
+    /// `rows`. It reads and writes no file, so the locked configuration allows it.
+    pub fn attach_computed(
+        &mut self,
+        name: &str,
+        values: &[&str],
+        rows: impl IntoIterator<Item = ComputedRow>,
+    ) -> Result<(), AnalysisError> {
+        let columns: String = values
+            .iter()
+            .map(|v| format!(", {} DOUBLE", ident(v)))
+            .collect();
+        self.con.execute_batch(&format!(
+            "CREATE TEMP TABLE {} (seq BIGINT{columns})",
+            ident(name)
+        ))?;
+        let mut appender = self.con.appender_to_catalog_and_db(name, "temp", "main")?;
+        for row in rows {
+            let mut cells: Vec<&dyn ToSql> = Vec::with_capacity(row.values.len() + 1);
+            cells.push(&row.seq);
+            cells.extend(row.values.iter().map(|v| v as &dyn ToSql));
+            appender.append_row(cells.as_slice())?;
+        }
+        appender.flush()?;
         Ok(())
     }
 }
@@ -360,5 +430,50 @@ fn python_str(t: NaiveDateTime) -> String {
         t.format("%Y-%m-%d %H:%M:%S").to_string()
     } else {
         t.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::session::{SessionKind, SessionStore};
+    use serde_json::json;
+
+    /// The lock in `open` must not stop the review path from computing into the connection:
+    /// a computed table reads and writes no file, which is what the lock forbids.
+    #[test]
+    fn a_computed_table_is_attached_and_queried_after_the_configuration_lock() {
+        let data = tempfile::tempdir().unwrap();
+        let store = SessionStore::new(data.path()).unwrap();
+        let manifest = store
+            .create("empty", SessionKind::Import, json!({}))
+            .unwrap();
+        let mut db = SessionDb::open(&store.path(&manifest.id), &manifest).unwrap();
+        let outside = db
+            .connection()
+            .execute_batch("SELECT * FROM read_csv('/etc/hostname')");
+        assert!(outside.is_err(), "the lock on external access is in place");
+
+        db.attach_computed(
+            "calc:t1:c1",
+            &["ubar_co2", "rate"],
+            [(0, vec![Some(1.5), None]), (7, vec![None, Some(-2.0)])]
+                .map(|(seq, values)| ComputedRow { seq, values }),
+        )
+        .unwrap();
+        let mut stmt = db
+            .connection()
+            .prepare("SELECT seq, \"ubar_co2\", rate FROM \"calc:t1:c1\" ORDER BY seq")
+            .unwrap();
+        let rows: Vec<(i64, Option<f64>, Option<f64>)> = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(rows, [(0, Some(1.5), None), (7, None, Some(-2.0))]);
+        assert!(
+            !db.has_view("calc:t1:c1"),
+            "computed tables are not researcher views"
+        );
     }
 }

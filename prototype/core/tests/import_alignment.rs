@@ -14,12 +14,13 @@ use cousinslab::alignment::{
     Alignment, Inputs, Member, Series, Unaligned, aligned_sql, chart_data, list_alignments,
     load_alignment, metric_series, propose, save_alignment,
 };
+use cousinslab::calc::Program;
 use cousinslab::export::export_aligned;
 use cousinslab::importing::{ImportError, ImportFile, import_session};
 use cousinslab::ms_workbook::read_sample_sheet;
 use cousinslab::query::{AnalysisError, SessionDb, run_query, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
-use cousinslab::templates::{Paths, Template, TemplateStore};
+use cousinslab::templates::{Paths, Template, TemplateStore, from_snapshot};
 use serde_json::{Value, json};
 use sha2::Digest;
 
@@ -658,4 +659,32 @@ fn a_query_cannot_reach_outside_its_session_or_run_a_second_statement() {
             .starts_with("ParserException: Parser Error"),
         "{error}"
     );
+}
+
+#[test]
+fn evaluating_a_program_over_stored_rows_matches_eval_row_for_row() {
+    let imported = imported();
+    let template = from_snapshot(imported.manifest.template.clone()).unwrap();
+    let program = Program::for_role(&template, "ms");
+    let params = template.params();
+    let db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
+    let computed = db.evaluate(&program, &params, "ms-workbook").unwrap();
+
+    let mut stmt = db
+        .connection()
+        .prepare("SELECT seq, m44 FROM \"cap:ms-workbook\" ORDER BY seq")
+        .unwrap();
+    let stored: Vec<(i64, Option<f64>)> = stmt
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+        .unwrap()
+        .collect::<Result<_, _>>()
+        .unwrap();
+    let ubar = &template.derived()[0].expr;
+    assert_eq!(computed.len(), stored.len());
+    assert!(computed.len() > 10_000);
+    for (row, (seq, m44)) in computed.iter().zip(&stored) {
+        let expected = ubar.eval(&params, |n| (n == "m44").then_some(*m44).flatten());
+        assert_eq!((row.seq, row.values.as_slice()), (*seq, &[expected][..]));
+    }
+    assert!(computed.iter().any(|row| row.values[0].is_some()));
 }
