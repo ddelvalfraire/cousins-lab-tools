@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use serde_json::{Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::calc::derived_order;
 use crate::contract::ClockKind;
@@ -602,6 +602,16 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     }
     if let Err(cycle) = computed_order(&params) {
         errors.push(format!("Parameter {cycle}"));
+    }
+    // Charts, metrics and expressions look a name up in one namespace.
+    for name in parameters
+        .keys()
+        .filter(|n| object(&data, "derived").contains_key(*n))
+    {
+        errors.push(format!(
+            "{} is defined under both parameters and derived",
+            repr(&json!(name))
+        ));
     }
 
     let no_columns = BTreeSet::new();

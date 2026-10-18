@@ -366,7 +366,7 @@ fn a_chart_on_the_source_clock_needs_every_role_to_record_one() {
 }
 
 #[test]
-fn parameters_may_be_unset_entered_or_computed() {
+fn parameters_may_be_unset_entered_or_computed_and_share_one_namespace_with_derived() {
     let mut data = builtin();
     data["parameters"]["temp_c"] = json!({"entry": true, "unit": "°C", "label": "Temperature"});
     data["parameters"]["o2_cal"] =
@@ -425,4 +425,10 @@ fn parameters_may_be_unset_entered_or_computed() {
         bad[section][name][key] = value;
         assert_eq!(rejection(bad), message, "{pointer}");
     }
+
+    data["parameters"]["ubar_co2"] = json!({"value": 1});
+    assert_eq!(
+        rejection(data),
+        "'ubar_co2' is defined under both parameters and derived"
+    );
 }
