@@ -14,7 +14,7 @@ use serde_json::{Map, Value};
 
 use super::Marker;
 use super::seconds_since;
-use crate::calc::{Evaluator, Program, Sample};
+use crate::calc::{CalcError, Evaluator, Program, Sample};
 use crate::contract::{Cell, Event, Row};
 use crate::session::{Capture, CaptureStatus, SessionStatus, iso};
 use crate::templates::Template;
@@ -121,12 +121,12 @@ impl PointMaker {
         columns: Vec<String>,
         aliases: BTreeMap<String, String>,
         host_time: Option<usize>,
-    ) -> Self {
+    ) -> Result<Self, CalcError> {
         let position = |name: &str| {
             let column = aliases.get(name).map_or(name, String::as_str);
             columns.iter().position(|c| c == column)
         };
-        let program = Program::for_role(template, role);
+        let program = Program::for_role(template, role)?;
         let inputs = program.columns().iter().map(|c| position(c)).collect();
         let values = template
             .live_values(role)
@@ -139,13 +139,13 @@ impl PointMaker {
                 (value, source)
             })
             .collect();
-        PointMaker {
+        Ok(PointMaker {
             inputs,
             values,
             evaluator: program.evaluator(&template.params()),
             host_time,
             t0: DateTime::UNIX_EPOCH,
-        }
+        })
     }
 
     pub fn point(&mut self, row: &Row) -> Map<String, Value> {

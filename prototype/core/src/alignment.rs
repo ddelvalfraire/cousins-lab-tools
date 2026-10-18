@@ -604,7 +604,8 @@ pub fn create_aligned_view(
     for trial in &alignment.trials {
         let params: Params = trial.params.iter().map(|(k, v)| (k.clone(), *v)).collect();
         for m in &trial.members {
-            let program = Program::for_role(&template, &m.role);
+            let program = Program::for_role(&template, &m.role)
+                .map_err(|e| AnalysisError::Invalid(e.to_string()))?;
             let values: Vec<&str> = program.values().collect();
             if values.is_empty() {
                 continue;
@@ -627,7 +628,8 @@ pub fn aligned_sql(manifest: &Manifest, alignment: &Alignment) -> Result<String,
     for trial in &alignment.trials {
         for m in &trial.members {
             let x = format!("({}) - {}", clock_seconds_sql(&m.clock), float_repr(m.zero));
-            let program = Program::for_role(&template, &m.role);
+            let program = Program::for_role(&template, &m.role)
+                .map_err(|e| AnalysisError::Invalid(e.to_string()))?;
             let derived: String = program
                 .values()
                 .map(|v| format!(", c.{}", ident(v)))

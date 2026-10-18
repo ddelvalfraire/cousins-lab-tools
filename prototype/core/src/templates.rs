@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde_json::{Map, Value};
 
+use crate::calc::derived_order;
 use crate::expr::{self, Expression, Params};
 use crate::layout::{self, Kind};
 use crate::protocol::{self, ProtocolPlan};
@@ -521,24 +522,36 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
             ));
             continue;
         };
-        let columns = role_columns.get(role).unwrap_or(&no_columns);
-        let unknown: Vec<&str> = expr
-            .names()
-            .iter()
-            .filter(|n| !parameters.contains_key(*n) && !columns.contains(*n))
-            .map(String::as_str)
-            .collect();
-        if !unknown.is_empty() {
-            errors.push(format!(
-                "Derived {key}: unknown names {}",
-                list_repr(unknown)
-            ));
-        }
         derived.push(DerivedValue {
             name: key.clone(),
             role: role.to_string(),
             expr,
         });
+    }
+    // A name may be a parameter, a column of the role, or a derived value of the same role.
+    for d in &derived {
+        let columns = role_columns.get(d.role.as_str()).unwrap_or(&no_columns);
+        let unknown: Vec<&str> = d
+            .expr
+            .names()
+            .iter()
+            .filter(|n| !parameters.contains_key(*n) && !columns.contains(*n))
+            .filter(|n| !derived.iter().any(|o| o.name == **n && o.role == d.role))
+            .map(String::as_str)
+            .collect();
+        if !unknown.is_empty() {
+            errors.push(format!(
+                "Derived {}: unknown names {}",
+                d.name,
+                list_repr(unknown)
+            ));
+        }
+    }
+    let parameter_names: BTreeSet<&str> = parameters.keys().map(String::as_str).collect();
+    for role in roles.keys() {
+        if let Err(cycle) = derived_order(&derived, role, &parameter_names) {
+            errors.push(format!("Derived {cycle}"));
+        }
     }
 
     let derived_names = object(&data, "derived");

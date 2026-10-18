@@ -314,7 +314,8 @@ impl GroupRun {
         let live = live_buffers(&prepared);
         for p in prepared {
             let names = p.columns.iter().map(|c| c.name.clone()).collect();
-            let points = PointMaker::new(&template, &p.role, names, p.aliases, p.host_time);
+            let points = PointMaker::new(&template, &p.role, names, p.aliases, p.host_time)
+                .map_err(|e| RunError::Invalid(e.to_string()))?;
             let output = Output {
                 role: p.role.clone(),
                 samples: SegmentWriter::new(

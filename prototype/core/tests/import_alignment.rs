@@ -660,7 +660,7 @@ fn a_query_cannot_reach_outside_its_session_or_run_a_second_statement() {
 fn evaluating_a_program_over_stored_rows_matches_eval_row_for_row() {
     let imported = imported();
     let template = from_snapshot(imported.manifest.template.clone()).unwrap();
-    let program = Program::for_role(&template, "ms");
+    let program = Program::for_role(&template, "ms").unwrap();
     let params = template.params();
     let db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
     let computed = db.evaluate(&program, &params, "ms-workbook").unwrap();

@@ -265,3 +265,29 @@ fn a_snapshot_with_an_unparseable_expression_is_rejected() {
         "{error}"
     );
 }
+
+#[test]
+fn a_derived_value_may_read_derived_values_of_its_role_but_not_in_a_cycle() {
+    let mut data = builtin();
+    data["derived"]["d_ubar"] = json!({"role": "ms", "expr": "ubar_co2 - co2_zero_mv"});
+    let profiles = load_profiles(&Paths::default().instruments).unwrap();
+    assert!(validate(data.clone(), &profiles).is_ok());
+
+    data["derived"]["other_role"] = json!({"role": "light", "expr": "ubar_co2 / R"});
+    assert_eq!(
+        rejection(data.clone()),
+        "Derived other_role: unknown names ['ubar_co2']"
+    );
+    data["derived"]
+        .as_object_mut()
+        .unwrap()
+        .remove("other_role");
+
+    data["derived"]["ubar_co2"]["expr"] = json!("d_ubar * 2");
+    assert_eq!(
+        rejection(data.clone()),
+        "Derived ubar_co2: depends on itself through d_ubar"
+    );
+    data["derived"]["ubar_co2"]["expr"] = json!("ubar_co2 + 1");
+    assert_eq!(rejection(data), "Derived ubar_co2: depends on itself");
+}
