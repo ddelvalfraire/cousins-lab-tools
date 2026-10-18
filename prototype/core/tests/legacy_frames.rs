@@ -382,6 +382,88 @@ fn a_folder_of_nine_field_files_imports_the_same_rows_as_its_zip() {
     );
 }
 
+#[test]
+fn a_capture_exports_its_stored_rows_once_with_a_sidecar_and_in_the_legacy_layout() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-frames-test",
+               "files": [{"role": "ms", "path": fixture("legacy-frames-ezview/Acquisition0")}]}),
+    );
+    let id = manifest["id"].as_str().unwrap();
+    let export = |legacy: bool| {
+        call(
+            &engine,
+            "export_capture_csv",
+            json!({"session_id": id, "capture": "ms-acquisition0", "legacy_header": legacy}),
+        )
+    };
+    let first = export(false);
+    assert_eq!(
+        (first["rows"].clone(), first["existing"].clone()),
+        (json!(3), json!(false))
+    );
+    let csv_path = PathBuf::from(first["csv"].as_str().unwrap());
+    assert!(
+        csv_path.ends_with("exports/raw-ms-acquisition0-3/raw.csv"),
+        "{csv_path:?}"
+    );
+    let csv = std::fs::read_to_string(&csv_path).unwrap();
+    let lines: Vec<&str> = csv.lines().collect();
+    assert_eq!(
+        lines[0],
+        "seq,t_host_utc,t_ms,frame,m32,m34,m36,m44,m45,m46,m47,m49,ch11,ch12"
+    );
+    assert_eq!(
+        lines[3],
+        "2,,1550,3,0.511,52.45,0.001,4.775,0.005,0.733,0.02,0.003,0.12,0.235"
+    );
+    assert_eq!(lines.len(), 4);
+    let sidecar: Value = serde_json::from_str(
+        &std::fs::read_to_string(first["metadata"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sidecar["session"]["id"], id);
+    assert_eq!(sidecar["capture"]["id"], "ms-acquisition0");
+    assert_eq!(sidecar["rows"], 3);
+    assert_eq!(sidecar["layout"], "stored");
+    assert_eq!(
+        sidecar["sources"],
+        manifest["captures"]["ms-acquisition0"]["sources"]
+    );
+    assert_eq!(sidecar["columns"].as_array().unwrap().len(), 14);
+
+    std::fs::write(&csv_path, "kept\n").unwrap();
+    let again = export(false);
+    assert_eq!(again["existing"], true);
+    assert_eq!(again["csv"], first["csv"]);
+    assert_eq!(std::fs::read_to_string(&csv_path).unwrap(), "kept\n");
+
+    let legacy = export(true);
+    let csv = std::fs::read_to_string(legacy["csv"].as_str().unwrap()).unwrap();
+    let lines: Vec<&str> = csv.lines().collect();
+    assert_eq!(lines[0], "Count,Time,m32,m34,m36,m44,m45,m46,m47,m49");
+    assert_eq!(
+        lines[1],
+        "0,0,0.512,52.437,0.0,4.81,0.004,0.734,0.021,0.003"
+    );
+    assert_eq!(
+        lines[3],
+        "2,300,0.511,52.45,0.001,4.775,0.005,0.733,0.02,0.003"
+    );
+    assert_ne!(legacy["csv"], first["csv"]);
+    let unknown = engine
+        .call(
+            "export_capture_csv",
+            json!({"session_id": id, "capture": "ms-gone"}),
+        )
+        .unwrap_err();
+    assert_eq!(unknown.message, "No capture ms-gone");
+}
+
 fn replay(speed: f64) -> FramesReplay {
     FramesReplay::new(FramesReplaySettings {
         model: "Frames".into(),

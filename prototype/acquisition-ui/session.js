@@ -1,3 +1,4 @@
+import { rawExports } from "./rawexport.js";
 import { bindReveal, call, esc, fmtTime, icon, inputBadge, pageHeader, pathRow, statusBadge, toast } from "./util.js";
 import { lineOption, makeChart } from "./charts.js";
 import { captureTable } from "./components.js";
@@ -207,6 +208,7 @@ async function dataTab(el, session) {
 function exportTab(el, session) {
   const m = session.manifest;
   const spool = Object.entries(m.captures).filter(([, c]) => c.adapter === "ezview_spool");
+  const raw = rawExports(m.captures);
   el.innerHTML = `
     <section class="card"><h2>Aligned CSV</h2>
       <p class="small">One header row. Keeps every original time column beside <code>x_s</code>, plus the alignment id. A JSON sidecar records the alignment, template revision, units, and source hashes.</p>
@@ -220,6 +222,11 @@ function exportTab(el, session) {
       <p class="small">Headerless one-frame files in the column order and rounding of <code>readEZView.py</code>, for modules 1 to 3.</p>
       <div class="actions">${spool.map(([cid]) => `<button data-legacy="${esc(cid)}">Export ${esc(cid)}</button>`).join("")}</div>
       <div id="legacy-result" class="small"></div></section>` : ""}
+    ${raw.length ? `<section class="card"><h2>Raw rows (CSV)</h2>
+      <p class="small">Every stored row of one capture with its original columns, and a JSON sidecar naming the session, capture, source files and row count. The legacy layout is the Count, Time, m32 to m49 file the legacy modules wrote at STOP. An unchanged capture returns the files already written.</p>
+      <div class="actions">${raw.map(r => `<button data-raw="${esc(r.capture)}">Export ${esc(r.capture)}</button>${r.legacy
+        ? `<button data-raw="${esc(r.capture)}" data-legacy-header="1">${esc(r.capture)}, legacy layout</button>` : ""}`).join("")}</div>
+      <div id="raw-result" class="small"></div></section>` : ""}
     <section class="card"><h2>Parquet</h2><p class="small">Stored as written: <code>sessions/${esc(m.id)}/captures/&lt;capture&gt;/samples/part-*.parquet</code>, with units in the field metadata.</p></section>`;
   const result = el.querySelector("#export-result");
   const showPaths = (target, note, paths) => {
@@ -229,6 +236,10 @@ function exportTab(el, session) {
   el.querySelectorAll("[data-export]").forEach(b => (b.onclick = async () => {
     const r = await call("export_alignment", { session_id: m.id, alignment_id: b.dataset.export });
     showPaths(result, "Wrote the CSV and its metadata sidecar.", [r.csv, r.metadata]);
+  }));
+  el.querySelectorAll("[data-raw]").forEach(b => (b.onclick = async () => {
+    const r = await call("export_capture_csv", { session_id: m.id, capture: b.dataset.raw, legacy_header: !!b.dataset.legacyHeader });
+    showPaths(el.querySelector("#raw-result"), `${r.existing ? "Already exported" : "Wrote"} ${r.rows.toLocaleString()} rows and the sidecar.`, [r.csv, r.metadata]);
   }));
   el.querySelectorAll("[data-legacy]").forEach(b => (b.onclick = async () => {
     const r = await call("export_legacy_frames", { session_id: m.id, capture: b.dataset.legacy });

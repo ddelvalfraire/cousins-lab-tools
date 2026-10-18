@@ -18,7 +18,7 @@ use crate::alignment::{
     load_alignment, metric_series, propose,
 };
 use crate::analysis::{self, Request};
-use crate::export::{export_aligned, export_legacy_frames};
+use crate::export::{export_aligned, export_capture_csv, export_legacy_frames};
 use crate::expr::Params;
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
@@ -262,6 +262,16 @@ impl Engine {
                     &dir,
                     &self.manifest(&a.session_id)?,
                     &a.capture,
+                )?)
+            }
+            "export_capture_csv" => {
+                let a: CaptureCsvArgs = parse(args)?;
+                let dir = self.session_dir(&a.session_id)?;
+                reply(export_capture_csv(
+                    &dir,
+                    &self.manifest(&a.session_id)?,
+                    &a.capture,
+                    a.legacy_header,
                 )?)
             }
             "analysis" => {
@@ -675,6 +685,14 @@ struct AlignmentRef {
 struct LegacyArgs {
     session_id: String,
     capture: String,
+}
+
+#[derive(Deserialize)]
+struct CaptureCsvArgs {
+    session_id: String,
+    capture: String,
+    #[serde(default)]
+    legacy_header: bool,
 }
 
 #[derive(Deserialize)]

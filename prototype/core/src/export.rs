@@ -1,4 +1,5 @@
-//! CSV exports: aligned analysis data with a JSON sidecar, and legacy frame folders.
+//! CSV exports: aligned analysis data and a capture's stored rows, each with a JSON sidecar,
+//! and legacy frame folders.
 
 use std::collections::HashMap;
 use std::fs;
@@ -8,6 +9,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::alignment::{Alignment, create_aligned_view};
+use crate::legacy_frames::MASSES;
 use crate::query::{AnalysisError, SessionDb, ident, sql_string};
 use crate::session::{Manifest, iso};
 use crate::spool::{SpoolFrame, legacy_frame_csv};
@@ -117,6 +119,131 @@ pub fn export_aligned(
     let metadata = out.join("aligned.json");
     fs::write(&metadata, serde_json::to_string_pretty(&sidecar)?)?;
     Ok(AlignedExport { csv, metadata })
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct CaptureExport {
+    pub csv: PathBuf,
+    pub metadata: PathBuf,
+    pub rows: u64,
+    /// The files were already there from an earlier export of the same rows.
+    pub existing: bool,
+}
+
+/// The header legacy modules wrote at STOP (module1 main.py:2101).
+const LEGACY_HEADER: [&str; 2] = ["Count", "Time"];
+
+const STORED_NOTE: &str = "Every stored row in seq order, with the columns the capture stored and their stored \
+    names. Times are as stored: UTC instants with an offset, local times without one.";
+const LEGACY_NOTE: &str = "Legacy layout of module1 main.py:2088-2118: Count from 0, Time in ms from the first \
+    row, then the eight masses. Legacy wrote one row per frame file, the mean of its rows; this file has every \
+    stored row.";
+
+/// One capture's stored rows as `exports/raw-<capture>-<rows>/raw.csv` with `raw.json` beside
+/// it, or with `legacy_header` in the layout legacy modules wrote at STOP, in
+/// `exports/raw-legacy-<capture>-<rows>/`. Stored rows are only ever appended, so the row
+/// count names an unchanged capture, and an export that exists is returned as it is.
+pub fn export_capture_csv(
+    session_dir: &Path,
+    manifest: &Manifest,
+    capture_id: &str,
+    legacy_header: bool,
+) -> Result<CaptureExport, AnalysisError> {
+    let capture = manifest
+        .captures
+        .get(capture_id)
+        .ok_or_else(|| AnalysisError::Invalid(format!("No capture {capture_id}")))?;
+    let has = |name: &str| {
+        capture.columns.iter().any(|c| c.name == name) || capture.aliases.contains_key(name)
+    };
+    if legacy_header && !["t_ms", "seq"].into_iter().chain(MASSES).all(has) {
+        return Err(AnalysisError::Invalid(format!(
+            "Capture {capture_id} has no t_ms and eight masses for the legacy header"
+        )));
+    }
+    let db = SessionDb::open(session_dir, manifest)?;
+    let view = ident(&format!("cap:{capture_id}"));
+    let rows: i64 = if db.has_view(&format!("cap:{capture_id}")) {
+        db.connection()
+            .query_row(&format!("SELECT count(*) FROM {view}"), [], |r| r.get(0))?
+    } else {
+        0
+    };
+    if rows == 0 {
+        return Err(AnalysisError::Invalid(format!(
+            "Capture {capture_id} has no stored rows yet"
+        )));
+    }
+    let layout = if legacy_header { "raw-legacy" } else { "raw" };
+    let out = session_dir
+        .join("exports")
+        .join(format!("{layout}-{capture_id}-{rows}"));
+    let mut export = CaptureExport {
+        csv: out.join("raw.csv"),
+        metadata: out.join("raw.json"),
+        rows: rows as u64,
+        existing: true,
+    };
+    if export.csv.is_file() && export.metadata.is_file() {
+        return Ok(export);
+    }
+    export.existing = false;
+    fs::create_dir_all(&out)?;
+    let (select, columns, note) = if legacy_header {
+        let masses: Vec<String> = MASSES.iter().map(|m| ident(m)).collect();
+        let select = format!(
+            "SELECT row_number() OVER (ORDER BY seq) - 1 AS \"Count\", \
+             t_ms - first_value(t_ms) OVER (ORDER BY seq) AS \"Time\", {} FROM {view} ORDER BY seq",
+            masses.join(", ")
+        );
+        let unit = |name: &str| {
+            let column = capture.aliases.get(name).map_or(name, String::as_str);
+            capture
+                .columns
+                .iter()
+                .find(|c| c.name == column)
+                .map_or(String::new(), |c| c.unit.clone())
+        };
+        let columns: Vec<Value> = LEGACY_HEADER
+            .iter()
+            .zip(["", "ms"])
+            .map(|(name, unit)| json!({"name": name, "unit": unit}))
+            .chain(MASSES.iter().map(|m| json!({"name": m, "unit": unit(m)})))
+            .collect();
+        (select, columns, LEGACY_NOTE)
+    } else {
+        let names: Vec<String> = capture.columns.iter().map(|c| ident(&c.name)).collect();
+        let select = format!("SELECT {} FROM {view} ORDER BY seq", names.join(", "));
+        let columns = capture.columns.iter().map(|c| json!(c)).collect();
+        (select, columns, STORED_NOTE)
+    };
+    let tmp = out.join("raw.csv.tmp");
+    db.connection().execute_batch(&format!(
+        "COPY ({select}) TO {} (HEADER, DELIMITER ',')",
+        sql_string(&tmp.to_string_lossy())
+    ))?;
+    fs::rename(&tmp, &export.csv)?;
+    let sidecar = json!({
+        "session": {"id": manifest.id, "name": manifest.name, "kind": manifest.kind},
+        "template": {"id": manifest.template["id"], "revision": manifest.template["revision"]},
+        "capture": {
+            "id": capture_id,
+            "role": capture.role,
+            "label": capture.label,
+            "input_kind": capture.input_kind,
+            "input_note": capture.input_note,
+            "adapter": capture.adapter,
+            "instrument": capture.instrument.as_ref().map(|p| p["id"].clone()),
+            "aliases": capture.aliases,
+        },
+        "sources": capture.sources,
+        "rows": rows,
+        "layout": if legacy_header { "legacy" } else { "stored" },
+        "columns": columns,
+        "notes": [note],
+    });
+    fs::write(&export.metadata, serde_json::to_string_pretty(&sidecar)?)?;
+    Ok(export)
 }
 
 /// Headerless one-frame CSVs that modules 1-3 can open, as readEZView.py wrote them, in
