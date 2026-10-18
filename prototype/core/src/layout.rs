@@ -4,7 +4,7 @@
 //! unplaced component below everything before it. `errors` checks the normalized layout
 //! against the template's charts, derived values, parameters and roles.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value, json};
 
@@ -174,9 +174,25 @@ fn repr_of(value: Option<&Value>) -> String {
 
 struct Check<'a> {
     data: &'a Value,
-    charts: BTreeSet<&'a str>,
+    /// Chart id to its time axis, `run` or `source`.
+    charts: BTreeMap<&'a str, &'a str>,
     seen: BTreeSet<String>,
     errors: Vec<String>,
+}
+
+/// The axes of every chart component in `items`, groups included.
+fn chart_axes<'a>(items: &[Value], charts: &BTreeMap<&str, &'a str>, out: &mut BTreeSet<&'a str>) {
+    for c in items {
+        if kind_of(c) == Some(Kind::Chart)
+            && let Some(axis) = c
+                .get("chart")
+                .and_then(Value::as_str)
+                .and_then(|ch| charts.get(ch))
+        {
+            out.insert(axis);
+        }
+        chart_axes(array(c, "components"), charts, out);
+    }
 }
 
 impl Check<'_> {
@@ -257,7 +273,7 @@ impl Check<'_> {
                     let chart = c.get("chart");
                     if !chart
                         .and_then(Value::as_str)
-                        .is_some_and(|ch| self.charts.contains(ch))
+                        .is_some_and(|ch| self.charts.contains_key(ch))
                     {
                         self.errors
                             .push(format!("{name}: unknown chart {}", repr_of(chart)));
@@ -352,7 +368,10 @@ pub(crate) fn errors(data: &Value) -> Vec<String> {
         data,
         charts: array(data, "charts")
             .iter()
-            .filter_map(|c| c.get("id")?.as_str())
+            .filter_map(|c| {
+                let axis = c.get("x").and_then(Value::as_str).unwrap_or("run");
+                Some((c.get("id")?.as_str()?, axis))
+            })
             .collect(),
         seen: BTreeSet::new(),
         errors: Vec::new(),
@@ -366,7 +385,18 @@ pub(crate) fn errors(data: &Value) -> Vec<String> {
                 .push(format!("Layout view {} is defined twice", repr(id)));
         }
         view_ids.push(id.clone());
-        check.components(array(view, "components"), &format!("view {}", repr(id)));
+        let components = array(view, "components");
+        check.components(components, &format!("view {}", repr(id)));
+        // A range selection is shared by every chart of a view, so they must share an axis.
+        let mut axes = BTreeSet::new();
+        chart_axes(components, &check.charts, &mut axes);
+        if axes.len() > 1 {
+            check.errors.push(format!(
+                "Layout view {}: every chart must use the same x; found {}",
+                repr(id),
+                list_repr(axes)
+            ));
+        }
     }
     check.errors
 }

@@ -5,13 +5,15 @@ import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, statusBa
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { visible } from "./layout.js";
+import { axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
+const SOURCE_CLOCK = "Recording clock (s on the capture's own clock)";
 
-function liveSource(m, template) {
-  const points = new Map();
+function liveSource(m, template, currentView) {
+  const points = livePoints();
   const events = [];
   const cursors = {};
   const specs = Object.fromEntries(template.charts.map(c => [c.id, c]));
@@ -22,13 +24,7 @@ function liveSource(m, template) {
     for (const [role, cap] of Object.entries(live.captures)) {
       cursors[role] = cap.next;
       cursors[`${role}:events`] = cap.events_next;
-      for (const row of cap.rows) {
-        for (const [key, value] of Object.entries(row)) {
-          if (key === "x" || value == null) continue;
-          if (!points.has(`${role}:${key}`)) points.set(`${role}:${key}`, []);
-          points.get(`${role}:${key}`).push([row.x, value]);
-        }
-      }
+      points.add(role, cap.rows);
       for (const ev of cap.events) events.push({ source: role, kind: ev.kind, label: ev.label, x: ev.x_run_s });
     }
     for (const mk of live.markers.slice(events.filter(e => e.source === "operator").length)) {
@@ -37,15 +33,20 @@ function liveSource(m, template) {
     Object.assign(source, { elapsed: live.elapsed_s, status: live.status, captures: live.manifest_captures, version: source.version + 1 });
   };
 
-  source.dataset = () => ({
-    version: source.version,
-    axis: { name: RUN_CLOCK, format: formatDuration, parse: parseDuration },
-    extent: [0, source.elapsed],
-    chartSeries: id => specs[id].series.map(s => ({ name: `${s.role} · ${s.value}`, points: points.get(`${s.role}:${s.value}`) || [] })),
-    chartMarkers: id => events.filter(e => e.x != null && (e.source === "operator"
-      || (specs[id].markers && e.source === specs[id].markers.role && e.kind === specs[id].markers.kind))),
-    valueSeries: (value, role) => [{ name: role, points: points.get(`${role}:${value}`) || [] }],
-  });
+  // Events carry only host time, so a view on the recording's clock shows no markers yet.
+  source.dataset = () => {
+    const axis = axisKeyFor(currentView().components, specs);
+    const run = axis === "x";
+    return {
+      version: source.version,
+      axis: { name: run ? RUN_CLOCK : SOURCE_CLOCK, format: formatDuration, parse: parseDuration },
+      extent: run ? [0, source.elapsed] : extentOf(points.all("t")),
+      chartSeries: id => specs[id].series.map(s => ({ name: `${s.role} · ${s.value}`, points: points.series(axis, s.role, s.value) })),
+      chartMarkers: id => run ? events.filter(e => e.x != null && (e.source === "operator"
+        || (specs[id].markers && e.source === specs[id].markers.role && e.kind === specs[id].markers.kind))) : [],
+      valueSeries: (value, role) => [{ name: role, points: points.series(axis, role, value) }],
+    };
+  };
   return source;
 }
 
@@ -132,7 +133,8 @@ async function mount(page, id, restart) {
   const [template, instruments] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }), call("list_instruments")]);
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
-  let source = session.live ? liveSource(m, template) : await replaySource(m, session, template);
+  const currentView = () => views.find(v => v.id === state.view);
+  let source = session.live ? liveSource(m, template, currentView) : await replaySource(m, session, template);
   let grid = null, timer = null, storedEvents = null, panelKey = null, stopped = false;
   const actions = [];
   const logged = (text, request) => async (...args) => {

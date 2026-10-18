@@ -1043,6 +1043,13 @@ fn review_computes_the_same_rate_and_ratio_as_the_live_points() {
                 row.seq
             );
         }
+        let device_s = (row.seq * 100) as f64 * 0.001;
+        assert_eq!(
+            point["t"].as_f64(),
+            Some(device_s),
+            "t is the device clock in seconds"
+        );
+        assert!(point["x"].as_f64().unwrap() >= 0.0, "x stays host seconds");
     }
 
     let index = |name: &str| values.iter().position(|v| *v == name).unwrap();

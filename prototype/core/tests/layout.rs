@@ -320,3 +320,35 @@ fn normalized_layouts_equal_the_python_engines_key_for_key_and_in_order() {
         assert_eq!(rust, python, "{name}");
     }
 }
+
+#[test]
+fn charts_of_one_view_share_an_axis_even_inside_groups() {
+    let mut data = data();
+    data["charts"][1]["x"] = json!("source");
+    let mixed = with_layout(
+        data.clone(),
+        json!([
+            {"id": "a", "kind": "chart", "chart": "fluorescence", "x": 0, "y": 0, "w": 6, "h": 4},
+            {"id": "g", "kind": "group", "x": 6, "y": 0, "w": 6, "h": 4, "components": [
+                {"id": "b", "kind": "chart", "chart": "mass44", "x": 0, "y": 0, "w": 6, "h": 4}]}
+        ]),
+    );
+    assert_eq!(
+        check(mixed).unwrap_err().0,
+        "Layout view 'run': every chart must use the same x; found ['run', 'source']"
+    );
+    let separate = data.clone();
+    let mut separate = with_layout(
+        separate,
+        json!([{"id": "a", "kind": "chart", "chart": "fluorescence", "x": 0, "y": 0, "w": 6, "h": 4}]),
+    );
+    separate["layout"]["views"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"id": "other", "components": [
+        {"id": "b", "kind": "chart", "chart": "mass44", "x": 0, "y": 0, "w": 6, "h": 4}]}));
+    assert!(
+        check(separate).is_ok(),
+        "one axis per view, not per template"
+    );
+}

@@ -23,6 +23,7 @@ use crate::schemas;
 
 const ON_FAILURE: [&str; 2] = ["continue_others", "stop_group"];
 const REFERENCES: [&str; 3] = ["clock", "elapsed", "event"];
+const CHART_AXES: [&str; 2] = ["run", "source"];
 const IMPORTERS: [&str; 2] = ["ambit_csv", "ms_workbook"];
 const DEFAULT_FLASH_RED_LEVEL: i64 = 2500;
 static SAVE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
@@ -648,6 +649,18 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
                 continue;
             }
         };
+        let axis = chart.get("x");
+        let source_axis = match axis.map(Value::as_str) {
+            None => false,
+            Some(Some(x)) if CHART_AXES.contains(&x) => x == "source",
+            Some(_) => {
+                errors.push(format!(
+                    "Chart {id}: x must be one of {}",
+                    list_repr(CHART_AXES)
+                ));
+                false
+            }
+        };
         for s in series {
             let Some(role) = text_in(s.get("role"), roles) else {
                 errors.push(format!(
@@ -656,6 +669,11 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
                 ));
                 continue;
             };
+            if source_axis && !role_source_clock.get(role).copied().unwrap_or(true) {
+                errors.push(format!(
+                    "Chart {id}: x: source needs role {role} to record an elapsed or device clock"
+                ));
+            }
             let value = s.get("value");
             let columns = role_columns.get(role).unwrap_or(&no_columns);
             if !value

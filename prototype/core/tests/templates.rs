@@ -332,3 +332,35 @@ fn a_slope_needs_a_source_clock_a_positive_window_and_at_least_two_points() {
         assert_eq!(rejection(data.clone()), message);
     }
 }
+
+#[test]
+fn a_chart_on_the_source_clock_needs_every_role_to_record_one() {
+    let mut data = builtin();
+    data["charts"][1]["x"] = json!("source");
+    let one_chart = json!({"views": [{"id": "run", "components": [
+        {"id": "f", "kind": "chart", "chart": "fluorescence"}]}]});
+    data["layout"] = one_chart;
+    let profiles = load_profiles(&Paths::default().instruments).unwrap();
+    let template = validate(data.clone(), &profiles).unwrap();
+    assert_eq!(template.charts()[1]["x"], "source");
+
+    data["charts"][0]["x"] = json!("source");
+    assert_eq!(
+        rejection(data.clone()),
+        "Chart co2: x: source needs role ms to record an elapsed or device clock"
+    );
+    data["charts"][0]["x"] = json!("host");
+    assert_eq!(
+        rejection(data.clone()),
+        "Chart co2: x must be one of ['run', 'source']"
+    );
+
+    data["charts"][0]["x"] = json!("run");
+    data["layout"] = json!({"views": [{"id": "run", "components": [
+        {"id": "c", "kind": "chart", "chart": "co2"},
+        {"id": "f", "kind": "chart", "chart": "fluorescence"}]}]});
+    assert_eq!(
+        rejection(data),
+        "Layout view 'run': every chart must use the same x; found ['run', 'source']"
+    );
+}

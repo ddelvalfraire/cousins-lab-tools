@@ -102,9 +102,9 @@ enum Source {
 }
 
 /// Turns a capture's rows into live points: `x`, seconds since the group start on the host
-/// clock, then each value the template shows for the role. Derived values come from the
-/// role's [`Evaluator`] with the template's default parameters; anything else is the column
-/// or alias of that name.
+/// clock, `t`, seconds on the capture's own clock when it records one, then each value the
+/// template shows for the role. Derived values come from the role's [`Evaluator`] with the
+/// template's default parameters; anything else is the column or alias of that name.
 pub(super) struct PointMaker {
     /// Row positions of the program's columns, in program order.
     inputs: Vec<Option<usize>>,
@@ -174,6 +174,7 @@ impl PointMaker {
         };
         let mut point = Map::new();
         point.insert("x".into(), x);
+        point.insert("t".into(), t_s.map_or(Value::Null, Value::from));
         for (name, source) in &self.values {
             let value = match source {
                 Source::Output(i) => outputs[*i].map_or(Value::Null, Value::from),
