@@ -1,12 +1,15 @@
 //! What a template declares about analysis: calibrations, parsed into typed specs once at
-//! validation.
+//! validation. `parse` checks shapes; `check` checks names against the rest of the template.
+
+use std::collections::{BTreeMap, BTreeSet};
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use crate::pycompat::list_repr;
-use crate::templates::object;
+use crate::params::ParamSpec;
+use crate::pycompat::{list_repr, repr, str_repr};
+use crate::templates::{DerivedValue, object};
 
 const STATS: [&str; 2] = ["mean", "slope"];
 
@@ -194,6 +197,92 @@ pub fn parse(data: &Value) -> (AnalysisSpec, Vec<String>) {
     )
 }
 
+/// What `check` compares the spec with, from the rest of the template.
+pub struct Names<'a> {
+    pub roles: &'a Map<String, Value>,
+    pub role_columns: &'a BTreeMap<&'a str, BTreeSet<String>>,
+    pub role_source_clock: &'a BTreeMap<&'a str, bool>,
+    pub params: &'a [ParamSpec],
+    pub derived: &'a [DerivedValue],
+}
+
+impl Names<'_> {
+    /// Whether `role` records `of` or derives it.
+    fn readable(&self, role: &str, of: &str) -> bool {
+        self.role_columns.get(role).is_some_and(|c| c.contains(of))
+            || self.derived.iter().any(|d| d.name == of && d.role == role)
+    }
+
+    fn param(&self, name: &str) -> Option<&ParamSpec> {
+        self.params.iter().find(|p| p.name == name)
+    }
+}
+
+/// Every reason the spec does not fit the template's roles, columns and parameters.
+pub fn check(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
+    let mut errors = Vec::new();
+    let mut set_by: BTreeMap<&str, &str> = BTreeMap::new();
+    for (id, c) in &spec.calibrations {
+        let mut error = |e: String| errors.push(format!("Calibration {id}: {e}"));
+        if !names.roles.contains_key(&c.role) {
+            error(format!(
+                "unknown role {}",
+                repr(&Value::from(c.role.as_str()))
+            ));
+            continue;
+        }
+        if !names
+            .role_source_clock
+            .get(c.role.as_str())
+            .copied()
+            .unwrap_or(true)
+        {
+            error(format!(
+                "readings need role {} to record an elapsed or device clock",
+                c.role
+            ));
+        }
+        let readings: Vec<(String, &ReadingSpec)> = match &c.kind {
+            CalibrationKind::Set { sets } => {
+                sets.iter().map(|(p, r)| (format!("set {p}"), r)).collect()
+            }
+        };
+        for (place, r) in readings {
+            if !names.readable(&c.role, &r.of) {
+                error(format!(
+                    "{place} reads {}, which is not a column or derived value of {}",
+                    str_repr(&r.of),
+                    c.role
+                ));
+            }
+        }
+        let outputs: Vec<(&str, &str)> = match &c.kind {
+            CalibrationKind::Set { sets } => sets.keys().map(|p| ("sets", p.as_str())).collect(),
+        };
+        for (what, parameter) in outputs {
+            match names.param(parameter) {
+                None => error(format!(
+                    "{what} {}, which is not a parameter",
+                    str_repr(parameter)
+                )),
+                Some(p) if p.entry => error(format!(
+                    "{what} {}, which is typed in (entry: true) and cannot also be calibrated",
+                    str_repr(parameter)
+                )),
+                Some(_) => {
+                    if let Some(other) = set_by.insert(parameter, id) {
+                        error(format!(
+                            "{what} {}, which calibration {other} also sets",
+                            str_repr(parameter)
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    errors
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -294,6 +383,44 @@ mod tests {
         assert_eq!(
             with("calibrations", json!([])).unwrap_err(),
             "calibrations must be a mapping"
+        );
+    }
+
+    #[test]
+    fn calibrations_must_read_what_the_role_has_and_set_parameters_once() {
+        let error = with(
+            "calibrations",
+            json!({
+                "zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m99"}}},
+                "again": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "t_ms"}}},
+                "typed": {"role": "ms", "set": {"temp_c": {"stat": "mean", "of": "d44"}}},
+                "nope": {"role": "ms", "set": {"co2_ul_per_mv": {"stat": "mean", "of": "m44"}}},
+                "elsewhere": {"role": "light", "set": {"slope_p": {"stat": "mean", "of": "m44"}}},
+            }),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.split("; ").collect::<Vec<_>>(),
+            [
+                "Calibration zero: set zero_p reads 'm99', which is not a column or derived value of ms",
+                "Calibration again: sets 'zero_p', which calibration zero also sets",
+                "Calibration typed: sets 'temp_c', which is typed in (entry: true) and cannot also be calibrated",
+                "Calibration nope: sets 'co2_ul_per_mv', which is not a parameter",
+                "Calibration elsewhere: unknown role 'light'",
+            ]
+        );
+    }
+
+    #[test]
+    fn readings_need_a_clock_the_replay_speed_cannot_stretch() {
+        let mut data = base();
+        data["roles"] = json!({"ms": {"instrument": "ms2-ezview-simulated"}});
+        data["calibrations"] =
+            json!({"zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}}});
+        let profiles = load_profiles(&Paths::default().instruments).unwrap();
+        assert_eq!(
+            validate(data, &profiles).unwrap_err().0,
+            "Calibration zero: readings need role ms to record an elapsed or device clock"
         );
     }
 }

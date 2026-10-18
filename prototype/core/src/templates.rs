@@ -682,6 +682,16 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
 
     let (analysis, analysis_errors) = spec::parse(&data);
     errors.extend(analysis_errors);
+    errors.extend(spec::check(
+        &analysis,
+        &spec::Names {
+            roles,
+            role_columns: &role_columns,
+            role_source_clock: &role_source_clock,
+            params: &params,
+            derived: &derived,
+        },
+    ));
 
     let derived_names = object(&data, "derived");
     for chart in array(&data, "charts") {
