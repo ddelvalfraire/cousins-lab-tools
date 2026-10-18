@@ -8,7 +8,7 @@ use crate::session::iso_time;
 use crate::templates::{Template, is_xy};
 
 use super::fold::AnalysisState;
-use super::fold::{Draft, FitState, StepState, TableRow, draft, fold};
+use super::fold::{Draft, Filled, FitState, StepState, TableRow, draft, fold};
 use super::reading::{Range, ReadingValue};
 use super::spec::{AnalysisSpec, CalibrationKind, StepKind};
 use super::store::{Record, RecordId};
@@ -84,7 +84,7 @@ fn xy_series(
             .iter()
             .filter_map(|(point, p)| {
                 let step = state.steps.get(&format!("{id}.{point}"))?;
-                Some([step.values.get(&reading.of)?.value?, p.known])
+                Some([step.value(&reading.of)?, p.known])
             })
             .collect();
         let fit = state.fits.get(id);
@@ -166,15 +166,23 @@ pub struct StepReading {
     pub values: IndexMap<String, ReadingValue>,
 }
 
-impl From<&StepState> for StepReading {
-    fn from(s: &StepState) -> StepReading {
-        StepReading {
+impl StepReading {
+    fn of(s: &StepState) -> Option<StepReading> {
+        let Filled::Read {
+            capture,
+            range_s,
+            values,
+        } = &s.filled
+        else {
+            return None;
+        };
+        Some(StepReading {
             record: s.record.clone(),
             created_utc: s.created_utc,
-            capture: s.capture.clone(),
-            range_s: s.range_s,
-            values: s.values.clone(),
-        }
+            capture: capture.clone(),
+            range_s: *range_s,
+            values: values.clone(),
+        })
     }
 }
 
@@ -188,7 +196,12 @@ pub struct StepView {
     pub kind: &'static str,
     /// A calibration point's known value.
     pub known: Option<f64>,
-    /// None until the step is read, and again once its reading is retracted.
+    /// `read` or `typed`, from the record that fills the step; None while nothing does.
+    pub source: Option<&'static str>,
+    pub record: Option<RecordId>,
+    /// Reading name to value from that record, whichever its source.
+    pub values: IndexMap<String, Option<f64>>,
+    /// The statistics behind the values when the step was read.
     pub reading: Option<StepReading>,
 }
 
@@ -230,13 +243,20 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
                 StepKind::Point { known } => ("point", Some(known)),
                 StepKind::Measure => ("measure", None),
             };
+            let filled = state.steps.get(id);
             let view = StepView {
                 label: step.label.clone(),
                 owner: step.owner.clone(),
                 role: step.role.clone(),
                 kind,
                 known,
-                reading: state.steps.get(id).map(StepReading::from),
+                source: filled.map(|s| match s.filled {
+                    Filled::Read { .. } => "read",
+                    Filled::Typed { .. } => "typed",
+                }),
+                record: filled.map(|s| s.record.clone()),
+                values: filled.map(StepState::values).unwrap_or_default(),
+                reading: filled.and_then(StepReading::of),
             };
             (id.clone(), view)
         })

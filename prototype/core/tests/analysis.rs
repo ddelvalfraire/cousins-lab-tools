@@ -345,7 +345,7 @@ fn a_reading_is_saved_with_its_values_and_a_set_calibration_fills_its_parameter(
     assert_eq!(
         fresh["steps"]["zero"],
         json!({"label": "Zero", "owner": "zero", "role": "ms", "kind": "set", "known": null,
-               "reading": null})
+               "source": null, "record": null, "values": {}, "reading": null})
     );
     let first = (211.692 + 191.442 + 171.192) / 3.0;
     let saved = record(&engine, &id, reading("zero", [0.2, 0.45]));
@@ -741,4 +741,78 @@ fn xy_charts_carry_calibration_points_with_the_fit_line_and_table_rows() {
         json!([point, point]),
         "equal x values each keep their own point"
     );
+}
+
+#[test]
+fn a_typed_value_fills_a_step_until_a_later_reading_and_says_where_it_came_from() {
+    let (engine, dir, id) = imported(template());
+    let typed =
+        |step: &str, values: Value| json!({"action": "typed", "step": step, "values": values});
+    let saved = record(&engine, &id, typed("zero", json!({"zero_p": 190.5})));
+    let step = &saved["steps"]["zero"];
+    assert_eq!(
+        (
+            &step["source"],
+            &step["record"],
+            &step["values"],
+            &step["reading"]
+        ),
+        (
+            &json!("typed"),
+            &json!("rec-000001"),
+            &json!({"zero_p": 190.5}),
+            &Value::Null
+        )
+    );
+    assert_eq!(saved["parameters"]["zero_p"]["value"], 190.5);
+    assert_eq!(saved["parameters"]["zero_p"]["source"], "fitted");
+    assert_eq!(saved["parameters"]["offset_p"]["value"], 381.0);
+    let file = dir
+        .path()
+        .join("sessions")
+        .join(&id)
+        .join("analysis/rec-000001.json");
+    let stored: Value = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+    assert_eq!(
+        (&stored["action"], &stored["step"], &stored["values"]),
+        (&json!("typed"), &json!("zero"), &json!({"zero_p": 190.5}))
+    );
+
+    let read = record(&engine, &id, reading("zero", [0.2, 0.45]));
+    let first = (211.692 + 191.442 + 171.192) / 3.0;
+    assert_eq!(read["steps"]["zero"]["source"], "read");
+    assert_eq!(read["steps"]["zero"]["values"], json!({"zero_p": first}));
+    let retyped = record(&engine, &id, typed("zero", json!({"zero_p": 2.0})));
+    assert_eq!(retyped["parameters"]["zero_p"]["value"], 2.0);
+
+    let points = record(&engine, &id, typed("line.p0", json!({"m44": 10.0})));
+    assert_eq!(points["fits"]["line"]["n"], 1);
+    let fitted = record(&engine, &id, typed("line.p1", json!({"m44": 20.0})));
+    assert_eq!(fitted["parameters"]["gain_p"]["value"], 0.1);
+    assert_eq!(
+        fitted["xy"]["line_cal"]["series"][0]["points"],
+        json!([[10.0, 0.0], [20.0, 1.0]])
+    );
+    let sample = record(&engine, &id, typed("sample.co2", json!({"co2_mv": 12.0})));
+    assert_eq!(sample["drafts"]["sample"]["results"]["co2_zeroed"], 10.0);
+    assert_eq!(
+        sample["drafts"]["sample"]["readings"],
+        json!({"co2_mv": 12.0})
+    );
+
+    let refuse = |request: Value| {
+        let mut args = request;
+        args["session_id"] = json!(id);
+        refused(&engine, "record_analysis", args).message
+    };
+    assert_eq!(refuse(typed("nope", json!({"x": 1}))), "No step nope");
+    assert_eq!(
+        refuse(typed("zero", json!({}))),
+        "Type at least one value for step zero"
+    );
+    assert_eq!(
+        refuse(typed("line.p0", json!({"m32": 1}))),
+        "Step line.p0 has no reading m32; it reads m44"
+    );
+    assert!(refuse(typed("zero", json!({"zero_p": "a"}))).starts_with("Bad arguments: "));
 }

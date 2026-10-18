@@ -261,6 +261,49 @@ fn module2_adds_a_sample_row_with_co2_and_o2_from_the_entered_temperature() {
     assert_eq!(table["rows"].as_array().unwrap().len(), 1);
 }
 
+#[test]
+fn module2_typed_zero_and_points_give_the_results_of_readings_with_those_means() {
+    let (engine, _dir, read_id) = imported("legacy-module2-co2-o2");
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-module2-co2-o2", "files": [{"role": "ms", "path": sample_path()}]}),
+    );
+    let typed_id = manifest["id"].as_str().unwrap();
+    for (step, range, _) in M2_CAL {
+        reading(&engine, &read_id, step, range);
+        let (mean, _) = hand_mean(range, M44);
+        let typed = json!({"action": "typed", "step": step, "values": {"m44": mean}});
+        record(&engine, typed_id, typed);
+    }
+    let (zero_mv, _) = hand_mean(M2_CAL[0].1, M44);
+    reading(&engine, &read_id, "co2_zero", M2_CAL[0].1);
+    let typed = json!({"action": "typed", "step": "co2_zero", "values": {"co2_zero_mv": zero_mv}});
+    record(&engine, typed_id, typed);
+    let by_reading = reading(&engine, &read_id, "sample.co2", M2_SAMPLE);
+    let by_typing = reading(&engine, typed_id, "sample.co2", M2_SAMPLE);
+
+    assert_eq!(by_typing["steps"]["co2_zero"]["source"], "typed");
+    assert_eq!(by_typing["steps"]["co2.ul3"]["source"], "typed");
+    assert_eq!(by_typing["fits"], by_reading["fits"]);
+    for name in [
+        "co2_ul_per_mv",
+        "co2_cal_intercept_ul",
+        "co2_pct_per_mv",
+        "co2_zero_mv",
+    ] {
+        let (typed, read) = (
+            &by_typing["parameters"][name],
+            &by_reading["parameters"][name],
+        );
+        assert_eq!(typed["value"], read["value"], "{name}");
+        assert_eq!(typed["source"], read["source"], "{name}");
+    }
+    let results = &by_typing["drafts"]["sample"]["results"];
+    assert_eq!(*results, by_reading["drafts"]["sample"]["results"]);
+    assert!(results["pct_co2"].as_f64().unwrap() > 0.0, "{results}");
+}
+
 const M45: usize = 4;
 const M47: usize = 6;
 const M49: usize = 7;

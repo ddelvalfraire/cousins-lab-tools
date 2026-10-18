@@ -25,7 +25,7 @@ use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
 pub use export::{TableExport, export_table};
-pub use fold::{AnalysisState, Draft, FitState, StepState, TableRow, draft, fold};
+pub use fold::{AnalysisState, Draft, Filled, FitState, StepState, TableRow, draft, fold};
 pub use reading::{Range, RangeError, ReadingValue, read_range};
 pub use spec::{
     AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
@@ -46,6 +46,10 @@ pub enum Request {
         step: String,
         capture: String,
         range_s: Range,
+    },
+    Typed {
+        step: String,
+        values: IndexMap<String, f64>,
     },
     Entry {
         parameter: String,
@@ -192,6 +196,24 @@ fn action_for(
                 values,
                 params,
             })
+        }
+        Request::Typed { step, values } => {
+            let spec = template
+                .analysis()
+                .steps
+                .get(&step)
+                .ok_or_else(|| invalid(format!("No step {step}")))?;
+            if values.is_empty() {
+                return Err(invalid(format!("Type at least one value for step {step}")));
+            }
+            if let Some(name) = values.keys().find(|n| !spec.readings.contains_key(*n)) {
+                let names: Vec<&str> = spec.readings.keys().map(String::as_str).collect();
+                return Err(invalid(format!(
+                    "Step {step} has no reading {name}; it reads {}",
+                    names.join(", ")
+                )));
+            }
+            Ok(Action::Typed { step, values })
         }
         Request::Entry { parameter, value } => {
             let spec = template

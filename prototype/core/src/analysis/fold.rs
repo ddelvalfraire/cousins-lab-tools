@@ -28,14 +28,49 @@ pub struct FitState {
     pub missing: Vec<String>,
 }
 
-/// The reading that currently fills a step.
+/// What fills a step: statistics over a range, or values the operator typed.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Filled {
+    Read {
+        capture: String,
+        range_s: Range,
+        values: IndexMap<String, ReadingValue>,
+    },
+    Typed {
+        values: IndexMap<String, f64>,
+    },
+}
+
+/// The record that currently fills a step.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StepState {
     pub record: RecordId,
     pub created_utc: DateTime<Utc>,
-    pub capture: String,
-    pub range_s: Range,
-    pub values: IndexMap<String, ReadingValue>,
+    pub filled: Filled,
+}
+
+impl StepState {
+    /// Each reading name the record holds, with its value. A typed record holds only the names
+    /// it typed.
+    pub fn values(&self) -> IndexMap<String, Option<f64>> {
+        match &self.filled {
+            Filled::Read { values, .. } => values
+                .iter()
+                .map(|(name, v)| (name.clone(), v.value))
+                .collect(),
+            Filled::Typed { values } => values
+                .iter()
+                .map(|(name, v)| (name.clone(), Some(*v)))
+                .collect(),
+        }
+    }
+
+    pub fn value(&self, name: &str) -> Option<f64> {
+        match &self.filled {
+            Filled::Read { values, .. } => values.get(name)?.value,
+            Filled::Typed { values } => values.get(name).copied(),
+        }
+    }
 }
 
 /// One row of a results table, as it was added.
@@ -52,8 +87,8 @@ pub struct AnalysisState {
     /// Entered and calibrated values only; template defaults are not repeated here.
     pub params: Params,
     pub sources: BTreeMap<String, ParamSource>,
-    /// The latest reading of each step that has one, in template order. A measurement
-    /// step's reading leaves once a table row takes it.
+    /// The latest reading or typed record of each step that has one, in template order. A
+    /// measurement step's record leaves once a table row takes it.
     pub steps: IndexMap<String, StepState>,
     /// Per measurement, in template order, the rows not retracted, in the order added.
     pub tables: IndexMap<String, Vec<TableRow>>,
@@ -88,9 +123,9 @@ impl AnalysisState {
 /// What a measurement's next table row would hold.
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 pub struct Draft {
-    /// Reading name to value, from the steps that hold a reading.
-    pub readings: IndexMap<String, ReadingValue>,
-    /// The reading records the row would take.
+    /// Reading name to value, from the steps that are filled.
+    pub readings: IndexMap<String, Option<f64>>,
+    /// The reading and typed records the row would take.
     pub records: Vec<RecordId>,
     pub results: IndexMap<String, Option<f64>>,
     /// Names a result reads that have no value: parameters, or readings not taken yet.
@@ -107,11 +142,11 @@ pub fn draft(measurement: &Measurement, state: &AnalysisState, params: &Params) 
             continue;
         };
         draft.records.push(reading.record.clone());
-        for (name, value) in &reading.values {
-            if let Some(v) = value.value {
+        for (name, value) in reading.values() {
+            if let Some(v) = value {
                 known.insert(name.clone(), v);
             }
-            draft.readings.insert(name.clone(), value.clone());
+            draft.readings.insert(name, value);
         }
     }
     for (key, result) in &measurement.results {
@@ -171,24 +206,36 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
     let mut latest: BTreeMap<&str, StepState> = BTreeMap::new();
     let mut rows: BTreeMap<&str, Vec<TableRow>> = BTreeMap::new();
     for record in effective(log) {
+        let mut fill = |step, filled| {
+            let state = StepState {
+                record: record.id.clone(),
+                created_utc: record.created_utc,
+                filled,
+            };
+            latest.insert(step, state);
+        };
         match &record.action {
-            Action::Reading { .. } if taken.contains(&record.id) => {}
+            Action::Reading { .. } | Action::Typed { .. } if taken.contains(&record.id) => {}
             Action::Reading {
                 step,
                 capture,
                 range_s,
                 values,
                 ..
-            } => {
-                let reading = StepState {
-                    record: record.id.clone(),
-                    created_utc: record.created_utc,
+            } => fill(
+                step,
+                Filled::Read {
                     capture: capture.clone(),
                     range_s: *range_s,
                     values: values.clone(),
-                };
-                latest.insert(step, reading);
-            }
+                },
+            ),
+            Action::Typed { step, values } => fill(
+                step,
+                Filled::Typed {
+                    values: values.clone(),
+                },
+            ),
             Action::Entry {
                 parameter,
                 value: Some(value),
@@ -234,13 +281,13 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
         let Some(reading) = state.steps.get(id) else {
             continue;
         };
-        for (parameter, value) in &reading.values {
-            if let Some(v) = value.value {
+        for (parameter, value) in reading.values() {
+            if let Some(v) = value {
                 state.params.insert(parameter.clone(), v);
                 let calibration = step.owner.clone();
                 state
                     .sources
-                    .insert(parameter.clone(), ParamSource::Fitted { calibration });
+                    .insert(parameter, ParamSource::Fitted { calibration });
             }
         }
     }
@@ -262,7 +309,7 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
             let value = state
                 .steps
                 .get(&format!("{id}.{point}"))
-                .and_then(|s| s.values.get(&reading.of)?.value);
+                .and_then(|s| s.value(&reading.of));
             match value {
                 Some(x) => pairs.push((x, p.known)),
                 None => fit.missing.push(point.clone()),
@@ -339,6 +386,12 @@ mod tests {
             params: Params::new(),
         };
         record(seq, None, action)
+    }
+
+    fn typed(seq: u64, step: &str, name: &str, value: f64) -> Record {
+        let values = IndexMap::from([(name.to_string(), value)]);
+        let step = step.into();
+        record(seq, None, Action::Typed { step, values })
     }
 
     fn entry(seq: u64, value: Option<f64>) -> Record {
@@ -450,6 +503,62 @@ mod tests {
         assert_eq!(empty.steps["zero"].record, RecordId::new(2));
     }
 
+    #[test]
+    fn the_latest_record_of_a_step_wins_whether_read_or_typed() {
+        let spec = zero_spec();
+        let read_then_typed = [read(1, "zero", Some(5.0)), typed(2, "zero", "zero_p", 6.5)];
+        let state = fold(&spec, &read_then_typed);
+        assert_eq!(state.params["zero_p"], 6.5);
+        assert_eq!(state.steps["zero"].record, RecordId::new(2));
+        let calibration = "zero".to_string();
+        assert_eq!(state.sources["zero_p"], ParamSource::Fitted { calibration });
+
+        let typed_then_read = [typed(1, "zero", "zero_p", 6.5), read(2, "zero", Some(5.0))];
+        let state = fold(&spec, &typed_then_read);
+        assert_eq!(state.params["zero_p"], 5.0);
+        assert!(matches!(state.steps["zero"].filled, Filled::Read { .. }));
+
+        let mut retracted = read_then_typed.to_vec();
+        retracted.push(retract(3, &[2]));
+        let state = fold(&spec, &retracted);
+        assert_eq!(state.params["zero_p"], 5.0, "the reading is back");
+        assert_eq!(state.steps["zero"].record, RecordId::new(1));
+        let state = fold(&spec, &[typed(1, "zero", "zero_p", 6.5), retract(2, &[1])]);
+        assert!(state.steps.is_empty() && state.params.is_empty());
+    }
+
+    #[test]
+    fn typed_points_fit_and_typed_measure_steps_fill_drafts_like_readings() {
+        let spec = co2_spec();
+        let mvs = [("zero", -18.8049), ("ul1", 38.9212), ("ul2", 95.7886)];
+        let reads: Vec<Record> = (1..)
+            .zip(mvs)
+            .map(|(seq, (p, mv))| read_as(seq, &format!("co2.{p}"), "m44", Some(mv)))
+            .collect();
+        let typings: Vec<Record> = (1..)
+            .zip(mvs)
+            .map(|(seq, (p, mv))| typed(seq, &format!("co2.{p}"), "m44", mv))
+            .collect();
+        let (by_reading, by_typing) = (fold(&spec, &reads), fold(&spec, &typings));
+        assert_eq!(by_typing.fits, by_reading.fits);
+        assert_eq!(by_typing.params, by_reading.params);
+        assert_eq!(by_typing.fits["co2"].n, 3);
+
+        let spec = sample_spec();
+        let m = &spec.measurements["sample"];
+        let params = Params::from([("gain".into(), 2.0), ("zero".into(), 4.0)]);
+        let log = [typed(1, "sample.co2", "co2_mv", 10.0)];
+        let next = draft(m, &fold(&spec, &log), &params);
+        assert_eq!(next.records, [RecordId::new(1)]);
+        assert_eq!(next.readings["co2_mv"], Some(10.0));
+        assert_eq!(next.results["pct"], Some(12.0));
+        let taken = [log[0].clone(), add_row(2, &[1], 12.0)];
+        assert!(
+            fold(&spec, &taken).steps.is_empty(),
+            "a row takes typed records too"
+        );
+    }
+
     fn co2_spec() -> AnalysisSpec {
         let (spec, errors) = crate::analysis::spec::parse(&serde_json::json!({"calibrations": {
             "co2": {"role": "ms", "line": {
@@ -534,7 +643,7 @@ mod tests {
         let log = [read_as(1, "sample.co2", "co2_mv", Some(10.0))];
         let partial = draft(m, &fold(&spec, &log), &params);
         assert_eq!(partial.records, [RecordId::new(1)]);
-        assert_eq!(partial.readings["co2_mv"].value, Some(10.0));
+        assert_eq!(partial.readings["co2_mv"], Some(10.0));
         let results: Vec<(&str, Option<f64>)> = partial
             .results
             .iter()

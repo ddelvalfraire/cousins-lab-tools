@@ -76,10 +76,16 @@ pub enum Action {
     AddRow {
         measurement: String,
         labels: IndexMap<String, String>,
-        /// The reading records the row took; they leave the draft for good.
+        /// The reading and typed records the row took; they leave the draft for good.
         readings: Vec<RecordId>,
         results: IndexMap<String, Option<f64>>,
         params: Params,
+    },
+    /// Values the operator typed for one step instead of reading a range, by reading name.
+    /// Like a reading, the latest record of a step fills it.
+    Typed {
+        step: String,
+        values: IndexMap<String, f64>,
     },
     /// A typed parameter value; None clears an earlier entry.
     Entry {
