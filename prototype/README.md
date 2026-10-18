@@ -133,7 +133,8 @@ commands as the JII template, with no module-specific code in either.
 | Atom% 49 isotope enrichment (module 3) | [module3-legacy](docs/screenshots/module3-legacy.png) | [module3-preset](docs/screenshots/module3-preset-1440.png) |
 
 The grids keep the legacy arrangement: which charts, in which row, at what relative width, with
-the legacy titles and axes. Module 2 has calibration values and the CO2 calibration chart, then
+the legacy titles, series colours and xy axis labels (time charts show their unit in the tile
+header rather than as an axis title). Module 2 has calibration values and the CO2 calibration chart, then
 Pressure and Pressure Derivative across the top, the raw masses full width, and the CO2 buttons,
 O2 block, and results table along the bottom. Module 1 has the Assay Buffer and HCL calibration
 charts and the velocity chart on top, eight raw masses, and the O2, CO2, BiCarb, blank and
@@ -166,9 +167,11 @@ every chart:
 | Module 3 | Get Mean 2000-2100 (mean of the rate over 954 rows) |
 
 The sample recording is not a Rubisco assay, so module 1's velocities only show the screen
-working. Module 2's %CO2 per mV comes out at 0.00062752, within 0.2 % of the legacy
-0.0006285103 from the same files; the difference is the least-squares fit over all four
-points (B2).
+working. Module 2's %CO2 per mV comes out at 0.00062752 with the ranges above, 0.2 % from the
+legacy 0.0006285103 on the same files. The least-squares fit alone (B2) accounts for little of
+that: on the legacy per-file means it gives 0.00062833. The rest is that a reading here is the
+mean of every stored row in the range, not of one mean per frame file, over ranges chosen by
+hand.
 
 **Legacy bugs, fixed in the presets only.** The legacy code is unchanged. Bug ids follow the
 review of the legacy modules.
@@ -185,19 +188,20 @@ review of the legacy modules.
 | B12 | Pressure derivative is previous minus current, per sample, with a first-point spike | Slope per second over the recording clock, rising positive, 5 s window |
 | B13 | µbar computed once at ingestion; points before calibration stay 0 | Recomputed from stored mass 44 whenever the calibration changes |
 | B15 | "CO2/Voltage (ml/mV)" holds %CO2 per mV | Labelled %CO2/mV; the 1/28 is its own parameter |
-| B16 | CO2 per volt computed only on the 3 µl button, and crashes on an empty field | Fitted once enough points exist; missing points are listed |
+| B16 | CO2 per volt computed only on the 3 µl button, and crashes on an empty field | Fitted once enough points exist; each unread point shows as Not read |
 | B17 | 9200 hard-coded | `ubar_per_pct` parameter with a note |
 | B18 | O2 labelled µbar | µmol/L (module 2) and nmol/ml (module 1), flagged as a lab check |
 | B19 | Temperature defaults to 0 and applies only on Enter | No default; O2 Cal stays unset until a temperature is typed; saved on change |
-| B21 | Copy never connected | Copy puts the table on the clipboard as tab-separated text (checked in a browser, not yet in the Tauri window) |
+| B21 | Copy never connected in modules 1 and 2 (module 3's copied the selected cells) | Copy puts the whole table on the clipboard as tab-separated text (checked in a browser, not yet in the Tauri window) |
 | B22 | Get Mean takes the first rate of a batch | Mean of the rate over the stored rows in the range |
 | B23 | ln(atom%) plotted under "Atom49%" | The chart plots atom%; ln is a separate value |
 | B24, B25 | 15-point rate window, emitted from partial windows | 12 s window on the clock, full windows of at least 60 points only |
 | B26 | A zero denominator or ln 0 gives −inf or NaN that spreads into later slopes | No value for that row, and windows skip it |
-| B30 | +0.0018 in module 3's O2 polynomial | −0.0018, as in modules 1 and 2 |
+| B30 | +0.0018 in module 3's O2 polynomial | The module 3 screen never used it; the module 1 and 2 presets use −0.0018 |
 
-B3, B11, B20, B29 and B31 are in code the presets do not have (bar-edge loops, the Plot All
-timer thread, and calibration save and load).
+B3, B11 and B29 are in code the presets do not have (bar-edge loops and the Plot All timer
+thread). B20 and B31 are in calibration save and load, which the presets do not offer yet (see
+Known gaps).
 
 **Lab checks.** These are choices the legacy code made that the presets keep or change and
 the lab should confirm:
@@ -213,10 +217,24 @@ the lab should confirm:
 - The fit direction (known value on reading), and whether the 0 µl point should also set the
   CO2 zero.
 - The legacy known values: 6 µl as 1000 nmol/ml and 2 µl as 33.3.
+- Readings average every stored row in the selected range; legacy averaged one mean per frame
+  file between its bars. Means and slopes differ slightly from legacy for that reason.
 
-**Known gaps.** Legacy frame gaps are stored as events but not drawn on charts that use the
-recording clock. The time charts use the app's palette, not the legacy white traces. A folder
-of frame files cannot be imported yet, only the zip.
+**Known gaps.** These are legacy features the presets do not have yet:
+
+- Loading the lab's own data. The import dialog offers only the repository's
+  `module2/SampleData.zip`; a folder of frame files, and the 11-field frame files the legacy
+  EZView reader writes, are refused. Start run replays the same fixed zip.
+- Live acquisition for the presets. The engine has an EZView spool adapter, but no profile maps
+  all eight masses, and the presets use the replay profile.
+- Typed calibration values and carrying calibrations over. Legacy let the operator type a
+  calibration mV or a zero (O2 Zero, CO2 Zero, the O2 average), save calibrations at STOP, keep
+  them for the next run, and load a calibration file (module 1). Here every value comes from a
+  reading in this session.
+- A raw-data CSV at stop. The export is the aligned CSV, after saving an alignment.
+- Live charts keep the last 50,000 rows, so *All* on a long live run starts part-way in.
+- Module 1's net rates (extract minus blank) are not shown, chart images cannot be exported, and
+  legacy frame gaps are stored as events but not drawn on charts on the recording clock.
 
 ## Demonstration guide
 
