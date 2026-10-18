@@ -57,7 +57,7 @@ const SOURCE_SETTING = { legacy_frames_replay: "path", ambit_replay: "recording"
 
 /**
  * Enabled roles of `template` whose source a run may replace: replays and real spools, not simulators. Each comes
- * with the profile's own path, shown as the placeholder, and whether its profile reads hardware.
+ * with the profile's own path, a placeholder naming its file, and whether its profile reads hardware.
  */
 export function runSources(template, instruments) {
   const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
@@ -65,7 +65,10 @@ export function runSources(template, instruments) {
     const profile = profiles[spec.instrument];
     const key = SOURCE_SETTING[profile?.adapter];
     if (spec.enabled === false || !key || profile.simulate) return [];
-    return [{ role, label: spec.label || role, path: profile.settings?.[key] ?? "", hardware: profile.input_kind === "hardware" }];
+    const path = profile.settings?.[key] ?? "";
+    // The profile's path can hold ${repo}; the field shows only the file it names.
+    const hint = path ? `Profile's recording: ${fileName(path)}` : "Path to the file to read";
+    return [{ role, label: spec.label || role, path, hint, hardware: profile.input_kind === "hardware" }];
   });
 }
 

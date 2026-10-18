@@ -74,8 +74,8 @@ test("a run offers a source field for replays and real spools, not for simulator
     live: { instrument: "spool" }, sim: { instrument: "sim" }, gone: { instrument: "missing" },
   } };
   assert.deepEqual(runSources(template, instruments), [
-    { role: "ms", label: "Mass spectrometer", path: "/repo/module2/SampleData.zip", hardware: false },
-    { role: "live", label: "live", path: "", hardware: true },
+    { role: "ms", label: "Mass spectrometer", path: "/repo/module2/SampleData.zip", hint: "Profile's recording: SampleData.zip", hardware: false },
+    { role: "live", label: "live", path: "", hint: "Path to the file to read", hardware: true },
   ]);
   assert.deepEqual(sourcesFrom([["ms", "  /lab/Acquisition12 "], ["live", ""], ["x", null]]), { ms: "/lab/Acquisition12" });
 });

@@ -164,7 +164,7 @@ export async function startRunDialog(templateId, templates, revision) {
       <label class="field">Replay speed
         <select name="speed">${speeds.map(([v, label]) => `<option value="${v}"${v === (hardware ? 1 : 20) ? " selected" : ""}>${label}</option>`).join("")}</select></label>
       ${sources.map((s, i) => `<label class="field">${s.hardware ? "Spool file" : "Recording to replay"} for ${esc(s.label)} (role ${esc(s.role)})
-        <input name="source${i}" placeholder="${esc(s.path)}"><span class="small muted">Leave empty to use the profile's. Not saved to the profile or the template.</span></label>`).join("")}
+        <input name="source${i}" placeholder="${esc(s.hint)}" title="${esc(s.path)}"><span class="small muted">Leave empty to use the profile's. Not saved to the profile or the template.</span></label>`).join("")}
       <p class="error-text"></p>
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Check readiness and start</button></div>
     </form>`, async form => {
