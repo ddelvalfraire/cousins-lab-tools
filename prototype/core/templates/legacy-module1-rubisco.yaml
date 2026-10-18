@@ -86,6 +86,9 @@ measurements:
       co2_reading: {stat: mean, of: m44}
       o2_reading: {stat: mean, of: m32}
     results:
+      # Extract minus blank: the legacy consumption-rate read-outs (m1:1606-1612).
+      co2_net: {expr: "co2_ext - co2_blank", unit: mV/s, label: CO2 net rate}
+      o2_net: {expr: "o2_ext - o2_blank", unit: mV/s, label: O2 net rate}
       v0: {expr: "-(o2_ext - o2_blank) * o2_cal", unit: nmol/ml/s, label: V0}
       vc: {expr: "-(co2_ext - co2_blank) * co2_cal", unit: nmol/ml/s, label: Vc}
       co2_conc: {expr: "co2_cal * (co2_reading - co2_zero_m44) / bicarb_per_co2", unit: nmol/ml, label: "[CO2]"}

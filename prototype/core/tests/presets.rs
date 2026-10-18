@@ -451,17 +451,21 @@ fn module1_extract_rows_fill_the_velocity_chart_from_both_calibrations_and_the_b
             &id,
             json!({"action": "add_row", "measurement": "extract"}),
         );
-        let v0 = -(hand_slope(range, M32) - o2_blank) * o2_cal;
-        let vc = -(hand_slope(range, M44) - co2_blank) * co2_cal;
+        let o2_net = hand_slope(range, M32) - o2_blank;
+        let co2_net = hand_slope(range, M44) - co2_blank;
+        let v0 = -o2_net * o2_cal;
+        let vc = -co2_net * co2_cal;
         let co2 = co2_cal * (hand_mean(range, M44).0 - zero44) / ratio;
         let o2 = o2_cal * hand_mean(range, M32).0;
-        expected.push((v0, vc, co2, o2));
+        expected.push((v0, vc, co2, o2, co2_net, o2_net));
     }
     let rows = view["tables"]["extract"]["rows"].as_array().unwrap();
     assert_eq!(rows.len(), 2);
     let velocity = &view["xy"]["velocity"]["series"];
-    for (i, (v0, vc, co2, o2)) in expected.into_iter().enumerate() {
+    for (i, (v0, vc, co2, o2, co2_net, o2_net)) in expected.into_iter().enumerate() {
         let row = &rows[i]["results"];
+        assert_close(&row["co2_net"], co2_net, "CO2 net rate");
+        assert_close(&row["o2_net"], o2_net, "O2 net rate");
         assert_close(&row["v0"], v0, "V0");
         assert_close(&row["vc"], vc, "Vc");
         assert_close(&row["co2_conc"], co2, "[CO2]");
