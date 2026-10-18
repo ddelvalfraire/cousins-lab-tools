@@ -9,7 +9,7 @@ use std::fmt;
 
 use crate::contract::{Clock, ClockKind};
 use crate::expr::{Expression, Params};
-use crate::templates::{DerivedKind, DerivedValue, Template, object};
+use crate::templates::{DerivedKind, DerivedValue, Template};
 
 /// A value that reaches itself through the values it reads.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -215,9 +215,10 @@ impl Program {
         role: &str,
         clocks: &[Clock],
     ) -> Result<Program, CalcError> {
-        let parameters: BTreeSet<&str> = object(template.data(), "parameters")
-            .keys()
-            .map(String::as_str)
+        let parameters: BTreeSet<&str> = template
+            .param_specs()
+            .iter()
+            .map(|s| s.name.as_str())
             .collect();
         let ordered =
             derived_order(template.derived(), role, &parameters).map_err(CalcError::Cycle)?;

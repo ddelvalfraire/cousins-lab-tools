@@ -26,6 +26,7 @@ use serde_json::Value;
 use crate::calc::Program;
 use crate::contract::{Clock, ClockKind};
 use crate::expr::Params;
+use crate::params::ParamSource;
 use crate::pycompat::{float_repr, round};
 use crate::query::{AnalysisError, SessionDb, clock_seconds_sql, ident, sql_string};
 use crate::session::{Capture, Manifest, iso_time_opt, utc_now};
@@ -317,13 +318,20 @@ fn trials_of<'a>(
 }
 
 /// Template parameters in template order.
-fn template_params(template: &Template) -> IndexMap<String, f64> {
-    template.data()["parameters"]
-        .as_object()
-        .into_iter()
-        .flatten()
-        .filter_map(|(k, p)| Some((k.clone(), p.get("value")?.as_f64()?)))
-        .collect()
+/// The trial's parameters in template order, then any override of a name the template does
+/// not declare, so a saved record reads in the order the template lists them.
+fn trial_params(template: &Template, overrides: &IndexMap<String, f64>) -> IndexMap<String, f64> {
+    let overrides: Params = overrides.iter().map(|(k, v)| (k.clone(), *v)).collect();
+    let mut values = template
+        .resolve_params(&[(&overrides, ParamSource::Trial)])
+        .values;
+    let mut params: IndexMap<String, f64> = template
+        .param_specs()
+        .iter()
+        .filter_map(|s| values.remove(&s.name).map(|v| (s.name.clone(), v)))
+        .collect();
+    params.extend(values);
+    params
 }
 
 fn window(spec: &Value) -> Option<[f64; 2]> {
@@ -553,10 +561,13 @@ pub fn propose(
                 }
             }
         }
-        let mut params = template_params(&template);
-        if let Some(overrides) = inputs.trial_params.get(trial.id) {
-            params.extend(overrides.iter().map(|(k, v)| (k.clone(), *v)));
-        }
+        let params = trial_params(
+            &template,
+            inputs
+                .trial_params
+                .get(trial.id)
+                .unwrap_or(&IndexMap::new()),
+        );
         trials.push(Trial {
             id: trial.id.into(),
             label: trial.label.into(),

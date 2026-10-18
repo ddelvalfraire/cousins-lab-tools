@@ -17,6 +17,7 @@ use crate::calc::derived_order;
 use crate::contract::ClockKind;
 use crate::expr::{self, Expression, Params};
 use crate::layout::{self, Kind};
+use crate::params::{ParamSource, ParamSpec, ResolvedParams, computed_order, resolve_params};
 use crate::protocol::{self, ProtocolPlan};
 use crate::pycompat::{list_repr, repr};
 use crate::schemas;
@@ -203,6 +204,7 @@ fn has_source_clock(clocks: &[crate::contract::Clock]) -> bool {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Template {
     data: Value,
+    params: Vec<ParamSpec>,
     derived: Vec<DerivedValue>,
     plans: BTreeMap<String, ProtocolPlan>,
 }
@@ -233,11 +235,19 @@ impl Template {
             .collect()
     }
 
+    pub fn param_specs(&self) -> &[ParamSpec] {
+        &self.params
+    }
+
+    /// The template's own parameter values: defaults, and what they compute. An unset
+    /// parameter is absent.
     pub fn params(&self) -> Params {
-        object(&self.data, "parameters")
-            .iter()
-            .filter_map(|(k, p)| Some((k.clone(), p.get("value")?.as_f64()?)))
-            .collect()
+        self.resolve_params(&[]).values
+    }
+
+    /// Parameter values with `layers` applied over the template defaults, later layers winning.
+    pub fn resolve_params(&self, layers: &[(&Params, ParamSource)]) -> ResolvedParams {
+        resolve_params(&self.params, layers)
     }
 
     pub fn derived(&self) -> &[DerivedValue] {
@@ -567,10 +577,31 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     }
 
     let parameters = object(&data, "parameters");
+    let mut params = Vec::new();
     for (name, parameter) in parameters {
-        if parameter.get("value").and_then(Value::as_f64).is_none() {
-            errors.push(format!("Parameter {name}: value must be a number"));
+        match ParamSpec::parse(name, parameter) {
+            Ok(spec) => params.push(spec),
+            Err(e) => errors.push(format!("Parameter {name}: {e}")),
         }
+    }
+    for spec in &params {
+        let unknown: Vec<&str> = spec
+            .expr
+            .iter()
+            .flat_map(|e| e.names())
+            .map(String::as_str)
+            .filter(|n| !parameters.contains_key(*n))
+            .collect();
+        if !unknown.is_empty() {
+            errors.push(format!(
+                "Parameter {}: unknown names {}",
+                spec.name,
+                list_repr(unknown)
+            ));
+        }
+    }
+    if let Err(cycle) = computed_order(&params) {
+        errors.push(format!("Parameter {cycle}"));
     }
 
     let no_columns = BTreeSet::new();
@@ -718,6 +749,7 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     }
     Ok(Template {
         data,
+        params,
         derived,
         plans,
     })
@@ -749,8 +781,15 @@ pub fn from_snapshot(data: Value) -> Result<Template, TemplateError> {
             kind,
         });
     }
+    let params = object(&data, "parameters")
+        .iter()
+        .map(|(name, p)| {
+            ParamSpec::parse(name, p).map_err(|e| TemplateError(format!("Parameter {name}: {e}")))
+        })
+        .collect::<Result<_, _>>()?;
     Ok(Template {
         data,
+        params,
         derived,
         plans,
     })

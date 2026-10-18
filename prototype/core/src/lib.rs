@@ -8,6 +8,7 @@ pub mod expr;
 pub mod importing;
 pub mod layout;
 pub mod ms_workbook;
+pub mod params;
 pub mod protocol;
 pub mod pycompat;
 pub mod query;

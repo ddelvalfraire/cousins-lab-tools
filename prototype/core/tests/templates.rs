@@ -364,3 +364,65 @@ fn a_chart_on_the_source_clock_needs_every_role_to_record_one() {
         "Layout view 'run': every chart must use the same x; found ['run', 'source']"
     );
 }
+
+#[test]
+fn parameters_may_be_unset_entered_or_computed() {
+    let mut data = builtin();
+    data["parameters"]["temp_c"] = json!({"entry": true, "unit": "°C", "label": "Temperature"});
+    data["parameters"]["o2_cal"] =
+        json!({"expr": "(456.49 - 12.387 * temp_c) / ubar_per_mv", "entry": true});
+    data["parameters"]["ubar_per_pct"] = json!({"expr": "ubar_per_mv * 2"});
+    let profiles = load_profiles(&Paths::default().instruments).unwrap();
+    let template = validate(data.clone(), &profiles).unwrap();
+    let params = template.params();
+    assert_eq!(
+        params.get("temp_c"),
+        None,
+        "an unset parameter is absent, never 0"
+    );
+    assert_eq!(params.get("o2_cal"), None);
+    assert_eq!(params["ubar_per_pct"], 2.0 * 1831.1123481696839);
+    let specs = template.param_specs();
+    let temp = specs.iter().find(|s| s.name == "temp_c").unwrap();
+    assert!(temp.entry && temp.value.is_none());
+    assert_eq!(from_snapshot(data.clone()).unwrap().params(), params);
+
+    let cases = [
+        (
+            "/parameters/o2_cal/expr",
+            json!("temp_c +"),
+            "Parameter o2_cal: Unsupported syntax in expression 'temp_c +' at position 8",
+        ),
+        (
+            "/parameters/o2_cal/expr",
+            json!("temp_c / m44"),
+            "Parameter o2_cal: unknown names ['m44']",
+        ),
+        (
+            "/parameters/o2_cal/expr",
+            json!("ubar_per_pct"),
+            "Parameter o2_cal: depends on itself through ubar_per_pct",
+        ),
+        (
+            "/parameters/temp_c/entry",
+            json!("yes"),
+            "Parameter temp_c: entry must be true or false",
+        ),
+        (
+            "/parameters/ubar_per_pct/value",
+            json!(1),
+            "Parameter ubar_per_pct: give value or expr, not both",
+        ),
+    ];
+    for (pointer, value, message) in cases {
+        let mut bad = data.clone();
+        if pointer.ends_with("/expr") && message.contains("itself") {
+            bad["parameters"]["ubar_per_pct"]["expr"] = json!("o2_cal + 1");
+        }
+        let [_, section, name, key] = pointer.split('/').collect::<Vec<_>>()[..] else {
+            panic!("{pointer}");
+        };
+        bad[section][name][key] = value;
+        assert_eq!(rejection(bad), message, "{pointer}");
+    }
+}
