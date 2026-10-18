@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { importSlots } from "../importing.js";
+import { importSlots, runInputs } from "../importing.js";
 
 const recordings = {
   ms_workbook: ["/repo/reference/instruments/mass-spec/Raw data-mass spec.xlsx"],
@@ -29,4 +29,20 @@ test("a role whose kind has no recordings still gets an empty slot", () => {
   assert.deepEqual(brief(importSlots({ roles: { ms: { import: "legacy_frames" } } }, {})), [
     ["ms", "Legacy frame files (zip) (role ms)", "", ""],
   ]);
+});
+
+test("a run names the profiles its template's roles use and takes its name suffix from their input kinds", () => {
+  const instruments = [
+    { id: "ms2-ezview-simulated", label: "Mass spectrometer 2, EZView spool (simulated)", input_kind: "simulated" },
+    { id: "ambit-replay-150-pl1", label: "Ambit, replay of sample 150 plant 1", input_kind: "replay" },
+    { id: "ms-legacy-frames-replay", label: "Mass spectrometer, replay of legacy frame files", input_kind: "replay" },
+  ];
+  const jii = { roles: { ms: { instrument: "ms2-ezview-simulated" }, light: { instrument: "ambit-replay-150-pl1" } } };
+  assert.deepEqual(runInputs(jii, instruments), {
+    labels: ["Mass spectrometer 2, EZView spool (simulated)", "Ambit, replay of sample 150 plant 1"],
+    suffix: "simulated and replay",
+  });
+  const module2 = { roles: { ms: { instrument: "ms-legacy-frames-replay" } } };
+  assert.deepEqual(runInputs(module2, instruments), { labels: ["Mass spectrometer, replay of legacy frame files"], suffix: "replay" });
+  assert.deepEqual(runInputs({ roles: { ms: { instrument: "gone" } } }, instruments), { labels: [], suffix: "run" });
 });

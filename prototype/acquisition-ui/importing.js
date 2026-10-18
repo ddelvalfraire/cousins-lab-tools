@@ -26,3 +26,14 @@ export function importSlots(template, recordings) {
     }));
   });
 }
+
+/**
+ * What a run of `template` reads, from its roles' instrument profiles: one label per role and the session name
+ * suffix ("simulated", "replay", or both). The start dialog says this instead of naming instruments it assumes.
+ */
+export function runInputs(template, instruments) {
+  const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
+  const used = Object.values(template.roles ?? {}).map(r => profiles[r.instrument]).filter(Boolean);
+  const kinds = [...new Set(used.map(p => p.input_kind))];
+  return { labels: used.map(p => p.label), suffix: kinds.join(" and ") || "run" };
+}

@@ -1,6 +1,7 @@
 import { call, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
+import { runInputs } from "./importing.js";
 
 export async function renderTemplates(page) {
   const templates = await call("list_templates");
@@ -145,15 +146,17 @@ export async function renderTemplate(page, id, revision, tab) {
 }
 
 export async function startRunDialog(templateId, templates, revision) {
+  const instruments = call("list_instruments");
   templates ??= await call("list_templates");
   const template = templates.find(t => t.data.id === templateId) || templates[0];
   const rev = revision ?? template.data.revision;
+  const inputs = runInputs(template.data, await instruments);
   openDialog(`
     <form>
       <h2>Start run</h2>
       <p>${esc(template.data.name)} · revision ${rev}</p>
-      <div class="notice warn">No hardware is connected. The mass spectrometer is a simulated EZView spool and the Ambit is a replay of a recorded run. Clock times are this computer's, at the chosen speed.</div>
-      <label class="field">Session name <input name="name" value="${esc(template.data.name)} · simulated"></label>
+      <div class="notice warn">No hardware is connected. This run reads: ${inputs.labels.map(esc).join("; ")}. Clock times are this computer's, at the chosen speed.</div>
+      <label class="field">Session name <input name="name" value="${esc(template.data.name)} · ${esc(inputs.suffix)}"></label>
       <label class="field">Replay speed
         <select name="speed"><option value="1">1x (real time)</option><option value="10">10x</option><option value="20" selected>20x</option><option value="50">50x</option></select></label>
       <p class="error-text"></p>
