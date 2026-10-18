@@ -315,3 +315,6 @@ a.list-row:hover { background: var(--workspace); }
 .reading-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .reading-head [data-action="retract"] { margin-left: auto; }
 .kv input.entry { width: 9em; padding: 2px 6px; }
+.results-table { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; }
+.results-table .table-wrap { flex: 1; font-variant-numeric: tabular-nums; }
+.draft-results dd { font-variant-numeric: tabular-nums; }

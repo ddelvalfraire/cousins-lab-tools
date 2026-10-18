@@ -4,7 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
-import { capturesFor, fmtValue, parameterRows, readingRows } from "./analysis.js";
+import { capturesFor, fmtValue, parameterRows, readingRows, tableModel } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -18,6 +18,7 @@ export function componentTitle(c, template) {
     captures: () => "Captures",
     inputs: () => "Parameters",
     readings: () => "Readings",
+    table: () => template.data.measurements?.[c.measurement]?.label || c.measurement,
     group: () => "Group",
   }[c.kind]?.() ?? c.kind;
 }
@@ -94,6 +95,32 @@ function readingsBody(c, ctx, analysis, selection) {
       </li>`).join("")}</ul>`;
 }
 
+/** analysis.labels: measurement -> label key -> typed text; analysis.exported: measurement -> export_table reply. */
+function tableBody(c, analysis) {
+  const id = c.measurement;
+  const t = tableModel(id, analysis.view, analysis.labels[id]);
+  const exported = analysis.exported[id];
+  const attrs = `data-measurement="${esc(id)}"`;
+  return `
+    <dl class="kv draft-results">${t.draft.map(r => `<dt>${esc(r.label)}</dt><dd><strong>${fmtValue(r.value)}</strong> ${esc(r.unit)}</dd>`).join("")}</dl>
+    ${t.unset.length ? `<p class="small muted">Needs ${t.unset.map(esc).join(", ")}</p>` : ""}
+    ${t.labels.map(l => `<label class="field">${esc(l.label)}<input data-input="label" ${attrs} data-key="${esc(l.key)}" value="${esc(l.value)}" autocomplete="off"></label>`).join("")}
+    <div class="command-actions">
+      <button class="primary" data-action="addRow" ${attrs} ${t.canAdd ? "" : "disabled"}>${icon("plus")}Add to table</button>
+      <button data-action="exportTable" ${attrs} ${t.hasRows ? "" : "disabled"}>${icon("download")}Export</button>
+      <button data-action="copyTable" ${attrs} ${t.hasRows ? "" : "disabled"}>Copy</button>
+      <button class="danger" data-action="clearTable" ${attrs} ${t.hasRows ? "" : "disabled"}>Clear table</button>
+    </div>
+    ${exported ? `<div class="small">${[exported.csv, exported.metadata].map(path =>
+      `<div class="inline"><code>${esc(path)}</code><button class="quiet" data-action="reveal" data-path="${esc(path)}">${icon("folder")}Show in folder</button></div>`).join("")}</div>` : ""}
+    <div class="table-wrap"><table>
+      <thead><tr>${t.headings.map(h => `<th>${esc(h)}</th>`).join("")}<th></th></tr></thead>
+      <tbody>${t.rows.map(r => `<tr data-record="${esc(r.record)}">${r.cells.map(v => `<td>${esc(v)}</td>`).join("")}
+        <td><button class="quiet" data-action="retract" data-records="${esc(r.record)}">Remove</button></td></tr>`).join("")
+        || `<tr><td colspan="${t.headings.length + 1}" class="small muted">No rows yet.</td></tr>`}</tbody>
+    </table></div>`;
+}
+
 function body(c, ctx) {
   if (c.kind === "chart") {
     const spec = ctx.template.data.charts.find(ch => ch.id === c.chart);
@@ -111,6 +138,7 @@ function body(c, ctx) {
   if (c.kind === "captures") return `<div data-captures-for="${esc(c.id)}"></div>`;
   if (c.kind === "inputs") return `<div data-inputs-for="${esc(c.id)}">${inputsBody(c, ctx, parameterRows(c.parameters, null, ctx.template.data.parameters))}</div>`;
   if (c.kind === "readings") return `<div class="readings" data-readings-for="${esc(c.id)}"></div>`;
+  if (c.kind === "table") return `<div class="results-table" data-table-for="${esc(c.id)}"></div>`;
   if (c.kind === "group") return renderGrid(c.components, ctx);
   return "";
 }
@@ -162,8 +190,13 @@ export function mountGrid(root, items, ctx) {
     const field = event.target.closest("[data-change]");
     if (field && root.contains(field)) ctx.actions?.[field.dataset.change]?.(field.dataset, field.value);
   });
+  root.addEventListener("input", event => {
+    const field = event.target.closest("[data-input]");
+    if (field && root.contains(field)) ctx.actions?.[field.dataset.input]?.(field.dataset, field.value);
+  });
 
   let stateKey = null, analysisKey = null, paramsKey = null;
+  const tableKeys = {};
   return {
     paint(frame) {
       const ds = frame.dataset;
@@ -207,6 +240,14 @@ export function mountGrid(root, items, ctx) {
         for (const c of all.filter(c => c.kind === "inputs")) {
           root.querySelector(`[data-inputs-for="${CSS.escape(c.id)}"]`).innerHTML = inputsBody(c, ctx, parameterRows(c.parameters, frame.analysis.view));
         }
+      }
+      // Typed labels are not in the key: they live in page state, and repainting while typing would drop the caret.
+      for (const c of frame.analysis ? all.filter(c => c.kind === "table") : []) {
+        const a = frame.analysis, m = c.measurement;
+        const tkey = JSON.stringify([a.view?.tables?.[m], a.view?.drafts?.[m], a.exported[m]]);
+        if (tkey === tableKeys[c.id]) continue;
+        tableKeys[c.id] = tkey;
+        root.querySelector(`[data-table-for="${CSS.escape(c.id)}"]`).innerHTML = tableBody(c, a);
       }
       const key = JSON.stringify([frame.live, frame.status, frame.captures]);
       if (key === stateKey) return;

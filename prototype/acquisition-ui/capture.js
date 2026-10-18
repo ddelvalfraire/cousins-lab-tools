@@ -1,14 +1,14 @@
 // The capture page: a session's run page laid out by its template revision. Live while the engine runs it,
 // then the same page over the stored data.
 
-import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, statusBadge, toast } from "./util.js";
+import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { visible, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
-import { capturesFor, parseEntry } from "./analysis.js";
+import { capturesFor, parseEntry, tableRecords, tableTsv } from "./analysis.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -135,7 +135,7 @@ async function mount(page, id, restart) {
   const [template, instruments, analysisView] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }),
     call("list_instruments"), call("analysis", { session_id: id }).catch(e => ({ error: e.message }))]);
   // view: the engine's analysis view; previews: preview_reading per step for the selection; capture: role -> chosen capture.
-  const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, version: 0, token: 0 };
+  const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, labels: {}, exported: {}, version: 0, token: 0 };
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
   const currentView = () => views.find(v => v.id === state.view);
@@ -170,10 +170,12 @@ async function mount(page, id, restart) {
     Object.assign(analysis, { previews: Object.fromEntries(results.filter(Boolean)), version: analysis.version + 1 });
     paint();
   };
-  const record = async args => {
+  /** saved runs once the record is saved, before the page repaints. */
+  const record = async (args, saved = () => {}) => {
     const next = await call("record_analysis", { session_id: m.id, request_id: crypto.randomUUID(), ...args });
     if (stopped) return;
     Object.assign(analysis, { view: next, version: analysis.version + 1 });
+    saved();
     refreshPreviews();
     // Review charts follow the session's current parameters too; live ones follow params_rev.
     if (source.live) return;
@@ -195,6 +197,24 @@ async function mount(page, id, restart) {
         if (typed.error) throw new Error(typed.error);
         await record({ action: "entry", parameter, value: typed.value });
       }),
+      label: ({ measurement, key }, text) => { (analysis.labels[measurement] ??= {})[key] = text; },
+      addRow: logged("Add to table requested", async ({ measurement }) => {
+        await record({ action: "add_row", measurement, labels: analysis.labels[measurement] || {} }, () => delete analysis.labels[measurement]);
+      }),
+      exportTable: logged("Table export requested", async ({ measurement }) => {
+        analysis.exported[measurement] = await call("export_table", { session_id: m.id, measurement });
+        paint();
+      }),
+      copyTable: logged("Table copy requested", async ({ measurement }) => {
+        const table = analysis.view.tables[measurement];
+        await navigator.clipboard.writeText(tableTsv(table));
+        toast(`Copied ${table.rows.length} rows with ${table.columns.length} columns`);
+      }),
+      clearTable: ({ measurement }) => openDialog(`
+        <form><h2>Clear the table?</h2><p>Every row is retracted. The rows stay in the session's record log.</p><p class="error-text"></p>
+          <div class="actions"><button value="cancel">Keep the rows</button><button class="danger" value="ok">Clear table</button></div></form>`,
+        logged("Clear table requested", () => record({ action: "retract", records: tableRecords(analysis.view.tables[measurement]) }))),
+      reveal: ({ path }) => showInFolder(path).catch(e => toast(e.message)),
       retract: logged("Removal requested", ({ records }) => record({ action: "retract", records: records.split(" ") })),
       capture: ({ role }, capture) => { analysis.capture[role] = capture; refreshPreviews(); },
       mark: logged("Mark requested", async ({ event }) => {

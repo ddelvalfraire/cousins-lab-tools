@@ -63,3 +63,38 @@ export function parseEntry(text) {
   const value = Number(t);
   return Number.isFinite(value) ? { value } : { error: `"${t}" is not a number` };
 }
+
+const heading = c => (c.unit ? `${c.label} (${c.unit})` : c.label);
+const cell = (row, c) => (c.kind === "label" ? row.labels[c.key] ?? "" : row.results[c.key] ?? null);
+
+/**
+ * A table tile: the draft row's results as read-outs, a field per label with what was typed (`typed`), the
+ * saved rows, and which actions apply. Add needs a draft with a reading, which is all the engine requires.
+ */
+export function tableModel(measurement, analysis, typed = {}) {
+  const table = analysis?.tables?.[measurement] ?? { columns: [], rows: [] };
+  const draft = analysis?.drafts?.[measurement] ?? { readings: {}, results: {}, unset: [] };
+  const columns = table.columns;
+  return {
+    labels: columns.filter(c => c.kind === "label").map(c => ({ key: c.key, label: c.label, value: typed[c.key] ?? "" })),
+    draft: columns.filter(c => c.kind === "result").map(c => ({ key: c.key, label: c.label, unit: c.unit, value: draft.results[c.key] ?? null })),
+    unset: draft.unset,
+    headings: columns.map(heading),
+    rows: table.rows.map(r => ({ record: r.record, cells: columns.map(c => {
+      const v = cell(r, c);
+      return c.kind === "label" ? v : fmtValue(v);
+    }) })),
+    canAdd: Object.keys(draft.readings).length > 0,
+    hasRows: table.rows.length > 0,
+  };
+}
+
+/** Every column of the table as tab-separated text with full-precision numbers, for the clipboard (B21). */
+export function tableTsv(table) {
+  const clean = v => String(v ?? "").replace(/[\t\r\n]+/g, " ");
+  return [table.columns.map(heading), ...table.rows.map(r => table.columns.map(c => cell(r, c)))]
+    .map(line => line.map(clean).join("\t")).join("\n");
+}
+
+/** The records Clear table retracts: every row still in the table. */
+export const tableRecords = table => (table?.rows || []).map(r => r.record);
