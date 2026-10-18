@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, parameterRows, parseEntry, readingRows, templateSteps } from "../analysis.js";
+import { capturesFor, parameterRows, parseEntry, readingRows, selectionLines, templateSteps } from "../analysis.js";
 import { inputsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
@@ -22,7 +22,7 @@ test("each step shows its saved reading, its known value when it is a line point
     ["co2_zero", "CO2 Zero", null, null],
     ["sample.co2", "CO2 Sample", null, null],
   ]);
-  assert.deepEqual(rows[0].saved, { record: "rec-000002", range_s: [0.2, 0.45], values: ["mean m44 191.442 · 3 rows"] });
+  assert.deepEqual(rows[0].saved, { record: "rec-000002", range_s: [0.2, 0.45], values: ["mean m44 191.442 · 3 rows"], short: "191.442" });
   assert.equal(rows[1].saved, null);
 });
 
@@ -116,4 +116,19 @@ test("the editor offers every step reference of the template, in template order"
     ["rate_mean", "rate_mean", "Get Mean", "ms"],
   ]);
   assert.deepEqual(templateSteps({}), []);
+});
+
+test("the selection's preview is listed once per distinct text, so steps reading the same thing show one line", () => {
+  const selection = { from: 0.2, to: 0.45 };
+  const previews = {
+    "co2.ul1": { values: m44(39.2, 220) },
+    co2_zero: { values: m44(39.2, 220) },
+    "sample.co2": { error: "No stored rows between 0.2 and 0.45 s" },
+  };
+  const rows = readingRows(steps, analysis, { selection, capture: "ms-x", previews });
+  assert.deepEqual(selectionLines(rows), [
+    { text: "mean m44 39.2 · 220 rows", error: false },
+    { text: "No stored rows between 0.2 and 0.45 s", error: true },
+  ]);
+  assert.deepEqual(selectionLines(readingRows(steps, analysis, { selection: null, capture: "ms-x" })), [], "nothing selected");
 });

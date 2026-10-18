@@ -25,12 +25,23 @@ export function readingRows(steps, analysis, { selection, capture, previews = {}
       step: ref,
       label: step?.label ?? ref,
       known: step?.known ?? null,
-      saved: reading && { record: reading.record, range_s: reading.range_s, values: Object.values(reading.values).map(readingText) },
+      saved: reading && { record: reading.record, range_s: reading.range_s, values: Object.values(reading.values).map(readingText),
+        short: Object.values(reading.values).map(v => fmtValue(v.value)).join(", ") },
       preview: previews[ref] && (previews[ref].error ? { error: previews[ref].error } : { values: Object.values(previews[ref].values).map(readingText) }),
       read: { disabled: !!why, why },
       remove: reading?.record ?? null,
     };
   });
+}
+
+/**
+ * What the selection would read, once per tile: steps that read the same thing over the same range preview the
+ * same text, which the legacy screens showed once in a box rather than under every button.
+ */
+export function selectionLines(rows) {
+  const lines = rows.flatMap(r => !r.preview ? [] : r.preview.error ? [{ text: r.preview.error, error: true }]
+    : [{ text: r.preview.values.join(", "), error: false }]);
+  return lines.filter((l, i) => lines.findIndex(m => m.text === l.text) === i);
 }
 
 const SOURCES = { default: "Default", computed: "Computed", entered: "Entered", fitted: "Fitted", trial: "Trial", unset: "Unset" };

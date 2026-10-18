@@ -4,7 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
-import { capturesFor, fmtValue, parameterRows, readingRows, tableModel } from "./analysis.js";
+import { capturesFor, fmtValue, parameterRows, readingRows, selectionLines, tableModel } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -82,16 +82,12 @@ function readingsBody(c, ctx, analysis, selection) {
     ${cids.length > 1 ? `<label class="field small">Capture<select data-change="capture" data-role="${esc(role)}">${cids.map(cid =>
       `<option value="${esc(cid)}" ${cid === capture ? "selected" : ""}>${esc(cid)}</option>`).join("")}</select></label>` : ""}
     ${whys.map(w => `<p class="small muted">${esc(w)}</p>`).join("")}
+    ${selectionLines(rows).map(l => `<p class="small ${l.error ? "error-text" : "muted"}">Selection: ${esc(l.text)}</p>`).join("")}
     <ul class="reading-list">${rows.map(r => `
       <li data-step="${esc(r.step)}">
-        <div class="reading-head">
-          <button class="primary" data-action="read" data-step="${esc(r.step)}" ${r.read.disabled ? "disabled" : ""}>${esc(r.label)}</button>
-          ${r.known != null ? `<span class="small muted">known ${fmtValue(r.known)}</span>` : ""}
-          ${r.remove ? `<button class="quiet" data-action="retract" data-records="${esc(r.remove)}">Remove</button>` : ""}
-        </div>
-        <div class="small">${r.saved ? r.saved.values.map(esc).join("<br>") : '<span class="muted">Not read</span>'}</div>
-        ${!r.preview ? "" : r.preview.error ? `<div class="small error-text">${esc(r.preview.error)}</div>`
-          : `<div class="small muted">Selection: ${r.preview.values.map(esc).join(", ")}</div>`}
+        <button class="primary" data-action="read" data-step="${esc(r.step)}" ${r.read.disabled ? "disabled" : ""}>${esc(r.label)}</button>
+        <span class="reading-value" ${r.saved ? `title="${esc(r.saved.values.join(", "))}"` : ""}>${r.saved ? esc(r.saved.short) : '<span class="muted">Not read</span>'}${r.known != null ? ` <span class="small muted">known ${fmtValue(r.known)}</span>` : ""}</span>
+        ${r.remove ? `<button class="quiet icon-only" data-action="retract" data-records="${esc(r.remove)}" aria-label="Remove ${esc(r.label)}" title="Remove this reading">${icon("close")}</button>` : ""}
       </li>`).join("")}</ul>`;
 }
 
