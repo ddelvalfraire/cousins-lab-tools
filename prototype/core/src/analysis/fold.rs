@@ -3,17 +3,34 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use chrono::{DateTime, Utc};
+use indexmap::IndexMap;
+
 use crate::expr::Params;
 use crate::params::{ParamSource, ResolvedParams};
 use crate::templates::Template;
 
+use super::reading::{Range, ReadingValue};
+use super::spec::{AnalysisSpec, StepKind};
 use super::store::{Action, Record, RecordId};
+
+/// The reading that currently fills a step.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StepState {
+    pub record: RecordId,
+    pub created_utc: DateTime<Utc>,
+    pub capture: String,
+    pub range_s: Range,
+    pub values: IndexMap<String, ReadingValue>,
+}
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AnalysisState {
     /// Entered and calibrated values only; template defaults are not repeated here.
     pub params: Params,
     pub sources: BTreeMap<String, ParamSource>,
+    /// The latest reading of each step that has one, in template order.
+    pub steps: IndexMap<String, StepState>,
     /// The number of the last record folded, 0 for an empty log. It changes with every new
     /// record, which is what live views watch.
     pub rev: u64,
@@ -49,13 +66,30 @@ pub(super) fn effective(log: &[Record]) -> Vec<&Record> {
         .collect()
 }
 
-pub fn fold(log: &[Record]) -> AnalysisState {
+pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
     let mut state = AnalysisState {
         rev: log.last().map_or(0, |r| r.id.seq()),
         ..AnalysisState::default()
     };
+    let mut latest: BTreeMap<&str, StepState> = BTreeMap::new();
     for record in effective(log) {
         match &record.action {
+            Action::Reading {
+                step,
+                capture,
+                range_s,
+                values,
+                ..
+            } => {
+                let reading = StepState {
+                    record: record.id.clone(),
+                    created_utc: record.created_utc,
+                    capture: capture.clone(),
+                    range_s: *range_s,
+                    values: values.clone(),
+                };
+                latest.insert(step, reading);
+            }
             Action::Entry {
                 parameter,
                 value: Some(value),
@@ -74,6 +108,26 @@ pub fn fold(log: &[Record]) -> AnalysisState {
                 state.sources.remove(parameter);
             }
             Action::Retract { .. } => {}
+        }
+    }
+    for (id, step) in &spec.steps {
+        if let Some(reading) = latest.remove(id.as_str()) {
+            state.steps.insert(id.clone(), reading);
+        }
+        if step.kind != StepKind::Set {
+            continue;
+        }
+        let Some(reading) = state.steps.get(id) else {
+            continue;
+        };
+        for (parameter, value) in &reading.values {
+            if let Some(v) = value.value {
+                state.params.insert(parameter.clone(), v);
+                let calibration = step.owner.clone();
+                state
+                    .sources
+                    .insert(parameter.clone(), ParamSource::Fitted { calibration });
+            }
         }
     }
     state
@@ -98,6 +152,34 @@ mod tests {
         }
     }
 
+    fn zero_spec() -> AnalysisSpec {
+        let (spec, errors) = crate::analysis::spec::parse(&serde_json::json!({"calibrations": {
+            "zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}},
+        }}));
+        assert!(errors.is_empty(), "{errors:?}");
+        spec
+    }
+
+    fn read(seq: u64, step: &str, value: Option<f64>) -> Record {
+        let value = ReadingValue {
+            stat: crate::analysis::Stat::Mean,
+            of: "m44".into(),
+            value,
+            n: 3,
+            t_first_s: 1.0,
+            t_last_s: 2.0,
+        };
+        let action = Action::Reading {
+            step: step.into(),
+            capture: "ms".into(),
+            range_s: Range::new(1.0, 2.0).unwrap(),
+            clock: "t_ms".into(),
+            values: IndexMap::from([("zero_p".to_string(), value)]),
+            params: Params::new(),
+        };
+        record(seq, None, action)
+    }
+
     fn entry(seq: u64, value: Option<f64>) -> Record {
         let parameter = "temp_c".into();
         record(seq, None, Action::Entry { parameter, value })
@@ -117,27 +199,36 @@ mod tests {
     #[test]
     fn the_latest_entry_wins_and_an_empty_entry_clears_it() {
         let log = [entry(1, Some(20.0)), entry(2, Some(25.0))];
-        let state = fold(&log);
+        let state = fold(&AnalysisSpec::default(), &log);
         assert_eq!(state.params, Params::from([("temp_c".into(), 25.0)]));
         assert_eq!(state.sources["temp_c"], entered(2));
         assert_eq!(state.rev, 2);
 
-        let cleared = fold(&[entry(1, Some(20.0)), entry(2, None)]);
+        let cleared = fold(
+            &AnalysisSpec::default(),
+            &[entry(1, Some(20.0)), entry(2, None)],
+        );
         assert!(cleared.params.is_empty() && cleared.sources.is_empty());
-        assert_eq!(fold(&[]), AnalysisState::default());
+        assert_eq!(
+            fold(&AnalysisSpec::default(), &[]),
+            AnalysisState::default()
+        );
     }
 
     #[test]
     fn a_retracted_entry_gives_way_to_the_one_before_it() {
         let log = [entry(1, Some(20.0)), entry(2, Some(25.0)), retract(3, &[2])];
-        let state = fold(&log);
+        let state = fold(&AnalysisSpec::default(), &log);
         assert_eq!(state.params["temp_c"], 20.0);
         assert_eq!(state.sources["temp_c"], entered(1));
         assert_eq!(state.rev, 3);
         assert!(
-            fold(&[entry(1, Some(20.0)), retract(2, &[1])])
-                .params
-                .is_empty()
+            fold(
+                &AnalysisSpec::default(),
+                &[entry(1, Some(20.0)), retract(2, &[1])]
+            )
+            .params
+            .is_empty()
         );
     }
 
@@ -152,7 +243,7 @@ mod tests {
             record(2, Some("b"), action(25.0)),
             record(3, Some("a"), action(30.0)),
         ];
-        let state = fold(&log);
+        let state = fold(&AnalysisSpec::default(), &log);
         assert_eq!(state.params["temp_c"], 25.0);
         assert_eq!(state.sources["temp_c"], entered(2));
         let retried = [
@@ -166,6 +257,35 @@ mod tests {
             ),
             record(3, Some("r"), Action::Retract { records: vec![] }),
         ];
-        assert!(fold(&retried).params.is_empty());
+        assert!(fold(&AnalysisSpec::default(), &retried).params.is_empty());
+    }
+
+    #[test]
+    fn a_step_holds_its_latest_reading_and_a_set_calibration_takes_its_values() {
+        let spec = zero_spec();
+        let log = [
+            read(1, "zero", Some(5.0)),
+            read(2, "zero", Some(7.0)),
+            read(3, "elsewhere", Some(9.0)),
+        ];
+        let state = fold(&spec, &log);
+        assert_eq!(state.params, Params::from([("zero_p".into(), 7.0)]));
+        let calibration = "zero".to_string();
+        assert_eq!(state.sources["zero_p"], ParamSource::Fitted { calibration });
+        assert_eq!(state.steps.keys().collect::<Vec<_>>(), ["zero"]);
+        assert_eq!(state.steps["zero"].record, RecordId::new(2));
+
+        let mut redone = log.to_vec();
+        redone.push(retract(4, &[2]));
+        let state = fold(&spec, &redone);
+        assert_eq!(state.params["zero_p"], 5.0);
+        assert_eq!(state.steps["zero"].record, RecordId::new(1));
+
+        let empty = fold(&spec, &[read(1, "zero", Some(5.0)), read(2, "zero", None)]);
+        assert!(
+            empty.params.is_empty(),
+            "a reading without a value sets nothing"
+        );
+        assert_eq!(empty.steps["zero"].record, RecordId::new(2));
     }
 }

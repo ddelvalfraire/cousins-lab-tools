@@ -11,9 +11,14 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use indexmap::IndexMap;
+
 use crate::alignment::TemplateRef;
+use crate::expr::Params;
 use crate::query::AnalysisError;
 use crate::session::iso_time;
+
+use super::reading::{Range, ReadingValue};
 
 static ATTEMPTS: AtomicU64 = AtomicU64::new(0);
 
@@ -54,6 +59,18 @@ impl fmt::Display for RecordId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum Action {
+    /// Statistics over a range of a capture's stored rows, for one step.
+    Reading {
+        step: String,
+        capture: String,
+        /// On the capture's source clock.
+        range_s: Range,
+        /// That clock's column.
+        clock: String,
+        values: IndexMap<String, ReadingValue>,
+        /// The parameters derived values were computed with.
+        params: Params,
+    },
     /// A typed parameter value; None clears an earlier entry.
     Entry {
         parameter: String,

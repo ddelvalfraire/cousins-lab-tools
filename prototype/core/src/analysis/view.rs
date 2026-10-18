@@ -38,7 +38,7 @@ pub struct AnalysisView {
 }
 
 pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
-    let state = fold(log);
+    let state = fold(template.analysis(), log);
     let resolved = state.resolve(template);
     let parameters = template
         .param_specs()
