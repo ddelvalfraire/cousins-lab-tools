@@ -21,7 +21,9 @@ use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
 pub use fold::{AnalysisState, fold};
-pub use spec::{AnalysisSpec, Calibration, CalibrationKind, ReadingSpec, Stat, StepKind, StepSpec};
+pub use spec::{
+    AnalysisSpec, CalPoint, Calibration, CalibrationKind, ReadingSpec, Stat, StepKind, StepSpec,
+};
 pub use store::{Action, Record, RecordId, append, load_records};
 
 /// One operator action as the UI sends it.

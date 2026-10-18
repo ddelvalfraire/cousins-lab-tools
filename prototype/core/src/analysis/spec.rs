@@ -29,9 +29,26 @@ pub struct ReadingSpec {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct CalPoint {
+    pub label: String,
+    pub known: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum CalibrationKind {
     /// One range sets each named parameter to a statistic over it.
     Set { sets: IndexMap<String, ReadingSpec> },
+    /// Each point's range gives one reading; a least-squares line of known on reading sets
+    /// `slope` and, when named, `intercept`, both in known units.
+    Line {
+        reading: ReadingSpec,
+        points: IndexMap<String, CalPoint>,
+        slope: String,
+        intercept: Option<String>,
+        min_points: usize,
+        x_label: String,
+        y_label: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,6 +63,12 @@ impl Calibration {
     pub fn outputs(&self) -> Vec<&str> {
         match &self.kind {
             CalibrationKind::Set { sets } => sets.keys().map(String::as_str).collect(),
+            CalibrationKind::Line {
+                slope, intercept, ..
+            } => [Some(slope.as_str()), intercept.as_deref()]
+                .into_iter()
+                .flatten()
+                .collect(),
         }
     }
 }
@@ -54,6 +77,8 @@ impl Calibration {
 pub enum StepKind {
     /// A `set` calibration's one range.
     Set,
+    /// One point of a `line` calibration.
+    Point { known: f64 },
 }
 
 /// One button's worth of analysis: a range the operator reads, and what it reads.
@@ -64,14 +89,15 @@ pub struct StepSpec {
     pub kind: StepKind,
     pub label: String,
     pub role: String,
-    /// Reading name to what it reads. A set step names each reading after its parameter.
+    /// Reading name to what it reads. A set step names each reading after its parameter; a
+    /// point names its one reading after the value it reads.
     pub readings: IndexMap<String, ReadingSpec>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AnalysisSpec {
     pub calibrations: IndexMap<String, Calibration>,
-    /// Every step by its reference, a bare id for a one-range owner.
+    /// Every step by its reference: `co2.ul1` for a point, a bare id for a one-range owner.
     pub steps: IndexMap<String, StepSpec>,
 }
 
@@ -117,6 +143,78 @@ fn mapping(value: Option<&Value>) -> Option<&Map<String, Value>> {
     value.and_then(Value::as_object).filter(|m| !m.is_empty())
 }
 
+fn line(spec: &Value, errors: &mut Vec<String>) -> Option<CalibrationKind> {
+    let mut error = |e: String| errors.push(e);
+    let reading = match reading(&spec["reading"]) {
+        Ok(r) => Some(r),
+        Err(e) => {
+            error(format!("line.reading: {e}"));
+            None
+        }
+    };
+    let mut points = IndexMap::new();
+    match mapping(spec.get("points")) {
+        None => error("line.points must map point ids to {label, known}".into()),
+        Some(given) => {
+            for (id, point) in given {
+                if !is_id(id) {
+                    error(format!(
+                        "point {}: ids may use only letters, digits, '_' and '-'",
+                        str_repr(id)
+                    ));
+                }
+                match point.get("known").and_then(Value::as_f64) {
+                    Some(known) => {
+                        let label = text(point, "label", id);
+                        points.insert(id.clone(), CalPoint { label, known });
+                    }
+                    None => error(format!("point {id}: known must be a number")),
+                }
+            }
+        }
+    }
+    let sets = &spec["sets"];
+    let slope = sets.get("slope").and_then(Value::as_str);
+    if slope.is_none() {
+        error("line.sets.slope must name a parameter".into());
+    }
+    let intercept = match sets.get("intercept") {
+        None => None,
+        Some(v) => match v.as_str() {
+            Some(name) => Some(name.to_string()),
+            None => {
+                error("line.sets.intercept must name a parameter".into());
+                None
+            }
+        },
+    };
+    let count = spec["points"].as_object().map_or(0, Map::len);
+    if count == 1 {
+        error("line.points needs at least two points to fit a line".into());
+    }
+    let min_points = match spec.get("min_points") {
+        None => 2,
+        Some(v) => match v.as_u64().filter(|n| (2..=count as u64).contains(n)) {
+            Some(n) => n as usize,
+            None => {
+                error(format!(
+                    "line.min_points must be a whole number from 2 to the number of points ({count})"
+                ));
+                2
+            }
+        },
+    };
+    Some(CalibrationKind::Line {
+        reading: reading?,
+        points,
+        slope: slope?.to_string(),
+        intercept,
+        min_points,
+        x_label: text(spec, "x_label", ""),
+        y_label: text(spec, "y_label", ""),
+    })
+}
+
 fn set(spec: &Value, errors: &mut Vec<String>) -> Option<CalibrationKind> {
     let Some(given) = mapping(Some(spec)) else {
         errors.push("set must map parameters to {stat, of}".into());
@@ -141,11 +239,16 @@ fn calibration(id: &str, spec: &Value, errors: &mut Vec<String>) -> Option<Calib
     } else if !is_id(id) {
         own.push("ids may use only letters, digits, '_' and '-'".into());
     }
-    let kind = match spec.get("set") {
+    let kind = match (spec.get("set"), spec.get("line")) {
         _ if !own.is_empty() => None,
-        Some(s) => set(s, &mut own),
-        None => {
-            own.push("needs set".into());
+        (Some(_), Some(_)) => {
+            own.push("give set or line, not both".into());
+            None
+        }
+        (Some(s), None) => set(s, &mut own),
+        (None, Some(l)) => line(l, &mut own),
+        (None, None) => {
+            own.push("needs set or line".into());
             None
         }
     };
@@ -171,6 +274,15 @@ fn steps_of(calibrations: &IndexMap<String, Calibration>) -> IndexMap<String, St
         match &c.kind {
             CalibrationKind::Set { sets } => {
                 steps.insert(id.clone(), step(StepKind::Set, &c.label, sets.clone()));
+            }
+            CalibrationKind::Line {
+                reading, points, ..
+            } => {
+                for (point, p) in points {
+                    let readings = IndexMap::from([(reading.of.clone(), reading.clone())]);
+                    let kind = StepKind::Point { known: p.known };
+                    steps.insert(format!("{id}.{point}"), step(kind, &p.label, readings));
+                }
             }
         }
     }
@@ -246,6 +358,7 @@ pub fn check(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
             CalibrationKind::Set { sets } => {
                 sets.iter().map(|(p, r)| (format!("set {p}"), r)).collect()
             }
+            CalibrationKind::Line { reading, .. } => vec![("line.reading".into(), reading)],
         };
         for (place, r) in readings {
             if !names.readable(&c.role, &r.of) {
@@ -258,6 +371,15 @@ pub fn check(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
         }
         let outputs: Vec<(&str, &str)> = match &c.kind {
             CalibrationKind::Set { sets } => sets.keys().map(|p| ("sets", p.as_str())).collect(),
+            CalibrationKind::Line {
+                slope, intercept, ..
+            } => [
+                ("sets slope", Some(slope)),
+                ("sets intercept", intercept.as_ref()),
+            ]
+            .into_iter()
+            .filter_map(|(w, p)| Some((w, p?.as_str())))
+            .collect(),
         };
         for (what, parameter) in outputs {
             match names.param(parameter) {
@@ -372,7 +494,7 @@ mod tests {
         assert_eq!(
             error.split("; ").collect::<Vec<_>>(),
             [
-                "Calibration none: needs set",
+                "Calibration none: needs set or line",
                 "Calibration co.2: ids may use only letters, digits, '_' and '-'",
                 "Calibration empty: set must map parameters to {stat, of}",
                 "Calibration nostat: set zero_p: stat must be one of ['mean', 'slope']",
@@ -383,6 +505,113 @@ mod tests {
         assert_eq!(
             with("calibrations", json!([])).unwrap_err(),
             "calibrations must be a mapping"
+        );
+    }
+
+    fn co2_line() -> Value {
+        json!({
+            "label": "CO2 Calibrations",
+            "role": "ms",
+            "line": {
+                "reading": {"stat": "mean", "of": "m44"},
+                "points": {"zero": {"label": "Zero", "known": 0}, "ul1": {"label": "1 µl", "known": 1}},
+                "sets": {"slope": "slope_p", "intercept": "intercept_p"},
+                "x_label": "Voltage (mV)",
+                "y_label": "CO2 (µl)",
+            },
+        })
+    }
+
+    #[test]
+    fn a_line_calibration_has_one_step_per_point() {
+        let template = with("calibrations", json!({"co2": co2_line()})).unwrap();
+        let spec = template.analysis();
+        let co2 = &spec.calibrations["co2"];
+        assert_eq!(co2.outputs(), ["slope_p", "intercept_p"]);
+        let CalibrationKind::Line {
+            min_points,
+            points,
+            x_label,
+            ..
+        } = &co2.kind
+        else {
+            panic!("co2 is a line");
+        };
+        assert_eq!((*min_points, points["ul1"].known), (2, 1.0));
+        assert_eq!(x_label, "Voltage (mV)");
+        let steps: Vec<(&str, &str, &StepKind)> = spec
+            .steps
+            .iter()
+            .map(|(id, s)| (id.as_str(), s.label.as_str(), &s.kind))
+            .collect();
+        assert_eq!(
+            steps,
+            [
+                ("co2.zero", "Zero", &StepKind::Point { known: 0.0 }),
+                ("co2.ul1", "1 µl", &StepKind::Point { known: 1.0 }),
+            ]
+        );
+        let m44 = ReadingSpec {
+            stat: Stat::Mean,
+            of: "m44".into(),
+        };
+        assert_eq!(
+            spec.steps["co2.ul1"].readings,
+            IndexMap::from([("m44".into(), m44)])
+        );
+    }
+
+    #[test]
+    fn each_problem_in_a_line_gets_its_own_message() {
+        let mut bad = co2_line();
+        bad["line"]["points"]["ul1"]["known"] = json!("one");
+        bad["line"]["points"]["u.2"] = json!({"known": 2});
+        bad["line"]["min_points"] = json!(5);
+        bad["line"]["reading"] = json!({"stat": "median", "of": "m44"});
+        let mut unnamed = co2_line();
+        unnamed["line"]["sets"] = json!({"intercept": 3});
+        unnamed["line"].as_object_mut().unwrap().remove("points");
+        let mut single = co2_line();
+        single["line"]["points"] = json!({"zero": {"known": 0}});
+        let error = with(
+            "calibrations",
+            json!({
+                "co2": bad,
+                "unnamed": unnamed,
+                "single": single,
+                "both": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}, "line": {}},
+            }),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.split("; ").collect::<Vec<_>>(),
+            [
+                "Calibration co2: line.reading: stat must be one of ['mean', 'slope']",
+                "Calibration co2: point ul1: known must be a number",
+                "Calibration co2: point 'u.2': ids may use only letters, digits, '_' and '-'",
+                "Calibration co2: line.min_points must be a whole number from 2 to the number of points (3)",
+                "Calibration unnamed: line.points must map point ids to {label, known}",
+                "Calibration unnamed: line.sets.slope must name a parameter",
+                "Calibration unnamed: line.sets.intercept must name a parameter",
+                "Calibration single: line.points needs at least two points to fit a line",
+                "Calibration both: give set or line, not both",
+            ]
+        );
+    }
+
+    #[test]
+    fn a_line_must_read_what_its_role_has_and_set_parameters() {
+        let mut line = co2_line();
+        line["line"]["sets"] = json!({"slope": "co2_ul_per_mv", "intercept": "temp_c"});
+        line["line"]["reading"]["of"] = json!("m99");
+        let error = with("calibrations", json!({"co2": line})).unwrap_err();
+        assert_eq!(
+            error.split("; ").collect::<Vec<_>>(),
+            [
+                "Calibration co2: line.reading reads 'm99', which is not a column or derived value of ms",
+                "Calibration co2: sets slope 'co2_ul_per_mv', which is not a parameter",
+                "Calibration co2: sets intercept 'temp_c', which is typed in (entry: true) and cannot also be calibrated",
+            ]
         );
     }
 
