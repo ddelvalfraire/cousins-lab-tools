@@ -4,10 +4,11 @@
 import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
-import { visible } from "./layout.js";
+import { visible, walk } from "./layout.js";
 import { axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
+import { capturesFor } from "./analysis.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -114,8 +115,9 @@ function statusStrip(m, source) {
     ${m.kind === "import" ? "" : `<div class="capture-policy"><span>Device failure</span><strong>${policy}</strong></div>`}`;
 }
 
-function alerts(m, session, source) {
+function alerts(m, session, source, analysis) {
   const out = [];
+  if (analysis.error) out.push(["bad", analysis.error]);
   if (session.interrupted_at_startup || source.status === "interrupted") {
     out.push(["bad", "Recording interrupted. Rows written before the interruption are kept; rows still buffered were lost. The gap stays in the recording."]);
   }
@@ -131,7 +133,10 @@ function alerts(m, session, source) {
 async function mount(page, id, restart) {
   const session = await call("get_session", { session_id: id });
   const m = session.manifest;
-  const [template, instruments] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }), call("list_instruments")]);
+  const [template, instruments, analysisView] = await Promise.all([call("get_template", { template_id: m.template.id, revision: m.template.revision }),
+    call("list_instruments"), call("analysis", { session_id: id }).catch(e => ({ error: e.message }))]);
+  // view: the engine's analysis view; previews: preview_reading per step for the selection; capture: role -> chosen capture.
+  const analysis = { view: analysisView.error ? null : analysisView, error: analysisView.error, previews: {}, capture: {}, version: 0, token: 0 };
   const views = template.layout.views.map(v => ({ ...v, components: visible(v.components, template.hidden_components) }));
   const state = { view: views[0].id };
   const currentView = () => views.find(v => v.id === state.view);
@@ -149,9 +154,39 @@ async function mount(page, id, restart) {
     }
   };
 
+  const captureOf = role => analysis.capture[role] ?? capturesFor(m.captures, role)[0] ?? null;
+  const refreshPreviews = async () => {
+    const sel = view.selection, token = ++analysis.token;
+    Object.assign(analysis, { previews: {}, version: analysis.version + 1 });
+    paint();
+    if (!sel || !analysis.view) return;
+    const steps = [...new Set([...walk(currentView().components)].filter(([c]) => c.kind === "readings").flatMap(([c]) => c.steps))];
+    const results = await Promise.all(steps.map(async step => {
+      const capture = captureOf(analysis.view.steps[step]?.role);
+      if (!capture) return null;
+      return call("preview_reading", { session_id: m.id, step, capture, range_s: [sel.from, sel.to] })
+        .then(r => [step, r], e => [step, { error: e.message }]);
+    }));
+    if (token !== analysis.token || stopped) return;
+    Object.assign(analysis, { previews: Object.fromEntries(results.filter(Boolean)), version: analysis.version + 1 });
+    paint();
+  };
+  const record = async args => {
+    const next = await call("record_analysis", { session_id: m.id, request_id: crypto.randomUUID(), ...args });
+    if (stopped) return;
+    Object.assign(analysis, { view: next, version: analysis.version + 1 });
+    refreshPreviews();
+  };
+
   const ctx = {
     template, session: m,
     actions: {
+      read: logged("Reading requested", async ({ step }) => {
+        const sel = view.selection;
+        if (sel) await record({ action: "reading", step, capture: captureOf(analysis.view.steps[step].role), range_s: [sel.from, sel.to] });
+      }),
+      retract: logged("Removal requested", ({ records }) => record({ action: "retract", records: records.split(" ") })),
+      capture: ({ role }, capture) => { analysis.capture[role] = capture; refreshPreviews(); },
       mark: logged("Mark requested", async ({ event }) => {
         const mk = await call("mark_session", { session_id: m.id, event });
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
@@ -178,7 +213,7 @@ async function mount(page, id, restart) {
   ctx.onSelect = range => {
     view.selection = range;
     view.selectionVersion++;
-    paint();
+    refreshPreviews();
   };
   const windowOf = ds => view.frozen || windowFor(view.range.mode, ds.extent, view.range.custom);
 
@@ -187,7 +222,7 @@ async function mount(page, id, restart) {
     const window = windowOf(dataset);
     if (!source.live) view.cursor = Math.min(window.end, Math.max(window.start, view.cursor ?? window.end));
     const select = { ...selectOn(), range: view.selection, active: view.selecting, version: view.selectionVersion };
-    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures, select };
+    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures, select, analysis };
   };
   const paintToolbar = f => {
     const fmt = f.dataset.axis.format;
@@ -235,7 +270,7 @@ async function mount(page, id, restart) {
     paintToolbar(f);
     paintPanel();
     page.querySelector("[data-strip]").innerHTML = statusStrip(m, source);
-    page.querySelector("[data-alerts]").innerHTML = alerts(m, session, source);
+    page.querySelector("[data-alerts]").innerHTML = alerts(m, session, source, analysis);
   };
   const mountView = () => {
     grid?.dispose();
@@ -313,7 +348,7 @@ async function mount(page, id, restart) {
 
   const q = sel => page.querySelector(sel);
   const form = q("#custom-range");
-  page.querySelectorAll("[data-view]").forEach(b => (b.onclick = () => { state.view = b.dataset.view; mountView(); }));
+  page.querySelectorAll("[data-view]").forEach(b => (b.onclick = () => { state.view = b.dataset.view; mountView(); refreshPreviews(); }));
   page.querySelectorAll("[data-range]").forEach(b => (b.onclick = () => setRange(b.dataset.range)));
   page.querySelectorAll("[data-panel-open]").forEach(b => (b.onclick = () => openPanel(b.dataset.panelOpen)));
   q("[data-panel]").addEventListener("click", event => {
@@ -357,6 +392,7 @@ async function mount(page, id, restart) {
     Object.assign(view, { range: { mode: "all", custom: null }, cursor: null, playing: false, selection: null });
     form.hidden = true;
     mountView();
+    refreshPreviews();
   });
   q("[data-play]")?.addEventListener("click", () => {
     const w = windowOf(source.dataset());

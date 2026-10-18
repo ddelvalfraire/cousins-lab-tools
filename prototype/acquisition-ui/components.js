@@ -4,6 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
+import { capturesFor, fmtValue, readingRows } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -16,6 +17,7 @@ export function componentTitle(c, template) {
     controls: () => (c.role ? `Run controls · ${c.role}` : "Run controls"),
     captures: () => "Captures",
     inputs: () => "Parameters",
+    readings: () => "Readings",
     group: () => "Group",
   }[c.kind]?.() ?? c.kind;
 }
@@ -65,6 +67,30 @@ function inputsBody(c, ctx) {
     <p class="small muted">Values of revision ${ctx.session.template.revision}. Edit them on the template; each save is a new revision.</p>`;
 }
 
+/** analysis: the page's {view, previews, capture}; capture maps a role to the capture chosen for it. */
+function readingsBody(c, ctx, analysis, selection) {
+  const role = c.role ?? analysis.view?.steps?.[c.steps[0]]?.role;
+  const cids = capturesFor(ctx.session.captures, role);
+  const capture = analysis.capture[role] ?? cids[0] ?? null;
+  const rows = readingRows(c.steps, analysis.view, { selection, capture, previews: analysis.previews });
+  const whys = [...new Set(rows.map(r => r.read.why).filter(Boolean))];
+  return `
+    ${cids.length > 1 ? `<label class="field small">Capture<select data-change="capture" data-role="${esc(role)}">${cids.map(cid =>
+      `<option value="${esc(cid)}" ${cid === capture ? "selected" : ""}>${esc(cid)}</option>`).join("")}</select></label>` : ""}
+    ${whys.map(w => `<p class="small muted">${esc(w)}</p>`).join("")}
+    <ul class="reading-list">${rows.map(r => `
+      <li data-step="${esc(r.step)}">
+        <div class="reading-head">
+          <button class="primary" data-action="read" data-step="${esc(r.step)}" ${r.read.disabled ? "disabled" : ""}>${esc(r.label)}</button>
+          ${r.known != null ? `<span class="small muted">known ${fmtValue(r.known)}</span>` : ""}
+          ${r.remove ? `<button class="quiet" data-action="retract" data-records="${esc(r.remove)}">Remove</button>` : ""}
+        </div>
+        <div class="small">${r.saved ? r.saved.values.map(esc).join("<br>") : '<span class="muted">Not read</span>'}</div>
+        ${!r.preview ? "" : r.preview.error ? `<div class="small error-text">${esc(r.preview.error)}</div>`
+          : `<div class="small muted">Selection: ${r.preview.values.map(esc).join(", ")}</div>`}
+      </li>`).join("")}</ul>`;
+}
+
 function body(c, ctx) {
   if (c.kind === "chart") {
     const spec = ctx.template.data.charts.find(ch => ch.id === c.chart);
@@ -80,6 +106,7 @@ function body(c, ctx) {
   if (c.kind === "controls") return `<div class="control-body" data-controls-for="${esc(c.id)}"></div>`;
   if (c.kind === "captures") return `<div data-captures-for="${esc(c.id)}"></div>`;
   if (c.kind === "inputs") return inputsBody(c, ctx);
+  if (c.kind === "readings") return `<div class="readings" data-readings-for="${esc(c.id)}"></div>`;
   if (c.kind === "group") return renderGrid(c.components, ctx);
   return "";
 }
@@ -127,8 +154,12 @@ export function mountGrid(root, items, ctx) {
     const button = event.target.closest("[data-action]");
     if (button && root.contains(button)) ctx.actions?.[button.dataset.action]?.(button.dataset);
   });
+  root.addEventListener("change", event => {
+    const field = event.target.closest("[data-change]");
+    if (field && root.contains(field)) ctx.actions?.[field.dataset.change]?.(field.dataset, field.value);
+  });
 
-  let stateKey = null;
+  let stateKey = null, analysisKey = null;
   return {
     paint(frame) {
       const ds = frame.dataset;
@@ -150,6 +181,13 @@ export function mountGrid(root, items, ctx) {
         root.querySelector(`[data-metric-for="${CSS.escape(c.id)}"]`).textContent = shown ? number.format(shown.y) : "–";
         root.querySelector(`[data-trials-for="${CSS.escape(c.id)}"]`).innerHTML = values.length > 1
           ? values.map(v => `<span>${esc(v.name)}: <strong>${v.y == null ? "–" : number.format(v.y)}</strong></span>`).join("") : "";
+      }
+      const akey = JSON.stringify([frame.analysis?.version, frame.select?.range]);
+      if (frame.analysis && akey !== analysisKey) {
+        analysisKey = akey;
+        for (const c of all.filter(c => c.kind === "readings")) {
+          root.querySelector(`[data-readings-for="${CSS.escape(c.id)}"]`).innerHTML = readingsBody(c, ctx, frame.analysis, frame.select?.range);
+        }
       }
       const key = JSON.stringify([frame.live, frame.status, frame.captures]);
       if (key === stateKey) return;

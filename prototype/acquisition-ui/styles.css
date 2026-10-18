@@ -309,3 +309,8 @@ a.list-row:hover { background: var(--workspace); }
 .live-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: var(--accent-tint); color: var(--accent); }
 .detail-row > td { background: var(--workspace); }
 .page { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.readings { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto; }
+.reading-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.reading-list li { display: flex; flex-direction: column; gap: 2px; font-variant-numeric: tabular-nums; }
+.reading-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.reading-head [data-action="retract"] { margin-left: auto; }
