@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde_json::{Map, Value, json};
 
+use crate::analysis::{AnalysisSpec, spec};
 use crate::calc::derived_order;
 use crate::contract::ClockKind;
 use crate::expr::{self, Expression, Params};
@@ -206,6 +207,7 @@ pub struct Template {
     data: Value,
     params: Vec<ParamSpec>,
     derived: Vec<DerivedValue>,
+    analysis: AnalysisSpec,
     plans: BTreeMap<String, ProtocolPlan>,
 }
 
@@ -252,6 +254,10 @@ impl Template {
 
     pub fn derived(&self) -> &[DerivedValue] {
         &self.derived
+    }
+
+    pub fn analysis(&self) -> &AnalysisSpec {
+        &self.analysis
     }
 
     /// The requested timing of the role's protocol, or None when the role runs none.
@@ -466,6 +472,7 @@ fn shape_errors(data: &Value) -> Vec<String> {
             Value::is_object as fn(&Value) -> bool,
         ),
         ("derived", "a mapping", Value::is_object),
+        ("calibrations", "a mapping", Value::is_object),
         ("charts", "a list", Value::is_array),
         ("alignment", "a mapping", Value::is_object),
     ] {
@@ -673,6 +680,9 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         }
     }
 
+    let (analysis, analysis_errors) = spec::parse(&data);
+    errors.extend(analysis_errors);
+
     let derived_names = object(&data, "derived");
     for chart in array(&data, "charts") {
         let Some(id) = chart.get("id").and_then(Value::as_str) else {
@@ -761,13 +771,14 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         data,
         params,
         derived,
+        analysis,
         plans,
     })
 }
 
 /// The template a session recorded, which passed [`validate`] when the session was created.
 /// Profiles are not consulted again because they may have changed since; only the derived
-/// expressions and protocol plans are rebuilt from the snapshot.
+/// expressions, analysis specs and protocol plans are rebuilt from the snapshot.
 pub fn from_snapshot(data: Value) -> Result<Template, TemplateError> {
     let protocols = object(&data, "protocols");
     let mut plans = BTreeMap::new();
@@ -797,10 +808,15 @@ pub fn from_snapshot(data: Value) -> Result<Template, TemplateError> {
             ParamSpec::parse(name, p).map_err(|e| TemplateError(format!("Parameter {name}: {e}")))
         })
         .collect::<Result<_, _>>()?;
+    let (analysis, errors) = spec::parse(&data);
+    if !errors.is_empty() {
+        return Err(TemplateError(errors.join("; ")));
+    }
     Ok(Template {
         data,
         params,
         derived,
+        analysis,
         plans,
     })
 }
