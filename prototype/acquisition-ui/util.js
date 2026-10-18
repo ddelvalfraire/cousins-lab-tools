@@ -58,6 +58,12 @@ export function openDialog(html, onSubmit) {
   const dialog = document.getElementById("dialog");
   dialog.innerHTML = html;
   const form = dialog.querySelector("form");
+  // Enter submits with the form's first submit button. Cancel comes first in every dialog, so make it a plain
+  // button: Enter then confirms, and only a click on Cancel closes.
+  for (const cancel of form.querySelectorAll('button[value="cancel"]')) {
+    cancel.type = "button";
+    cancel.addEventListener("click", () => dialog.close());
+  }
   form.addEventListener("submit", async event => {
     event.preventDefault();
     if (event.submitter?.value === "cancel") return dialog.close();
