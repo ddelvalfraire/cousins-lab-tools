@@ -1,7 +1,9 @@
 # Acquisition prototype: JII leaf-disc CO2 and fluorescence
 
-A working proof of concept for the refactor. One experiment template drives the screens. A
-Rust engine owns instruments, timing, and storage, and a Tauri window shows the UI. The UI
+A working proof of concept for the refactor. Experiment templates drive the screens: the JII
+leaf-disc template, and presets that rebuild the chart screens of the three legacy PyQt modules
+(see [Legacy module presets](#legacy-module-presets)). A Rust engine owns instruments, timing,
+storage, and the calculations, and a Tauri window shows the UI. The UI
 reaches the engine only through one table of named commands. No hardware is connected. Every
 input is labelled as simulated, replayed, or imported.
 
@@ -93,15 +95,17 @@ with `x`, `y`, `w`, and `h` in grid cells. A component is bound to something the
 
 | Kind | Binding | Default size |
 |---|---|---|
-| `chart` | `chart:` a template chart id | 8 x 4 |
+| `chart` | `chart:` a template chart id: a time chart, or an xy chart of a calibration or of measurement results | 8 x 4 |
 | `metric` | `value:` a derived value (its role comes with it) | 4 x 2 |
 | `controls` | optional `role:`; Mark, Stop, Cancel, readiness, per-capture status | 4 x 3 |
-| `inputs` | optional `parameters:`; the revision's parameters, read only | 6 x 4 |
+| `inputs` | optional `parameters:`; each parameter's value and where it came from. `entry` parameters get a field that saves on change | 6 x 4 |
+| `readings` | `steps:` calibration or measurement steps; a button per step reads the selected range | 3 x 6 |
+| `table` | `measurement:`; the next row's results, Add to table, Export, Copy, Clear, and the rows | 4 x 7 |
 | `captures` | optional `role:`; requested start, start command, first sample, rows | 12 x 3 |
 | `group` | `components:` a nested grid | 12 x 5 |
 
 Sizes default per kind, and a component without `y` goes below the previous one. Validation
-rejects unknown kinds, `calibration` (no engine model yet), components outside the grid or
+rejects unknown kinds, components outside the grid or
 overlapping a sibling, unknown charts, derived values, roles, or parameters, a metric given a
 role other than its derived value's, and malformed views or components. A template
 without a layout gets one view with every chart, then controls and the capture table.
@@ -110,6 +114,104 @@ A component bound to an excluded role is hidden, the same way charts are. The en
 the reason per component (`hidden_components`), and the layout editor shows hidden components
 dimmed with that reason so a save never drops them. A layout edit is saved as a new revision,
 and a session keeps the layout of the revision it ran with.
+
+## Legacy module presets
+
+Three built-in templates rebuild the chart screens of the legacy PyQt modules. Each preset is
+only template YAML (`core/templates/legacy-module*.yaml`): the same engine, run page, and
+commands as the JII template, with no module-specific code in either.
+
+| Preset | Legacy screen | Ours, on the sample data |
+|---|---|---|
+| Rubisco kinetics (module 1) | [module1-legacy](docs/screenshots/module1-legacy.png) | [module1-preset](docs/screenshots/module1-preset-1440.png) |
+| CO2 and O2 in µbar (module 2) | [module2-legacy](docs/screenshots/module2-legacy.png) | [module2-preset](docs/screenshots/module2-preset-1440.png) |
+| Atom% 49 isotope enrichment (module 3) | [module3-legacy](docs/screenshots/module3-legacy.png) | [module3-preset](docs/screenshots/module3-preset-1440.png) |
+
+The grids keep the legacy arrangement: which charts, in which row, at what relative width, with
+the legacy titles and axes. Module 2 has calibration values and the CO2 calibration chart, then
+Pressure and Pressure Derivative across the top, the raw masses full width, and the CO2 buttons,
+O2 block, and results table along the bottom. Module 1 has the Assay Buffer and HCL calibration
+charts and the velocity chart on top, eight raw masses, and the O2, CO2, BiCarb, blank and
+extract buttons beside the results table. Module 3 has Atom49% and its rate of change on top,
+the raw masses, and Get Mean with its table centred below. The buttons and inputs work
+differently: Plot All, Start, Pause and the speed slider become Start run and the time-range
+toolbar, the mass checkboxes become the chart legend, and a reading is taken over a range
+selected on a chart rather than between two bars.
+
+**What the presets show about the design.**
+
+- The formulas from the legacy `Calculations.py` files are template expressions. The engine
+  computes them once, from stored rows, for the live page and for review alike.
+- Calibration readings, typed values, and table rows are saved as numbered records that are
+  never edited. Remove saves a retraction. A fit or a parameter change recomputes every
+  derived value from the first row, so µbar before the calibration is no longer stuck at 0.
+- Rates are slopes per second over the recording's own clock, so a 50x replay gives the same
+  numbers as an import.
+
+**Try it.** Sessions, Import recordings, pick a module preset, and import `SampleData.zip`.
+Or press Start on a preset to replay the same files live. On the run page press Select range,
+zoom in on a chart, drag over a step, and press its button. The selection shows what the
+button would read before it saves. These ranges of the sample (seconds on its own clock) fill
+every chart:
+
+| Preset | Steps and ranges |
+|---|---|
+| Module 2 | CO2 Cal Zero 880-895, 1 µl 925-948, 2 µl 970-1005, 3 µl 1030-1065; CO2 Zero and O2 Zero 880-895; sample 2800-3000; Temperature 25, then Add to table |
+| Module 1 | O2 Zero 880-895 and Temperature 25; assay buffer points on the module 2 CO2 ranges; BiCarb Cal Zero 480-499, 2 µl 520-545, 4 µl 568-588, 6 µl 612-650; CO2 Zero 880-895; Blank 720-765; Extract 4100-4600 and 6000-6600, each added to the table |
+| Module 3 | Get Mean 2000-2100 (mean of the rate over 954 rows) |
+
+The sample recording is not a Rubisco assay, so module 1's velocities only show the screen
+working. Module 2's %CO2 per mV comes out at 0.00062752, within 0.2 % of the legacy
+0.0006285103 from the same files; the difference is the least-squares fit over all four
+points (B2).
+
+**Legacy bugs, fixed in the presets only.** The legacy code is unchanged. Bug ids follow the
+review of the legacy modules.
+
+| Bug | Legacy behaviour | Preset |
+|---|---|---|
+| B1 | Calibration intercept reported in mV (key and value swapped) | Intercept in the known units: µl (module 2), nmol/ml (module 1) |
+| B2 | Slope from the first and last points in insertion order | Least squares over all points; redoing a point replaces only that point |
+| B4, B5, B14, B27, B28 | Charts page one window at a time, scale y from the last point, apply ranges to the wrong chart, or start with ranges that hide the data | Charts fit the data and the selected time range |
+| B6 | Assay-buffer CO2 slope labelled "BiCarb cal" | "CO2 cal (nmol/ml/mV)" and "BiCarb cal (nmol/ml/mV)" |
+| B7 | Velocity x axis "[CO2] (nmol/ml/sec)", y without units | "[CO2], [O2] (nmol/ml)" and "Velocity (nmol/ml/s)" |
+| B8 | Blank and Extract rates from the two samples at the bar edges | Regression slope over the range (lab check) |
+| B10 | A blank of exactly 0 blocks Extract; the O2 blank is never checked | An unread blank is unset and leaves results unset; 0 is a valid blank |
+| B12 | Pressure derivative is previous minus current, per sample, with a first-point spike | Slope per second over the recording clock, rising positive, 5 s window |
+| B13 | µbar computed once at ingestion; points before calibration stay 0 | Recomputed from stored mass 44 whenever the calibration changes |
+| B15 | "CO2/Voltage (ml/mV)" holds %CO2 per mV | Labelled %CO2/mV; the 1/28 is its own parameter |
+| B16 | CO2 per volt computed only on the 3 µl button, and crashes on an empty field | Fitted once enough points exist; missing points are listed |
+| B17 | 9200 hard-coded | `ubar_per_pct` parameter with a note |
+| B18 | O2 labelled µbar | µmol/L (module 2) and nmol/ml (module 1), flagged as a lab check |
+| B19 | Temperature defaults to 0 and applies only on Enter | No default; O2 Cal stays unset until a temperature is typed; saved on change |
+| B21 | Copy never connected | Copy puts the table on the clipboard as tab-separated text (checked in a browser, not yet in the Tauri window) |
+| B22 | Get Mean takes the first rate of a batch | Mean of the rate over the stored rows in the range |
+| B23 | ln(atom%) plotted under "Atom49%" | The chart plots atom%; ln is a separate value |
+| B24, B25 | 15-point rate window, emitted from partial windows | 12 s window on the clock, full windows of at least 60 points only |
+| B26 | A zero denominator or ln 0 gives −inf or NaN that spreads into later slopes | No value for that row, and windows skip it |
+| B30 | +0.0018 in module 3's O2 polynomial | −0.0018, as in modules 1 and 2 |
+
+B3, B11, B20, B29 and B31 are in code the presets do not have (bar-edge loops, the Plot All
+timer thread, and calibration save and load).
+
+**Lab checks.** These are choices the legacy code made that the presets keep or change and
+the lab should confirm:
+
+- B8: regression slope or two-point slope for Blank and Extract.
+- B9: [CO2] through the BiCarb/CO2 ratio, and [O2] with no zero subtracted.
+- B15: the 1/28 factor and the chamber volume.
+- B17: 9200 µbar per %, or the measured barometric pressure.
+- B18: the O2 units and the source of the air-saturation polynomial.
+- Rate windows: 12 s for atom% 49 (the spreadsheet's 14 files) and 5 s for the module 2
+  derivative.
+- Module 3: whether the rate chart should show the log rate (as now) or the linear rate.
+- The fit direction (known value on reading), and whether the 0 µl point should also set the
+  CO2 zero.
+- The legacy known values: 6 µl as 1000 nmol/ml and 2 µl as 33.3.
+
+**Known gaps.** Legacy frame gaps are stored as events but not drawn on charts that use the
+recording clock. The time charts use the app's palette, not the legacy white traces. A folder
+of frame files cannot be imported yet, only the zip.
 
 ## Demonstration guide
 
@@ -298,8 +400,8 @@ first proof of concept.
     reference the marker is the zero line.
   - The Events tab shows stored times (run clock, host clock, or native clock), not x on the
     selected reference.
-  - No device registration or test page, no calibration table, no results-profile table, and
-    no derived-results deletion: the engine has none of these.
+  - No device registration or test page and no results-profile table: the engine has none
+    of these.
   - The editor's hidden-component notes come from the saved revision, so a role excluded in
     unsaved Setup changes is not shown as hidden until it is saved.
   - Dragging snaps by the grid's minimum row height; rows that grew to fit their content make
@@ -321,8 +423,7 @@ first proof of concept.
   Python `open_session` helper went away with the Python engine.
 - **Live updates.** The capture page polls every 500 ms. A Tauri channel could push updates
   instead.
-- **Other sources and tools.** The module 1 frame-folder source, a protocol editor, the
-  legacy calculations (mean bars, calibration, atom% 49), and recovering unflushed rows
-  from the raw spool copy.
-- **Layout.** A calibration component (needs a calibration model in the engine), compacting
-  holes left by excluded roles, dragging between groups, and deleting views.
+- **Other sources and tools.** Importing a folder of legacy frame files (the zip works), a
+  protocol editor, and recovering unflushed rows from the raw spool copy.
+- **Layout.** Compacting holes left by excluded roles, dragging between groups, and deleting
+  views.
