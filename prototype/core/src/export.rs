@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use serde_json::{Value, json};
 
-use crate::alignment::{Alignment, aligned_sql};
+use crate::alignment::{Alignment, create_aligned_view};
 use crate::query::{AnalysisError, SessionDb, ident, sql_string};
 use crate::session::{Manifest, iso};
 use crate::spool::{SpoolFrame, legacy_frame_csv};
@@ -43,7 +43,7 @@ pub fn export_aligned(
     let out = session_dir.join("exports").join(id);
     fs::create_dir_all(&out)?;
     let mut db = SessionDb::open(session_dir, manifest)?;
-    db.create_view("aligned", &aligned_sql(manifest, alignment)?)?;
+    create_aligned_view(&mut db, manifest, alignment)?;
     let csv = out.join("aligned.csv");
     db.connection().execute_batch(&format!(
         "COPY (SELECT * FROM aligned ORDER BY trial, capture, x_s) TO {} (HEADER, DELIMITER ',')",

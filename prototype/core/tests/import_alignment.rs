@@ -11,8 +11,8 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use cousinslab::alignment::{
-    Alignment, Inputs, Member, Series, Unaligned, aligned_sql, chart_data, list_alignments,
-    load_alignment, metric_series, propose, save_alignment,
+    Alignment, Inputs, Member, Series, Unaligned, aligned_sql, chart_data, create_aligned_view,
+    list_alignments, load_alignment, metric_series, propose, save_alignment,
 };
 use cousinslab::calc::Program;
 use cousinslab::export::export_aligned;
@@ -270,11 +270,7 @@ fn proposal(reference: &str, entered: bool) -> Alignment {
 fn aligned_db(alignment: &Alignment) -> SessionDb {
     let imported = imported();
     let mut db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
-    db.create_view(
-        "aligned",
-        &aligned_sql(&imported.manifest, alignment).unwrap(),
-    )
-    .unwrap();
+    create_aligned_view(&mut db, &imported.manifest, alignment).unwrap();
     db
 }
 
@@ -456,21 +452,20 @@ fn proposals_match_the_python_engine_key_for_key() {
     }
 }
 
+/// The view's text is pinned so that its column order, which the aligned CSV header follows,
+/// cannot move by accident. The fixture began as the Python engine's SQL and now holds ours,
+/// with derived values read from the `calc:` tables instead of inlined arithmetic.
 #[test]
-fn aligned_sql_is_pythons_with_the_uncertainty_cast_to_double() {
+fn aligned_sql_is_pinned_byte_for_byte() {
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/python-aligned.sql");
-    let python = fs::read_to_string(fixture).unwrap();
+    let expected = fs::read_to_string(fixture).unwrap();
     let alignment = Alignment {
         id: Some("aln-20261017-044254-event".into()),
         ..proposal("event", true)
     };
-    let expected = python
-        .trim_end()
-        .replace(" 0.5 AS x_uncertainty_s", " 0.5::DOUBLE AS x_uncertainty_s")
-        .replace(" 0.1 AS x_uncertainty_s", " 0.1::DOUBLE AS x_uncertainty_s");
     assert_eq!(
         aligned_sql(&imported().manifest, &alignment).unwrap(),
-        expected
+        expected.trim_end()
     );
 }
 

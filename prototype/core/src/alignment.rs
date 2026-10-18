@@ -23,6 +23,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::calc::Program;
 use crate::contract::{Clock, ClockKind};
 use crate::expr::Params;
 use crate::pycompat::{float_repr, round};
@@ -586,22 +587,59 @@ pub fn propose(
     })
 }
 
+/// The table holding one member's derived values in one trial.
+fn calc_table(trial: &str, capture: &str) -> String {
+    format!("calc:{trial}:{capture}")
+}
+
+/// Computes every member's derived values with its trial's parameters, attaches them as
+/// `calc:` tables, and creates the view `aligned` over the join. Rates and other derived
+/// values cover the whole capture, so a window on `x_s` cannot truncate them at its edges.
+pub fn create_aligned_view(
+    db: &mut SessionDb,
+    manifest: &Manifest,
+    alignment: &Alignment,
+) -> Result<(), AnalysisError> {
+    let template = from_snapshot(manifest.template.clone())?;
+    for trial in &alignment.trials {
+        let params: Params = trial.params.iter().map(|(k, v)| (k.clone(), *v)).collect();
+        for m in &trial.members {
+            let program = Program::for_role(&template, &m.role);
+            let values: Vec<&str> = program.values().collect();
+            if values.is_empty() {
+                continue;
+            }
+            let rows = db.evaluate(&program, &params, &m.capture)?;
+            db.attach_computed(&calc_table(&trial.id, &m.capture), &values, rows)?;
+        }
+    }
+    db.create_view("aligned", &aligned_sql(manifest, alignment)?)
+}
+
 /// One `SELECT` per member, joined by `UNION ALL BY NAME`: the stored columns as they are,
-/// plus `x_s`, its uncertainty, and the member role's derived values with trial parameters.
+/// plus `x_s`, its uncertainty, and the member role's derived values read from the `calc:`
+/// table [`create_aligned_view`] attaches. Derived columns come before the stored ones, so
+/// an exported CSV keeps its column order.
 pub fn aligned_sql(manifest: &Manifest, alignment: &Alignment) -> Result<String, AnalysisError> {
     let template = from_snapshot(manifest.template.clone())?;
     let id = sql_string(alignment.id.as_deref().unwrap_or("proposal"));
     let mut parts = Vec::new();
     for trial in &alignment.trials {
-        let params: Params = trial.params.iter().map(|(k, v)| (k.clone(), *v)).collect();
         for m in &trial.members {
             let x = format!("({}) - {}", clock_seconds_sql(&m.clock), float_repr(m.zero));
-            let derived: String = template
-                .derived()
-                .iter()
-                .filter(|d| d.role == m.role)
-                .map(|d| format!(", {} AS {}", d.expr.sql(&params), ident(&d.name)))
+            let program = Program::for_role(&template, &m.role);
+            let derived: String = program
+                .values()
+                .map(|v| format!(", c.{}", ident(v)))
                 .collect();
+            let join = if derived.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    " LEFT JOIN {} AS c USING (seq)",
+                    ident(&calc_table(&trial.id, &m.capture))
+                )
+            };
             let filter = match alignment.window_s {
                 Some([lo, hi]) => format!(
                     " WHERE {x} BETWEEN {} AND {}",
@@ -616,7 +654,7 @@ pub fn aligned_sql(manifest: &Manifest, alignment: &Alignment) -> Result<String,
             };
             parts.push(format!(
                 "SELECT {id} AS alignment_id, {} AS trial, {} AS capture, {} AS role, {x} AS x_s, \
-                 {uncertainty} AS x_uncertainty_s{derived}, * FROM {}{filter}",
+                 {uncertainty} AS x_uncertainty_s{derived}, cap.* FROM {} AS cap{join}{filter}",
                 sql_string(&trial.id),
                 sql_string(&m.capture),
                 sql_string(&m.role),
@@ -708,7 +746,7 @@ impl AlignedView {
         alignment: &Alignment,
     ) -> Result<Self, AnalysisError> {
         let mut db = SessionDb::open(session_dir, manifest)?;
-        db.create_view("aligned", &aligned_sql(manifest, alignment)?)?;
+        create_aligned_view(&mut db, manifest, alignment)?;
         let columns = db
             .connection()
             .prepare("SELECT column_name FROM (DESCRIBE aligned)")?

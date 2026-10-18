@@ -16,7 +16,7 @@ use duckdb::{Config, Connection, ToSql};
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::alignment::{Alignment, aligned_sql};
+use crate::alignment::{Alignment, create_aligned_view};
 use crate::calc::{Program, Sample};
 use crate::contract::{Clock, ClockKind};
 use crate::expr::Params;
@@ -334,7 +334,7 @@ pub fn run_query(
 ) -> Result<QueryResult, AnalysisError> {
     let mut db = SessionDb::open(session_dir, manifest)?;
     if let Some(alignment) = alignment {
-        db.create_view("aligned", &aligned_sql(manifest, alignment)?)?;
+        create_aligned_view(&mut db, manifest, alignment)?;
     }
     let views = db.views().map(String::from).collect();
     let text = sql.trim_end().trim_end_matches(';');
