@@ -1003,3 +1003,126 @@ fn calibrations_export_to_csv_with_their_source_records() {
         export
     );
 }
+
+#[test]
+fn an_exported_calibration_file_loads_into_another_session_of_the_template() {
+    let (engine, dir, from) = imported(template());
+    record(&engine, &from, reading("zero", [0.2, 0.45]));
+    record(
+        &engine,
+        &from,
+        json!({"action": "typed", "step": "line.p0", "values": {"m44": 10.5}}),
+    );
+    let source = record(
+        &engine,
+        &from,
+        json!({"action": "entry", "parameter": "temp_c", "value": 21}),
+    );
+    let export = call(&engine, "export_calibrations", json!({"session_id": from}));
+    let csv = export["csv"].as_str().unwrap();
+
+    let to = import_again(&engine, TEMPLATE);
+    let loaded = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": to, "path": csv, "request_id": "load-1"}),
+    );
+    assert_eq!(
+        loaded["records"],
+        json!(["rec-000001", "rec-000002", "rec-000003"])
+    );
+    assert_eq!(loaded["notes"], json!([]));
+    let step = &loaded["steps"]["zero"];
+    assert_eq!(step["source"], "loaded");
+    assert_eq!(step["values"], source["steps"]["zero"]["values"]);
+    assert_eq!(step["from"], json!({"file": csv}));
+    assert_eq!(loaded["steps"]["line.p0"]["values"], json!({"m44": 10.5}));
+    for name in ["zero_p", "temp_c", "o2_scale"] {
+        assert_eq!(
+            loaded["parameters"][name]["value"], source["parameters"][name]["value"],
+            "{name}"
+        );
+    }
+    let again = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": to, "path": csv, "request_id": "load-1"}),
+    );
+    assert_eq!(
+        (again["records"].clone(), record_files(&dir, &to)),
+        (loaded["records"].clone(), 3)
+    );
+}
+
+#[test]
+fn a_calibration_file_that_does_not_fit_the_session_is_refused_and_saves_nothing() {
+    let (engine, dir, to) = imported(template());
+    let write = |name: &str, text: &str| {
+        let path = dir.path().join(name);
+        std::fs::write(&path, text).unwrap();
+        path
+    };
+    let load = |path: &std::path::Path| {
+        refused(
+            &engine,
+            "load_calibrations",
+            json!({"session_id": to, "path": path}),
+        )
+        .message
+    };
+    let header = "template,kind,name,reading,value,label,source,record\n";
+    let file = |row: &str| format!("{header}{row}\n");
+    assert_eq!(
+        load(&write(
+            "other.csv",
+            &file("other-test,step,zero,zero_p,1,Zero,read,rec-000001")
+        )),
+        "The file holds calibrations of template other-test; this session uses analysis-test"
+    );
+    assert_eq!(
+        load(&write(
+            "text.csv",
+            &file("analysis-test,step,zero,zero_p,abc,,,")
+        )),
+        "Row 2 holds \"abc\", not a number"
+    );
+    assert_eq!(
+        load(&write("short.csv", &file("analysis-test,step,zero"))),
+        "Row 2 has 3 fields; an exported calibration file has 8"
+    );
+    assert_eq!(
+        load(&write("empty.csv", header)),
+        "The file holds no calibrations"
+    );
+    let odd = write("odd.csv", "a,b\n1,2\n");
+    assert_eq!(
+        load(&odd),
+        format!(
+            "{} is not a calibration file this template reads: it should start with the header template,kind,name,reading,value,label,source,record",
+            odd.display()
+        )
+    );
+    assert_eq!(
+        load(&write(
+            "unknown.csv",
+            &file("analysis-test,step,gone,x,1,,,")
+        )),
+        "Nothing in the file fits this template revision: Step gone is not in this template revision; not loaded"
+    );
+    let missing = dir.path().join("missing.csv");
+    assert_eq!(load(&missing), format!("No file {}", missing.display()));
+    assert_eq!(record_files(&dir, &to), 0);
+
+    let partly = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": to, "path": write("partly.csv", &format!(
+            "{header}analysis-test,step,gone,x,1,,,\nanalysis-test,parameter,temp_c,,19.5,,,\n"
+        ))}),
+    );
+    assert_eq!(
+        partly["notes"],
+        json!(["Step gone is not in this template revision; not loaded"])
+    );
+    assert_eq!(partly["parameters"]["temp_c"]["value"], 19.5);
+}

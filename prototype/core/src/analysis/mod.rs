@@ -26,7 +26,7 @@ use crate::query::{AnalysisError, SessionDb};
 use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
-pub use calfile::{CalibrationExport, export_calibrations};
+pub use calfile::{CalibrationExport, export_calibrations, load_calibrations};
 pub use carry::{Applied, Carried, calibration_state, copy_calibrations};
 pub use export::{TableExport, export_table};
 pub use fold::{AnalysisState, Draft, Filled, FitState, StepState, TableRow, draft, fold};

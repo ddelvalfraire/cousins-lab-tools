@@ -304,6 +304,37 @@ fn module2_typed_zero_and_points_give_the_results_of_readings_with_those_means()
     assert!(results["pct_co2"].as_f64().unwrap() > 0.0, "{results}");
 }
 
+#[test]
+fn module2_calibrations_export_and_load_into_the_next_session() {
+    let (engine, _dir, first) = imported("legacy-module2-co2-o2");
+    for (step, range, _) in M2_CAL {
+        reading(&engine, &first, step, range);
+    }
+    reading(&engine, &first, "co2_zero", M2_CAL[0].1);
+    reading(&engine, &first, "o2_zero", M2_CAL[0].1);
+    let temp = json!({"action": "entry", "parameter": "temp_c", "value": 25});
+    let calibrated = record(&engine, &first, temp);
+    let export = call(&engine, "export_calibrations", json!({"session_id": first}));
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-module2-co2-o2", "files": [{"role": "ms", "path": sample_path()}]}),
+    );
+    let next = manifest["id"].as_str().unwrap();
+    let loaded = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": next, "path": export["csv"]}),
+    );
+    assert_eq!(loaded["records"].as_array().unwrap().len(), 7);
+    assert_eq!(loaded["notes"], json!([]));
+    assert_eq!(loaded["fits"], calibrated["fits"]);
+    for (name, p) in calibrated["parameters"].as_object().unwrap() {
+        assert_eq!(loaded["parameters"][name]["value"], p["value"], "{name}");
+    }
+    assert!(loaded["parameters"]["o2_cal"]["value"].is_f64());
+}
+
 const M45: usize = 4;
 const M47: usize = 6;
 const M49: usize = 7;

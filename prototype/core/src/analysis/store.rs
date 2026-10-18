@@ -86,7 +86,8 @@ pub enum Action {
     Typed {
         step: String,
         values: IndexMap<String, f64>,
-        /// Set when the engine copied the values rather than the operator typing them.
+        /// Set when the engine copied or loaded the values rather than the operator typing
+        /// them.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         from: Option<Provenance>,
     },
@@ -101,12 +102,14 @@ pub enum Action {
     Retract { records: Vec<RecordId> },
 }
 
-/// Where a copied value came from.
+/// Where a copied or loaded value came from.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Provenance {
     /// The record of another session of the same template that held the value.
     Session { session: String, record: RecordId },
+    /// A calibration file loaded into the session.
+    File { file: String },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

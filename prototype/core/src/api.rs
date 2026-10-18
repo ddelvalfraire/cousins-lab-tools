@@ -311,6 +311,17 @@ impl Engine {
                     &self.manifest(&id)?,
                 )?)
             }
+            "load_calibrations" => {
+                let a: LoadArgs = parse(args)?;
+                let applied = analysis::load_calibrations(
+                    &self.session_dir(&a.session_id)?,
+                    &self.manifest(&a.session_id)?,
+                    &a.path,
+                    a.request_id,
+                )?;
+                self.follow(&a.session_id, &applied.view);
+                reply(applied)
+            }
             "calibration_sources" => {
                 let id = parse::<SessionRef>(args)?.session_id;
                 reply(self.calibration_sources(&id)?)
@@ -765,6 +776,13 @@ struct RecordArgs {
 struct CopyArgs {
     session_id: String,
     from_session_id: String,
+    request_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct LoadArgs {
+    session_id: String,
+    path: PathBuf,
     request_id: Option<String>,
 }
 

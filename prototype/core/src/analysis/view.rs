@@ -196,15 +196,16 @@ pub struct StepView {
     pub kind: &'static str,
     /// A calibration point's known value.
     pub known: Option<f64>,
-    /// `read`, `typed` or `copied`, from the record that fills the step; None while nothing
-    /// does.
+    /// `read`, `typed`, `copied` or `loaded`, from the record that fills the step; None while
+    /// nothing does.
     pub source: Option<&'static str>,
     pub record: Option<RecordId>,
     /// Reading name to value from that record, whichever its source.
     pub values: IndexMap<String, Option<f64>>,
     /// The statistics behind the values when the step was read.
     pub reading: Option<StepReading>,
-    /// The session and record the values were copied from.
+    /// The session and record the values were copied from, or the file they were loaded
+    /// from.
     pub from: Option<Provenance>,
 }
 
@@ -256,7 +257,14 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
                 source: filled.map(|s| match &s.filled {
                     Filled::Read { .. } => "read",
                     Filled::Typed { from: None, .. } => "typed",
-                    Filled::Typed { from: Some(_), .. } => "copied",
+                    Filled::Typed {
+                        from: Some(Provenance::Session { .. }),
+                        ..
+                    } => "copied",
+                    Filled::Typed {
+                        from: Some(Provenance::File { .. }),
+                        ..
+                    } => "loaded",
                 }),
                 record: filled.map(|s| s.record.clone()),
                 values: filled.map(StepState::values).unwrap_or_default(),
