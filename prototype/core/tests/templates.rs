@@ -291,3 +291,44 @@ fn a_derived_value_may_read_derived_values_of_its_role_but_not_in_a_cycle() {
     data["derived"]["ubar_co2"]["expr"] = json!("ubar_co2 + 1");
     assert_eq!(rejection(data), "Derived ubar_co2: depends on itself");
 }
+
+#[test]
+fn a_slope_needs_a_source_clock_a_positive_window_and_at_least_two_points() {
+    let mut data = builtin();
+    data["derived"]["rate"] =
+        json!({"role": "light", "slope": {"of": "S", "window_s": 2, "min_points": 3}});
+    let profiles = load_profiles(&Paths::default().instruments).unwrap();
+    let template = validate(data.clone(), &profiles).unwrap();
+    assert_eq!(template.derived()[2].names(), ["S"]);
+    assert_eq!(from_snapshot(data.clone()).unwrap(), template);
+
+    data["derived"]["rate"] =
+        json!({"role": "ms", "slope": {"of": "m44", "window_s": 2, "min_points": 3}});
+    assert_eq!(
+        rejection(data.clone()),
+        "Derived rate: slope needs role ms to record an elapsed or device clock"
+    );
+    let cases = [
+        (
+            json!({"role": "light", "slope": {"of": "S", "window_s": 0, "min_points": 3}}),
+            "Derived rate: slope.window_s must be a number of seconds > 0",
+        ),
+        (
+            json!({"role": "light", "slope": {"of": "S", "window_s": 2, "min_points": 1}}),
+            "Derived rate: slope.min_points must be a whole number >= 2",
+        ),
+        (
+            json!({"role": "light", "slope": {"of": "foo", "window_s": 2, "min_points": 2}}),
+            "Derived rate: unknown names ['foo']",
+        ),
+        (
+            json!({"role": "light", "slope": {"window_s": 2, "min_points": 2}}),
+            "Derived rate: slope.of must be the name of a column or derived value",
+        ),
+        (json!({"role": "light"}), "Derived rate: expr must be text"),
+    ];
+    for (rate, message) in cases {
+        data["derived"]["rate"] = rate;
+        assert_eq!(rejection(data.clone()), message);
+    }
+}

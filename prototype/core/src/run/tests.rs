@@ -13,8 +13,12 @@ use serde_json::{Map, Value, json};
 
 use super::live::LiveBuffer;
 use super::*;
-use crate::contract::{InputKind, Instrument, InstrumentInfo, Readiness, Sink};
+use crate::calc::Program;
+use crate::contract::{Cell, InputKind, Instrument, InstrumentInfo, Readiness, Sink};
+use crate::query::SessionDb;
+use crate::schemas;
 use crate::session::segments;
+use crate::session::utc_now;
 use crate::templates::{TemplateStore, load_profiles, validate};
 
 const TEMPLATE: &str = "jii-leaf-co2-fluorescence";
@@ -226,6 +230,65 @@ fn light_as(behaviour: Behaviour, cancelled: &Arc<AtomicBool>) -> Box<BuildAdapt
             }),
             simulator: None,
             note: "test adapter".into(),
+            sources: vec![],
+        })
+    })
+}
+
+/// Ambit-shaped rows the test can predict: the device clock ticks 100 ms per row, S rises
+/// 10 counts per row (100 counts per second) and R is zero on every third row.
+struct LineAdapter {
+    rows: i64,
+}
+
+impl Instrument for LineAdapter {
+    fn describe(&self) -> InstrumentInfo {
+        InstrumentInfo {
+            adapter: "test".into(),
+            model: "line".into(),
+            input_kind: InputKind::Simulated,
+            capabilities: ["acquire".to_string()].into(),
+            columns: schemas::ambit_columns(),
+            clocks: schemas::ambit_clocks(),
+            aliases: Default::default(),
+        }
+    }
+
+    fn check_ready(&self) -> Readiness {
+        Readiness {
+            ok: true,
+            detail: "ok".into(),
+        }
+    }
+
+    fn run(&mut self, sink: &mut dyn Sink, stop: &StopSignal) -> Result<(), InstrumentError> {
+        for i in 0..self.rows {
+            let mut row = vec![
+                Cell::Int(i),
+                Cell::TimeUtc(utc_now()),
+                Cell::Int(i * 100),
+                Cell::Int(10 * i),
+                Cell::Int(i % 3),
+            ];
+            row.extend(std::iter::repeat_n(Cell::Int(0), 5));
+            sink.rows(vec![row]);
+        }
+        while !stop.wait(Duration::from_millis(10)) {}
+        Ok(())
+    }
+
+    fn cancel(&self) {}
+}
+
+fn light_as_line(rows: i64) -> Box<BuildAdapter> {
+    Box::new(move |profile, role, template, dir, speed, paths| {
+        if role != "light" {
+            return build_adapter(profile, role, template, dir, speed, paths);
+        }
+        Ok(BuiltAdapter {
+            adapter: Box::new(LineAdapter { rows }),
+            simulator: None,
+            note: "line adapter".into(),
             sources: vec![],
         })
     })
@@ -928,6 +991,79 @@ fn start_gap_stays_under_a_fifth_of_a_second_over_twenty_runs_at_50x() {
             late[role].iter().all(|l| (0.0..0.2).contains(l)),
             "{role}: {:?}",
             late[role]
+        );
+    }
+}
+
+#[test]
+fn review_computes_the_same_rate_and_ratio_as_the_live_points() {
+    let _shared = shared();
+    let data = tempfile::tempdir().unwrap();
+    let mut doc = template_with(data.path(), json!({"light": {"start_delay_s": 0}}))
+        .data()
+        .clone();
+    doc["derived"]["rate"] =
+        json!({"role": "light", "slope": {"of": "S", "window_s": 1, "min_points": 5}});
+    doc["derived"]["ratio"] = json!({"role": "light", "expr": "S / R"});
+    doc["charts"].as_array_mut().unwrap().push(json!({
+        "id": "line", "title": "Line", "unit": "",
+        "series": [{"role": "light", "value": "rate"}, {"role": "light", "value": "ratio"}]
+    }));
+    let template = validate(doc, &profiles()).unwrap();
+    let rows = 60;
+    let run = launch(
+        data.path(),
+        template.clone(),
+        &profiles(),
+        &light_as_line(rows),
+        JOIN_TIMEOUT,
+        Arc::new(utc_now),
+    );
+    assert!(wait_until(20.0, || {
+        run.live(&Cursors::new()).captures["light"].rows.len() as i64 == rows
+    }));
+    let live = run.live(&Cursors::new());
+    let manifest = stop(&run, false);
+
+    let session_dir = store(data.path()).path(run.id());
+    let db = SessionDb::open(&session_dir, &manifest).unwrap();
+    let clocks = &manifest.captures["light"].clocks;
+    let program = Program::for_role(&template, "light", clocks).unwrap();
+    let values: Vec<&str> = program.values().collect();
+    let computed = db.evaluate(&program, &template.params(), "light").unwrap();
+    assert_eq!(computed.len() as i64, rows);
+    let points = &live.captures["light"].rows;
+    assert_eq!(points.len(), computed.len());
+    for (point, row) in points.iter().zip(&computed) {
+        for (i, value) in values.iter().enumerate() {
+            assert_eq!(
+                point[*value].as_f64(),
+                row.values[i],
+                "{value} at seq {}",
+                row.seq
+            );
+        }
+    }
+
+    let index = |name: &str| values.iter().position(|v| *v == name).unwrap();
+    let rates: Vec<Option<f64>> = computed.iter().map(|r| r.values[index("rate")]).collect();
+    assert!(
+        rates[..10].iter().all(Option::is_none),
+        "no rate before a full second: {rates:?}"
+    );
+    assert!(
+        rates[10..]
+            .iter()
+            .all(|r| r.is_some_and(|r| (r - 100.0).abs() < 1e-9)),
+        "{rates:?}"
+    );
+    let ratio = index("ratio");
+    for row in &computed {
+        assert_eq!(
+            row.values[ratio].is_none(),
+            row.seq % 3 == 0,
+            "seq {}",
+            row.seq
         );
     }
 }

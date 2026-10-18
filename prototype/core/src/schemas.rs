@@ -205,6 +205,24 @@ pub fn import_columns(importer: &str) -> Option<Vec<Column>> {
     }
 }
 
+/// Clocks a live adapter declares, keyed by the profile's `adapter`.
+pub fn adapter_clocks(adapter: &str) -> Option<Vec<Clock>> {
+    match adapter {
+        "ezview_spool" => Some(spool_clocks()),
+        "ambit_replay" => Some(ambit_clocks()),
+        _ => None,
+    }
+}
+
+/// Clocks an importer declares, keyed by the template role's `import`.
+pub fn import_clocks(importer: &str) -> Option<Vec<Clock>> {
+    match importer {
+        "ms_workbook" => Some(ms_import_clocks()),
+        "ambit_csv" => Some(ambit_import_clocks()),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,5 +259,23 @@ mod tests {
     fn unknown_adapters_and_importers_have_no_columns() {
         assert!(adapter_columns("ambit_serial").is_none());
         assert!(import_columns("ambit_csv").is_some());
+    }
+
+    #[test]
+    fn clocks_by_adapter_and_importer_are_the_ones_their_rows_declare() {
+        for (adapter, clocks) in [
+            ("ezview_spool", spool_clocks()),
+            ("ambit_replay", ambit_clocks()),
+        ] {
+            assert_eq!(adapter_clocks(adapter), Some(clocks), "{adapter}");
+        }
+        for (importer, clocks) in [
+            ("ms_workbook", ms_import_clocks()),
+            ("ambit_csv", ambit_import_clocks()),
+        ] {
+            assert_eq!(import_clocks(importer), Some(clocks), "{importer}");
+        }
+        assert!(adapter_clocks("ambit_serial").is_none());
+        assert!(import_clocks("legacy").is_none());
     }
 }

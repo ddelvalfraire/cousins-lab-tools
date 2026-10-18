@@ -15,7 +15,7 @@ use serde_json::{Map, Value};
 use super::Marker;
 use super::seconds_since;
 use crate::calc::{CalcError, Evaluator, Program, Sample};
-use crate::contract::{Cell, Event, Row};
+use crate::contract::{Cell, Clock, Event, Row};
 use crate::session::{Capture, CaptureStatus, SessionStatus, iso};
 use crate::templates::Template;
 
@@ -108,6 +108,8 @@ enum Source {
 pub(super) struct PointMaker {
     /// Row positions of the program's columns, in program order.
     inputs: Vec<Option<usize>>,
+    /// Row position of the source clock and its seconds per unit, when the capture has one.
+    clock: Option<(usize, f64)>,
     values: Vec<(String, Source)>,
     evaluator: Evaluator,
     host_time: Option<usize>,
@@ -121,13 +123,17 @@ impl PointMaker {
         columns: Vec<String>,
         aliases: BTreeMap<String, String>,
         host_time: Option<usize>,
+        clocks: &[Clock],
     ) -> Result<Self, CalcError> {
         let position = |name: &str| {
             let column = aliases.get(name).map_or(name, String::as_str);
             columns.iter().position(|c| c == column)
         };
-        let program = Program::for_role(template, role)?;
+        let program = Program::for_role(template, role, clocks)?;
         let inputs = program.columns().iter().map(|c| position(c)).collect();
+        let clock = program
+            .clock()
+            .and_then(|c| Some((position(&c.column)?, c.seconds_per_unit)));
         let values = template
             .live_values(role)
             .into_iter()
@@ -141,6 +147,7 @@ impl PointMaker {
             .collect();
         Ok(PointMaker {
             inputs,
+            clock,
             values,
             evaluator: program.evaluator(&template.params()),
             host_time,
@@ -154,7 +161,13 @@ impl PointMaker {
             .iter()
             .map(|i| i.and_then(|i| row.get(i)).and_then(number))
             .collect();
-        let outputs = self.evaluator.push(Sample { columns: &columns });
+        let t_s = self
+            .clock
+            .and_then(|(i, per_unit)| Some(number(row.get(i)?)? * per_unit));
+        let outputs = self.evaluator.push(Sample {
+            t_s,
+            columns: &columns,
+        });
         let x = match self.host_time.and_then(|i| row.get(i)) {
             Some(Cell::TimeUtc(t)) => Value::from(seconds_since(self.t0, *t)),
             _ => Value::Null,

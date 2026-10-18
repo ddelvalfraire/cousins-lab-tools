@@ -186,13 +186,21 @@ impl SessionDb {
         params: &Params,
         capture: &str,
     ) -> Result<Vec<ComputedRow>, AnalysisError> {
+        let t_s = match program.clock() {
+            Some(clock) => format!(
+                "TRY_CAST({} AS DOUBLE) * {}",
+                ident(&clock.column),
+                float_repr(clock.seconds_per_unit)
+            ),
+            None => "NULL::DOUBLE".into(),
+        };
         let columns: String = program
             .columns()
             .iter()
             .map(|c| format!(", TRY_CAST({} AS DOUBLE)", ident(c)))
             .collect();
         let mut stmt = self.con.prepare(&format!(
-            "SELECT seq{columns} FROM {} ORDER BY seq",
+            "SELECT seq, {t_s}{columns} FROM {} ORDER BY seq",
             ident(&format!("cap:{capture}"))
         ))?;
         let mut rows = stmt.query([])?;
@@ -201,11 +209,14 @@ impl SessionDb {
         let mut cells = vec![None; program.columns().len()];
         while let Some(row) = rows.next()? {
             for (i, cell) in cells.iter_mut().enumerate() {
-                *cell = row.get::<_, Option<f64>>(i + 1)?;
+                *cell = row.get::<_, Option<f64>>(i + 2)?;
             }
             out.push(ComputedRow {
                 seq: row.get(0)?,
-                values: eval.push(Sample { columns: &cells }),
+                values: eval.push(Sample {
+                    t_s: row.get(1)?,
+                    columns: &cells,
+                }),
             });
         }
         Ok(out)

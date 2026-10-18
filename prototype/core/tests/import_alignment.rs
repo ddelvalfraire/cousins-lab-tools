@@ -20,7 +20,7 @@ use cousinslab::importing::{ImportError, ImportFile, import_session};
 use cousinslab::ms_workbook::read_sample_sheet;
 use cousinslab::query::{AnalysisError, SessionDb, run_query, session_events};
 use cousinslab::session::{Manifest, SessionStore, segment_rows, segments, sha256};
-use cousinslab::templates::{Paths, Template, TemplateStore, from_snapshot};
+use cousinslab::templates::{DerivedKind, Paths, Template, TemplateStore, from_snapshot};
 use serde_json::{Value, json};
 use sha2::Digest;
 
@@ -660,7 +660,8 @@ fn a_query_cannot_reach_outside_its_session_or_run_a_second_statement() {
 fn evaluating_a_program_over_stored_rows_matches_eval_row_for_row() {
     let imported = imported();
     let template = from_snapshot(imported.manifest.template.clone()).unwrap();
-    let program = Program::for_role(&template, "ms").unwrap();
+    let clocks = &imported.manifest.captures["ms-workbook"].clocks;
+    let program = Program::for_role(&template, "ms", clocks).unwrap();
     let params = template.params();
     let db = SessionDb::open(&imported.session_dir(), &imported.manifest).unwrap();
     let computed = db.evaluate(&program, &params, "ms-workbook").unwrap();
@@ -674,7 +675,9 @@ fn evaluating_a_program_over_stored_rows_matches_eval_row_for_row() {
         .unwrap()
         .collect::<Result<_, _>>()
         .unwrap();
-    let ubar = &template.derived()[0].expr;
+    let DerivedKind::Expr(ubar) = &template.derived()[0].kind else {
+        panic!("ubar_co2 is an expression");
+    };
     assert_eq!(computed.len(), stored.len());
     assert!(computed.len() > 10_000);
     for (row, (seq, m44)) in computed.iter().zip(&stored) {

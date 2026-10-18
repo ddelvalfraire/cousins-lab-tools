@@ -23,7 +23,7 @@ use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
 use serde_json::Value;
 
-use crate::contract::{Column, InstrumentError, StopSignal};
+use crate::contract::{Clock, Column, InstrumentError, StopSignal};
 use crate::pycompat::str_repr;
 use crate::session::{
     Capture, CaptureStatus, FLUSH_EVERY, FLUSH_ROWS, Manifest, OnFailure, RunInfo, SegmentWriter,
@@ -168,6 +168,7 @@ struct Prepared {
     output_dir: PathBuf,
     host_time: Option<usize>,
     columns: Vec<Column>,
+    clocks: Vec<Clock>,
     aliases: BTreeMap<String, String>,
     live: Arc<LiveBuffer>,
 }
@@ -269,6 +270,7 @@ impl GroupRun {
                 role: role.into(),
                 host_time: info.columns.iter().position(|c| c.name == "t_host_utc"),
                 columns: info.columns,
+                clocks: info.clocks,
                 aliases: info.aliases,
                 live: Arc::default(),
                 output_dir: dir,
@@ -314,8 +316,9 @@ impl GroupRun {
         let live = live_buffers(&prepared);
         for p in prepared {
             let names = p.columns.iter().map(|c| c.name.clone()).collect();
-            let points = PointMaker::new(&template, &p.role, names, p.aliases, p.host_time)
-                .map_err(|e| RunError::Invalid(e.to_string()))?;
+            let points =
+                PointMaker::new(&template, &p.role, names, p.aliases, p.host_time, &p.clocks)
+                    .map_err(|e| RunError::Invalid(e.to_string()))?;
             let output = Output {
                 role: p.role.clone(),
                 samples: SegmentWriter::new(

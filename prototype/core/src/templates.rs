@@ -14,6 +14,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use serde_json::{Map, Value};
 
 use crate::calc::derived_order;
+use crate::contract::ClockKind;
 use crate::expr::{self, Expression, Params};
 use crate::layout::{self, Kind};
 use crate::protocol::{self, ProtocolPlan};
@@ -130,10 +131,71 @@ impl fmt::Display for TemplateError {
 impl std::error::Error for TemplateError {}
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum DerivedKind {
+    Expr(Expression),
+    /// Trailing least-squares slope per second of `of` (a column or an earlier derived value
+    /// of the role) over `window_s` seconds of the capture's own clock.
+    Slope {
+        of: String,
+        window_s: f64,
+        min_points: usize,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct DerivedValue {
     pub name: String,
     pub role: String,
-    pub expr: Expression,
+    pub kind: DerivedKind,
+}
+
+impl DerivedValue {
+    /// The names the value reads: the expression's operands, or the slope's `of`.
+    pub fn names(&self) -> Vec<&str> {
+        match &self.kind {
+            DerivedKind::Expr(expr) => expr.names().iter().map(String::as_str).collect(),
+            DerivedKind::Slope { of, .. } => vec![of],
+        }
+    }
+}
+
+/// `{expr}` or `{slope: {of, window_s, min_points}}`, or the first thing wrong with it.
+fn derived_kind(d: &Value) -> Result<DerivedKind, String> {
+    if let Some(slope) = d.get("slope") {
+        let of = slope
+            .get("of")
+            .and_then(Value::as_str)
+            .ok_or("slope.of must be the name of a column or derived value")?;
+        let window_s = slope
+            .get("window_s")
+            .and_then(Value::as_f64)
+            .filter(|w| *w > 0.0)
+            .ok_or("slope.window_s must be a number of seconds > 0")?;
+        let min_points = slope
+            .get("min_points")
+            .and_then(Value::as_u64)
+            .filter(|m| *m >= 2)
+            .ok_or("slope.min_points must be a whole number >= 2")?;
+        return Ok(DerivedKind::Slope {
+            of: of.to_string(),
+            window_s,
+            min_points: min_points as usize,
+        });
+    }
+    let text = d
+        .get("expr")
+        .and_then(Value::as_str)
+        .ok_or("expr must be text")?;
+    expr::parse(text)
+        .map(DerivedKind::Expr)
+        .map_err(|e| e.to_string())
+}
+
+/// Whether `clocks` holds a clock that replay speed cannot stretch.
+fn has_source_clock(clocks: &[crate::contract::Clock]) -> bool {
+    clocks
+        .iter()
+        .any(|c| matches!(c.kind, ClockKind::Elapsed | ClockKind::DeviceRelative))
 }
 
 /// A template document that passed validation.
@@ -412,6 +474,7 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     let roles = object(&data, "roles");
     let protocols = object(&data, "protocols");
     let mut role_columns: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+    let mut role_source_clock: BTreeMap<&str, bool> = BTreeMap::new();
     let mut plans = BTreeMap::new();
     for (name, role) in roles {
         let instrument = role.get("instrument");
@@ -439,11 +502,18 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         };
         let mut columns: BTreeSet<String> = adapter_columns.into_iter().map(|c| c.name).collect();
         columns.extend(object(profile, "aliases").keys().cloned());
+        let adapter = adapter.and_then(Value::as_str).unwrap_or_default();
+        let mut source_clock =
+            schemas::adapter_clocks(adapter).is_some_and(|c| has_source_clock(&c));
         if let Some(import) = role.get("import").filter(|v| truthy(v)) {
             match import.as_str().and_then(schemas::import_columns) {
                 Some(imported) => {
                     let imported: BTreeSet<String> = imported.into_iter().map(|c| c.name).collect();
                     columns.retain(|c| imported.contains(c));
+                    source_clock &= import
+                        .as_str()
+                        .and_then(schemas::import_clocks)
+                        .is_some_and(|c| has_source_clock(&c));
                 }
                 None => errors.push(format!(
                     "Role {name}: unknown import {}; use one of {}",
@@ -453,6 +523,7 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
             }
         }
         role_columns.insert(name, columns);
+        role_source_clock.insert(name, source_clock);
         if role
             .get("start_delay_s")
             .is_some_and(|d| d.as_f64().is_none_or(|s| s < 0.0))
@@ -504,12 +575,8 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
     let no_columns = BTreeSet::new();
     let mut derived = Vec::new();
     for (key, d) in object(&data, "derived") {
-        let Some(text) = d.get("expr").and_then(Value::as_str) else {
-            errors.push(format!("Derived {key}: expr must be text"));
-            continue;
-        };
-        let expr = match expr::parse(text) {
-            Ok(expr) => expr,
+        let kind = match derived_kind(d) {
+            Ok(kind) => kind,
             Err(e) => {
                 errors.push(format!("Derived {key}: {e}"));
                 continue;
@@ -525,25 +592,35 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         derived.push(DerivedValue {
             name: key.clone(),
             role: role.to_string(),
-            expr,
+            kind,
         });
     }
     // A name may be a parameter, a column of the role, or a derived value of the same role.
     for d in &derived {
         let columns = role_columns.get(d.role.as_str()).unwrap_or(&no_columns);
         let unknown: Vec<&str> = d
-            .expr
             .names()
-            .iter()
+            .into_iter()
             .filter(|n| !parameters.contains_key(*n) && !columns.contains(*n))
-            .filter(|n| !derived.iter().any(|o| o.name == **n && o.role == d.role))
-            .map(String::as_str)
+            .filter(|n| !derived.iter().any(|o| o.name == *n && o.role == d.role))
             .collect();
         if !unknown.is_empty() {
             errors.push(format!(
                 "Derived {}: unknown names {}",
                 d.name,
                 list_repr(unknown)
+            ));
+        }
+        // A slope on host time would scale with replay speed.
+        if matches!(d.kind, DerivedKind::Slope { .. })
+            && !role_source_clock
+                .get(d.role.as_str())
+                .copied()
+                .unwrap_or(true)
+        {
+            errors.push(format!(
+                "Derived {}: slope needs role {} to record an elapsed or device clock",
+                d.name, d.role
             ));
         }
     }
@@ -647,12 +724,11 @@ pub fn from_snapshot(data: Value) -> Result<Template, TemplateError> {
     }
     let mut derived = Vec::new();
     for (key, d) in object(&data, "derived") {
-        let text = d.get("expr").and_then(Value::as_str).unwrap_or_default();
-        let expr = expr::parse(text).map_err(|e| TemplateError(format!("Derived {key}: {e}")))?;
+        let kind = derived_kind(d).map_err(|e| TemplateError(format!("Derived {key}: {e}")))?;
         derived.push(DerivedValue {
             name: key.clone(),
             role: d["role"].as_str().unwrap_or_default().into(),
-            expr,
+            kind,
         });
     }
     Ok(Template {
