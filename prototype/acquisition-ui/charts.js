@@ -1,4 +1,5 @@
 import { cssVar } from "./util.js";
+import { brushComponent, selectionArea } from "./selection.js";
 
 const PALETTE_VARS = ["--accent", "--trace-blue", "--trace-violet", "--trace-amber", "--success", "--destructive-text"];
 
@@ -20,8 +21,9 @@ export function markLines(markers, cursor) {
 /**
  * series: [{name, points: [[x, y]...]}], markers: [{x, label}], cursor: x of the replay playhead.
  * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
+ * selection: {from, to} drawn as a band; brush: the chart takes a range selection.
  */
-export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false }) {
+export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false }) {
   const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
   return {
     animation: false,
@@ -46,6 +48,8 @@ export function lineOption({ series, markers = [], cursor = null, window = null,
       lineStyle: { width: 1.5 },
       data: s.points,
       markLine: i === 0 ? markLines(markers, cursor) : undefined,
+      markArea: i === 0 && selection ? selectionArea(selection, cssVar("--accent")) : undefined,
     })),
+    ...(brush ? { brush: brushComponent() } : {}),
   };
 }

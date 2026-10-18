@@ -7,6 +7,7 @@ import { PANELS, panel } from "./diagnostics.js";
 import { visible } from "./layout.js";
 import { axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
+import { selectable } from "./selection.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -167,6 +168,17 @@ async function mount(page, id, restart) {
     range: { mode: source.live ? "60" : "all", custom: null },
     frozen: null,
     cursor: null, playing: false, speed: 1, lastTick: 0,
+    selection: null, selecting: false, selectionVersion: 0,
+  };
+  const selectOn = () => ({ live: source.live, reference: source.alignment?.reference });
+  const canSelect = () => {
+    const specs = Object.fromEntries(template.data.charts.map(c => [c.id, c]));
+    return currentView().components.some(c => c.kind === "chart" && selectable(specs[c.chart], selectOn()));
+  };
+  ctx.onSelect = range => {
+    view.selection = range;
+    view.selectionVersion++;
+    paint();
   };
   const windowOf = ds => view.frozen || windowFor(view.range.mode, ds.extent, view.range.custom);
 
@@ -174,7 +186,8 @@ async function mount(page, id, restart) {
     const dataset = source.dataset();
     const window = windowOf(dataset);
     if (!source.live) view.cursor = Math.min(window.end, Math.max(window.start, view.cursor ?? window.end));
-    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures };
+    const select = { ...selectOn(), range: view.selection, active: view.selecting, version: view.selectionVersion };
+    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures, select };
   };
   const paintToolbar = f => {
     const fmt = f.dataset.axis.format;
@@ -184,6 +197,11 @@ async function mount(page, id, restart) {
     q("[data-range-custom]").setAttribute("aria-pressed", view.range.mode === "custom" || !!view.frozen);
     const freeze = q('[data-header="freeze"]');
     if (freeze) freeze.innerHTML = view.frozen ? `${icon("play")}Resume live` : `${icon("pause")}Freeze display`;
+    const selecting = canSelect();
+    q("[data-selection-controls]").hidden = !selecting;
+    q("[data-select-mode]").setAttribute("aria-pressed", selecting && view.selecting);
+    q("[data-selection]").textContent = view.selection ? `${fmt(view.selection.from)} to ${fmt(view.selection.to)}` : "No range selected";
+    q("[data-selection-clear]").disabled = !view.selection;
     if (source.live) return;
     q("[data-replay-time]").textContent = fmt(f.cursor);
     q("[data-replay-end]").textContent = fmt(f.window.end);
@@ -277,6 +295,11 @@ async function mount(page, id, restart) {
         <div class="capture-toolbar">
           <div class="capture-view-controls">
             <div class="view-tabs" role="tablist" aria-label="Views">${views.map(v => `<button role="tab" data-view="${esc(v.id)}">${esc(v.name)}</button>`).join("")}</div>
+            <div class="selection-controls" data-selection-controls hidden>
+              <button class="range-chip" data-select-mode title="Drag across a chart to select a range; off, dragging pans">${icon("sliders")}Select range</button>
+              <span class="small muted" data-selection></span>
+              <button class="quiet" data-selection-clear>Clear</button>
+            </div>
             <div class="actions">${PANELS.map(([k, label, ico]) => `<button class="quiet" data-panel-open="${k}" aria-controls="diagnostics" aria-expanded="false">${icon(ico)}${label}</button>`).join("")}</div>
           </div>
           ${toolbar()}
@@ -325,11 +348,13 @@ async function mount(page, id, restart) {
     paint();
   });
   q('[data-header="stop"]')?.addEventListener("click", ctx.actions.stop);
+  q("[data-select-mode]").addEventListener("click", () => { view.selecting = !view.selecting; paint(); });
+  q("[data-selection-clear]").addEventListener("click", () => ctx.onSelect(null));
   q("[data-reference]")?.addEventListener("change", async event => {
     const next = await replaySource(m, session, template, event.target.value);
     if (stopped) return;
     source = next;
-    Object.assign(view, { range: { mode: "all", custom: null }, cursor: null, playing: false });
+    Object.assign(view, { range: { mode: "all", custom: null }, cursor: null, playing: false, selection: null });
     form.hidden = true;
     mountView();
   });

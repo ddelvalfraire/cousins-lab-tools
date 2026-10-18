@@ -3,6 +3,7 @@
 import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge } from "./util.js";
 import { lineOption, makeChart, markLines } from "./charts.js";
 import { valueAt } from "./timerange.js";
+import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -92,12 +93,34 @@ export function renderGrid(items, ctx) {
     </section>`).join("")}</div>`;
 }
 
-/** Mount charts under root and return paint(frame). frame: {dataset, window, cursor, live, status, captures}. */
+/**
+ * When a time chart must be rebuilt, and with what. frame.select: {range, active, version, live, reference}.
+ * The selection and the pan/select mode are part of the key, so changing either rebuilds the option with
+ * the band, and a rebuilt chart in select mode takes the brush cursor again.
+ */
+export function timeChartPaint(spec, chartId, frame) {
+  const ds = frame.dataset;
+  const sel = frame.select || {};
+  const brush = selectable(spec, sel);
+  const key = JSON.stringify([ds.version, frame.window.start, frame.window.end, brush && [sel.range, !!sel.active, sel.version]]);
+  return {
+    key,
+    takeCursor: brush && !!sel.active,
+    option: () => lineOption({ series: ds.chartSeries(chartId), markers: ds.chartMarkers(chartId), cursor: frame.cursor, window: frame.window,
+      xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true, selection: brush ? sel.range : null, brush }),
+  };
+}
+
+/** Mount charts under root and return paint(frame). frame: {dataset, window, cursor, live, status, captures, select}. */
 export function mountGrid(root, items, ctx) {
   const all = [];
   const collect = list => list.forEach(c => (all.push(c), c.components && collect(c.components)));
   collect(items);
-  const charts = all.filter(c => c.kind === "chart").map(c => ({ c, key: null, ...makeChart(root.querySelector(`[data-chart-for="${CSS.escape(c.id)}"]`)) }));
+  const specs = Object.fromEntries(ctx.template.data.charts.map(ch => [ch.id, ch]));
+  const charts = all.filter(c => c.kind === "chart")
+    .map(c => ({ c, spec: specs[c.chart], key: null, ...makeChart(root.querySelector(`[data-chart-for="${CSS.escape(c.id)}"]`)) }));
+  // Deferred so the repaint it causes does not replace the brush model inside its own mouseup.
+  for (const inst of charts) inst.chart.on("brushEnd", e => setTimeout(() => ctx.onSelect?.(rangeFromBrush(e.areas))));
   const derived = ctx.template.data.derived;
 
   root.addEventListener("click", event => {
@@ -111,11 +134,11 @@ export function mountGrid(root, items, ctx) {
       const ds = frame.dataset;
       for (const inst of charts) {
         const markers = ds.chartMarkers(inst.c.chart);
-        const key = `${ds.version}|${frame.window.start}|${frame.window.end}`;
-        if (key !== inst.key) {
-          inst.chart.setOption(lineOption({ series: ds.chartSeries(inst.c.chart), markers, cursor: frame.cursor, window: frame.window,
-            xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true }), { notMerge: true });
-          inst.key = key;
+        const next = timeChartPaint(inst.spec, inst.c.chart, frame);
+        if (next.key !== inst.key) {
+          inst.chart.setOption(next.option(), { notMerge: true });
+          if (next.takeCursor) inst.chart.dispatchAction({ type: "takeGlobalCursor", key: "brush", brushOption: BRUSH });
+          inst.key = next.key;
         } else if (frame.cursor != null) {
           inst.chart.setOption({ series: [{ markLine: markLines(markers, frame.cursor) }] });
         }

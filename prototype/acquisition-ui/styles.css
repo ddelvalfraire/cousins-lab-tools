@@ -234,6 +234,9 @@ dialog form { display: flex; flex-direction: column; gap: 14px; }
 .speed-control { display: flex; gap: 8px; align-items: center; }
 .capture-view-controls { display: flex; gap: 8px 16px; align-items: center; flex-wrap: wrap; }
 .capture-view-controls button[aria-expanded="true"] { background: var(--accent-tint); color: var(--accent); border-color: var(--accent); }
+.selection-controls { display: flex; gap: 8px; align-items: center; }
+.selection-controls[hidden] { display: none; }
+.selection-controls [data-selection] { font-variant-numeric: tabular-nums; }
 .runtime-workspace.has-diagnostics { grid-template-columns: minmax(0, 1fr) var(--diagnostic-width, 380px); }
 .diagnostics-panel { background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
 .diagnostics-panel[hidden] { display: none; }
