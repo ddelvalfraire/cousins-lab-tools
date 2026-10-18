@@ -26,12 +26,27 @@ export function readingRows(steps, analysis, { selection, capture, previews = {}
       label: step?.label ?? ref,
       known: step?.known ?? null,
       saved: reading && { record: reading.record, range_s: reading.range_s, values: Object.values(reading.values).map(readingText),
-        short: Object.values(reading.values).map(v => fmtValue(v.value)).join(", ") },
+        short: Object.values(reading.values).map(v => fmtValue(v.value)).join(", "),
+        detail: Object.values(reading.values).map(v => `${v.n} ${v.n === 1 ? "row" : "rows"}`).join(", ") },
       preview: previews[ref] && (previews[ref].error ? { error: previews[ref].error } : { values: Object.values(previews[ref].values).map(readingText) }),
       read: { disabled: !!why, why },
       remove: reading?.record ?? null,
     };
   });
+}
+
+/** How many of a tile's steps hold a reading, for its progress bar. */
+export const stepProgress = rows => ({ done: rows.filter(r => r.saved).length, total: rows.length });
+
+/**
+ * A readings tile's default title: the calibration or measurement its steps belong to when they share one,
+ * else "Readings". A step ref is `owner.point` or the owner itself.
+ */
+export function readingsTitle(steps, data) {
+  const owners = [...new Set((steps || []).map(ref => ref.split(".")[0]))];
+  if (owners.length !== 1) return "Readings";
+  const owner = data?.calibrations?.[owners[0]] ?? data?.measurements?.[owners[0]];
+  return owner?.label || "Readings";
 }
 
 /**
@@ -62,6 +77,7 @@ export function parameterRows(names, analysis, templateParams = {}) {
     entry: !!p.entry,
     // The field holds only what was typed, so clearing it sends null and the value falls back.
     typed: p.source === "entered" && p.value != null ? String(p.value) : "",
+    source: p.source,
     tag: SOURCES[p.source] + (p.source === "fitted" ? ` · ${p.calibration}` : ""),
     why: p.source === "unset" ? p.why : "",
   }));
@@ -91,6 +107,7 @@ export function tableModel(measurement, analysis, typed = {}) {
     draft: columns.filter(c => c.kind === "result").map(c => ({ key: c.key, label: c.label, unit: c.unit, value: draft.results[c.key] ?? null })),
     unset: draft.unset,
     headings: columns.map(heading),
+    columns: columns.map(c => ({ label: c.label, unit: c.unit || "", numeric: c.kind !== "label" })),
     rows: table.rows.map(r => ({ record: r.record, cells: columns.map(c => {
       const v = cell(r, c);
       return c.kind === "label" ? v : fmtValue(v);

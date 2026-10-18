@@ -26,6 +26,11 @@ test("the table tile shows the draft results, a field per label, the rows, and A
   assert.deepEqual(t.unset, ["o2_cal"]);
   assert.deepEqual(t.labels, [{ key: "name", label: "Sample Name", value: "leaf 3" }]);
   assert.deepEqual(t.headings, ["Sample Name", "%CO2 (%)", "O2 (µmol/L)"]);
+  assert.deepEqual(t.columns, [
+    { label: "Sample Name", unit: "", numeric: false },
+    { label: "%CO2", unit: "%", numeric: true },
+    { label: "O2", unit: "µmol/L", numeric: true },
+  ], "the unit sits under the heading and numbers align right");
   assert.deepEqual(t.rows, [
     { record: "rec-000005", cells: ["leaf 1", "2.31416", "–"] },
     { record: "rec-000009", cells: ["leaf\t2\nb", "0.000628331", "258.003"] },

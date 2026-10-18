@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, parameterRows, parseEntry, readingRows, selectionLines, templateSteps } from "../analysis.js";
+import { capturesFor, parameterRows, parseEntry, readingRows, readingsTitle, selectionLines, stepProgress, templateSteps } from "../analysis.js";
 import { inputsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
@@ -22,7 +22,7 @@ test("each step shows its saved reading, its known value when it is a line point
     ["co2_zero", "CO2 Zero", null, null],
     ["sample.co2", "CO2 Sample", null, null],
   ]);
-  assert.deepEqual(rows[0].saved, { record: "rec-000002", range_s: [0.2, 0.45], values: ["mean m44 191.442 · 3 rows"], short: "191.442" });
+  assert.deepEqual(rows[0].saved, { record: "rec-000002", range_s: [0.2, 0.45], values: ["mean m44 191.442 · 3 rows"], short: "191.442", detail: "3 rows" });
   assert.equal(rows[1].saved, null);
 });
 
@@ -97,6 +97,14 @@ test("entry parameters render a field that sends on change; the others render re
   assert.match(html, /data-parameter="o2_cal"\s+value="" placeholder="1.35"/);
 });
 
+test("a parameter's source tag is coloured by where the value came from, and an unset one shows why instead of its note", () => {
+  const html = inputsBody({}, { session: { template: { revision: 2 } } }, parameterRows([], { parameters }));
+  const tags = [...html.matchAll(/<span class="badge ([^"]*)">([^<]+)<\/span>/g)].map(m => [m[2], m[1].trim()]);
+  assert.deepEqual(tags, [["Fitted · zero", "tone-active"], ["Unset", "tone-pending"], ["Computed", ""], ["Default", ""], ["Entered", "tone-good"]]);
+  assert.match(html, /param-note warn">Enter a value</);
+  assert.doesNotMatch(html, />Required</, "the why replaces the note");
+});
+
 test("the editor offers every step reference of the template, in template order", () => {
   const data = {
     calibrations: {
@@ -131,4 +139,15 @@ test("the selection's preview is listed once per distinct text, so steps reading
     { text: "No stored rows between 0.2 and 0.45 s", error: true },
   ]);
   assert.deepEqual(selectionLines(readingRows(steps, analysis, { selection: null, capture: "ms-x" })), [], "nothing selected");
+});
+
+test("a readings tile counts its read steps and takes its title from the one calibration or measurement its steps share", () => {
+  const rows = readingRows(steps, analysis, { selection: null, capture: "ms-x" });
+  assert.deepEqual(stepProgress(rows), { done: 1, total: 3 });
+  assert.deepEqual(stepProgress([]), { done: 0, total: 0 });
+  const data = { calibrations: { co2: { label: "CO2 Calibrations" }, co2_zero: { label: "CO2 Zero" } }, measurements: { sample: { label: "Sample" } } };
+  assert.equal(readingsTitle(["co2.zero", "co2.ul1"], data), "CO2 Calibrations");
+  assert.equal(readingsTitle(["sample.co2", "sample.o2"], data), "Sample");
+  assert.equal(readingsTitle(["co2.ul1", "co2_zero"], data), "Readings", "two owners");
+  assert.equal(readingsTitle(["gone.x"], data), "Readings");
 });

@@ -4,7 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
-import { capturesFor, fmtValue, parameterRows, readingRows, selectionLines, tableModel } from "./analysis.js";
+import { capturesFor, fmtValue, parameterRows, readingRows, readingsTitle, selectionLines, stepProgress, tableModel } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -17,7 +17,7 @@ export function componentTitle(c, template) {
     controls: () => (c.role ? `Run controls · ${c.role}` : "Run controls"),
     captures: () => "Captures",
     inputs: () => "Parameters",
-    readings: () => "Readings",
+    readings: () => readingsTitle(c.steps, template.data),
     table: () => template.data.measurements?.[c.measurement]?.label || c.measurement,
     group: () => "Group",
   }[c.kind]?.() ?? c.kind;
@@ -62,13 +62,20 @@ function controlsBody(c, ctx, frame) {
       No commands are sent to instruments. Ambit and pulser serial control is deferred.</p>`;
 }
 
+const TONES = { fitted: "tone-active", entered: "tone-good", unset: "tone-pending" };
+
 export function inputsBody(c, ctx, rows) {
-  return `<dl class="kv">${rows.map(p => `<dt title="${esc(p.name)}">${esc(p.label)}</dt><dd>
-      ${p.entry ? `<input class="entry" inputmode="decimal" aria-label="${esc(p.label)}" data-change="entry" data-parameter="${esc(p.name)}"
-        value="${esc(p.typed)}" placeholder="${esc(p.value == null ? "Enter a value" : fmtValue(p.value))}">` : `<strong>${fmtValue(p.value)}</strong>`}
-      ${esc(p.unit)} <span class="source-tag">${esc(p.tag)}</span>
-      ${p.why || p.note ? `<br><span class="small muted">${esc(p.why || p.note)}</span>` : ""}</dd>`).join("")}</dl>
-    <p class="small muted">Revision ${ctx.session.template.revision} gives the defaults. Typed values, readings and fits are saved to this session.</p>`;
+  return `<ul class="param-list">${rows.map(p => `
+      <li class="param-row">
+        <div class="param-text"><span class="param-label" title="${esc(p.name)}">${esc(p.label)}</span>
+          ${p.why ? `<span class="param-note warn">${esc(p.why)}</span>` : p.note ? `<span class="param-note" title="${esc(p.note)}">${esc(p.note)}</span>` : ""}</div>
+        <div class="param-value">${p.entry
+          ? `<span class="input-unit"><input class="entry" inputmode="decimal" aria-label="${esc(p.label)}" data-change="entry" data-parameter="${esc(p.name)}"
+        value="${esc(p.typed)}" placeholder="${esc(p.value == null ? "Enter a value" : fmtValue(p.value))}">${p.unit ? `<span>${esc(p.unit)}</span>` : ""}</span>`
+          : `<span class="param-number"><strong>${fmtValue(p.value)}</strong>${p.unit ? `<span class="unit">${esc(p.unit)}</span>` : ""}</span>`}
+          <span class="badge ${TONES[p.source] ?? ""}">${esc(p.tag)}</span></div>
+      </li>`).join("")}</ul>
+    <p class="tile-footnote">${icon("info")}<span>Revision ${ctx.session.template.revision} gives the defaults. Typed values, readings and fits are saved to this session.</span></p>`;
 }
 
 /** analysis: the page's {view, previews, capture}; capture maps a role to the capture chosen for it. */
@@ -78,16 +85,28 @@ function readingsBody(c, ctx, analysis, selection) {
   const capture = analysis.capture[role] ?? cids[0] ?? null;
   const rows = readingRows(c.steps, analysis.view, { selection, capture, previews: analysis.previews });
   const whys = [...new Set(rows.map(r => r.read.why).filter(Boolean))];
+  const progress = stepProgress(rows);
+  const lines = selectionLines(rows);
   return `
+    <div class="step-progress" aria-label="${progress.done} of ${progress.total} read">
+      <span class="small muted">${progress.done} of ${progress.total} read</span>
+      <span class="progress-track"><span style="width:${progress.total ? (100 * progress.done) / progress.total : 0}%"></span></span>
+    </div>
     ${cids.length > 1 ? `<label class="field small">Capture<select data-change="capture" data-role="${esc(role)}">${cids.map(cid =>
       `<option value="${esc(cid)}" ${cid === capture ? "selected" : ""}>${esc(cid)}</option>`).join("")}</select></label>` : ""}
-    ${whys.map(w => `<p class="small muted">${esc(w)}</p>`).join("")}
-    ${selectionLines(rows).map(l => `<p class="small ${l.error ? "error-text" : "muted"}">Selection: ${esc(l.text)}</p>`).join("")}
-    <ul class="reading-list">${rows.map(r => `
-      <li data-step="${esc(r.step)}">
-        <button class="primary" data-action="read" data-step="${esc(r.step)}" ${r.read.disabled ? "disabled" : ""}>${esc(r.label)}</button>
-        <span class="reading-value" ${r.saved ? `title="${esc(r.saved.values.join(", "))}"` : ""}>${r.saved ? esc(r.saved.short) : '<span class="muted">Not read</span>'}${r.known != null ? ` <span class="small muted">known ${fmtValue(r.known)}</span>` : ""}</span>
-        ${r.remove ? `<button class="quiet icon-only" data-action="retract" data-records="${esc(r.remove)}" aria-label="Remove ${esc(r.label)}" title="Remove this reading">${icon("close")}</button>` : ""}
+    ${lines.length ? `<div class="selection-preview">${icon("sliders")}<div><span class="eyebrow">This selection reads</span>${lines.map(l =>
+      `<span class="${l.error ? "error-text" : ""}">${esc(l.text)}</span>`).join("")}</div></div>`
+      : whys.length ? `<p class="hint">${icon("info")}<span>${whys.map(esc).join(" ")}</span></p>` : ""}
+    <ul class="step-list">${rows.map(r => `
+      <li data-step="${esc(r.step)}" class="${r.saved ? "done" : ""}">
+        <span class="step-status" aria-hidden="true">${r.saved ? icon("check") : ""}</span>
+        <span class="step-label" ${r.known != null ? `title="Known value ${fmtValue(r.known)}"` : ""}>${esc(r.label)}</span>
+        <div class="step-actions">
+          <button class="small ${r.saved ? "" : "primary"}" data-action="read" data-step="${esc(r.step)}" aria-label="Read ${esc(r.label)}" ${r.read.disabled ? "disabled" : ""}>${r.saved ? "Redo" : "Read"}</button>
+          ${r.remove ? `<button class="quiet icon-only small" data-action="retract" data-records="${esc(r.remove)}" aria-label="Remove ${esc(r.label)}" title="Remove this reading">${icon("close")}</button>` : ""}
+        </div>
+        <span class="step-value" ${r.saved ? `title="${esc(r.saved.values.join(", "))}"` : ""}>${r.saved
+          ? `<strong>${esc(r.saved.short)}</strong> <span class="muted">${esc(r.saved.detail)}</span>` : '<span class="muted">Not read</span>'}${r.known != null ? ` <span class="known">known ${fmtValue(r.known)}</span>` : ""}</span>
       </li>`).join("")}</ul>`;
 }
 
@@ -98,22 +117,31 @@ function tableBody(c, analysis) {
   const exported = analysis.exported[id];
   const attrs = `data-measurement="${esc(id)}"`;
   return `
-    <dl class="kv draft-results">${t.draft.map(r => `<dt>${esc(r.label)}</dt><dd><strong>${fmtValue(r.value)}</strong> ${esc(r.unit)}</dd>`).join("")}</dl>
-    ${t.unset.length ? `<p class="small muted">Needs ${t.unset.map(esc).join(", ")}</p>` : ""}
-    ${t.labels.map(l => `<label class="field">${esc(l.label)}<input data-input="label" ${attrs} data-key="${esc(l.key)}" value="${esc(l.value)}" autocomplete="off"></label>`).join("")}
-    <div class="command-actions">
-      <button class="primary" data-action="addRow" ${attrs} ${t.canAdd ? "" : "disabled"}>${icon("plus")}Add to table</button>
-      <button data-action="exportTable" ${attrs} ${t.hasRows ? "" : "disabled"}>${icon("download")}Export</button>
-      <button data-action="copyTable" ${attrs} ${t.hasRows ? "" : "disabled"}>Copy</button>
-      <button class="danger" data-action="clearTable" ${attrs} ${t.hasRows ? "" : "disabled"}>Clear table</button>
+    <section class="next-row" aria-label="Next row">
+      <span class="eyebrow">Next row</span>
+      <div class="stat-row">${t.draft.map(r => `<div class="stat"><span class="stat-label">${esc(r.label)}</span>
+        <span class="stat-value">${fmtValue(r.value)}${r.unit ? `<span class="unit">${esc(r.unit)}</span>` : ""}</span></div>`).join("")}</div>
+      ${t.unset.length ? `<p class="hint warn">${icon("alert")}<span>Needs ${t.unset.map(esc).join(", ")}</span></p>` : ""}
+      <div class="next-row-form">
+        ${t.labels.map(l => `<label class="field">${esc(l.label)}<input data-input="label" ${attrs} data-key="${esc(l.key)}" value="${esc(l.value)}" autocomplete="off"></label>`).join("")}
+        <button class="primary" data-action="addRow" ${attrs} ${t.canAdd ? "" : "disabled"}>${icon("plus")}Add to table</button>
+      </div>
+    </section>
+    <div class="table-toolbar">
+      <span class="small"><strong>${t.rows.length}</strong> <span class="muted">${t.rows.length === 1 ? "row" : "rows"}</span></span>
+      <div class="toolbar-actions">
+        <button class="quiet small" data-action="copyTable" ${attrs} ${t.hasRows ? "" : "disabled"}>${icon("file")}Copy</button>
+        <button class="quiet small" data-action="exportTable" ${attrs} ${t.hasRows ? "" : "disabled"}>${icon("download")}Export</button>
+        <button class="quiet small danger-text" data-action="clearTable" ${attrs} ${t.hasRows ? "" : "disabled"}>Clear</button>
+      </div>
     </div>
     ${exported ? `<div class="small">${[exported.csv, exported.metadata].map(path =>
       `<div class="inline"><code>${esc(path)}</code><button class="quiet" data-action="reveal" data-path="${esc(path)}">${icon("folder")}Show in folder</button></div>`).join("")}</div>` : ""}
-    <div class="table-wrap"><table>
-      <thead><tr>${t.headings.map(h => `<th>${esc(h)}</th>`).join("")}<th></th></tr></thead>
-      <tbody>${t.rows.map(r => `<tr data-record="${esc(r.record)}">${r.cells.map(v => `<td>${esc(v)}</td>`).join("")}
-        <td><button class="quiet icon-only" data-action="retract" data-records="${esc(r.record)}" aria-label="Remove this row" title="Remove this row">${icon("close")}</button></td></tr>`).join("")
-        || `<tr><td colspan="${t.headings.length + 1}" class="small muted">No rows yet.</td></tr>`}</tbody>
+    <div class="table-wrap results-grid"><table>
+      <thead><tr>${t.columns.map(col => `<th class="${col.numeric ? "num" : ""}">${esc(col.label)}${col.unit ? `<span class="unit">${esc(col.unit)}</span>` : ""}</th>`).join("")}<th aria-label="Actions"></th></tr></thead>
+      <tbody>${t.rows.map(r => `<tr data-record="${esc(r.record)}">${r.cells.map((v, i) => `<td class="${t.columns[i].numeric ? "num" : ""}">${esc(v)}</td>`).join("")}
+        <td class="row-action"><button class="quiet icon-only small" data-action="retract" data-records="${esc(r.record)}" aria-label="Remove this row" title="Remove this row">${icon("close")}</button></td></tr>`).join("")
+        || `<tr><td colspan="${t.columns.length + 1}" class="empty">No rows yet. Read the steps, then Add to table.</td></tr>`}</tbody>
     </table></div>`;
 }
 
