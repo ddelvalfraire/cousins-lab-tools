@@ -112,7 +112,7 @@ function tableBody(c, analysis) {
     <div class="table-wrap"><table>
       <thead><tr>${t.headings.map(h => `<th>${esc(h)}</th>`).join("")}<th></th></tr></thead>
       <tbody>${t.rows.map(r => `<tr data-record="${esc(r.record)}">${r.cells.map(v => `<td>${esc(v)}</td>`).join("")}
-        <td><button class="quiet" data-action="retract" data-records="${esc(r.record)}">Remove</button></td></tr>`).join("")
+        <td><button class="quiet icon-only" data-action="retract" data-records="${esc(r.record)}" aria-label="Remove this row" title="Remove this row">${icon("close")}</button></td></tr>`).join("")
         || `<tr><td colspan="${t.headings.length + 1}" class="small muted">No rows yet.</td></tr>`}</tbody>
     </table></div>`;
 }
