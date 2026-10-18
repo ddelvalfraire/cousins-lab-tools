@@ -53,3 +53,30 @@ export function lineOption({ series, markers = [], cursor = null, window = null,
     ...(brush ? { brush: brushComponent() } : {}),
   };
 }
+
+/**
+ * An xy chart as the engine computed it: spec is the template chart (title, x_label, y_label), series the
+ * analysis view's xy series. Each series is its points as a scatter, and its fit line once it has one.
+ */
+export function xyOption(spec, series = []) {
+  const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
+  const palette = PALETTE_VARS.map(cssVar);
+  const axis = name => ({
+    type: "value", scale: true, name, nameLocation: "middle", nameGap: 32, nameTextStyle: { color: muted },
+    axisLabel: { color: muted, hideOverlap: true }, axisLine: { lineStyle: { color: line } }, splitLine: { lineStyle: { color: line, type: "dashed" } },
+  });
+  return {
+    animation: false,
+    textStyle: { fontFamily: cssVar("--font-body"), color: text },
+    grid: { left: 64, right: 16, top: 28, bottom: 44 },
+    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
+    tooltip: { trigger: "item", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
+    xAxis: axis(spec?.x_label || ""),
+    yAxis: { ...axis(spec?.y_label || ""), nameGap: 48 },
+    series: series.flatMap((s, i) => {
+      const color = s.color || palette[i % palette.length];
+      const points = { name: s.name, type: "scatter", symbolSize: 9, itemStyle: { color }, data: s.points };
+      return s.line ? [points, { name: s.name, type: "line", showSymbol: false, silent: true, lineStyle: { color, width: 1.5 }, data: s.line }] : [points];
+    }),
+  };
+}

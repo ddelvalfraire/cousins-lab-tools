@@ -1,7 +1,7 @@
 // Renders a template layout's components on the 12-column grid, and paints them from a dataset the page supplies.
 
 import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge } from "./util.js";
-import { lineOption, makeChart, markLines } from "./charts.js";
+import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
 import { capturesFor, fmtValue, parameterRows, readingRows } from "./analysis.js";
@@ -97,7 +97,8 @@ function readingsBody(c, ctx, analysis, selection) {
 function body(c, ctx) {
   if (c.kind === "chart") {
     const spec = ctx.template.data.charts.find(ch => ch.id === c.chart);
-    return `<div class="component-meta"><span class="source-tag">${esc(spec?.unit || "")}</span><span class="small muted">${(spec?.series || []).map(s => `${esc(s.role)}.${esc(s.value)}`).join(", ")}</span></div>
+    const bound = s => (s.calibration ? `calibration ${s.calibration}` : s.measurement ? `${s.measurement}: ${s.y} on ${s.x}` : `${s.role}.${s.value}`);
+    return `<div class="component-meta"><span class="source-tag">${esc(spec?.kind === "xy" ? "xy" : spec?.unit || "")}</span><span class="small muted">${(spec?.series || []).map(s => esc(bound(s))).join(", ")}</span></div>
       <div class="chart" data-chart-for="${esc(c.id)}" role="img" aria-label="${esc(componentTitle(c, ctx.template))}"></div>`;
   }
   if (c.kind === "metric") {
@@ -167,6 +168,13 @@ export function mountGrid(root, items, ctx) {
     paint(frame) {
       const ds = frame.dataset;
       for (const inst of charts) {
+        if (inst.spec?.kind === "xy") {
+          const series = frame.analysis?.view?.xy?.[inst.c.chart]?.series ?? [];
+          const key = JSON.stringify(series);
+          if (key !== inst.key) inst.chart.setOption(xyOption(inst.spec, series), { notMerge: true });
+          inst.key = key;
+          continue;
+        }
         const markers = ds.chartMarkers(inst.c.chart);
         const next = timeChartPaint(inst.spec, inst.c.chart, frame);
         if (next.key !== inst.key) {
