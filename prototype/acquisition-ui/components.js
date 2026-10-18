@@ -192,7 +192,8 @@ export function timeChartPaint(spec, chartId, frame) {
     extent,
     takeCursor: brush && !!sel.active,
     option: () => lineOption({ series: ds.chartSeries(chartId), markers: ds.chartMarkers(chartId), cursor: frame.cursor, window: frame.window,
-      xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true, selection: brush ? sel.range : null, brush }),
+      xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true, selection: brush ? sel.range : null, brush,
+      legendSelected: frame.legend?.[chartId] }),
   };
 }
 
@@ -206,6 +207,11 @@ export function mountGrid(root, items, ctx) {
     .map(c => ({ c, spec: specs[c.chart], key: null, ...makeChart(root.querySelector(`[data-chart-for="${CSS.escape(c.id)}"]`)) }));
   // Deferred so the repaint it causes does not replace the brush model inside its own mouseup.
   for (const inst of charts) inst.chart.on("brushEnd", e => setTimeout(() => ctx.onSelect?.(rangeFromBrush(e.areas))));
+  // Series hidden from the legend stay hidden when the option is rebuilt for new data.
+  const legend = {};
+  for (const inst of charts) for (const event of ["legendselectchanged", "legendselected", "legendunselected"]) {
+    inst.chart.on(event, e => { legend[inst.c.chart] = { ...e.selected }; });
+  }
   const derived = ctx.template.data.derived;
 
   // root outlives this grid, since a view switch mounts the next grid into it; dispose drops these listeners
@@ -233,7 +239,7 @@ export function mountGrid(root, items, ctx) {
           continue;
         }
         const markers = ds.chartMarkers(inst.c.chart);
-        const next = timeChartPaint(inst.spec, inst.c.chart, frame);
+        const next = timeChartPaint(inst.spec, inst.c.chart, { ...frame, legend });
         if (next.key !== inst.key) {
           // Same window: keep the operator's zoom across a new selection, a mode switch, or values recomputed
           // after a reading, so a calibration can be read step after step without zooming in again.

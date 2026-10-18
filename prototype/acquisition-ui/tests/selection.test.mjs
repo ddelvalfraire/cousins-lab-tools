@@ -85,3 +85,14 @@ test("a repaint for a new selection, mode or recomputed values keeps the extent,
   const moved = { ...frame(live, 1), window: { start: 0, end: 960 } };
   assert.notEqual(timeChartPaint(pressure, "pressure", moved).extent, before.extent, "a new window");
 });
+
+test("a rebuilt chart keeps the template's series colours and the series hidden from its legend", () => {
+  const live = { live: true, range: null, active: false, version: 1 };
+  const coloured = { ...frame(live), dataset: { ...frame(live).dataset,
+    chartSeries: () => [{ name: "Mass 32", color: "#800000", points: [[900, 1]] }, { name: "Mass 44", points: [[900, 2]] }] } };
+  const option = timeChartPaint(pressure, "pressure", { ...coloured, legend: { pressure: { "Mass 32": false } } }).option();
+  assert.equal(option.series[0].color, "#800000");
+  assert.equal("color" in option.series[1], false, "no colour: the palette picks one");
+  assert.deepEqual(option.legend.selected, { "Mass 32": false });
+  assert.deepEqual(timeChartPaint(pressure, "pressure", coloured).option().legend.selected, {}, "nothing hidden yet");
+});

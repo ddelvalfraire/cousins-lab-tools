@@ -23,14 +23,14 @@ export function markLines(markers, cursor) {
  * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
  * selection: {from, to} drawn as a band; brush: the chart takes a range selection.
  */
-export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false }) {
+export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false, legendSelected = {} }) {
   const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
   return {
     animation: false,
     color: PALETTE_VARS.map(cssVar),
     textStyle: { fontFamily: cssVar("--font-body"), color: text },
     grid: { left: 56, right: 16, top: compact ? 28 : 36, bottom: compact ? 36 : 56 },
-    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
+    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1, selected: legendSelected },
     tooltip: { trigger: "axis", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
     xAxis: {
       type: "value", name: compact ? "" : xName, nameLocation: "middle", nameGap: 32, scale: true,
@@ -43,6 +43,7 @@ export function lineOption({ series, markers = [], cursor = null, window = null,
     series: series.map((s, i) => ({
       name: s.name,
       type: "line",
+      ...(s.color ? { color: s.color } : {}),
       showSymbol: false,
       sampling: "lttb",
       lineStyle: { width: 1.5 },

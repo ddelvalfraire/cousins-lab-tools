@@ -43,7 +43,7 @@ function liveSource(m, template, currentView) {
       version: source.version,
       axis: { name: run ? RUN_CLOCK : SOURCE_CLOCK, format: formatDuration, parse: parseDuration },
       extent: run ? [0, source.elapsed] : extentOf(points.all("t")),
-      chartSeries: id => specs[id].series.map(s => ({ name: `${s.role} · ${s.value}`, points: points.series(axis, s.role, s.value) })),
+      chartSeries: id => specs[id].series.map(s => ({ name: s.label || `${s.role} · ${s.value}`, color: s.color, points: points.series(axis, s.role, s.value) })),
       chartMarkers: id => run ? events.filter(e => e.x != null && (e.source === "operator"
         || (specs[id].markers && e.source === specs[id].markers.role && e.kind === specs[id].markers.kind))) : [],
       valueSeries: (value, role) => [{ name: role, points: points.series(axis, role, value) }],
@@ -71,6 +71,7 @@ async function replaySource(m, session, template, reference) {
   const origin = a.clock_origin_utc ? new Date(a.clock_origin_utc).getTime() : null;
   const axis = axisFor(a.reference, origin);
   const trials = new Set(aligned.charts.flatMap(c => c.series.map(s => s.trial))).size;
+  const specOf = (id, value) => template.data.charts.find(c => c.id === id)?.series?.find(s => s.value === value);
   const all = [...aligned.charts.flatMap(c => c.series), ...Object.values(aligned.values).flat()].map(s => s.points);
   source.alignment = a;
   source.dataset = () => ({
@@ -81,7 +82,11 @@ async function replaySource(m, session, template, reference) {
       tickFormat: a.reference === "clock" ? axis.format : undefined,
     },
     extent: extentOf(all),
-    chartSeries: id => (charts[id]?.series || []).map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, points: s.points })),
+    // One trial: the template's label and colour per series. Several: trial names, and colours that tell trials apart.
+    chartSeries: id => (charts[id]?.series || []).map(s => {
+      const spec = trials > 1 ? null : specOf(id, s.value);
+      return { name: trials > 1 ? `${s.trial} · ${s.value}` : spec?.label || s.name, color: spec?.color, points: s.points };
+    }),
     chartMarkers: id => charts[id]?.markers || [],
     valueSeries: value => (aligned.values[value] || []).map(s => ({ name: s.trial, points: s.points })),
   });
