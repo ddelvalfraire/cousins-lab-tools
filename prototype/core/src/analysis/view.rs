@@ -7,7 +7,7 @@ use crate::params::ParamSource;
 use crate::session::iso_time;
 use crate::templates::Template;
 
-use super::fold::{StepState, fold};
+use super::fold::{FitState, StepState, fold};
 use super::reading::{Range, ReadingValue};
 use super::spec::StepKind;
 use super::store::{Record, RecordId};
@@ -40,6 +40,8 @@ pub struct AnalysisView {
     pub parameters: IndexMap<String, ParameterView>,
     /// Every step in template order, with the reading that fills it.
     pub steps: IndexMap<String, StepView>,
+    /// Every line calibration's fit, in template order.
+    pub fits: IndexMap<String, FitState>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -131,5 +133,6 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
         rev: state.rev,
         parameters,
         steps,
+        fits: state.fits,
     }
 }

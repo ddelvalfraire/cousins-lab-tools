@@ -46,9 +46,16 @@ fn template() -> Value {
             "o2_scale": {"expr": "temp_c * 2", "entry": true, "unit": "x", "label": "O2 scale"},
             "zero_p": {"unit": "mV", "label": "Zero"},
             "offset_p": {"expr": "zero_p * 2", "unit": "mV"},
+            "gain_p": {"unit": "µl/mV"},
+            "base_p": {"unit": "µl"},
         },
         "calibrations": {
             "zero": {"label": "Zero", "role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}},
+            "line": {"role": "ms", "line": {
+                "reading": {"stat": "mean", "of": "m44"},
+                "points": {"p0": {"label": "0 µl", "known": 0}, "p1": {"label": "1 µl", "known": 1}},
+                "sets": {"slope": "gain_p", "intercept": "base_p"},
+            }},
         },
         "derived": {
             "scaled": {"role": "ms", "expr": "m44 * ubar_per_pct"},
@@ -97,7 +104,15 @@ fn the_view_lists_every_parameter_with_its_value_and_where_it_came_from() {
     let names: Vec<&String> = view["parameters"].as_object().unwrap().keys().collect();
     assert_eq!(
         names,
-        ["ubar_per_pct", "temp_c", "o2_scale", "zero_p", "offset_p"]
+        [
+            "ubar_per_pct",
+            "temp_c",
+            "o2_scale",
+            "zero_p",
+            "offset_p",
+            "gain_p",
+            "base_p"
+        ]
     );
     assert_eq!(
         view["parameters"]["temp_c"],
@@ -420,4 +435,33 @@ fn a_reading_refuses_a_capture_of_another_role() {
         e.message,
         "Capture other-b records role other; step zero reads role ms"
     );
+}
+
+#[test]
+fn line_points_fill_their_steps_and_the_fit_sets_slope_and_intercept() {
+    let (engine, _dir, id) = imported(template());
+    let fresh = call(&engine, "analysis", json!({"session_id": id}));
+    assert_eq!(
+        fresh["fits"]["line"],
+        json!({"slope": null, "intercept": null, "r2": null, "n": 0, "missing": ["p0", "p1"]})
+    );
+    assert_eq!(fresh["steps"]["line.p1"]["known"], 1.0);
+    assert_eq!(fresh["steps"]["line.p1"]["kind"], "point");
+    record(&engine, &id, reading("line.p0", [0.2, 0.45]));
+    let view = record(&engine, &id, reading("line.p1", [2.9, 3.2]));
+    let (x0, x1) = (
+        (211.692 + 191.442 + 171.192) / 3.0,
+        (-314.808 + -335.058 + -355.308) / 3.0,
+    );
+    let fit = &view["fits"]["line"];
+    assert_eq!(
+        (fit["n"].clone(), fit["missing"].clone()),
+        (json!(2), json!([]))
+    );
+    let slope = fit["slope"].as_f64().unwrap();
+    assert!((slope - 1.0 / (x1 - x0)).abs() < 1e-15, "{fit}");
+    assert!((fit["intercept"].as_f64().unwrap() - -x0 / (x1 - x0)).abs() < 1e-12);
+    assert_eq!(view["parameters"]["gain_p"]["value"], slope);
+    assert_eq!(view["parameters"]["gain_p"]["calibration"], "line");
+    assert_eq!(view["parameters"]["base_p"]["source"], "fitted");
 }

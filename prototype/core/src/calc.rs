@@ -383,6 +383,35 @@ pub fn slope(points: impl Iterator<Item = (f64, f64)> + Clone) -> Option<f64> {
         .filter(|s| s.is_finite())
 }
 
+/// A least-squares line `y = intercept + slope * x`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LineFit {
+    pub slope: f64,
+    pub intercept: f64,
+    /// None when every y is the same, so there is no variance to explain.
+    pub r2: Option<f64>,
+}
+
+/// The least-squares line through `points`; None for fewer than two points or no spread in x.
+pub fn line_fit(points: &[(f64, f64)]) -> Option<LineFit> {
+    let slope = slope(points.iter().copied())?;
+    let n = points.len() as f64;
+    let mean_x = points.iter().map(|p| p.0).sum::<f64>() / n;
+    let mean_y = points.iter().map(|p| p.1).sum::<f64>() / n;
+    let intercept = mean_y - slope * mean_x;
+    let total: f64 = points.iter().map(|(_, y)| (y - mean_y).powi(2)).sum();
+    let residual: f64 = points
+        .iter()
+        .map(|(x, y)| (y - intercept - slope * x).powi(2))
+        .sum();
+    let r2 = (total > 0.0).then(|| 1.0 - residual / total);
+    intercept.is_finite().then_some(LineFit {
+        slope,
+        intercept,
+        r2,
+    })
+}
+
 /// The arithmetic mean; None for no values.
 pub fn mean(values: impl Iterator<Item = f64>) -> Option<f64> {
     let (n, sum) = values.fold((0usize, 0.0), |(n, sum), v| (n + 1, sum + v));
@@ -531,6 +560,26 @@ mod tests {
         assert_eq!(slope(std::iter::empty()), None);
         assert_eq!(slope([(2.0, 1.0), (2.0, 5.0)].into_iter()), None);
         assert_eq!(slope([(0.0, 5.0), (1.0, 3.0)].into_iter()), Some(-2.0));
+    }
+
+    #[test]
+    fn a_line_fit_on_the_module2_staircase_gives_the_slope_and_intercept_in_known_units() {
+        let means = [-18.8049, 38.9212, 95.7886, 151.6954];
+        let points: Vec<(f64, f64)> = means.iter().zip(0..).map(|(x, y)| (*x, y as f64)).collect();
+        let fit = line_fit(&points).unwrap();
+        assert!((fit.slope - 0.017593323574209997).abs() < 1e-15, "{fit:?}");
+        assert!(
+            (fit.intercept - 0.32300533338608317).abs() < 1e-12,
+            "{fit:?}"
+        );
+        assert!(
+            (fit.r2.unwrap() - 0.9999487411223659).abs() < 1e-12,
+            "{fit:?}"
+        );
+        let flat = line_fit(&[(1.0, 2.0), (3.0, 2.0)]).unwrap();
+        assert_eq!((flat.slope, flat.intercept, flat.r2), (0.0, 2.0, None));
+        assert_eq!(line_fit(&[(1.0, 2.0)]), None);
+        assert_eq!(line_fit(&[(1.0, 2.0), (1.0, 3.0)]), None);
     }
 
     #[test]

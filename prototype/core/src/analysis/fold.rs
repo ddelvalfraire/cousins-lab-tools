@@ -5,14 +5,28 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
+use serde::Serialize;
 
+use crate::calc::line_fit;
 use crate::expr::Params;
 use crate::params::{ParamSource, ResolvedParams};
 use crate::templates::Template;
 
 use super::reading::{Range, ReadingValue};
-use super::spec::{AnalysisSpec, StepKind};
+use super::spec::{AnalysisSpec, CalibrationKind, StepKind};
 use super::store::{Action, Record, RecordId};
+
+/// A line calibration's fit over the points that hold a reading.
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+pub struct FitState {
+    pub slope: Option<f64>,
+    pub intercept: Option<f64>,
+    pub r2: Option<f64>,
+    /// Points with a value.
+    pub n: usize,
+    /// Points without one, in template order.
+    pub missing: Vec<String>,
+}
 
 /// The reading that currently fills a step.
 #[derive(Clone, Debug, PartialEq)]
@@ -31,6 +45,8 @@ pub struct AnalysisState {
     pub sources: BTreeMap<String, ParamSource>,
     /// The latest reading of each step that has one, in template order.
     pub steps: IndexMap<String, StepState>,
+    /// Per line calibration, in template order.
+    pub fits: IndexMap<String, FitState>,
     /// The number of the last record folded, 0 for an empty log. It changes with every new
     /// record, which is what live views watch.
     pub rev: u64,
@@ -130,6 +146,49 @@ pub fn fold(spec: &AnalysisSpec, log: &[Record]) -> AnalysisState {
             }
         }
     }
+    for (id, calibration) in &spec.calibrations {
+        let CalibrationKind::Line {
+            reading,
+            points,
+            slope,
+            intercept,
+            min_points,
+            ..
+        } = &calibration.kind
+        else {
+            continue;
+        };
+        let mut fit = FitState::default();
+        let mut pairs = Vec::new();
+        for (point, p) in points {
+            let value = state
+                .steps
+                .get(&format!("{id}.{point}"))
+                .and_then(|s| s.values.get(&reading.of)?.value);
+            match value {
+                Some(x) => pairs.push((x, p.known)),
+                None => fit.missing.push(point.clone()),
+            }
+        }
+        fit.n = pairs.len();
+        if let Some(line) = line_fit(&pairs).filter(|_| pairs.len() >= *min_points) {
+            fit.slope = Some(line.slope);
+            fit.r2 = line.r2;
+            let mut outputs = vec![(slope, line.slope)];
+            if let Some(name) = intercept {
+                fit.intercept = Some(line.intercept);
+                outputs.push((name, line.intercept));
+            }
+            for (name, value) in outputs {
+                state.params.insert(name.clone(), value);
+                let calibration = id.clone();
+                state
+                    .sources
+                    .insert(name.clone(), ParamSource::Fitted { calibration });
+            }
+        }
+        state.fits.insert(id.clone(), fit);
+    }
     state
 }
 
@@ -161,6 +220,10 @@ mod tests {
     }
 
     fn read(seq: u64, step: &str, value: Option<f64>) -> Record {
+        read_as(seq, step, "zero_p", value)
+    }
+
+    fn read_as(seq: u64, step: &str, name: &str, value: Option<f64>) -> Record {
         let value = ReadingValue {
             stat: crate::analysis::Stat::Mean,
             of: "m44".into(),
@@ -174,7 +237,7 @@ mod tests {
             capture: "ms".into(),
             range_s: Range::new(1.0, 2.0).unwrap(),
             clock: "t_ms".into(),
-            values: IndexMap::from([("zero_p".to_string(), value)]),
+            values: IndexMap::from([(name.to_string(), value)]),
             params: Params::new(),
         };
         record(seq, None, action)
@@ -287,5 +350,55 @@ mod tests {
             "a reading without a value sets nothing"
         );
         assert_eq!(empty.steps["zero"].record, RecordId::new(2));
+    }
+
+    fn co2_spec() -> AnalysisSpec {
+        let (spec, errors) = crate::analysis::spec::parse(&serde_json::json!({"calibrations": {
+            "co2": {"role": "ms", "line": {
+                "reading": {"stat": "mean", "of": "m44"},
+                "points": {"zero": {"known": 0}, "ul1": {"known": 1}, "ul2": {"known": 2}, "ul3": {"known": 3}},
+                "sets": {"slope": "co2_ul_per_mv", "intercept": "co2_cal_intercept_ul"},
+                "min_points": 3,
+            }},
+        }}));
+        assert!(errors.is_empty(), "{errors:?}");
+        spec
+    }
+
+    #[test]
+    fn a_line_fits_every_filled_point_and_a_redone_point_replaces_only_its_own() {
+        let spec = co2_spec();
+        let point = |seq, step: &str, mv| read_as(seq, &format!("co2.{step}"), "m44", Some(mv));
+        let log = [
+            point(1, "zero", -18.8049),
+            point(2, "ul1", 38.9212),
+            point(3, "ul2", 50.0),
+            point(4, "ul3", 151.6954),
+            point(5, "ul2", 95.7886),
+        ];
+        let state = fold(&spec, &log);
+        let fit = &state.fits["co2"];
+        assert_eq!((fit.n, fit.missing.len()), (4, 0));
+        assert!((fit.slope.unwrap() - 0.017593323574209997).abs() < 1e-15);
+        assert!((fit.intercept.unwrap() - 0.32300533338608317).abs() < 1e-12);
+        assert_eq!(state.params["co2_ul_per_mv"], fit.slope.unwrap());
+        assert_eq!(state.params["co2_cal_intercept_ul"], fit.intercept.unwrap());
+        let calibration = "co2".to_string();
+        assert_eq!(
+            state.sources["co2_cal_intercept_ul"],
+            ParamSource::Fitted { calibration }
+        );
+
+        let short = fold(&spec, &log[..2]);
+        assert_eq!(
+            short.fits["co2"],
+            FitState {
+                n: 2,
+                missing: vec!["ul2".into(), "ul3".into()],
+                ..FitState::default()
+            }
+        );
+        assert!(short.params.is_empty(), "two points are below min_points");
+        assert_eq!(fold(&spec, &log[..3]).fits["co2"].n, 3);
     }
 }
