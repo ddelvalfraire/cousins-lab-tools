@@ -28,5 +28,24 @@ export function livePoints() {
     },
     series: (axis, role, value) => byAxis[axis].get(`${role}:${value}`) || [],
     all: axis => [...byAxis[axis].values()],
+    clear: () => Object.values(byAxis).forEach(m => m.clear()),
   };
+}
+
+/**
+ * Takes one session_live reply's rows into state {points, cursors, paramsRev}. A new params_rev means the engine
+ * recomputed its buffer with new parameters, so every held point is stale: they are cleared and the row cursors
+ * go back to 0. The reply's own rows are dropped as well, since they may have been read before the recompute.
+ * Returns whether it reset.
+ */
+export function absorbRows(state, live) {
+  const reset = state.paramsRev != null && live.params_rev !== state.paramsRev;
+  state.paramsRev = live.params_rev;
+  if (reset) state.points.clear();
+  for (const [role, cap] of Object.entries(live.captures)) {
+    state.cursors[role] = reset ? 0 : cap.next;
+    state.cursors[`${role}:events`] = cap.events_next;
+    if (!reset) state.points.add(role, cap.rows);
+  }
+  return reset;
 }

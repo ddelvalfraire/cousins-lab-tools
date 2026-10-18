@@ -5,7 +5,7 @@ import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, statusBa
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
 import { visible, walk } from "./layout.js";
-import { axisKeyFor, livePoints } from "./livepoints.js";
+import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
 import { capturesFor } from "./analysis.js";
@@ -15,18 +15,17 @@ const RUN_CLOCK = "Run clock (s since group start, host clock)";
 const SOURCE_CLOCK = "Recording clock (s on the capture's own clock)";
 
 function liveSource(m, template, currentView) {
-  const points = livePoints();
+  const rows = { points: livePoints(), cursors: {}, paramsRev: null };
+  const { points, cursors } = rows;
   const events = [];
-  const cursors = {};
   const specs = Object.fromEntries(template.charts.map(c => [c.id, c]));
   const source = { live: true, version: 0, elapsed: 0, status: m.status, captures: m.captures, events };
 
   source.poll = async () => {
     const live = await call("session_live", { session_id: m.id, cursors });
+    absorbRows(rows, live);
+    source.paramsRev = rows.paramsRev;
     for (const [role, cap] of Object.entries(live.captures)) {
-      cursors[role] = cap.next;
-      cursors[`${role}:events`] = cap.events_next;
-      points.add(role, cap.rows);
       for (const ev of cap.events) events.push({ source: role, kind: ev.kind, label: ev.label, x: ev.x_run_s });
     }
     for (const mk of live.markers.slice(events.filter(e => e.source === "operator").length)) {
@@ -176,6 +175,12 @@ async function mount(page, id, restart) {
     if (stopped) return;
     Object.assign(analysis, { view: next, version: analysis.version + 1 });
     refreshPreviews();
+    // Review charts follow the session's current parameters too; live ones follow params_rev.
+    if (source.live) return;
+    const recomputed = await replaySource(m, session, template, source.alignment?.reference);
+    if (stopped || source.live) return;
+    source = recomputed;
+    paint();
   };
 
   const ctx = {
@@ -420,6 +425,10 @@ async function mount(page, id, restart) {
     try {
       await source.poll();
       if (stopped) return;
+      if (analysis.view && source.paramsRev > analysis.view.rev) {
+        Object.assign(analysis, { view: await call("analysis", { session_id: m.id }), version: analysis.version + 1 });
+        if (stopped) return;
+      }
       paint();
       if (["running", "stopping", "preparing"].includes(source.status)) timer = setTimeout(poll, LIVE_POLL_MS);
       else restart();
