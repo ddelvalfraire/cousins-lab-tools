@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { absorbRows, axisKeyFor, livePoints } from "../livepoints.js";
+import { RECENT_POINTS, SERIES_LIMIT, absorbRows, axisKeyFor, livePoints, thin } from "../livepoints.js";
 
 const charts = { pressure: { id: "pressure", x: "source" }, co2: { id: "co2" } };
 
@@ -45,4 +45,15 @@ test("a new params_rev clears the held points and polls rows from cursor 0, keep
   assert.equal(absorbRows(state, reply(5, [{ x: 0.5, t: 10, ubar_co2: 9 }, { x: 1.5, t: 12, ubar_co2: 10 }], 3)), false);
   assert.deepEqual(state.points.series("t", "ms", "ubar_co2"), [[10, 9], [12, 10]], "the recomputed buffer from the start");
   assert.equal(state.cursors.ms, 3);
+});
+
+test("a long series keeps its first point and recent points, thinning only what is older", () => {
+  assert.deepEqual(thin([1, 2, 3, 4, 5, 6, 7], 2), [1, 3, 5, 6, 7]);
+  const points = livePoints();
+  const rows = Array.from({ length: SERIES_LIMIT + 1 }, (_, i) => ({ x: i, t: null, v: i }));
+  points.add("ms", rows);
+  const series = points.series("x", "ms", "v");
+  assert.ok(series.length <= SERIES_LIMIT, String(series.length));
+  assert.deepEqual(series[0], [0, 0]);
+  assert.deepEqual(series.slice(-RECENT_POINTS).map(p => p[0]), rows.slice(-RECENT_POINTS).map(r => r.x));
 });

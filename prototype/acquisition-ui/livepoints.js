@@ -10,6 +10,17 @@ export function axisKeyFor(components, charts) {
   return "x";
 }
 
+// The engine keeps 25,000 recent rows per capture at full rate; a series held here keeps the same, and thins what is
+// older to every other point once it holds more than SERIES_LIMIT, so a page left open on a long run stays bounded.
+export const RECENT_POINTS = 25_000;
+export const SERIES_LIMIT = 75_000;
+
+/** Every other point of all but the last `recent`, then the last `recent` as they are. */
+export function thin(points, recent = RECENT_POINTS) {
+  const cut = Math.max(0, points.length - recent);
+  return points.slice(0, cut).filter((_, i) => i % 2 === 0).concat(points.slice(cut));
+}
+
 export function livePoints() {
   const byAxis = { x: new Map(), t: new Map() };
   const list = (axis, key) => {
@@ -18,12 +29,17 @@ export function livePoints() {
   };
   return {
     add(role, rows) {
+      const touched = new Set();
       for (const row of rows) {
         for (const [key, value] of Object.entries(row)) {
           if (key === "x" || key === "t" || value == null) continue;
           list("x", `${role}:${key}`).push([row.x, value]);
+          touched.add(`${role}:${key}`);
           if (row.t != null) list("t", `${role}:${key}`).push([row.t, value]);
         }
+      }
+      for (const map of Object.values(byAxis)) {
+        for (const key of touched) if (map.get(key)?.length > SERIES_LIMIT) map.set(key, thin(map.get(key)));
       }
     },
     series: (axis, role, value) => byAxis[axis].get(`${role}:${value}`) || [],

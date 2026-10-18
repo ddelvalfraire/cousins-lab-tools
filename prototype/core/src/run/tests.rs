@@ -11,7 +11,7 @@ use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde_json::{Value, json};
 
-use super::live::{LiveBuffer, PointMaker, RawPoint};
+use super::live::{LiveBuffer, PointMaker, RawPoint, StoredRows};
 use super::*;
 use crate::calc::Program;
 use crate::contract::{Cell, InputKind, Instrument, InstrumentInfo, Readiness, Sink};
@@ -881,13 +881,15 @@ fn a_metric_streams_its_derived_value_live_even_when_no_chart_plots_it() {
 }
 
 #[test]
-fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
+fn a_long_run_keeps_its_first_row_and_thins_older_rows_within_the_bound() {
     let buffer = LiveBuffer::default();
     let point = |i: usize| RawPoint {
         x: json!(i),
         ..RawPoint::default()
     };
-    for chunk in (0..LIVE_BUFFER_ROWS + 10).collect::<Vec<_>>().chunks(1000) {
+    // The module 2 sample's row count.
+    let total_rows = 84_665;
+    for chunk in (0..total_rows).collect::<Vec<_>>().chunks(1000) {
         buffer.push_rows(chunk.iter().map(|&i| point(i)).collect());
     }
     for kind in ["light_on", "sat_flash", "light_off"] {
@@ -898,13 +900,28 @@ fn live_cursors_skip_what_was_seen_and_rows_that_fell_off_the_buffer() {
             value: None,
         });
     }
-    let total = (LIVE_BUFFER_ROWS + 10) as u64;
+    let total = total_rows as u64;
     let all = buffer.view(0, 0, CaptureStatus::Running);
-    assert_eq!(
-        (all.next, all.rows_total, all.rows.len()),
-        (total, total, LIVE_BUFFER_ROWS)
+    assert_eq!((all.next, all.rows_total), (total, total));
+    assert!(all.rows.len() <= LIVE_BUFFER_ROWS, "{}", all.rows.len());
+    let xs: Vec<u64> = all.rows.iter().map(|r| r["x"].as_u64().unwrap()).collect();
+    assert_eq!(xs[0], 0, "the first row stays");
+    let first_recent = total - LIVE_RECENT_ROWS as u64;
+    let (older, recent) = xs.split_at(xs.len() - LIVE_RECENT_ROWS);
+    assert!(recent.iter().copied().eq(first_recent..total));
+    assert_eq!(older.len(), first_recent.div_ceil(4) as usize);
+    assert!(
+        older.iter().zip(0..).all(|(&x, k)| x == 4 * k),
+        "every 4th older row"
     );
-    assert_eq!(all.rows[0]["x"], 10, "the 10 oldest rows fell off");
+    let from_100: Vec<u64> = buffer
+        .view(100, 0, CaptureStatus::Running)
+        .rows
+        .iter()
+        .take(2)
+        .map(|r| r["x"].as_u64().unwrap())
+        .collect();
+    assert_eq!(from_100, [100, 104]);
     let recent = buffer.view(total - 5, 2, CaptureStatus::Running);
     let xs: Vec<&Value> = recent.rows.iter().map(|r| &r["x"]).collect();
     assert_eq!(
@@ -1126,6 +1143,65 @@ fn new_parameters_recompute_every_buffered_point_of_a_run() {
     );
     assert_eq!(fluorescence(&Cursors::new()), expected(15.0));
     stop(&run, false);
+}
+
+#[test]
+fn new_parameters_recompute_older_live_points_from_the_stored_rows() {
+    let data = tempfile::tempdir().unwrap();
+    let template = template_with(data.path(), json!({}));
+    let columns = schemas::ambit_columns();
+    let names = columns.iter().map(|c| c.name.clone()).collect();
+    let (maker, evaluation) = PointMaker::new(
+        &template,
+        "light",
+        names,
+        Default::default(),
+        Some(1),
+        &schemas::ambit_clocks(),
+    )
+    .unwrap();
+    let samples = data.path().join("samples");
+    let mut writer = SegmentWriter::new(&samples, &columns, 7, Duration::MAX).unwrap();
+    let buffer = LiveBuffer::with_bounds(5, 4);
+    buffer.attach(evaluation);
+    buffer.attach_stored(StoredRows {
+        samples,
+        columns,
+        maker: maker.clone(),
+    });
+    for i in 0..30 {
+        let mut row = vec![
+            Cell::Int(i),
+            Cell::TimeUtc(utc_now()),
+            Cell::Int(i * 100),
+            Cell::Int(1000 + 2 * i),
+            Cell::Int(2),
+        ];
+        row.extend(std::iter::repeat_n(Cell::Int(0), 5));
+        let raw = maker.raw(&row);
+        writer.append(vec![row]).unwrap();
+        buffer.push_rows(vec![raw]);
+    }
+    writer.flush().unwrap();
+    let mut params = template.params();
+    params.insert("ambit_offset".into(), 0.0);
+    buffer.set_params(&params, 1);
+    let rows = buffer.view(0, 0, CaptureStatus::Running).rows;
+    assert_eq!(rows.len(), 4 + 5);
+    let older: Vec<f64> = rows[..4]
+        .iter()
+        .map(|r| r["fluorescence"].as_f64().unwrap() * 2.0)
+        .collect();
+    assert_eq!(
+        older,
+        [1000.0, 1016.0, 1032.0, 1048.0],
+        "every 8th of rows 0..25"
+    );
+    let recent: Vec<f64> = rows[4..]
+        .iter()
+        .map(|r| r["fluorescence"].as_f64().unwrap() * 2.0)
+        .collect();
+    assert_eq!(recent, [1050.0, 1052.0, 1054.0, 1056.0, 1058.0]);
 }
 
 #[test]

@@ -35,12 +35,15 @@ use crate::session::{
 };
 use crate::templates::{Paths, Profiles, Template};
 use capture::{CaptureTask, Output};
-use live::{LiveBuffer, PointMaker};
+use live::{LiveBuffer, PointMaker, StoredRows};
 use markers::MarkerLog;
 use owner::{CaptureControl, Message, Owner, Published};
 
 pub use adapter::{BuiltAdapter, SIMULATED_SPOOL, build_adapter};
-pub use live::{Cursors, LIVE_BUFFER_ROWS, LiveCaptureView, LiveEvent, LiveView};
+pub use live::{
+    Cursors, LIVE_BUFFER_ROWS, LIVE_HISTORY_POINTS, LIVE_RECENT_ROWS, LiveCaptureView, LiveEvent,
+    LiveView,
+};
 pub use markers::Marker;
 
 /// Per-capture wait at stop; a capture still running after it is recorded as interrupted.
@@ -414,7 +417,8 @@ impl GroupRun {
                 write_error: None,
             };
             simulators.extend(p.built.simulator);
-            tasks.push((p.built.adapter, output));
+            let stored = (p.output_dir.join("samples"), p.columns);
+            tasks.push((p.built.adapter, output, stored));
         }
 
         let (t0, t0_utc) = (Instant::now(), clock());
@@ -426,8 +430,13 @@ impl GroupRun {
             run.group_start_utc = Some(t0_utc);
         }
         let mut controls = IndexMap::new();
-        for (adapter, mut output) in tasks {
+        for (adapter, mut output, (samples, columns)) in tasks {
             output.points.t0 = t0_utc;
+            output.live.attach_stored(StoredRows {
+                samples,
+                columns,
+                maker: output.points.clone(),
+            });
             let capture = &mut manifest.captures[&output.role];
             let delay =
                 Duration::from_micros((capture.host_delay_s.unwrap_or(0.0) * 1e6).round() as u64);

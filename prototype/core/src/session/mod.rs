@@ -31,7 +31,9 @@ pub use events::{event_columns, event_row};
 pub use manifest::{
     Capture, CaptureStatus, Host, Manifest, OnFailure, RunInfo, SessionKind, SessionStatus, Source,
 };
-pub use segment::{FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, segment_rows, segments};
+pub use segment::{
+    FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, read_segment, segment_rows, segments,
+};
 pub use store::SessionStore;
 pub use time::{iso, iso_time, iso_time_opt, parse_iso, utc_now};
 

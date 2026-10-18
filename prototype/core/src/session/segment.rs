@@ -6,10 +6,16 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use arrow::array::{ArrayRef, Float64Array, Int64Array, StringArray, TimestampMicrosecondArray};
-use arrow::datatypes::{DataType, Field, Schema, SchemaRef, TimeUnit};
+use arrow::array::{
+    Array, ArrayRef, AsArray, Float64Array, Int64Array, StringArray, TimestampMicrosecondArray,
+};
+use arrow::datatypes::{
+    DataType, Field, Float64Type, Int64Type, Schema, SchemaRef, TimeUnit, TimestampMicrosecondType,
+};
 use arrow::record_batch::RecordBatch;
+use chrono::DateTime;
 use parquet::arrow::ArrowWriter;
+use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
 use parquet::file::reader::{FileReader, SerializedFileReader};
@@ -47,6 +53,54 @@ pub fn arrow_schema(columns: &[Column]) -> Schema {
 pub fn segment_rows(path: &Path) -> Result<u64, SessionError> {
     let reader = SerializedFileReader::new(File::open(path)?)?;
     Ok(reader.metadata().file_metadata().num_rows() as u64)
+}
+
+/// The rows of one finished segment as cells in the order of `columns`. A value of a type
+/// other than its column's, or a column the part lacks, reads as null.
+pub fn read_segment(path: &Path, columns: &[Column]) -> Result<Vec<Row>, SessionError> {
+    let reader = ParquetRecordBatchReaderBuilder::try_new(File::open(path)?)?.build()?;
+    let mut rows = Vec::new();
+    for batch in reader {
+        let batch = batch?;
+        let arrays: Vec<Option<&ArrayRef>> = columns
+            .iter()
+            .map(|c| batch.column_by_name(&c.name))
+            .collect();
+        for i in 0..batch.num_rows() {
+            let row = columns
+                .iter()
+                .zip(&arrays)
+                .map(|(c, array)| array.map_or(Cell::Null, |a| cell(c.ty, a, i)))
+                .collect();
+            rows.push(row);
+        }
+    }
+    Ok(rows)
+}
+
+fn cell(ty: ColumnType, array: &ArrayRef, i: usize) -> Cell {
+    if array.is_null(i) {
+        return Cell::Null;
+    }
+    let micros = || {
+        array
+            .as_primitive_opt::<TimestampMicrosecondType>()
+            .and_then(|a| DateTime::from_timestamp_micros(a.value(i)))
+    };
+    let cell = match ty {
+        ColumnType::Int64 => array
+            .as_primitive_opt::<Int64Type>()
+            .map(|a| Cell::Int(a.value(i))),
+        ColumnType::Float64 => array
+            .as_primitive_opt::<Float64Type>()
+            .map(|a| Cell::Float(a.value(i))),
+        ColumnType::String => array
+            .as_string_opt::<i32>()
+            .map(|a| Cell::Str(a.value(i).to_string())),
+        ColumnType::TimestampUtc => micros().map(Cell::TimeUtc),
+        ColumnType::TimestampLocal => micros().map(|t| Cell::TimeLocal(t.naive_utc())),
+    };
+    cell.unwrap_or(Cell::Null)
 }
 
 /// Finished segments in `dir`, in part order. A missing directory has none.

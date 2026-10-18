@@ -1,12 +1,16 @@
 //! What the UI polls during a run: recent points per capture, events and markers.
 //!
 //! Each capture has its own buffer behind its own lock. The buffers are not the manifest;
-//! they hold only what the live charts need, and the oldest points fall off after
-//! [`LIVE_BUFFER_ROWS`]. A buffer keeps each row's program inputs beside its point and owns
-//! the evaluator, so a parameter change recomputes every buffered point under the same lock
-//! that new rows take.
+//! they hold only what the live charts need: the last [`LIVE_RECENT_ROWS`] rows at full rate,
+//! and before them every `stride`-th row, the stride doubling whenever more than
+//! [`LIVE_HISTORY_POINTS`] are kept. So a chart of the whole run starts at its first row and a
+//! buffer never holds more than [`LIVE_BUFFER_ROWS`] points. A buffer keeps each recent row's
+//! program inputs beside its point and owns the evaluator, so a parameter change recomputes
+//! every point under the same lock that new rows take; the older points are recomputed from
+//! the stored rows, so rates keep their full windows.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 use chrono::{DateTime, Utc};
@@ -17,12 +21,17 @@ use serde_json::{Map, Value};
 use super::Marker;
 use super::seconds_since;
 use crate::calc::{CalcError, Evaluator, Program, Sample};
-use crate::contract::{Cell, Clock, Event, Row};
+use crate::contract::{Cell, Clock, Column, Event, Row};
 use crate::expr::Params;
-use crate::session::{Capture, CaptureStatus, SessionStatus, iso};
+use crate::session::{
+    Capture, CaptureStatus, SessionError, SessionStatus, iso, read_segment, segments,
+};
 use crate::templates::Template;
 
-pub const LIVE_BUFFER_ROWS: usize = 50_000;
+pub const LIVE_RECENT_ROWS: usize = 25_000;
+pub const LIVE_HISTORY_POINTS: usize = 25_000;
+/// The most points one capture's buffer holds.
+pub const LIVE_BUFFER_ROWS: usize = LIVE_RECENT_ROWS + LIVE_HISTORY_POINTS;
 
 /// Where each capture's poll left off, keyed as the UI sends them: `<role>` counts rows and
 /// `<role>:events` counts events. A missing key starts from the beginning.
@@ -59,23 +68,62 @@ pub struct LiveView {
     pub params_rev: u64,
 }
 
-#[derive(Default)]
 pub(super) struct LiveBuffer(Mutex<LiveState>);
 
-#[derive(Default)]
+impl Default for LiveBuffer {
+    fn default() -> Self {
+        LiveBuffer::with_bounds(LIVE_RECENT_ROWS, LIVE_HISTORY_POINTS)
+    }
+}
+
 struct LiveState {
+    recent_rows: usize,
+    history_points: usize,
+    /// The last rows, at full rate.
     raw: VecDeque<RawPoint>,
     points: VecDeque<Map<String, Value>>,
+    /// Older rows by row number, every `stride`-th.
+    history: Vec<(u64, Map<String, Value>)>,
+    stride: u64,
     received: u64,
     events: Vec<LiveEvent>,
     evaluation: Evaluation,
+    stored: Option<StoredRows>,
     params_rev: u64,
 }
 
+/// Where a capture's stored rows are and how to turn them into points again.
+pub(super) struct StoredRows {
+    pub samples: PathBuf,
+    pub columns: Vec<Column>,
+    pub maker: PointMaker,
+}
+
 impl LiveBuffer {
+    pub fn with_bounds(recent_rows: usize, history_points: usize) -> Self {
+        LiveBuffer(Mutex::new(LiveState {
+            recent_rows,
+            history_points,
+            raw: VecDeque::new(),
+            points: VecDeque::new(),
+            history: Vec::new(),
+            stride: 1,
+            received: 0,
+            events: Vec::new(),
+            evaluation: Evaluation::default(),
+            stored: None,
+            params_rev: 0,
+        }))
+    }
+
     /// The evaluation this capture's rows go through, before its first row.
     pub fn attach(&self, evaluation: Evaluation) {
         self.0.lock().unwrap().evaluation = evaluation;
+    }
+
+    /// Where older rows are read back from when parameters change.
+    pub fn attach_stored(&self, stored: StoredRows) {
+        self.0.lock().unwrap().stored = Some(stored);
     }
 
     pub fn push_rows(&self, rows: Vec<RawPoint>) {
@@ -86,13 +134,20 @@ impl LiveBuffer {
             state.points.push_back(state.evaluation.point(&raw));
             state.raw.push_back(raw);
         }
-        let excess = state.points.len().saturating_sub(LIVE_BUFFER_ROWS);
-        state.points.drain(..excess);
-        state.raw.drain(..excess);
+        while state.points.len() > state.recent_rows {
+            let row = state.received - state.points.len() as u64;
+            let point = state
+                .points
+                .pop_front()
+                .expect("more points than the bound");
+            state.raw.pop_front();
+            state.keep_older(row, point);
+        }
     }
 
-    /// Recomputes every buffered point with `params`, unless `rev` is not newer than the
-    /// revision the points already have. Rows that fell off the buffer stay gone.
+    /// Recomputes every point with `params`, unless `rev` is not newer than the revision the
+    /// points already have. Points older than the recent rows are recomputed from the stored
+    /// rows when the capture has any, which also fills the recent rows' rate windows.
     pub fn set_params(&self, params: &Params, rev: u64) {
         let mut guard = self.0.lock().unwrap();
         let state = &mut *guard;
@@ -100,6 +155,14 @@ impl LiveBuffer {
             return;
         }
         state.evaluation.restart(params);
+        let first_recent = state.received - state.points.len() as u64;
+        if first_recent > 0 && state.stored.is_some() {
+            state.history.clear();
+            state.stride = 1;
+            // A failed read leaves the older points that were read; the recent rows and the
+            // stored files are unaffected.
+            let _ = state.replay_stored(first_recent);
+        }
         state.points = state
             .raw
             .iter()
@@ -116,21 +179,63 @@ impl LiveBuffer {
         self.0.lock().unwrap().events.push(event);
     }
 
-    /// Rows from cursor `rows` on, or every buffered row when older ones have fallen off,
+    /// Rows from cursor `rows` on: the kept older rows at or after it, then the recent ones;
     /// and events from cursor `events` on.
     pub fn view(&self, rows: u64, events: u64, status: CaptureStatus) -> LiveCaptureView {
         let state = self.0.lock().unwrap();
-        let dropped = state.received - state.points.len() as u64;
-        let skip = rows.saturating_sub(dropped) as usize;
+        let first_recent = state.received - state.points.len() as u64;
+        let skip = rows.saturating_sub(first_recent) as usize;
+        let older = state.history.iter().filter(|(row, _)| *row >= rows);
         let skip_events = events.min(state.events.len() as u64) as usize;
         LiveCaptureView {
             next: state.received,
-            rows: state.points.iter().skip(skip).cloned().collect(),
+            rows: older
+                .map(|(_, point)| point)
+                .chain(state.points.iter().skip(skip))
+                .cloned()
+                .collect(),
             events: state.events[skip_events..].to_vec(),
             events_next: state.events.len() as u64,
             status,
             rows_total: state.received,
         }
+    }
+}
+
+impl LiveState {
+    /// Keeps row `row`'s point if it falls on the stride, then halves the kept points by
+    /// doubling the stride whenever they exceed the bound.
+    fn keep_older(&mut self, row: u64, point: Map<String, Value>) {
+        if row.is_multiple_of(self.stride) {
+            self.history.push((row, point));
+        }
+        if self.history.len() > self.history_points {
+            self.stride *= 2;
+            let stride = self.stride;
+            self.history.retain(|(row, _)| row.is_multiple_of(stride));
+        }
+    }
+
+    /// Runs the stored rows before `first_recent` through the evaluation, keeping the older
+    /// points as [`LiveState::keep_older`] would have. One segment is in memory at a time.
+    fn replay_stored(&mut self, first_recent: u64) -> Result<(), SessionError> {
+        let stored = self.stored.take().expect("checked by the caller");
+        let mut row = 0;
+        let result = (|| {
+            for part in segments(&stored.samples)? {
+                for cells in read_segment(&part, &stored.columns)? {
+                    if row >= first_recent {
+                        return Ok(());
+                    }
+                    let point = self.evaluation.point(&stored.maker.raw(&cells));
+                    self.keep_older(row, point);
+                    row += 1;
+                }
+            }
+            Ok(())
+        })();
+        self.stored = Some(stored);
+        result
     }
 }
 
@@ -192,6 +297,7 @@ impl Evaluation {
 /// Reads what the live view needs out of a capture's rows: host-time `x`, seconds on the
 /// capture's own clock when it records one, the program's inputs, and the cells shown as
 /// they are.
+#[derive(Clone)]
 pub(super) struct PointMaker {
     /// Row positions of the program's columns, in program order.
     inputs: Vec<Option<usize>>,
