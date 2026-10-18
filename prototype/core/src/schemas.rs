@@ -258,6 +258,7 @@ pub fn adapter_clocks(adapter: &str) -> Option<Vec<Clock>> {
     match adapter {
         "ezview_spool" => Some(spool_clocks()),
         "ambit_replay" => Some(ambit_clocks()),
+        "legacy_frames_replay" => Some(legacy_frames_clocks()),
         _ => None,
     }
 }
@@ -267,6 +268,7 @@ pub fn import_clocks(importer: &str) -> Option<Vec<Clock>> {
     match importer {
         "ms_workbook" => Some(ms_import_clocks()),
         "ambit_csv" => Some(ambit_import_clocks()),
+        "legacy_frames" => Some(legacy_frames_import_clocks()),
         _ => None,
     }
 }
@@ -316,12 +318,14 @@ mod tests {
         for (adapter, clocks) in [
             ("ezview_spool", spool_clocks()),
             ("ambit_replay", ambit_clocks()),
+            ("legacy_frames_replay", legacy_frames_clocks()),
         ] {
             assert_eq!(adapter_clocks(adapter), Some(clocks), "{adapter}");
         }
         for (importer, clocks) in [
             ("ms_workbook", ms_import_clocks()),
             ("ambit_csv", ambit_import_clocks()),
+            ("legacy_frames", legacy_frames_import_clocks()),
         ] {
             assert_eq!(import_clocks(importer), Some(clocks), "{importer}");
         }

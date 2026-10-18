@@ -399,3 +399,46 @@ fn the_import_dialog_is_offered_the_module2_sample_zip() {
     );
     assert_eq!(recordings["ms_workbook"].as_array().unwrap().len(), 1);
 }
+
+#[test]
+fn an_imported_zip_plots_on_t_ms_and_computes_slopes_over_it() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    let template = json!({
+        "id": "legacy-frames-test",
+        "revision": 1,
+        "name": "Legacy frames",
+        "roles": {"ms": {"instrument": "ms-legacy-frames-replay", "import": "legacy_frames"}},
+        "derived": {"d44": {"role": "ms", "slope": {"of": "m44", "window_s": 0.3, "min_points": 3}}},
+        "charts": [{"id": "rate", "title": "Rate", "unit": "mV/s", "x": "source",
+                    "series": [{"role": "ms", "value": "d44"}]}],
+    });
+    call(
+        &engine,
+        "save_template",
+        json!({"template_id": "legacy-frames-test", "data": template}),
+    );
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-frames-test",
+               "files": [{"role": "ms", "path": fixture("legacy-frames.zip")}]}),
+    );
+    let preview = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": manifest["id"], "reference": "elapsed"}),
+    );
+    let points = preview["charts"][0]["series"][0]["points"]
+        .as_array()
+        .unwrap();
+    let xs: Vec<f64> = points.iter().map(|p| p[0].as_f64().unwrap()).collect();
+    assert_eq!(
+        xs,
+        [0.42, 0.525, 0.63, 0.735, 0.84, 2.205, 2.31, 2.415, 3.15]
+    );
+    for p in points {
+        let rate = p[1].as_f64().unwrap();
+        assert!((rate - -20.25 / 0.105).abs() < 1e-9, "{p}");
+    }
+}
