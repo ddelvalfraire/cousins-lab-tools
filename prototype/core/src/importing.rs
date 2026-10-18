@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use indexmap::IndexMap;
+use sha2::{Digest, Sha256};
 
 use crate::ambit::{detect_events, read_ambit_csv, sample_row, timing_summary};
 use crate::contract::{Column, Event, InputKind, InstrumentError, Row};
@@ -116,7 +117,8 @@ fn plan<'a>(template: &Template, files: &'a [ImportFile]) -> Result<Vec<Planned<
                     ));
                 }
             };
-            if !file.path.is_file() {
+            let folder_ok = importer == Importer::LegacyFrames && file.path.is_dir();
+            if !file.path.is_file() && !folder_ok {
                 return Err(ImportError::FileNotFound(file.path.clone()));
             }
             let label = match file.label.as_deref() {
@@ -149,10 +151,18 @@ fn file_name(path: &Path) -> String {
         .unwrap_or_default()
 }
 
-/// Copies the source into `raw/`, keeping its modification time as `shutil.copy2` does.
+/// Copies the source into `raw/`, keeping its modification time as `shutil.copy2` does. A
+/// folder's files are copied into `raw/<folder>/`; its subfolders are not read, so they are
+/// not copied.
 fn copy_raw(source: &Path, raw: &Path) -> Result<(), ImportError> {
     fs::create_dir_all(raw)?;
     let target = raw.join(source.file_name().unwrap_or_default());
+    if source.is_dir() {
+        for file in folder_files(source)? {
+            copy_raw(&file, &target)?;
+        }
+        return Ok(());
+    }
     fs::copy(source, &target)?;
     let modified = fs::metadata(source)?.modified()?;
     File::options()
@@ -160,6 +170,35 @@ fn copy_raw(source: &Path, raw: &Path) -> Result<(), ImportError> {
         .open(&target)?
         .set_modified(modified)?;
     Ok(())
+}
+
+/// The regular files directly inside `dir`, in name order.
+fn folder_files(dir: &Path) -> Result<Vec<PathBuf>, ImportError> {
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            files.push(entry.path());
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+/// A file's hash and size; for a folder, the SHA-256 of the lines `<sha256>  <name>\n` that
+/// `sha256sum` prints for its files in name order, and their total size.
+fn fingerprint(source: &Path) -> Result<(String, u64), ImportError> {
+    if !source.is_dir() {
+        return Ok((sha256(source)?, fs::metadata(source)?.len()));
+    }
+    let (mut listing, mut bytes) = (String::new(), 0);
+    for file in folder_files(source)? {
+        listing.push_str(&format!("{}  {}\n", sha256(&file)?, file_name(&file)));
+        bytes += fs::metadata(&file)?.len();
+    }
+    let digest = Sha256::digest(listing.as_bytes());
+    let hex = digest.iter().map(|b| format!("{b:02x}")).collect();
+    Ok((hex, bytes))
 }
 
 fn write_segment(dir: &Path, columns: &[Column], rows: Vec<Row>) -> Result<(), SessionError> {
@@ -182,6 +221,7 @@ pub fn import_session(
         let cdir = store.capture_dir(&manifest.id, &item.capture_id);
         copy_raw(source, &cdir.join("raw"))?;
         let name = file_name(source);
+        let (digest, bytes) = fingerprint(source)?;
         let mut capture = Capture {
             role: item.file.role.clone(),
             label: item.label,
@@ -193,8 +233,8 @@ pub fn import_session(
             sources: vec![Source {
                 path: source.to_string_lossy().into_owned(),
                 name,
-                sha256: Some(sha256(source)?),
-                bytes: Some(fs::metadata(source)?.len()),
+                sha256: Some(digest),
+                bytes: Some(bytes),
             }],
             capabilities: None,
             columns: Vec::new(),

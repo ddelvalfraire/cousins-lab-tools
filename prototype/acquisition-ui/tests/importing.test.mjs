@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { importSlots, runInputs } from "../importing.js";
+import { importFiles, importSlots, runInputs } from "../importing.js";
 
 const recordings = {
   ms_workbook: ["/repo/reference/instruments/mass-spec/Raw data-mass spec.xlsx"],
@@ -21,14 +21,29 @@ test("the JII template offers its workbook and each Ambit recording with the lab
 test("a legacy frames role offers the sample zip, and roles that import nothing get no slot", () => {
   const legacy = { roles: { ms: { import: "legacy_frames" }, pump: { instrument: "pump" }, gas: { import: "netcdf" } } };
   const slots = importSlots(legacy, recordings);
-  assert.deepEqual(brief(slots), [["ms", "Legacy frame files (zip) (role ms)", "SampleData.zip", "SampleData"]]);
+  assert.deepEqual(brief(slots), [["ms", "Legacy frame files (zip or folder) (role ms)", "SampleData.zip", "SampleData"]]);
   assert.deepEqual(slots[0].files, recordings.legacy_frames);
 });
 
 test("a role whose kind has no recordings still gets an empty slot", () => {
   assert.deepEqual(brief(importSlots({ roles: { ms: { import: "legacy_frames" } } }, {})), [
-    ["ms", "Legacy frame files (zip) (role ms)", "", ""],
+    ["ms", "Legacy frame files (zip or folder) (role ms)", "", ""],
   ]);
+});
+
+test("a typed path wins over the suggestion, and a slot with neither is left out", () => {
+  const slots = importSlots({ roles: { ms: { import: "legacy_frames" }, light: { import: "ambit_csv" } } }, recordings);
+  const values = [
+    { chosen: "C:\\repo\\module2\\SampleData.zip", typed: "  D:\\lab\\Acquisition-12\\ ", label: "Acquisition-12" },
+    { chosen: "/repo/ambit/Ambit raw data_sample_150_pl1.csv", typed: "", label: "150-pl1" },
+    { chosen: "", typed: " ", label: "" },
+  ];
+  assert.deepEqual(importFiles(slots, i => values[i]), [
+    { role: "ms", path: "D:\\lab\\Acquisition-12\\", label: "Acquisition-12" },
+    { role: "light", path: "/repo/ambit/Ambit raw data_sample_150_pl1.csv", label: "150-pl1" },
+  ]);
+  assert.equal(slots[0].labelFor("D:\\lab\\Acquisition-12\\"), "Acquisition-12");
+  assert.equal(slots[0].labelFor("/lab/frames.ZIP"), "frames");
 });
 
 test("a run names the profiles its template's roles use and takes its name suffix from their input kinds", () => {

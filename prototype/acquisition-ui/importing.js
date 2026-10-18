@@ -7,7 +7,7 @@ const IMPORT_KINDS = {
     title: "Ambit recording",
     label: path => fileName(path).replace(/^Ambit raw data_sample_/, "").replace(/\.csv$/, "").replace("_", "-"),
   },
-  legacy_frames: { title: "Legacy frame files (zip)", label: path => fileName(path).replace(/\.zip$/i, "") },
+  legacy_frames: { title: "Legacy frame files (zip or folder)", label: path => fileName(path.replace(/[\\/]+$/, "")).replace(/\.zip$/i, "") },
 };
 
 /** One file slot per offered recording of each importing role, or one empty slot when none is offered. */
@@ -23,8 +23,22 @@ export function importSlots(template, recordings) {
       files,
       path,
       label: path ? kind.label(path) : "",
+      labelFor: kind.label,
     }));
   });
+}
+
+/**
+ * The import_files list from each slot's form values: a typed path wins over the chosen suggestion, and a slot with
+ * neither is left out. `values(i)` gives slot i's {chosen, typed, label}.
+ */
+export function importFiles(slots, values) {
+  return slots
+    .map((slot, i) => {
+      const { chosen, typed, label } = values(i);
+      return { role: slot.role, path: typed?.trim() || chosen || "", label };
+    })
+    .filter(f => f.path);
 }
 
 /**

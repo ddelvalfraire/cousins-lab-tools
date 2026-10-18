@@ -295,6 +295,93 @@ fn an_imported_zip_keeps_its_rows_and_aligns_on_t_ms() {
     assert_eq!(markers, [0.84, 2.415]);
 }
 
+#[test]
+fn a_folder_of_eleven_field_files_imports_with_its_extra_channels_and_a_listing_hash() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let folder = fixture("legacy-frames-ezview/Acquisition0");
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-frames-test", "files": [{"role": "ms", "path": folder}]}),
+    );
+    let id = manifest["id"].as_str().unwrap();
+    let capture = &manifest["captures"]["ms-acquisition0"];
+    assert_eq!(capture["rows"], 3);
+    let names: Vec<&str> = capture["columns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names[11..], ["m49", "ch11", "ch12"]);
+    assert_eq!(
+        capture["sources"],
+        json!([{"path": folder, "name": "Acquisition0", "bytes": 195,
+                "sha256": "00eeeb3bbcf1b3bc4fdaf394e63ef40e3abba45884d9873b9099401fc9ba7605"}])
+    );
+    let raw = data
+        .path()
+        .join("sessions")
+        .join(id)
+        .join("captures/ms-acquisition0/raw/Acquisition0/3.csv");
+    assert_eq!(
+        std::fs::read(raw).unwrap(),
+        std::fs::read(folder.join("3.csv")).unwrap()
+    );
+    let stored = call(
+        &engine,
+        "query_session",
+        json!({"session_id": id, "sql":
+            "SELECT t_ms, frame, m44, ch11, ch12 FROM \"cap:ms-acquisition0\" ORDER BY seq"}),
+    );
+    assert_eq!(
+        stored["rows"][2],
+        json!({"t_ms": 1550, "frame": 3, "m44": 4.775, "ch11": 0.12, "ch12": 0.235})
+    );
+}
+
+#[test]
+fn a_folder_of_nine_field_files_imports_the_same_rows_as_its_zip() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let import = |path: PathBuf| {
+        let manifest = call(
+            &engine,
+            "import_files",
+            json!({"template_id": "legacy-frames-test",
+                   "files": [{"role": "ms", "path": path, "label": "x"}]}),
+        );
+        let id = manifest["id"].as_str().unwrap().to_string();
+        let rows = call(
+            &engine,
+            "query_session",
+            json!({"session_id": id, "sql": "SELECT * FROM \"cap:ms-x\" ORDER BY seq"}),
+        );
+        (
+            manifest["captures"]["ms-x"]["columns"].clone(),
+            rows["rows"].clone(),
+        )
+    };
+    let folder = import(fixture("legacy-frames/Acquisition-1"));
+    assert_eq!(folder, import(fixture("legacy-frames.zip")));
+    assert_eq!(folder.0.as_array().unwrap().len(), 12);
+    let missing = engine
+        .call(
+            "import_files",
+            json!({"template_id": "legacy-frames-test",
+                   "files": [{"role": "ms", "path": fixture("no-such-folder")}]}),
+        )
+        .unwrap_err();
+    assert!(
+        missing.message.starts_with("File not found: "),
+        "{}",
+        missing.message
+    );
+}
+
 fn replay(speed: f64) -> FramesReplay {
     FramesReplay::new(FramesReplaySettings {
         model: "Frames".into(),

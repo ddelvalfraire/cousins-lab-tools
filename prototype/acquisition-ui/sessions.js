@@ -1,5 +1,5 @@
 import { call, esc, fileName, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
-import { importSlots } from "./importing.js";
+import { importFiles, importSlots } from "./importing.js";
 import { startRunDialog } from "./templates.js";
 
 export async function renderSessions(page) {
@@ -44,9 +44,8 @@ async function importDialog(templates) {
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Import</button></div>
     </form>`, async form => {
       const template = chosen(form.get("template"));
-      const files = importSlots(template, recordings)
-        .map((slot, i) => ({ role: slot.role, path: form.get(`path${i}`), label: form.get(`label${i}`) }))
-        .filter(f => f.path);
+      const files = importFiles(importSlots(template, recordings),
+        i => ({ chosen: form.get(`path${i}`), typed: form.get(`typed${i}`), label: form.get(`label${i}`) }));
       const manifest = await call("import_files", { template_id: template.id, revision: template.revision, name: form.get("name"), files });
       location.hash = `#/sessions/${manifest.id}`;
     });
@@ -54,12 +53,18 @@ async function importDialog(templates) {
   const showSlots = () => {
     const template = chosen(form.elements.template.value);
     form.elements.name.value = `${template.name} (recorded)`;
-    form.querySelector(".import-slots").innerHTML = importSlots(template, recordings).map((slot, i) => `
+    const slots = importSlots(template, recordings);
+    form.querySelector(".import-slots").innerHTML = slots.map((slot, i) => `
       <div class="inline">
         <label class="field" style="flex:1">${esc(slot.title)}
           <select name="path${i}"><option value="">Not included</option>${options(slot.files, slot.path)}</select></label>
+        <label class="field" style="flex:1">Or a path on this computer <input name="typed${i}" placeholder="a file, a zip, or a folder"></label>
         <label class="field">Label <input name="label${i}" value="${esc(slot.label)}"></label>
       </div>`).join("");
+    slots.forEach((slot, i) => {
+      const typed = form.elements[`typed${i}`];
+      typed.oninput = () => (form.elements[`label${i}`].value = slot.labelFor(typed.value.trim() || form.elements[`path${i}`].value || ""));
+    });
   };
   form.elements.template.onchange = showSlots;
   showSlots();
