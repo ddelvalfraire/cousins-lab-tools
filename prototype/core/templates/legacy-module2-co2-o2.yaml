@@ -1,0 +1,124 @@
+id: legacy-module2-co2-o2
+revision: 1
+name: CO2 and O2 in µbar (legacy module 2)
+summary: >
+  The module 2 screen as a template. Mass 44 is calibrated with 0, 1, 2 and 3 µl CO2
+  injections; µbar CO2 and its rate follow every stored row and are recomputed whenever the
+  calibration changes. O2 uses the air-saturation polynomial at the entered temperature.
+evidence:
+  - "Formulas: module2/application/calculations/Calculations.py:81-146 and mainUI/main.py:1385-1468"
+  - "Screen: module2/application/mainUI/main.py:346-650"
+  - "Bug fixes B1, B2, B12-B19: docs/legacy-screens.md section 5"
+
+roles:
+  ms:
+    label: Mass spectrometer (legacy frame files)
+    instrument: ms-legacy-frames-replay
+    import: legacy_frames
+    start_delay_s: 0
+    on_failure: stop_group
+
+parameters:
+  co2_ul_per_mv: {unit: µl/mV, label: CO2 cal slope, note: "Least-squares fit of the CO2 calibration points (fixes B1, B2)"}
+  co2_cal_intercept_ul: {unit: µl, label: Intercept, note: "Intercept in µl, not mV (B1)"}
+  co2_pct_per_ul: {value: 0.03571428571428571, unit: "%CO2/µl", label: "%CO2 per µl injected",
+                   note: "Legacy 1/28, read as 1 µl into a 2.8 ml chamber. Lab check (B15)"}
+  co2_pct_per_mv: {expr: "co2_ul_per_mv * co2_pct_per_ul", unit: "%CO2/mV", label: "CO2 per mV",
+                   note: "The legacy field 'CO2/Voltage (ml/mV)' held this value (B15)"}
+  co2_zero_mv: {unit: mV, label: CO2 Zero}
+  ubar_per_pct: {value: 9200, unit: "µbar/%", label: "µbar per %CO2",
+                 note: "Legacy constant. 1 % at 1 bar is 10000 µbar, so 9200 implies 0.92 bar. Lab check (B17)"}
+  temp_c: {entry: true, unit: °C, label: Temperature, note: "Required; no default (B19)"}
+  o2_zero_mv: {unit: mV, label: O2 Zero, note: "Air-equilibrated mass 32 reading (B18)"}
+  o2_cal: {expr: "(-0.0018*temp_c*temp_c*temp_c + 0.2229*temp_c*temp_c - 12.387*temp_c + 456.49) / o2_zero_mv",
+           entry: true, unit: "µmol/L per mV (lab check)", label: O2 Cal,
+           note: "Air-saturated O2 polynomial S(T) over O2 Zero. S(25) = 258.0, which matches µmol/L, not µbar (B18)"}
+
+derived:
+  ubar_co2: {role: ms, expr: "co2_pct_per_mv * (m44 - co2_zero_mv) * ubar_per_pct", unit: µbar, label: CO2}
+  d_ubar_co2: {role: ms, slope: {of: ubar_co2, window_s: 5, min_points: 20}, unit: µbar/s, label: dCO2/dt,
+               note: "Slope per second on t_ms, rising is positive (B12). Window is a lab check"}
+
+calibrations:
+  co2:
+    label: CO2 Calibrations
+    role: ms
+    line:
+      reading: {stat: mean, of: m44}
+      points:
+        zero: {label: CO2 Cal Zero, known: 0}
+        ul1: {label: CO2 Cal 1 µl, known: 1}
+        ul2: {label: CO2 Cal 2 µl, known: 2}
+        ul3: {label: CO2 Cal 3 µl, known: 3}
+      sets: {slope: co2_ul_per_mv, intercept: co2_cal_intercept_ul}
+      x_label: Voltage (mV)
+      y_label: CO2 (µl)
+  co2_zero:
+    label: CO2 Zero
+    role: ms
+    set: {co2_zero_mv: {stat: mean, of: m44}}
+  o2_zero:
+    label: O2 Zero
+    role: ms
+    set: {o2_zero_mv: {stat: mean, of: m32}}
+
+measurements:
+  sample:
+    label: Sample
+    role: ms
+    steps:
+      co2: {label: CO2 Sample, readings: {co2_mv: {stat: mean, of: m44}}}
+      o2: {label: Calculate, readings: {o2_mv: {stat: mean, of: m32}}}
+    results:
+      pct_co2: {expr: "co2_pct_per_mv * (co2_mv - co2_zero_mv)", unit: "%", label: "%CO2"}
+      ubar_co2_sample: {expr: "pct_co2 * ubar_per_pct", unit: µbar, label: µbar CO2}
+      o2: {expr: "o2_cal * o2_mv", unit: "µmol/L (lab check)", label: "O2 (legacy µBar O2)"}
+
+events:
+  missing_frames:
+    label: Frame files missing from the recording
+
+alignment:
+  default_reference: elapsed
+
+charts:
+  - id: co2_cal
+    kind: xy
+    title: CO2 Calibrations
+    x_label: Voltage (mV)
+    y_label: CO2 (µl)
+    series: [{calibration: co2, color: "#00fa9a"}]
+  - id: pressure
+    title: Pressure
+    unit: µbar
+    x: source
+    series: [{role: ms, value: ubar_co2}]
+  - id: pressure_derivative
+    title: Pressure Derivative
+    unit: µbar/s
+    x: source
+    series: [{role: ms, value: d_ubar_co2}]
+  - id: raw
+    title: Raw data
+    unit: mV
+    x: source
+    series:
+      - {role: ms, value: m32, label: Mass 32, color: "#800000"}
+      - {role: ms, value: m44, label: Mass 44, color: "#4363d8"}
+    markers: {role: ms, kind: missing_frames}
+
+layout:
+  views:
+    - id: screen
+      name: CO2 / O2 µbar
+      components:
+        - {id: co2-cal-values, kind: inputs, title: CO2 Calibrations, parameters: [co2_cal_intercept_ul, co2_pct_per_mv], x: 0, y: 0, w: 4, h: 2}
+        - {id: co2-cal-chart, kind: chart, chart: co2_cal, x: 0, y: 2, w: 4, h: 6}
+        - {id: pressure-chart, kind: chart, chart: pressure, x: 4, y: 0, w: 4, h: 8}
+        - {id: derivative-chart, kind: chart, chart: pressure_derivative, x: 8, y: 0, w: 4, h: 8}
+        - {id: raw-chart, kind: chart, chart: raw, x: 0, y: 8, w: 12, h: 7}
+        - {id: controls, kind: controls, x: 0, y: 15, w: 12, h: 2}
+        - {id: co2-steps, kind: readings, role: ms, steps: [co2.zero, co2.ul1, co2.ul2, co2.ul3, co2_zero, sample.co2], x: 0, y: 17, w: 3, h: 7}
+        - {id: o2-steps, kind: readings, role: ms, steps: [o2_zero, sample.o2], x: 4, y: 17, w: 3, h: 4}
+        - {id: o2-values, kind: inputs, title: O2, parameters: [o2_cal, temp_c], x: 4, y: 21, w: 3, h: 3}
+        - {id: sample-table, kind: table, measurement: sample, x: 8, y: 17, w: 4, h: 7}
