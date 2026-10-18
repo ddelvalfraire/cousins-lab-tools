@@ -166,6 +166,24 @@ every chart:
 | Module 1 | O2 Zero 880-895 and Temperature 25; assay buffer points on the module 2 CO2 ranges; BiCarb Cal Zero 480-499, 2 µl 520-545, 4 µl 568-588, 6 µl 612-650; CO2 Zero 880-895; Blank 720-765; Extract 4100-4600 and 6000-6600, each added to the table |
 | Module 3 | Get Mean 2000-2100 (mean of the rate over 954 rows) |
 
+**Typed values and calibrations from elsewhere.** The pencil on a readings step turns its value
+into a field per reading; Enter or leaving the field saves it as a typed record, Escape drops
+it. Each step shows where its value came from: Read, Typed, Copied (from another session) or
+Loaded (from a file), with the session and record or the file on hover. The capture page
+header has a Calibrations menu for the whole session:
+
+- *Use calibrations from another session* lists the sessions of the same template that hold
+  calibrations and copies the latest value of every calibration step and entered parameter.
+- *Export calibrations* writes them to `exports/calibrations-<last record>/calibrations.csv`.
+- *Load calibration file* takes a file exported here, or in a module 1 session the legacy
+  module 1 calibration CSV. Its columns go where the legacy loader put them: Temp to the
+  temperature, O2 Buffer Zero to the O2 Zero step, the CO2 and BiCarb columns to the assay
+  buffer and HCL points. O2 Calibration and BiCarb/CO2 load only when the file lacks the values
+  that compute them; otherwise the session computes them and says so.
+
+Every copied or loaded value is a new record, so Remove on a step brings back what it held
+before. The path is typed in; there is no Browse button yet.
+
 The sample recording is not a Rubisco assay, so module 1's velocities only show the screen
 working. Module 2's %CO2 per mV comes out at 0.00062752 with the ranges above, 0.2 % from the
 legacy 0.0006285103 on the same files. The least-squares fit alone (B2) accounts for little of
@@ -192,6 +210,7 @@ review of the legacy modules.
 | B17 | 9200 hard-coded | `ubar_per_pct` parameter with a note |
 | B18 | O2 labelled µbar | µmol/L (module 2) and nmol/ml (module 1), flagged as a lab check |
 | B19 | Temperature defaults to 0 and applies only on Enter | No default; O2 Cal stays unset until a temperature is typed; saved on change |
+| B20 | Module 2's calibration save writes module 1's header over its 9 values, and its load indexes past them and fails | Both modules export and load the app's own calibration file; module 1 also loads its legacy file; a legacy module 2 file is refused and named as such |
 | B21 | Copy never connected in modules 1 and 2 (module 3's copied the selected cells) | Copy puts the whole table on the clipboard as tab-separated text (checked in a browser, not yet in the Tauri window) |
 | B22 | Get Mean takes the first rate of a batch | Mean of the rate over the stored rows in the range |
 | B23 | ln(atom%) plotted under "Atom49%" | The chart plots atom%; ln is a separate value |
@@ -200,8 +219,8 @@ review of the legacy modules.
 | B30 | +0.0018 in module 3's O2 polynomial | The module 3 screen never used it; the module 1 and 2 presets use −0.0018 |
 
 B3, B11 and B29 are in code the presets do not have (bar-edge loops and the Plot All timer
-thread). B20 and B31 are in calibration save and load, which the presets do not offer yet (see
-Known gaps).
+thread). B31 is module 3's calibration save and load; module 3 has no calibrations, so its
+preset has no Calibrations menu.
 
 **Lab checks.** These are choices the legacy code made that the presets keep or change and
 the lab should confirm:
@@ -217,6 +236,9 @@ the lab should confirm:
 - The fit direction (known value on reading), and whether the 0 µl point should also set the
   CO2 zero.
 - The legacy known values: 6 µl as 1000 nmol/ml and 2 µl as 33.3.
+- A legacy module 1 calibration file: whether its O2 Calibration and BiCarb/CO2 were ever
+  typed over the computed values. The load recomputes them when the file holds what computes
+  them (O2 Calibration then comes from the unrounded O2 zero, not the file's 4 decimals).
 - Readings average every stored row in the selected range; legacy averaged one mean per frame
   file between its bars. Means and slopes differ slightly from legacy for that reason.
 
@@ -258,10 +280,8 @@ all but the last 25,000.
 
 **Known gaps.** These are legacy features the presets do not have yet:
 
-- Typed calibration values and carrying calibrations over. Legacy let the operator type a
-  calibration mV or a zero (O2 Zero, CO2 Zero, the O2 average), save calibrations at STOP, keep
-  them for the next run, and load a calibration file (module 1). Here every value comes from a
-  reading in this session.
+- Saving calibrations at STOP. Legacy kept them for the next run on its own; here the next
+  session copies them or loads an exported file.
 - Legacy frame gaps are stored as events but not drawn on charts on the recording clock.
 
 ## Demonstration guide
