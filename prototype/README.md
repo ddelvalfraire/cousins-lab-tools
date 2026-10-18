@@ -220,19 +220,48 @@ the lab should confirm:
 - Readings average every stored row in the selected range; legacy averaged one mean per frame
   file between its bars. Means and slopes differ slightly from legacy for that reason.
 
+**The lab's own data.** Import recordings takes a zip or a folder of frame files, picked from
+the suggested list or typed as a path (there is no native Browse button yet). Frame files may
+have the nine fields of the sample or the eleven `readEZView.py` writes: the two extra fields
+are EZView channels 11 and 12, stored as `ch11` and `ch12`, and a time written as `1250.0`
+reads as 1250 ms. A folder's files are copied into the capture's `raw/`, and its source hash is
+the SHA-256 of the `sha256sum` listing of those files in name order. Start run has a field per
+replay role for the recording to replay; empty keeps the profile's. The engine refuses a path
+that is missing or that it cannot read before it creates the session, and changes neither the
+profile nor the template; the capture's manifest records the path it used.
+
+**Live from EZView.** The profile `ms-ezview-spool-masses` reads an EZView spool (input kind
+hardware; it sends nothing to the instrument) with the channel of each mass as `readEZView.py`
+writes it (m32 ch5, m34 ch2, m36 ch4, m44 ch3, m45 ch1, m46 ch6, m47 ch7, m49 ch8) and
+`t_legacy_ms` as the elapsed clock the presets' rates and readings need. To use it, choose it
+for the role on a preset's Setup tab and save; the list offers every profile whose columns and
+clocks cover what the role's derived values, charts and steps use. Then give the spool file at
+Start run, which runs hardware at 1x. The presets keep the replay profile as their default. It
+has been run against the spool fixtures, not a real spool. There is no simulated variant: the
+decoder cannot produce the sample's values (it never yields negatives, and channel 5's range
+caps m32 near 1.14), so a simulator would have to invent data.
+
+**Raw rows.** The session page's Export tab writes one capture's stored rows as CSV with their
+original columns, and a JSON sidecar with the session, capture, source files and hashes, row
+count, and column units (command `export_capture_csv`). A capture with `t_ms` and the eight
+masses can also be written in the layout legacy wrote at STOP: Count, Time (ms from the first
+row), m32 to m49. Legacy wrote one row per frame file, the mean of its rows; this has every
+stored row. An export is never overwritten: the same capture with the same rows returns the
+files already there.
+
+**Live charts over a long run.** Each capture's live buffer keeps its last 25,000 rows at full
+rate and, before them, every n-th row, n doubling whenever more than 25,000 are kept: at most
+50,000 points per capture, and *All* starts at the first row. A parameter change recomputes the
+older points from the stored rows, so rates keep full windows. Readings and analysis read the
+stored rows as before. The page keeps the same bound per series: past 75,000 points it halves
+all but the last 25,000.
+
 **Known gaps.** These are legacy features the presets do not have yet:
 
-- Loading the lab's own data. The import dialog offers only the repository's
-  `module2/SampleData.zip`; a folder of frame files, and the 11-field frame files the legacy
-  EZView reader writes, are refused. Start run replays the same fixed zip.
-- Live acquisition for the presets. The engine has an EZView spool adapter, but no profile maps
-  all eight masses, and the presets use the replay profile.
 - Typed calibration values and carrying calibrations over. Legacy let the operator type a
   calibration mV or a zero (O2 Zero, CO2 Zero, the O2 average), save calibrations at STOP, keep
   them for the next run, and load a calibration file (module 1). Here every value comes from a
   reading in this session.
-- A raw-data CSV at stop. The export is the aligned CSV, after saving an alignment.
-- Live charts keep the last 50,000 rows, so *All* on a long live run starts part-way in.
 - Legacy frame gaps are stored as events but not drawn on charts on the recording clock.
 
 ## Demonstration guide
@@ -299,6 +328,8 @@ requested timing, the parameters, the derived values, the alignment event, and t
   has a *Show in folder* button.
 - For spool captures, the engine also writes legacy one-frame CSVs that module 1 can read
   (command `export_legacy_frames`).
+- *Raw rows (CSV)* writes any capture's stored rows with a provenance sidecar (see
+  [Legacy module presets](#legacy-module-presets)).
 
 **7. Layout edit.** On the template, open *Run-page layout*. Drag the capture table's handle
 onto the top row; the charts, metrics, and controls move down. Save as the next revision (r5)
@@ -446,7 +477,7 @@ first proof of concept.
   Python `open_session` helper went away with the Python engine.
 - **Live updates.** The capture page polls every 500 ms. A Tauri channel could push updates
   instead.
-- **Other sources and tools.** Importing a folder of legacy frame files (the zip works), a
-  protocol editor, and recovering unflushed rows from the raw spool copy.
+- **Other sources and tools.** A native Browse button for import and replay paths (the Tauri
+  dialog plugin), a protocol editor, and recovering unflushed rows from the raw spool copy.
 - **Layout.** Dragging between groups, and deleting
   views.
