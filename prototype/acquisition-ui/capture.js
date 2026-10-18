@@ -1,9 +1,10 @@
 // The capture page: a session's run page laid out by its template revision. Live while the engine runs it,
 // then the same page over the stored data.
 
-import { call, esc, fmtClock, icon, inputBadge, openDialog, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
+import { call, esc, fmtClock, icon, openDialog, pageHeader, showInFolder, statusBadge, toast } from "./util.js";
 import { mountGrid, renderGrid } from "./components.js";
 import { PANELS, panel } from "./diagnostics.js";
+import { sessionSummary } from "./status.js";
 import { fillGaps, visible, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
@@ -87,7 +88,6 @@ async function replaySource(m, session, template, reference) {
   return source;
 }
 
-const ACQUISITION = { running: "Acquiring", completed: "Stopped", source_ended: "Source ended", waiting: "Waiting for start", imported: "Imported" };
 
 function recordingState(c, status, live) {
   if (status === "interrupted") return statusBadge("interrupted", "Interrupted");
@@ -96,22 +96,26 @@ function recordingState(c, status, live) {
   return live && ["running", "starting"].includes(c.status) ? statusBadge("running", "Recording") : statusBadge("completed", "Saved");
 }
 
-function statusStrip(m, source) {
+const INPUT_KINDS = { simulated: "Simulated", replay: "Replay", import: "Imported", hardware: "Hardware" };
+
+/** The status card behind the header's capture button: the clock, each capture, and the diagnostics panels. */
+function statusMenu(m, source, counts) {
   const policies = new Set(Object.values(source.captures).map(c => c.on_failure || "continue_others"));
   const policy = policies.size > 1 ? "Per role" : policies.has("stop_group") ? "Stop the whole group" : "Continue remaining";
   const duration = m.run?.stopped_utc && m.run?.group_start_utc ? (new Date(m.run.stopped_utc) - new Date(m.run.group_start_utc)) / 1000 : null;
   const clock = source.live ? ["Run elapsed", formatDuration(Math.floor(source.elapsed))]
-    : m.kind === "import" ? ["Imported recordings", "–"] : ["Run duration", duration == null ? "–" : formatDuration(Math.round(duration))];
+    : m.kind === "import" ? ["Imported recordings", `${Object.keys(source.captures).length} ${Object.keys(source.captures).length === 1 ? "file" : "files"}`] : ["Run duration", duration == null ? "–" : formatDuration(Math.round(duration))];
   return `
-    <div class="capture-clock"><span>${clock[0]}</span><strong data-elapsed>${clock[1]}</strong>
-      ${m.run?.speed && m.run.speed !== 1 ? `<small>${m.run.speed}x replay speed</small>` : ""}</div>
-    <div class="capture-devices">${Object.entries(source.captures).map(([cid, c]) => `
-      <div class="device-state">
-        <span class="device-name"><strong>${esc(cid)}</strong>${inputBadge(c.input_kind)}</span>
-        <span class="device-row"><span>Acquisition</span>${statusBadge(c.status, ACQUISITION[c.status])}</span>
-        <span class="device-row"><span>Recording</span>${recordingState(c, source.status, source.live)}<small>${c.rows ?? 0} rows</small></span>
-      </div>`).join("")}</div>
-    ${m.kind === "import" ? "" : `<div class="capture-policy"><span>Device failure</span><strong>${policy}</strong></div>`}`;
+    <div class="menu-section menu-clock"><span>${clock[0]}</span><strong>${clock[1]}</strong>
+      ${m.run?.speed && m.run.speed !== 1 ? `<span class="badge">${m.run.speed}x replay</span>` : ""}</div>
+    <div class="menu-section"><span class="menu-heading">Captures</span>${Object.entries(source.captures).map(([cid, c]) => `
+      <button class="menu-row capture-row" data-panel-open="devices">${icon("device")}
+        <span class="menu-label"><strong>${esc(cid)}</strong><span class="menu-meta">${esc(INPUT_KINDS[c.input_kind] || c.input_kind)} · ${(c.rows ?? 0).toLocaleString()} rows</span></span>
+        ${recordingState(c, source.status, source.live)}</button>`).join("")}</div>
+    <div class="menu-section">${PANELS.map(([k, label, ico]) => `
+      <button class="menu-row" data-panel-open="${k}">${icon(ico)}<span class="menu-label">${label}</span>
+        <span class="menu-meta">${counts[k] ?? ""}</span>${icon("right")}</button>`).join("")}</div>
+    ${m.kind === "import" ? "" : `<div class="menu-footer"><span>If a device fails</span><span>${policy}</span></div>`}`;
 }
 
 function alerts(m, session, source, analysis) {
@@ -271,12 +275,24 @@ async function mount(page, id, restart) {
     q("[data-select-mode]").setAttribute("aria-pressed", selecting && view.selecting);
     q("[data-selection]").textContent = view.selection ? `${fmt(view.selection.from)} to ${fmt(view.selection.to)}` : "No range selected";
     q("[data-selection-clear]").disabled = !view.selection;
-    if (source.live) return;
+    if (source.live) return void (q("[data-elapsed-bar]").textContent = formatDuration(Math.floor(source.elapsed)));
     q("[data-replay-time]").textContent = fmt(f.cursor);
     q("[data-replay-end]").textContent = fmt(f.window.end);
     Object.assign(q("[data-seek]"), { min: f.window.start, max: f.window.end, value: f.cursor });
     q("[data-seek]").setAttribute("aria-valuetext", fmt(f.cursor));
-    q("[data-play]").innerHTML = view.playing ? `${icon("pause")}Pause` : `${icon("play")}Play interval`;
+    q("[data-play]").innerHTML = icon(view.playing ? "pause" : "play");
+    q("[data-play]").setAttribute("aria-label", view.playing ? "Pause" : "Play interval");
+  };
+  let statusKey = null;
+  const paintStatus = () => {
+    const summary = sessionSummary(source.captures, source.status);
+    const eventList = source.live ? source.events : storedEvents;
+    const counts = { events: eventList ? String(eventList.length) : "" };
+    const key = JSON.stringify([summary, source.captures, source.status, source.live && Math.floor(source.elapsed), counts]);
+    if (key === statusKey) return;
+    statusKey = key;
+    page.querySelector("[data-status-toggle]").innerHTML = `<span class="status-dot tone-${summary.tone}"></span>${esc(summary.label)}${icon("down")}`;
+    page.querySelector("[data-status-popover]").innerHTML = statusMenu(m, source, counts);
   };
   const paintPanel = () => {
     const aside = page.querySelector("[data-panel]");
@@ -303,7 +319,7 @@ async function mount(page, id, restart) {
     grid?.paint(f);
     paintToolbar(f);
     paintPanel();
-    page.querySelector("[data-strip]").innerHTML = statusStrip(m, source);
+    paintStatus();
     page.querySelector("[data-alerts]").innerHTML = alerts(m, session, source, analysis);
   };
   const mountView = () => {
@@ -324,7 +340,6 @@ async function mount(page, id, restart) {
   const references = [["event", "Shared event"], ["elapsed", "Elapsed since each start"], ["clock", "Clock time"]];
   const toolbar = () => `
     <div class="capture-interval">
-      <div class="range-heading"><strong>${source.live ? "Display interval" : "Replay interval"}</strong><span data-range-summary></span></div>
       <div class="range-options" role="group" aria-label="Time range">
         ${source.live ? "" : `<label class="reference-select"><span>Reference</span><select data-reference>${references.map(([k, label]) =>
           `<option value="${k}" ${k === source.alignment?.reference ? "selected" : ""}>${label}</option>`).join("")}</select></label>`}
@@ -341,24 +356,34 @@ async function mount(page, id, restart) {
         Only the display changes; stored data keeps its original times.</p>
       <p class="error-text" role="alert"></p>
     </form>`;
-  const transport = () => source.live ? "" : `
-    <div class="replay-transport">
-      <button data-play></button>
-      <button class="icon-only" data-restart aria-label="Restart interval" title="Restart interval">${icon("undo")}</button>
-      <div class="playhead-readout"><strong data-replay-time></strong><span>/ <span data-replay-end></span></span></div>
-      <label class="replay-scrubber"><span class="sr-only">Replay position</span><input type="range" step="0.1" data-seek></label>
-      <label class="speed-control">Speed<select data-speed>${[0.5, 1, 2, 4, 10, 20].map(v => `<option value="${v}" ${v === view.speed ? "selected" : ""}>${v}×</option>`).join("")}</select></label>
+  // Floating at the bottom of the page and hideable: play controls for a recording, the clock and freeze for a run.
+  const transport = () => `
+    <div class="transport-dock" data-dock>
+      <div class="transport-bar" role="group" aria-label="${source.live ? "Live display" : "Replay"}">
+        ${source.live ? `<span class="live-pill"><span class="live-dot"></span>Live</span>
+          <div class="playhead-readout"><strong data-elapsed-bar></strong><span>run time</span></div>
+          <button data-header="freeze"></button>` : `
+          <button class="primary icon-only play-button" data-play></button>
+          <button class="quiet icon-only" data-restart aria-label="Restart interval" title="Restart interval">${icon("undo")}</button>
+          <div class="playhead-readout"><strong data-replay-time></strong><span>/ <span data-replay-end></span></span></div>
+          <label class="replay-scrubber"><span class="sr-only">Replay position</span><input type="range" step="0.1" data-seek></label>
+          <label class="speed-control"><span class="sr-only">Speed</span><select data-speed>${[0.5, 1, 2, 4, 10, 20].map(v => `<option value="${v}" ${v === view.speed ? "selected" : ""}>${v}×</option>`).join("")}</select></label>`}
+        <span class="transport-range" title="${source.live ? "Display interval" : "Replay interval"}" data-range-summary></span>
+        <button class="quiet icon-only" data-dock-toggle aria-label="Hide controls" title="Hide controls">${icon("down")}</button>
+      </div>
+      <button class="dock-show" data-dock-toggle hidden>${icon(source.live ? "clock" : "play")}${source.live ? "Live display" : "Replay controls"}${icon("up")}</button>
     </div>`;
 
   const t = m.template;
   page.innerHTML = pageHeader([["Home", "#/"], ["Sessions", "#/sessions"], [m.name, `#/sessions/${m.id}`]], m.name, {
     current: "Capture",
     sub: `<a href="#/templates/${esc(t.id)}/r${t.revision}">${esc(t.name)} r${t.revision}</a> · ${statusBadge(m.status)}`,
-    actions: session.live ? `<button data-header="freeze"></button><button class="danger" data-header="stop">${icon("stop")}Stop run</button>`
-      : `<a class="button" href="#/sessions/${esc(m.id)}">${icon("file")}Review &amp; export</a>`,
+    actions: `<div class="status-menu"><button class="status-trigger" data-status-toggle aria-expanded="false" aria-controls="session-status"></button>
+        <div class="status-popover" id="session-status" data-status-popover hidden></div></div>` + (session.live
+      ? `<button class="danger" data-header="stop">${icon("stop")}Stop run</button>`
+      : `<a class="button" href="#/sessions/${esc(m.id)}">${icon("file")}Review &amp; export</a>`),
   }) + `
     <div class="runtime-page">
-      <section class="capture-status-strip" aria-label="Session state" data-strip></section>
       <div data-alerts></div>
       <section class="replay-controls" aria-label="${source.live ? "Display time range" : "Recording replay"}">
         <div class="capture-toolbar">
@@ -369,22 +394,40 @@ async function mount(page, id, restart) {
               <span class="small muted" data-selection></span>
               <button class="quiet" data-selection-clear>Clear</button>
             </div>
-            <div class="actions">${PANELS.map(([k, label, ico]) => `<button class="quiet" data-panel-open="${k}" aria-controls="diagnostics" aria-expanded="false">${icon(ico)}${label}</button>`).join("")}</div>
           </div>
           ${toolbar()}
         </div>
         ${customForm()}
-        ${transport()}
       </section>
       <div class="runtime-workspace" data-workspace><div class="runtime-canvas" data-canvas></div>
         <aside class="diagnostics-panel" id="diagnostics" data-panel hidden aria-label="Diagnostics"></aside></div>
+      ${transport()}
     </div>`;
 
   const q = sel => page.querySelector(sel);
   const form = q("#custom-range");
   page.querySelectorAll("[data-view]").forEach(b => (b.onclick = () => { state.view = b.dataset.view; mountView(); refreshPreviews(); }));
   page.querySelectorAll("[data-range]").forEach(b => (b.onclick = () => setRange(b.dataset.range)));
-  page.querySelectorAll("[data-panel-open]").forEach(b => (b.onclick = () => openPanel(b.dataset.panelOpen)));
+  const popover = q("[data-status-popover]"), trigger = q("[data-status-toggle]");
+  const showStatus = open => { popover.hidden = !open; trigger.setAttribute("aria-expanded", open); };
+  trigger.addEventListener("click", event => { event.stopPropagation(); showStatus(popover.hidden); });
+  popover.addEventListener("click", event => {
+    const row = event.target.closest("[data-panel-open]");
+    if (row) { showStatus(false); if (view.panel !== row.dataset.panelOpen) openPanel(row.dataset.panelOpen); }
+  });
+  // The page is mounted again on every visit; these die with it.
+  const outside = new AbortController();
+  document.addEventListener("click", event => event.target.closest?.(".status-menu") || showStatus(false), { signal: outside.signal });
+  document.addEventListener("keydown", event => event.key === "Escape" && showStatus(false), { signal: outside.signal });
+  const DOCK_KEY = "cousins-transport-hidden";
+  const dockHidden = hidden => {
+    q("[data-dock]").classList.toggle("collapsed", hidden);
+    q(".transport-bar").hidden = hidden;
+    q(".dock-show").hidden = !hidden;
+    localStorage.setItem(DOCK_KEY, hidden ? "1" : "");
+  };
+  page.querySelectorAll("[data-dock-toggle]").forEach(b => (b.onclick = () => dockHidden(!q(".transport-bar").hidden)));
+  dockHidden(!!localStorage.getItem(DOCK_KEY));
   q("[data-panel]").addEventListener("click", event => {
     if (event.target.closest("[data-panel-close]")) openPanel(view.panel);
     const tab = event.target.closest("[data-panel-tab]");
@@ -469,7 +512,7 @@ async function mount(page, id, restart) {
     }
   };
   if (source.live) poll();
-  return () => { stopped = true; clearTimeout(timer); clearInterval(replay); grid?.dispose(); };
+  return () => { stopped = true; clearTimeout(timer); clearInterval(replay); grid?.dispose(); outside.abort(); };
 }
 
 export async function renderCapture(page, id) {

@@ -78,7 +78,7 @@ const ICONS = {
   home: "m3 10 9-7 9 7v10H3Z M9 20v-7h6v7", grid: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
   device: "M6 3h12v18H6z M9 7h6 M9 11h6 M10 17h4", chart: "M3 3v18h18 M6 15l4-5 4 3 6-8", folder: "M3 6h7l2 3h9v11H3z",
   gear: "m9 3-.7 3-2 .9-2.7-.9-1.5 2.6 2 2.1v2.5l-2 2.1 1.5 2.6 2.7-.9 2 .9.7 3h3l.7-3 2-.9 2.7.9 1.5-2.6-2-2.1v-2.5l2-2.1-1.5-2.6-2.7.9-2-.9-.7-3z M14.5 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
-  left: "m14 6-6 6 6 6", right: "m10 6 6 6-6 6", plus: "M12 5v14 M5 12h14", close: "m6 6 12 12 M18 6 6 18",
+  left: "m14 6-6 6 6 6", right: "m10 6 6 6-6 6", down: "m6 9 6 6 6-6", up: "m6 15 6-6 6 6", plus: "M12 5v14 M5 12h14", close: "m6 6 12 12 M18 6 6 18",
   play: "m8 4 12 8-12 8z", pause: "M8 5v14 M16 5v14", stop: "M5 5h14v14H5z", check: "m5 12 4 4L19 6",
   alert: "m12 3 10 18H2z M12 9v4 M12 17h.01", clock: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 7v5l3 2",
   download: "M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5", save: "M3 3h15l3 3v15H3z M7 3v6h10V3 M7 21v-8h10v8",

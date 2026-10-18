@@ -16,8 +16,9 @@ prototype/
 ```
 
 The UI follows the look and layout of the first proof of concept (commit `e99400c`): sidebar,
-breadcrumbs, a run page laid out on a 12-column grid, view tabs, a status strip, a time-range
-toolbar, replay, and a diagnostics panel. Every value on it comes from the engine.
+breadcrumbs, a run page laid out on a 12-column grid, view tabs, a time-range toolbar, replay,
+and a diagnostics panel. The capture page's header has a status button, and replay sits in a
+floating bar. Every value on it comes from the engine.
 
 The engine was first written in Python. It was ported to Rust when the team chose Rust and
 Tauri, and the Python package was then removed. The Rust tests repeat every check the Python
@@ -230,19 +231,21 @@ requested timing, the parameters, the derived values, the alignment event, and t
 - The run opens on the capture page. CO2 and fluorescence charts sit side by side, with the
   CO2 and fluorescence metrics and the run controls beside them and the capture table below.
   *Mass 44 and parameters* is the second view.
-- The status strip shows the run clock and, per capture, the input badge (Simulated, Replay),
-  acquisition state, recording state, and rows.
+- The header's capture button (*2 captures*, with a dot for the most urgent state) opens a card
+  with the run clock, each capture's input, rows and recording state, and the diagnostics
+  panels.
 - The capture table shows requested start, start command, and first sample as separate
   times.
 - *Last 30 s*, *Last 1 min*, *All*, and *Custom* (HH:MM:SS on the run clock) window the
-  charts. *Freeze display* holds the window while data keeps arriving.
-- *Devices*, *Events*, and *Capture logs* open the diagnostics panel: input notes and control
-  capability, flashes and markers, and the engine's timestamps.
+  charts. The floating bar at the bottom shows the run time; its *Freeze display* holds the
+  window while data keeps arriving. The chevron hides the bar, and the page remembers.
+- *Devices*, *Events*, and *Capture logs* in the status card open the diagnostics panel: input
+  notes and control capability, flashes and markers, and the engine's timestamps.
 - Press *Mark: Closed system* during the run, then *Stop run*. The page switches to replay.
 
 **3. Review the run.**
 - On the capture page, *Reference* switches between the shared event, elapsed time, and clock
-  time. *Play interval*, restart, the seek slider, and *Speed* replay the stored data. Metrics
+  time. The floating bar's play button, restart, seek slider, and speed replay the stored data. Metrics
   show the value at the playhead. None of this writes to the session.
 - *Review & export* opens the session page. *Align & compare* offers *Clock time*. It works
   here because both captures recorded host clock time. *Shared event* uses the operator marker.
