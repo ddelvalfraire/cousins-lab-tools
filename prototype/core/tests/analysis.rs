@@ -358,8 +358,20 @@ fn a_reading_is_saved_with_its_values_and_a_set_calibration_fills_its_parameter(
 }
 
 #[test]
-fn a_reading_refuses_unknown_steps_and_captures_and_empty_ranges() {
+fn a_preview_computes_the_reading_without_saving_it_and_both_refuse_the_same_requests() {
     let (engine, dir, id) = imported(template());
+    let preview = call(
+        &engine,
+        "preview_reading",
+        json!({"session_id": id, "step": "zero", "capture": CAPTURE, "range_s": [0.2, 0.45]}),
+    );
+    assert_eq!(preview["step"], "zero");
+    assert_eq!(preview["values"]["zero_p"]["n"], 3);
+    assert_eq!(
+        preview["values"]["zero_p"]["value"],
+        (211.692 + 191.442 + 171.192) / 3.0
+    );
+    assert_eq!(record_files(&dir, &id), 0);
     for (request, message) in [
         (reading("nope", [0.2, 0.45]), "No step nope"),
         (
@@ -377,8 +389,10 @@ fn a_reading_refuses_unknown_steps_and_captures_and_empty_ranges() {
     ] {
         let mut args = request.clone();
         args["session_id"] = json!(id);
-        let e = refused(&engine, "record_analysis", args);
+        let e = refused(&engine, "record_analysis", args.clone());
         assert_eq!((e.kind, e.message.as_str()), (ErrorKind::Invalid, message));
+        let e = refused(&engine, "preview_reading", args);
+        assert_eq!(e.message, message);
     }
     assert_eq!(record_files(&dir, &id), 0);
 }

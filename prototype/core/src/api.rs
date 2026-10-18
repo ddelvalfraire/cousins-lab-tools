@@ -277,6 +277,16 @@ impl Engine {
                     a.request,
                 )?)
             }
+            "preview_reading" => {
+                let a: PreviewArgs = parse(args)?;
+                reply(analysis::preview(
+                    &self.session_dir(&a.session_id)?,
+                    &self.manifest(&a.session_id)?,
+                    a.step,
+                    a.capture,
+                    a.range_s,
+                )?)
+            }
             "query_session" => {
                 let a: QueryArgs = parse(args)?;
                 let dir = self.session_dir(&a.session_id)?;
@@ -646,6 +656,14 @@ struct RecordArgs {
     request_id: Option<String>,
     #[serde(flatten)]
     request: Request,
+}
+
+#[derive(Deserialize)]
+struct PreviewArgs {
+    session_id: String,
+    step: String,
+    capture: String,
+    range_s: analysis::Range,
 }
 
 #[derive(Deserialize)]

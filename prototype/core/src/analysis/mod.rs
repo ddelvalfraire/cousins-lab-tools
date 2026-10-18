@@ -116,6 +116,41 @@ fn take_reading(
     Ok((clock, values, params))
 }
 
+/// What a reading would hold, computed from stored rows and not saved.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Preview {
+    pub step: String,
+    pub capture: String,
+    pub range_s: Range,
+    pub values: IndexMap<String, ReadingValue>,
+}
+
+pub fn preview(
+    session_dir: &Path,
+    manifest: &Manifest,
+    step: String,
+    capture: String,
+    range_s: Range,
+) -> Result<Preview, AnalysisError> {
+    let template = from_snapshot(manifest.template.clone())?;
+    let log = load_records(session_dir)?;
+    let (_, values, _) = take_reading(
+        session_dir,
+        manifest,
+        &template,
+        &log,
+        &step,
+        &capture,
+        range_s,
+    )?;
+    Ok(Preview {
+        step,
+        capture,
+        range_s,
+        values,
+    })
+}
+
 /// The record `request` makes, checked against the template and the log so far.
 fn action_for(
     session_dir: &Path,
