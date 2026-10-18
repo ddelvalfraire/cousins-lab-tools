@@ -100,7 +100,8 @@ test("a rebuilt chart keeps the template's series colours and the series hidden 
 test("every rebuilt chart offers Reset zoom and Save as PNG under the chart's title, and no brush buttons", () => {
   const live = { live: true, range: null, active: true, version: 1 };
   const option = timeChartPaint({ ...pressure, title: "Pressure" }, "pressure", frame(live)).option();
-  assert.deepEqual(Object.keys(option.toolbox.feature), ["restore", "saveAsImage"]);
+  assert.deepEqual(Object.keys(option.toolbox.feature), ["restore", "saveAsImage", "brush"]);
+  assert.deepEqual(option.toolbox.feature.brush, { show: false }, "no brush buttons in the toolbox");
   assert.equal(option.toolbox.feature.saveAsImage.name, "Pressure");
   assert.deepEqual(option.brush.toolbox, [], "the page's Select range toggle drives the brush");
 });
