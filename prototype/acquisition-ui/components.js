@@ -4,7 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
-import { capturesFor, fmtValue, readingRows } from "./analysis.js";
+import { capturesFor, fmtValue, parameterRows, readingRows } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
 
@@ -61,10 +61,13 @@ function controlsBody(c, ctx, frame) {
       No commands are sent to instruments. Ambit and pulser serial control is deferred.</p>`;
 }
 
-function inputsBody(c, ctx) {
-  const params = Object.entries(ctx.session.template.parameters || {}).filter(([k]) => !c.parameters?.length || c.parameters.includes(k));
-  return `<dl class="kv">${params.map(([k, p]) => `<dt>${esc(k)}</dt><dd><strong>${esc(p.value)}</strong> ${esc(p.unit || "")}<br><span class="small muted">${esc(p.note || "")}</span></dd>`).join("")}</dl>
-    <p class="small muted">Values of revision ${ctx.session.template.revision}. Edit them on the template; each save is a new revision.</p>`;
+export function inputsBody(c, ctx, rows) {
+  return `<dl class="kv">${rows.map(p => `<dt title="${esc(p.name)}">${esc(p.label)}</dt><dd>
+      ${p.entry ? `<input class="entry" inputmode="decimal" aria-label="${esc(p.label)}" data-change="entry" data-parameter="${esc(p.name)}"
+        value="${esc(p.typed)}" placeholder="${esc(p.value == null ? "Enter a value" : fmtValue(p.value))}">` : `<strong>${fmtValue(p.value)}</strong>`}
+      ${esc(p.unit)} <span class="source-tag">${esc(p.tag)}</span>
+      ${p.why || p.note ? `<br><span class="small muted">${esc(p.why || p.note)}</span>` : ""}</dd>`).join("")}</dl>
+    <p class="small muted">Revision ${ctx.session.template.revision} gives the defaults. Typed values, readings and fits are saved to this session.</p>`;
 }
 
 /** analysis: the page's {view, previews, capture}; capture maps a role to the capture chosen for it. */
@@ -105,7 +108,7 @@ function body(c, ctx) {
   }
   if (c.kind === "controls") return `<div class="control-body" data-controls-for="${esc(c.id)}"></div>`;
   if (c.kind === "captures") return `<div data-captures-for="${esc(c.id)}"></div>`;
-  if (c.kind === "inputs") return inputsBody(c, ctx);
+  if (c.kind === "inputs") return `<div data-inputs-for="${esc(c.id)}">${inputsBody(c, ctx, parameterRows(c.parameters, null, ctx.template.data.parameters))}</div>`;
   if (c.kind === "readings") return `<div class="readings" data-readings-for="${esc(c.id)}"></div>`;
   if (c.kind === "group") return renderGrid(c.components, ctx);
   return "";
@@ -159,7 +162,7 @@ export function mountGrid(root, items, ctx) {
     if (field && root.contains(field)) ctx.actions?.[field.dataset.change]?.(field.dataset, field.value);
   });
 
-  let stateKey = null, analysisKey = null;
+  let stateKey = null, analysisKey = null, paramsKey = null;
   return {
     paint(frame) {
       const ds = frame.dataset;
@@ -187,6 +190,14 @@ export function mountGrid(root, items, ctx) {
         analysisKey = akey;
         for (const c of all.filter(c => c.kind === "readings")) {
           root.querySelector(`[data-readings-for="${CSS.escape(c.id)}"]`).innerHTML = readingsBody(c, ctx, frame.analysis, frame.select?.range);
+        }
+      }
+      // Keyed on the values alone, so a preview or poll does not wipe a field while it is being typed in.
+      const pkey = JSON.stringify(frame.analysis?.view?.parameters ?? null);
+      if (frame.analysis?.view && pkey !== paramsKey) {
+        paramsKey = pkey;
+        for (const c of all.filter(c => c.kind === "inputs")) {
+          root.querySelector(`[data-inputs-for="${CSS.escape(c.id)}"]`).innerHTML = inputsBody(c, ctx, parameterRows(c.parameters, frame.analysis.view));
         }
       }
       const key = JSON.stringify([frame.live, frame.status, frame.captures]);

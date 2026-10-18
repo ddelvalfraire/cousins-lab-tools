@@ -8,7 +8,7 @@ import { visible, walk } from "./layout.js";
 import { absorbRows, axisKeyFor, livePoints } from "./livepoints.js";
 import { advance, axisFor, extentOf, formatDuration, parseDuration, RANGE_PRESETS, windowFor } from "./timerange.js";
 import { selectable } from "./selection.js";
-import { capturesFor } from "./analysis.js";
+import { capturesFor, parseEntry } from "./analysis.js";
 
 const LIVE_POLL_MS = 500;
 const RUN_CLOCK = "Run clock (s since group start, host clock)";
@@ -189,6 +189,11 @@ async function mount(page, id, restart) {
       read: logged("Reading requested", async ({ step }) => {
         const sel = view.selection;
         if (sel) await record({ action: "reading", step, capture: captureOf(analysis.view.steps[step].role), range_s: [sel.from, sel.to] });
+      }),
+      entry: logged("Value entered", async ({ parameter }, text) => {
+        const typed = parseEntry(text);
+        if (typed.error) throw new Error(typed.error);
+        await record({ action: "entry", parameter, value: typed.value });
       }),
       retract: logged("Removal requested", ({ records }) => record({ action: "retract", records: records.split(" ") })),
       capture: ({ role }, capture) => { analysis.capture[role] = capture; refreshPreviews(); },

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { capturesFor, readingRows } from "../analysis.js";
+import { capturesFor, parameterRows, parseEntry, readingRows } from "../analysis.js";
+import { inputsBody } from "../components.js";
 
 const m44 = (value, n) => ({ m44: { stat: "mean", of: "m44", value, n, t_first_s: 0.21, t_last_s: 0.42 } });
 const analysis = {
@@ -52,4 +53,46 @@ test("readings go to the captures that record the step's role", () => {
   const captures = { "ms-a": { role: "ms" }, light: { role: "light" }, "ms-b": { role: "ms" } };
   assert.deepEqual(capturesFor(captures, "ms"), ["ms-a", "ms-b"]);
   assert.deepEqual(capturesFor(captures, "pulser"), []);
+});
+
+const parameters = {
+  zero_p: { value: 191.442, unit: "mV", label: "Zero", note: "", entry: false, source: "fitted", calibration: "zero" },
+  temp_c: { value: null, unit: "°C", label: "Temperature", note: "Required", entry: true, source: "unset", why: "Enter a value" },
+  o2_cal: { value: 1.35, unit: "µmol/L per mV", label: "O2 Cal", note: "", entry: true, source: "computed" },
+  ubar: { value: 9200, unit: "µbar/%", label: "µbar per %", note: "Legacy constant", entry: false, source: "default" },
+  co2_t: { value: 25, unit: "°C", label: "Typed", note: "", entry: true, source: "entered", record: "rec-000003" },
+};
+
+test("inputs show each parameter's effective value with where it came from", () => {
+  const rows = parameterRows([], { parameters });
+  assert.deepEqual(rows.map(r => [r.name, r.value, r.tag, r.entry, r.typed, r.why]), [
+    ["zero_p", 191.442, "Fitted · zero", false, "", ""],
+    ["temp_c", null, "Unset", true, "", "Enter a value"],
+    ["o2_cal", 1.35, "Computed", true, "", ""],
+    ["ubar", 9200, "Default", false, "", ""],
+    ["co2_t", 25, "Entered", true, "25", ""],
+  ]);
+  assert.deepEqual(parameterRows(["temp_c", "ubar"], { parameters }).map(r => r.name), ["temp_c", "ubar"]);
+});
+
+test("before the analysis view arrives the template's values show as defaults, none typed in", () => {
+  const rows = parameterRows(["q"], null, { q: { value: 3, unit: "s", label: "Q" }, r: { value: 1 } });
+  assert.deepEqual(rows.map(r => [r.name, r.label, r.value, r.tag, r.entry]), [["q", "Q", 3, "Default", false]]);
+});
+
+test("a typed value is a number, an empty field clears the entry, anything else is refused", () => {
+  assert.deepEqual(parseEntry(" 25 "), { value: 25 });
+  assert.deepEqual(parseEntry("-0.5e-3"), { value: -0.0005 });
+  assert.deepEqual(parseEntry(""), { value: null });
+  assert.deepEqual(parseEntry("twenty"), { error: '"twenty" is not a number' });
+  assert.deepEqual(parseEntry("Infinity"), { error: '"Infinity" is not a number' });
+});
+
+test("entry parameters render a field that sends on change; the others render read-outs (B19)", () => {
+  const html = inputsBody({}, { session: { template: { revision: 2 } } }, parameterRows([], { parameters }));
+  const fields = [...html.matchAll(/<input[^>]*data-parameter="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(fields, ["temp_c", "o2_cal", "co2_t"]);
+  assert.equal([...html.matchAll(/<input[^>]*data-change="entry"/g)].length, 3);
+  assert.match(html, /data-parameter="co2_t"\s+value="25"/);
+  assert.match(html, /data-parameter="o2_cal"\s+value="" placeholder="1.35"/);
 });
