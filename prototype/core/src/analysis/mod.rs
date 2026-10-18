@@ -22,7 +22,8 @@ use crate::templates::{Template, from_snapshot};
 
 pub use fold::{AnalysisState, fold};
 pub use spec::{
-    AnalysisSpec, CalPoint, Calibration, CalibrationKind, ReadingSpec, Stat, StepKind, StepSpec,
+    AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
+    ResultSpec, Stat, StepKind, StepSpec,
 };
 pub use store::{Action, Record, RecordId, append, load_records};
 

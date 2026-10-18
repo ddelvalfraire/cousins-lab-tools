@@ -1,5 +1,6 @@
-//! What a template declares about analysis: calibrations, parsed into typed specs once at
-//! validation. `parse` checks shapes; `check` checks names against the rest of the template.
+//! What a template declares about analysis: calibrations and measurements, parsed into
+//! typed specs once at validation. `parse` checks shapes; `check` checks the calibrations'
+//! names against the rest of the template. `parse` checks shapes; `check` checks names against the rest of the template.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -7,6 +8,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+use crate::expr::{self, Expression};
 use crate::params::ParamSpec;
 use crate::pycompat::{list_repr, repr, str_repr};
 use crate::templates::{DerivedValue, object};
@@ -74,17 +76,57 @@ impl Calibration {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct MeasureStep {
+    pub label: String,
+    pub readings: IndexMap<String, ReadingSpec>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ResultSpec {
+    /// Reads parameters, the measurement's readings and earlier results.
+    pub expr: Expression,
+    pub unit: String,
+    pub label: String,
+}
+
+/// Readings taken over one or more ranges, results computed from them, and the text columns
+/// the operator types, which together make one row of a results table.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Measurement {
+    pub label: String,
+    pub role: String,
+    /// By step reference: `<id>.<step>`, or the measurement's own id when the template gives
+    /// its readings directly.
+    pub steps: IndexMap<String, MeasureStep>,
+    pub labels: IndexMap<String, String>,
+    pub results: IndexMap<String, ResultSpec>,
+}
+
+impl Measurement {
+    /// Every reading name with its step reference.
+    pub fn readings(&self) -> impl Iterator<Item = (&str, &str, &ReadingSpec)> {
+        self.steps.iter().flat_map(|(step, s)| {
+            s.readings
+                .iter()
+                .map(move |(name, r)| (step.as_str(), name.as_str(), r))
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum StepKind {
     /// A `set` calibration's one range.
     Set,
     /// One point of a `line` calibration.
     Point { known: f64 },
+    /// One range of a measurement.
+    Measure,
 }
 
 /// One button's worth of analysis: a range the operator reads, and what it reads.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StepSpec {
-    /// The calibration that owns the step.
+    /// The calibration or measurement that owns the step.
     pub owner: String,
     pub kind: StepKind,
     pub label: String,
@@ -97,13 +139,14 @@ pub struct StepSpec {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AnalysisSpec {
     pub calibrations: IndexMap<String, Calibration>,
+    pub measurements: IndexMap<String, Measurement>,
     /// Every step by its reference: `co2.ul1` for a point, a bare id for a one-range owner.
     pub steps: IndexMap<String, StepSpec>,
 }
 
 impl AnalysisSpec {
     pub fn is_empty(&self) -> bool {
-        self.calibrations.is_empty()
+        self.calibrations.is_empty() && self.measurements.is_empty()
     }
 }
 
@@ -261,7 +304,113 @@ fn calibration(id: &str, spec: &Value, errors: &mut Vec<String>) -> Option<Calib
     })
 }
 
-fn steps_of(calibrations: &IndexMap<String, Calibration>) -> IndexMap<String, StepSpec> {
+/// Name to reading spec, each problem reported after `place`.
+fn readings(
+    given: Option<&Value>,
+    place: &str,
+    errors: &mut Vec<String>,
+) -> IndexMap<String, ReadingSpec> {
+    let mut out = IndexMap::new();
+    let Some(given) = mapping(given) else {
+        errors.push(format!(
+            "{place}readings must map reading names to {{stat, of}}"
+        ));
+        return out;
+    };
+    for (name, r) in given {
+        match reading(r) {
+            Ok(r) => {
+                out.insert(name.clone(), r);
+            }
+            Err(e) => errors.push(format!("{place}reading {name}: {e}")),
+        }
+    }
+    out
+}
+
+fn measurement(id: &str, spec: &Value, errors: &mut Vec<String>) -> Option<Measurement> {
+    let mut own = Vec::new();
+    if !spec.is_object() {
+        own.push("settings must be a mapping".into());
+    } else if !is_id(id) {
+        own.push("ids may use only letters, digits, '_' and '-'".into());
+    }
+    let label = text(spec, "label", id);
+    let mut steps = IndexMap::new();
+    match (spec.get("readings"), spec.get("steps")) {
+        _ if !own.is_empty() => {}
+        (Some(_), Some(_)) => own.push("give readings or steps, not both".into()),
+        (None, None) => own.push("needs readings or steps".into()),
+        (Some(r), None) => {
+            let readings = readings(Some(r), "", &mut own);
+            steps.insert(id.to_string(), MeasureStep { label, readings });
+        }
+        (None, Some(given)) => match mapping(Some(given)) {
+            None => own.push("steps must map step ids to {label, readings}".into()),
+            Some(given) => {
+                for (step, s) in given {
+                    if !is_id(step) {
+                        own.push(format!(
+                            "step {}: ids may use only letters, digits, '_' and '-'",
+                            str_repr(step)
+                        ));
+                    }
+                    let place = format!("step {step}: ");
+                    let readings = readings(s.get("readings"), &place, &mut own);
+                    let label = text(s, "label", step);
+                    steps.insert(format!("{id}.{step}"), MeasureStep { label, readings });
+                }
+            }
+        },
+    }
+    let mut labels = IndexMap::new();
+    match spec.get("labels").map(Value::as_object) {
+        None => {}
+        Some(Some(given)) if given.values().all(Value::is_string) => {
+            for (key, label) in given {
+                labels.insert(key.clone(), label.as_str().unwrap_or_default().to_string());
+            }
+        }
+        Some(_) => own.push("labels must map keys to the text the table shows".into()),
+    }
+    let mut results = IndexMap::new();
+    match mapping(spec.get("results")) {
+        None => own.push("results must map result keys to {expr, unit, label}".into()),
+        Some(given) => {
+            for (key, r) in given {
+                let parsed = r
+                    .get("expr")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "expr must be text".to_string())
+                    .and_then(|t| expr::parse(t).map_err(|e| e.to_string()));
+                match parsed {
+                    Ok(expr) => {
+                        let result = ResultSpec {
+                            expr,
+                            unit: text(r, "unit", ""),
+                            label: text(r, "label", key),
+                        };
+                        results.insert(key.clone(), result);
+                    }
+                    Err(e) => own.push(format!("result {key}: {e}")),
+                }
+            }
+        }
+    }
+    errors.extend(own.iter().map(|e| format!("Measurement {id}: {e}")));
+    own.is_empty().then(|| Measurement {
+        label: text(spec, "label", id),
+        role: text(spec, "role", ""),
+        steps,
+        labels,
+        results,
+    })
+}
+
+fn steps_of(
+    calibrations: &IndexMap<String, Calibration>,
+    measurements: &IndexMap<String, Measurement>,
+) -> IndexMap<String, StepSpec> {
     let mut steps = IndexMap::new();
     for (id, c) in calibrations {
         let step = |kind, label: &str, readings| StepSpec {
@@ -286,6 +435,18 @@ fn steps_of(calibrations: &IndexMap<String, Calibration>) -> IndexMap<String, St
             }
         }
     }
+    for (id, m) in measurements {
+        for (step, s) in &m.steps {
+            let spec = StepSpec {
+                owner: id.clone(),
+                kind: StepKind::Measure,
+                label: s.label.clone(),
+                role: m.role.clone(),
+                readings: s.readings.clone(),
+            };
+            steps.insert(step.clone(), spec);
+        }
+    }
     steps
 }
 
@@ -299,10 +460,17 @@ pub fn parse(data: &Value) -> (AnalysisSpec, Vec<String>) {
             calibrations.insert(id.clone(), c);
         }
     }
-    let steps = steps_of(&calibrations);
+    let mut measurements = IndexMap::new();
+    for (id, spec) in object(data, "measurements") {
+        if let Some(m) = measurement(id, spec, &mut errors) {
+            measurements.insert(id.clone(), m);
+        }
+    }
+    let steps = steps_of(&calibrations, &measurements);
     (
         AnalysisSpec {
             calibrations,
+            measurements,
             steps,
         },
         errors,
@@ -637,6 +805,100 @@ mod tests {
                 "Calibration nope: sets 'co2_ul_per_mv', which is not a parameter",
                 "Calibration elsewhere: unknown role 'light'",
             ]
+        );
+    }
+
+    fn sample() -> Value {
+        json!({
+            "label": "Sample",
+            "role": "ms",
+            "steps": {
+                "co2": {"label": "CO2 Sample", "readings": {"co2_mv": {"stat": "mean", "of": "m44"}}},
+                "o2": {"readings": {"o2_mv": {"stat": "mean", "of": "m32"}}},
+            },
+            "results": {
+                "pct": {"expr": "slope_p * (co2_mv - zero_p)", "unit": "%", "label": "%CO2"},
+                "twice": {"expr": "pct * 2 + o2_mv"},
+            },
+        })
+    }
+
+    #[test]
+    fn measurements_parse_into_steps_readings_labels_and_results() {
+        let template = with(
+            "measurements",
+            json!({
+                "sample": sample(),
+                "extract": {
+                    "role": "ms",
+                    "labels": {"sample_name": "Sample Name"},
+                    "readings": {"rate": {"stat": "slope", "of": "d44"}},
+                    "results": {"v0": {"expr": "-rate * slope_p", "unit": "nmol/ml/s"}},
+                },
+            }),
+        )
+        .unwrap();
+        let spec = template.analysis();
+        let steps: Vec<(&str, &str, &str, &StepKind)> = spec
+            .steps
+            .iter()
+            .map(|(id, s)| (id.as_str(), s.owner.as_str(), s.label.as_str(), &s.kind))
+            .collect();
+        assert_eq!(
+            steps,
+            [
+                ("sample.co2", "sample", "CO2 Sample", &StepKind::Measure),
+                ("sample.o2", "sample", "o2", &StepKind::Measure),
+                ("extract", "extract", "extract", &StepKind::Measure),
+            ]
+        );
+        let sample = &spec.measurements["sample"];
+        let readings: Vec<(&str, &str)> = sample.readings().map(|(s, n, _)| (s, n)).collect();
+        assert_eq!(readings, [("sample.co2", "co2_mv"), ("sample.o2", "o2_mv")]);
+        assert_eq!(sample.results.keys().collect::<Vec<_>>(), ["pct", "twice"]);
+        assert_eq!(sample.results["twice"].label, "twice");
+        let extract = &spec.measurements["extract"];
+        assert_eq!(extract.labels["sample_name"], "Sample Name");
+        assert_eq!(extract.results["v0"].expr.text(), "-rate * slope_p");
+    }
+
+    #[test]
+    fn each_problem_in_a_measurement_gets_its_own_message() {
+        let mut steps = sample();
+        steps["steps"]["o.2"] = json!({"readings": {}});
+        steps["labels"] = json!({"name": 3});
+        steps["results"]["bad"] = json!({"expr": "co2_mv +"});
+        steps["results"]["none"] = json!({"unit": "%"});
+        let error = with(
+            "measurements",
+            json!({
+                "sample": steps,
+                "both": {"role": "ms", "readings": {}, "steps": {}, "results": {}},
+                "neither": {"role": "ms", "results": {"a": {"expr": "1"}}},
+                "flat": {"role": "ms", "steps": [], "results": {"a": {"expr": "1"}}},
+                "direct": {"role": "ms", "readings": {"r": {"stat": "sum", "of": "m44"}}},
+            }),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.split("; ").collect::<Vec<_>>(),
+            [
+                "Measurement sample: step 'o.2': ids may use only letters, digits, '_' and '-'",
+                "Measurement sample: step o.2: readings must map reading names to {stat, of}",
+                "Measurement sample: labels must map keys to the text the table shows",
+                "Measurement sample: result bad: Unsupported syntax in expression 'co2_mv +' at position 8",
+                "Measurement sample: result none: expr must be text",
+                "Measurement both: give readings or steps, not both",
+                "Measurement both: results must map result keys to {expr, unit, label}",
+                "Measurement neither: needs readings or steps",
+                "Measurement flat: steps must map step ids to {label, readings}",
+                "Measurement direct: reading r: stat must be one of ['mean', 'slope']",
+                "Measurement direct: results must map result keys to {expr, unit, label}",
+            ]
+        );
+        assert_eq!(
+            with("measurements", json!("sample")).unwrap_err(),
+            "measurements must be a mapping"
         );
     }
 

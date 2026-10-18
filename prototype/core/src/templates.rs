@@ -473,6 +473,7 @@ fn shape_errors(data: &Value) -> Vec<String> {
         ),
         ("derived", "a mapping", Value::is_object),
         ("calibrations", "a mapping", Value::is_object),
+        ("measurements", "a mapping", Value::is_object),
         ("charts", "a list", Value::is_array),
         ("alignment", "a mapping", Value::is_object),
     ] {
