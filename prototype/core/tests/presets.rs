@@ -688,3 +688,104 @@ fn module2_on_the_eight_mass_spool_profile_reads_a_spool_file_with_the_legacy_ch
     assert!(stored.iter().all(|r| r["mapped"] == true), "{stored:?}");
     assert!(stored.iter().any(|r| r["ch3"].as_f64() > Some(0.0)));
 }
+
+fn legacy_m1_file() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/legacy-module1-calibrations.csv")
+}
+
+#[test]
+fn module1_loads_the_legacy_calibration_file_into_its_steps_by_column() {
+    let (engine, dir, id) = imported("legacy-module1-rubisco");
+    let file = legacy_m1_file();
+    let loaded = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": id, "path": file}),
+    );
+    assert_eq!(
+        loaded["notes"],
+        json!([
+            "BiCarb Cal 6 holds no value; not loaded",
+            "O2 Calibration 2.1328 not loaded; the session computes it from Temp and O2 Buffer Zero",
+            "BiCarb/CO2 15.015 not loaded; the session computes it from the CO2 and BiCarb calibration points",
+        ])
+    );
+    assert_eq!(loaded["records"].as_array().unwrap().len(), 9);
+    let steps = &loaded["steps"];
+    for (step, reading, value) in [
+        ("o2_zero", "o2_zero_mv", 120.5),
+        ("co2_assay.zero", "m44", -20.0),
+        ("co2_assay.ul6", "m44", -10.0),
+        ("co2_assay.ul12", "m44", 0.0),
+        ("co2_assay.ul18", "m44", 10.0),
+        ("bicarb.zero", "m44", -20.0),
+        ("bicarb.ul2", "m44", -15.0),
+        ("bicarb.ul4", "m44", -10.0),
+    ] {
+        assert_eq!(steps[step]["values"], json!({reading: value}), "{step}");
+        assert_eq!(steps[step]["source"], "loaded", "{step}");
+        assert_eq!(steps[step]["from"], json!({"file": file}), "{step}");
+    }
+    assert_eq!(steps["bicarb.ul6"]["source"], Value::Null);
+    let p = |name: &str| loaded["parameters"][name]["value"].clone();
+    assert_eq!(p("temp_c"), 25.0);
+    assert_eq!(p("o2_zero_mv"), 120.5);
+    assert_close(&p("o2_cal"), o2_air(25.0) / 120.5, "o2_cal");
+    assert_close(&p("co2_cal"), 100.0, "co2_cal");
+    assert_close(&p("co2_cal_intercept"), 2000.0, "co2_cal_intercept");
+    assert_close(&p("bicarb_cal"), 6.66, "bicarb_cal");
+    assert_close(&p("bicarb_cal_intercept"), 133.2, "bicarb_cal_intercept");
+    assert_close(&p("bicarb_per_co2"), 100.0 / 6.66, "bicarb_per_co2");
+    assert_eq!(loaded["parameters"]["o2_cal"]["source"], json!("computed"));
+
+    let header = std::fs::read_to_string(&file).unwrap();
+    let header = header.lines().next().unwrap();
+    let write = |name: &str, rows: &[&str]| {
+        let path = dir.path().join(name);
+        let text = format!("{header}\r\n{}\r\n", rows.join("\r\n"));
+        std::fs::write(&path, text).unwrap();
+        path
+    };
+    let typed_cal = call(
+        &engine,
+        "load_calibrations",
+        json!({"session_id": id, "path": write("typed.csv", &[
+            "21,2.5,undef,1.5,,,,5,,,,",
+            "22,9,9,9,9,9,9,9,9,9,9,9",
+        ])}),
+    );
+    assert_eq!(typed_cal["parameters"]["o2_cal"]["value"], 2.5);
+    assert_eq!(typed_cal["parameters"]["bicarb_per_co2"]["value"], 1.5);
+    assert_eq!(typed_cal["parameters"]["temp_c"]["value"], 21.0);
+    assert_eq!(typed_cal["records"].as_array().unwrap().len(), 4);
+    assert_eq!(
+        typed_cal["notes"][0],
+        "Rows 3 to 3 not loaded; legacy reads only the first row after the header"
+    );
+
+    let refuse = |session: &str, path: std::path::PathBuf| match engine.call(
+        "load_calibrations",
+        json!({"session_id": session, "path": path}),
+    ) {
+        Ok(v) => panic!("should be refused: {v}"),
+        Err(e) => e.message,
+    };
+    assert_eq!(
+        refuse(&id, write("module2.csv", &["25,1,2,3,4,5,6,7,8"])),
+        "This is a legacy module 2 calibration file: 9 values under module 1's header. Legacy module 2 saves and loads these wrongly (B20), so it is not loaded; module 2 sessions load calibration files exported here"
+    );
+    assert_eq!(
+        refuse(&id, write("blank.csv", &[",,undef,,,,,,,,,"])),
+        "The file holds no calibrations. Temp holds no value; not loaded. O2 Calibration holds no value; not loaded. O2 Buffer Zero holds no value; not loaded. BiCarb/CO2 holds no value; not loaded. CO2 Cal 0 holds no value; not loaded. CO2 Cal 6 holds no value; not loaded. CO2 Cal 12 holds no value; not loaded. CO2 Cal 18 holds no value; not loaded. BiCarb Cal 0 holds no value; not loaded. BiCarb Cal 2 holds no value; not loaded. BiCarb Cal 4 holds no value; not loaded. BiCarb Cal 6 holds no value; not loaded"
+    );
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-module2-co2-o2", "files": [{"role": "ms", "path": sample_path()}]}),
+    );
+    assert_eq!(
+        refuse(manifest["id"].as_str().unwrap(), file),
+        "A legacy module 1 calibration file loads only into a session of template legacy-module1-rubisco; this session uses legacy-module2-co2-o2"
+    );
+}

@@ -1,5 +1,6 @@
 //! Calibration files: a session's calibration state written as CSV, and such a file loaded
 //! back into a session of the same template as typed values and entries that name the file.
+//! A module 1 session also loads the legacy module 1 file.
 
 use std::fs;
 use std::io;
@@ -15,6 +16,7 @@ use crate::templates::{Template, from_snapshot};
 
 use super::carry::{Applied, Carried, action_for, apply, calibration_state};
 use super::fold::fold;
+use super::legacy_calfile;
 use super::store::{Provenance, RecordId, load_records};
 use super::view::view_of;
 
@@ -198,21 +200,34 @@ pub fn load_calibrations(
     let bytes = fs::read(path)?;
     let rows = rows_of(&String::from_utf8_lossy(&bytes))?;
     let header = rows.first().map(Vec::as_slice).unwrap_or_default();
-    if header != HEADER {
+    let (carried, mut notes) = if header == HEADER {
+        (exported_values(&template, &rows)?, Vec::new())
+    } else if legacy_calfile::is_module1_header(header) {
+        legacy_calfile::module1_values(template.id(), &rows)?
+    } else {
+        let legacy = if template.id() == legacy_calfile::MODULE1_TEMPLATE {
+            format!(
+                ", or the legacy header {}",
+                legacy_calfile::module1_header()
+            )
+        } else {
+            String::new()
+        };
         return Err(invalid(format!(
-            "{} is not a calibration file this template reads: it should start with the header {}",
+            "{} is not a calibration file this template reads: it should start with the header {}{legacy}",
             path.display(),
             HEADER.join(",")
         )));
-    }
-    let carried = exported_values(&template, &rows)?;
+    };
     if carried.is_empty() {
-        return Err(invalid("The file holds no calibrations"));
+        return Err(invalid(format!(
+            "The file holds no calibrations{}",
+            notes.iter().map(|n| format!(". {n}")).collect::<String>()
+        )));
     }
     let file = path.display().to_string();
     let from = |_: &RecordId| Some(Provenance::File { file: file.clone() });
     let mut actions = Vec::new();
-    let mut notes = Vec::new();
     for c in carried {
         match action_for(&template, c, from) {
             Ok(action) => actions.push(action),

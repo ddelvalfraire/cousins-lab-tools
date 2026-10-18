@@ -9,6 +9,7 @@ mod calfile;
 mod carry;
 mod export;
 mod fold;
+mod legacy_calfile;
 mod reading;
 pub(crate) mod spec;
 mod store;
