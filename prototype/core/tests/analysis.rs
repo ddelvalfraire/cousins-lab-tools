@@ -60,9 +60,14 @@ fn template() -> Value {
         "derived": {
             "scaled": {"role": "ms", "expr": "m44 * ubar_per_pct"},
             "rate": {"role": "ms", "slope": {"of": "m44", "window_s": 0.3, "min_points": 3}},
+            "zeroed": {"role": "ms", "expr": "m44 - zero_p"},
         },
-        "charts": [{"id": "raw", "title": "Raw", "unit": "mV", "x": "source",
-                    "series": [{"role": "ms", "value": "m44"}]}],
+        "charts": [
+            {"id": "raw", "title": "Raw", "unit": "mV", "x": "source",
+             "series": [{"role": "ms", "value": "m44"}]},
+            {"id": "zeroed", "title": "Zeroed", "unit": "mV", "x": "source",
+             "series": [{"role": "ms", "value": "zeroed"}]},
+        ],
     })
 }
 
@@ -464,4 +469,49 @@ fn line_points_fill_their_steps_and_the_fit_sets_slope_and_intercept() {
     assert_eq!(view["parameters"]["gain_p"]["value"], slope);
     assert_eq!(view["parameters"]["gain_p"]["calibration"], "line");
     assert_eq!(view["parameters"]["base_p"]["source"], "fitted");
+}
+
+#[test]
+fn a_calibration_recomputes_review_charts_and_a_saved_alignment_keeps_its_values() {
+    let (engine, _dir, id) = imported(template());
+    let review = |trial_params: Value| {
+        let preview = call(
+            &engine,
+            "preview_alignment",
+            json!({"session_id": id, "reference": "elapsed", "trial_params": trial_params}),
+        );
+        preview["charts"][1]["series"].clone()
+    };
+    assert_eq!(
+        review(json!({})),
+        json!([]),
+        "zero_p is unset, so nothing plots"
+    );
+    record(&engine, &id, reading("zero", [0.2, 0.45]));
+    let zero = (211.692 + 191.442 + 171.192) / 3.0;
+    let series = review(json!({}));
+    let points = series[0]["points"].as_array().unwrap();
+    assert_eq!(points.len(), 16, "every stored row, the earliest included");
+    assert_eq!(points[0], json!([0.105, 231.942 - zero]));
+    let overridden = review(json!({"all": {"zero_p": 200.0}}));
+    assert_eq!(overridden[0]["points"][0], json!([0.105, 231.942 - 200.0]));
+
+    let saved = call(
+        &engine,
+        "save_alignment",
+        json!({"session_id": id, "reference": "elapsed"}),
+    );
+    assert_eq!(saved["trials"][0]["params"]["zero_p"], zero);
+    assert_eq!(saved["trials"][0]["params"]["offset_p"], zero * 2.0);
+    record(&engine, &id, reading("zero", [2.9, 3.2]));
+    let charts = call(
+        &engine,
+        "alignment_charts",
+        json!({"session_id": id, "alignment_id": saved["id"]}),
+    );
+    assert_eq!(
+        charts["charts"][1]["series"][0]["points"][0],
+        json!([0.105, 231.942 - zero]),
+        "a saved alignment keeps the parameters it was saved with"
+    );
 }

@@ -23,10 +23,10 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::analysis::{AnalysisState, fold, load_records};
 use crate::calc::Program;
 use crate::contract::{Clock, ClockKind};
 use crate::expr::Params;
-use crate::params::ParamSource;
 use crate::pycompat::{float_repr, round};
 use crate::query::{AnalysisError, SessionDb, clock_seconds_sql, ident, sql_string};
 use crate::session::{Capture, Manifest, iso_time_opt, utc_now};
@@ -317,14 +317,16 @@ fn trials_of<'a>(
         .collect()
 }
 
-/// Template parameters in template order.
 /// The trial's parameters in template order, then any override of a name the template does
-/// not declare, so a saved record reads in the order the template lists them.
-fn trial_params(template: &Template, overrides: &IndexMap<String, f64>) -> IndexMap<String, f64> {
+/// not declare, so a saved record reads in the order the template lists them. The session's
+/// entered and calibrated values sit between the template defaults and the overrides.
+fn trial_params(
+    template: &Template,
+    analysis: &AnalysisState,
+    overrides: &IndexMap<String, f64>,
+) -> IndexMap<String, f64> {
     let overrides: Params = overrides.iter().map(|(k, v)| (k.clone(), *v)).collect();
-    let mut values = template
-        .resolve_params(&[(&overrides, ParamSource::Trial)])
-        .values;
+    let mut values = analysis.resolve_with(template, &overrides).values;
     let mut params: IndexMap<String, f64> = template
         .param_specs()
         .iter()
@@ -488,6 +490,7 @@ pub fn propose(
     let detect = &event_spec["detect"];
     let db = SessionDb::open(session_dir, manifest)?;
     let captures = &manifest.captures;
+    let analysis = fold(template.analysis(), &load_records(session_dir)?);
 
     let mut clock_origin = None;
     if reference == Reference::Clock {
@@ -563,6 +566,7 @@ pub fn propose(
         }
         let params = trial_params(
             &template,
+            &analysis,
             inputs
                 .trial_params
                 .get(trial.id)

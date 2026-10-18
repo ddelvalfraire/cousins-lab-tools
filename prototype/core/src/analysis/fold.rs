@@ -55,9 +55,19 @@ pub struct AnalysisState {
 impl AnalysisState {
     /// Template defaults, then this state's values, then the computed parameters.
     pub fn resolve(&self, template: &Template) -> ResolvedParams {
-        let mut resolved = template.resolve_params(&[(&self.params, ParamSource::Default)]);
+        self.resolve_with(template, &Params::new())
+    }
+
+    /// As [`AnalysisState::resolve`], with a trial's overrides layered on top.
+    pub fn resolve_with(&self, template: &Template, trial: &Params) -> ResolvedParams {
+        let mut resolved = template.resolve_params(&[
+            (&self.params, ParamSource::Default),
+            (trial, ParamSource::Trial),
+        ]);
         for (name, source) in &self.sources {
-            resolved.sources.insert(name.clone(), source.clone());
+            if !trial.contains_key(name) {
+                resolved.sources.insert(name.clone(), source.clone());
+            }
         }
         resolved
     }
