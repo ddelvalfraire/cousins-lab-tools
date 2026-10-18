@@ -962,3 +962,44 @@ fn source_created(engine: &Engine, id: &str) -> Value {
     let session = call(engine, "get_session", json!({"session_id": id}));
     session["manifest"]["created_utc"].clone()
 }
+
+#[test]
+fn calibrations_export_to_csv_with_their_source_records() {
+    let (engine, _dir, from) = imported(template());
+    assert_eq!(
+        refused(&engine, "export_calibrations", json!({"session_id": from})).message,
+        "This session has no calibrations to export"
+    );
+    let typed =
+        |step: &str, values: Value| json!({"action": "typed", "step": step, "values": values});
+    record(&engine, &from, reading("zero", [0.2, 0.45]));
+    record(&engine, &from, typed("line.p0", json!({"m44": 10.5})));
+    record(
+        &engine,
+        &from,
+        json!({"action": "entry", "parameter": "temp_c", "value": 21}),
+    );
+    let source = record(&engine, &from, reading("sample.co2", [2.9, 3.2]));
+    let export = call(&engine, "export_calibrations", json!({"session_id": from}));
+    let csv = export["csv"].as_str().unwrap();
+    assert!(
+        csv.ends_with("exports/calibrations-rec-000004/calibrations.csv"),
+        "{csv}"
+    );
+    let zero = source["steps"]["zero"]["values"]["zero_p"]
+        .as_f64()
+        .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(csv).unwrap(),
+        format!(
+            "template,kind,name,reading,value,label,source,record\n\
+             analysis-test,step,zero,zero_p,{zero:?},Zero,read,rec-000001\n\
+             analysis-test,step,line.p0,m44,10.5,0 µl,typed,rec-000002\n\
+             analysis-test,parameter,temp_c,,21.0,Temperature,entered,rec-000003\n"
+        )
+    );
+    assert_eq!(
+        call(&engine, "export_calibrations", json!({"session_id": from})),
+        export
+    );
+}

@@ -304,6 +304,13 @@ impl Engine {
                 self.follow(&a.session_id, &applied.view);
                 reply(applied)
             }
+            "export_calibrations" => {
+                let id = parse::<SessionRef>(args)?.session_id;
+                reply(analysis::export_calibrations(
+                    &self.session_dir(&id)?,
+                    &self.manifest(&id)?,
+                )?)
+            }
             "calibration_sources" => {
                 let id = parse::<SessionRef>(args)?.session_id;
                 reply(self.calibration_sources(&id)?)
