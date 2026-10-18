@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CATALOG, find, overlaps, placeBelow, settle, SIZES, uniqueId, visible } from "../layout.js";
+import { CATALOG, fillGaps, find, overlaps, placeBelow, settle, SIZES, uniqueId, visible } from "../layout.js";
 
 const grid = () => [
   { id: "co2", kind: "chart", x: 0, y: 0, w: 4, h: 5 },
@@ -56,4 +56,19 @@ test("the catalog offers readings and table tiles in place of the old calibratio
   assert.ok(!kinds.includes("calibration"));
   assert.deepEqual(CATALOG.filter(c => c.disabled), []);
   assert.deepEqual(kinds.filter(k => !SIZES[k]), []);
+});
+
+test("a component widens into the empty columns beside it, and the first in a band reaches the left edge", () => {
+  const band = [
+    { id: "co2", x: 0, y: 17, w: 3, h: 7 },
+    { id: "o2", x: 4, y: 17, w: 3, h: 4 },
+    { id: "o2-values", x: 4, y: 21, w: 3, h: 3 },
+    { id: "table", x: 8, y: 17, w: 4, h: 7 },
+  ];
+  assert.deepEqual(fillGaps(band).map(c => [c.id, c.x, c.w]), [["co2", 0, 4], ["o2", 4, 4], ["o2-values", 4, 4], ["table", 8, 4]]);
+  assert.deepEqual(band[0], { id: "co2", x: 0, y: 17, w: 3, h: 7 }, "the template's geometry is not changed");
+  const centred = [{ id: "mean", x: 4, y: 0, w: 4, h: 2 }, { id: "chart", x: 0, y: 2, w: 12, h: 4 }];
+  assert.deepEqual(fillGaps(centred).map(c => [c.id, c.x, c.w]), [["mean", 0, 12], ["chart", 0, 12]], "rows it does not share do not block it");
+  const group = [{ id: "g", x: 0, y: 0, w: 12, h: 5, components: [{ id: "a", x: 2, y: 0, w: 4, h: 2 }] }];
+  assert.deepEqual(fillGaps(group)[0].components.map(c => [c.x, c.w]), [[0, 12]], "groups are filled inside");
 });

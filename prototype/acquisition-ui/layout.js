@@ -65,3 +65,26 @@ export function uniqueId(layout, base) {
   while (taken.has(`${base}-${n}`)) n++;
   return `${base}-${n}`;
 }
+
+const rowsMeet = (a, b) => a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * Widen each component into the empty columns beside it, so a layout has no holes at run time: gaps a
+ * template leaves, and gaps left by components hidden with an excluded role. A component grows right up to
+ * the next component sharing any of its rows, and the first in a band also grows left to the edge. Groups
+ * are filled inside. Returns new objects; the template's own geometry is untouched.
+ */
+export function fillGaps(items, columns = COLUMNS) {
+  const placed = items.map(c => ({ ...c, ...(c.components ? { components: fillGaps(c.components, columns) } : {}) }));
+  for (const c of placed) {
+    const right = placed.filter(o => o !== c && rowsMeet(o, c) && o.x >= c.x + c.w).map(o => o.x);
+    c.w = Math.min(columns, ...right) - c.x;
+  }
+  for (const c of placed) {
+    const left = placed.filter(o => o !== c && rowsMeet(o, c) && o.x + o.w <= c.x).map(o => o.x + o.w);
+    const edge = Math.max(0, ...left);
+    c.w += c.x - edge;
+    c.x = edge;
+  }
+  return placed;
+}
