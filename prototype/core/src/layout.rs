@@ -2,20 +2,21 @@
 //!
 //! A template may leave sizes and rows out; `normalize` fills them per kind and stacks an
 //! unplaced component below everything before it. `errors` checks the normalized layout
-//! against the template's charts, derived values, parameters and roles.
+//! against the template's charts, derived values, parameters, roles, calibrations and
+//! measurements.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value, json};
 
+use crate::analysis::AnalysisSpec;
+use crate::analysis::spec;
 use crate::pycompat::{display, list_repr, repr};
 use crate::templates::{array, object, truthy};
 
 pub const GRID_COLUMNS: i64 = 12;
 
 const FALLBACK_SIZE: (i64, i64) = (6, 3);
-const UNSUPPORTED_KINDS: [(&str, &str); 1] =
-    [("calibration", "the engine has no calibration model yet")];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -25,17 +26,23 @@ pub enum Kind {
     Group,
     Inputs,
     Metric,
+    /// One row per step: a reading button, the step's values, and Remove.
+    Readings,
+    /// A measurement's draft, its label inputs and table actions, then its rows.
+    Table,
 }
 
 impl Kind {
     /// Sorted by name, as the Python engine lists them in messages.
-    pub const ALL: [Kind; 6] = [
+    pub const ALL: [Kind; 8] = [
         Kind::Captures,
         Kind::Chart,
         Kind::Controls,
         Kind::Group,
         Kind::Inputs,
         Kind::Metric,
+        Kind::Readings,
+        Kind::Table,
     ];
 
     pub fn name(self) -> &'static str {
@@ -46,6 +53,8 @@ impl Kind {
             Kind::Group => "group",
             Kind::Inputs => "inputs",
             Kind::Metric => "metric",
+            Kind::Readings => "readings",
+            Kind::Table => "table",
         }
     }
 
@@ -62,6 +71,8 @@ impl Kind {
             Kind::Inputs => (6, 4),
             Kind::Captures => (12, 3),
             Kind::Group => (12, 5),
+            Kind::Readings => (3, 6),
+            Kind::Table => (4, 7),
         }
     }
 }
@@ -174,6 +185,7 @@ fn repr_of(value: Option<&Value>) -> String {
 
 struct Check<'a> {
     data: &'a Value,
+    analysis: AnalysisSpec,
     /// Chart id to its time axis, `run` or `source`, or `xy` for a chart with no time axis.
     charts: BTreeMap<&'a str, &'a str>,
     seen: BTreeSet<String>,
@@ -218,16 +230,6 @@ impl Check<'_> {
                 self.errors.push(format!("{name} is defined twice"));
             }
             let kind_value = c.get("kind");
-            if let Some((kind, reason)) = UNSUPPORTED_KINDS
-                .iter()
-                .find(|(k, _)| kind_value.and_then(Value::as_str) == Some(*k))
-            {
-                self.errors.push(format!(
-                    "{name}: kind {} is not supported; {reason}",
-                    repr(&json!(kind))
-                ));
-                continue;
-            }
             let Some(kind) = kind_of(item) else {
                 self.errors.push(format!(
                     "{name}: unknown kind {}; use one of {}",
@@ -337,9 +339,91 @@ impl Check<'_> {
                         .errors
                         .push(format!("{name}: components must be a list")),
                 },
+                Kind::Readings => self.readings(&name, c, role),
+                Kind::Table => {
+                    let measurement = c.get("measurement");
+                    match measurement
+                        .and_then(Value::as_str)
+                        .and_then(|m| self.analysis.measurements.get(m))
+                    {
+                        None => self.errors.push(format!(
+                            "{name}: unknown measurement {}",
+                            repr_of(measurement)
+                        )),
+                        Some(m) if role.is_some_and(|r| r != m.role.as_str()) => {
+                            self.errors.push(format!(
+                                "{name}: a table takes its role from its measurement ({}); \
+                                 remove role {}",
+                                m.role,
+                                repr_of(role)
+                            ));
+                        }
+                        Some(_) => {}
+                    }
+                }
                 Kind::Captures | Kind::Controls => {}
             }
         }
+    }
+}
+
+impl Check<'_> {
+    /// `steps` lists step references of one role, the component's role when it gives one.
+    fn readings(&mut self, name: &str, c: &Map<String, Value>, role: Option<&Value>) {
+        let steps: Option<Vec<&str>> = c
+            .get("steps")
+            .and_then(Value::as_array)
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.iter().map(Value::as_str).collect());
+        let Some(steps) = steps else {
+            self.errors.push(format!(
+                "{name}: steps must be a non-empty list of step references"
+            ));
+            return;
+        };
+        let unknown: Vec<&str> = steps
+            .iter()
+            .copied()
+            .filter(|s| !self.analysis.steps.contains_key(*s))
+            .collect();
+        if !unknown.is_empty() {
+            self.errors
+                .push(format!("{name}: unknown steps {}", list_repr(unknown)));
+        }
+        let roles: BTreeSet<&str> = steps
+            .iter()
+            .filter_map(|s| self.analysis.steps.get(*s))
+            .map(|s| s.role.as_str())
+            .collect();
+        match role.and_then(Value::as_str) {
+            Some(role) if roles.iter().any(|r| *r != role) => {
+                let other: Vec<&str> = roles.into_iter().filter(|r| *r != role).collect();
+                self.errors.push(format!(
+                    "{name}: steps of role {} cannot sit in a readings tile of role {role}",
+                    list_repr(other)
+                ));
+            }
+            None if roles.len() > 1 => self.errors.push(format!(
+                "{name}: steps read roles {}; give each role its own readings tile",
+                list_repr(roles)
+            )),
+            _ => {}
+        }
+    }
+}
+
+/// The role a readings or table component is bound to through its steps or measurement.
+pub(crate) fn analysis_role<'a>(c: &Value, analysis: &'a AnalysisSpec) -> Option<&'a str> {
+    match kind_of(c)? {
+        Kind::Readings => {
+            let first = c.get("steps")?.as_array()?.first()?.as_str()?;
+            Some(analysis.steps.get(first)?.role.as_str())
+        }
+        Kind::Table => {
+            let m = c.get("measurement")?.as_str()?;
+            Some(analysis.measurements.get(m)?.role.as_str())
+        }
+        _ => None,
     }
 }
 
@@ -367,6 +451,7 @@ pub(crate) fn errors(data: &Value) -> Vec<String> {
     }
     let mut check = Check {
         data,
+        analysis: spec::parse(data).0,
         charts: array(data, "charts")
             .iter()
             .filter_map(|c| {

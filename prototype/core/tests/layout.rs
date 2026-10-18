@@ -115,7 +115,7 @@ fn invalid_layouts_are_rejected_with_the_reason() {
         ),
         (
             json!([{"id": "a", "kind": "calibration"}]),
-            "no calibration model",
+            "unknown kind 'calibration'",
         ),
         (
             json!([{"id": "a", "kind": "metric", "value": "ubar_co2", "x": 10, "w": 4}]),
@@ -194,11 +194,7 @@ fn invalid_layouts_keep_the_full_python_messages() {
     let cases = [
         (
             json!([{"id": "a", "kind": "sparkline"}]),
-            "Layout component 'a': unknown kind 'sparkline'; use one of ['captures', 'chart', 'controls', 'group', 'inputs', 'metric']",
-        ),
-        (
-            json!([{"id": "a", "kind": "calibration"}]),
-            "Layout component 'a': kind 'calibration' is not supported; the engine has no calibration model yet",
+            "Layout component 'a': unknown kind 'sparkline'; use one of ['captures', 'chart', 'controls', 'group', 'inputs', 'metric', 'readings', 'table']",
         ),
         (
             json!([{"id": "a", "kind": "metric", "value": "ubar_co2", "x": 10, "w": 4}]),
@@ -351,4 +347,107 @@ fn charts_of_one_view_share_an_axis_even_inside_groups() {
         check(separate).is_ok(),
         "one axis per view, not per template"
     );
+}
+
+/// Two legacy frame roles with one calibration and one measurement each.
+fn frames() -> Value {
+    let role = json!({"instrument": "ms-legacy-frames-replay", "import": "legacy_frames"});
+    json!({
+        "id": "frames", "revision": 1, "name": "Frames",
+        "roles": {"ms": role, "ms2": role},
+        "parameters": {"zero_p": {}, "zero2_p": {}},
+        "calibrations": {
+            "zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}},
+            "zero2": {"role": "ms2", "set": {"zero2_p": {"stat": "mean", "of": "m44"}}},
+        },
+        "measurements": {
+            "sample": {"role": "ms", "steps": {"co2": {"readings": {"co2_mv": {"stat": "mean", "of": "m44"}}}},
+                       "results": {"pct": {"expr": "co2_mv - zero_p"}}},
+            "other": {"role": "ms2", "readings": {"o_mv": {"stat": "mean", "of": "m32"}},
+                      "results": {"o": {"expr": "o_mv"}}},
+        },
+    })
+}
+
+#[test]
+fn readings_and_table_tiles_bind_steps_and_measurements_and_default_their_sizes() {
+    let template = check(with_layout(
+        frames(),
+        json!([
+            {"id": "steps", "kind": "readings", "role": "ms", "steps": ["zero", "sample.co2"]},
+            {"id": "rows", "kind": "table", "measurement": "sample"},
+            {"id": "steps2", "kind": "readings", "steps": ["zero2", "other"]},
+            {"id": "rows2", "kind": "table", "measurement": "other"},
+        ]),
+    ))
+    .unwrap();
+    assert_eq!(
+        boxes(&template.layout()["views"][0]["components"]),
+        [
+            ("steps", [0, 0, 3, 6]),
+            ("rows", [0, 6, 4, 7]),
+            ("steps2", [0, 13, 3, 6]),
+            ("rows2", [0, 19, 4, 7]),
+        ]
+    );
+    assert!(template.hidden_components().is_empty());
+    let mut without = template.data().clone();
+    without["roles"]["ms2"]["enabled"] = json!(false);
+    let hidden = check(without).unwrap().hidden_components();
+    let reasons: Vec<(&str, &str)> = hidden
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    assert_eq!(
+        reasons,
+        [
+            ("rows2", "Role ms2 is excluded"),
+            ("steps2", "Role ms2 is excluded")
+        ]
+    );
+}
+
+#[test]
+fn readings_and_table_tiles_name_what_they_cannot_bind() {
+    let cases = [
+        (
+            json!({"kind": "readings", "steps": []}),
+            "Layout component 'a': steps must be a non-empty list of step references",
+        ),
+        (
+            json!({"kind": "readings", "steps": "zero"}),
+            "Layout component 'a': steps must be a non-empty list of step references",
+        ),
+        (
+            json!({"kind": "readings", "steps": ["zero", "co2.ul9"]}),
+            "Layout component 'a': unknown steps ['co2.ul9']",
+        ),
+        (
+            json!({"kind": "readings", "steps": ["zero", "zero2"]}),
+            "Layout component 'a': steps read roles ['ms', 'ms2']; give each role its own readings tile",
+        ),
+        (
+            json!({"kind": "readings", "role": "ms", "steps": ["zero", "zero2"]}),
+            "Layout component 'a': steps of role ['ms2'] cannot sit in a readings tile of role ms",
+        ),
+        (
+            json!({"kind": "table", "measurement": "extract"}),
+            "Layout component 'a': unknown measurement 'extract'",
+        ),
+        (
+            json!({"kind": "table"}),
+            "Layout component 'a': unknown measurement None",
+        ),
+        (
+            json!({"kind": "table", "measurement": "other", "role": "ms"}),
+            "Layout component 'a': a table takes its role from its measurement (ms2); remove role 'ms'",
+        ),
+    ];
+    for (mut component, message) in cases {
+        component["id"] = json!("a");
+        let error = check(with_layout(frames(), json!([component.clone()])))
+            .unwrap_err()
+            .0;
+        assert_eq!(error, message, "{component}");
+    }
 }

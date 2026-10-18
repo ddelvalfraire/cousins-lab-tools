@@ -397,7 +397,7 @@ impl Template {
             let role = match c.get("role").filter(|r| truthy(r)) {
                 Some(role) => role.as_str(),
                 None if kind == Some(Kind::Metric) => self.derived_role(c),
-                None => None,
+                None => layout::analysis_role(c, &self.analysis),
             };
             let chart = c.get("chart").and_then(Value::as_str).unwrap_or_default();
             if let Some(role) = role.filter(|r| !r.is_empty() && !enabled.contains(r)) {

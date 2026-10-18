@@ -1,7 +1,7 @@
 // Grid geometry for template layouts. No DOM: the engine validates, this keeps edits valid while dragging.
 
 export const COLUMNS = 12;
-export const SIZES = { chart: [8, 4], metric: [4, 2], controls: [4, 3], inputs: [6, 4], captures: [12, 3], group: [12, 5] };
+export const SIZES = { chart: [8, 4], metric: [4, 2], controls: [4, 3], inputs: [6, 4], captures: [12, 3], group: [12, 5], readings: [3, 6], table: [4, 7] };
 
 export const CATALOG = [
   { kind: "chart", name: "Chart", section: "Visualize", icon: "chart", description: "A template chart over the run clock or alignment" },

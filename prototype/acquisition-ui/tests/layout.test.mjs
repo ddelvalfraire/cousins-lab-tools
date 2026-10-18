@@ -33,6 +33,14 @@ test("a new component goes below everything with its kind's default size", () =>
   assert.deepEqual([added.x, added.y, added.w, added.h], [0, 8, 6, 4]);
 });
 
+test("readings and table tiles get the engine's default sizes", () => {
+  const items = grid();
+  const readings = placeBelow(items, { id: "r", kind: "readings" });
+  const table = placeBelow(items, { id: "t", kind: "table" });
+  assert.deepEqual([readings.y, readings.w, readings.h], [8, 3, 6]);
+  assert.deepEqual([table.y, table.w, table.h], [14, 4, 7]);
+});
+
 test("hidden components are dropped at every depth and ids stay unique", () => {
   const layout = { views: [{ id: "run", components: [...grid(), { id: "g", kind: "group", components: [{ id: "metric-1", kind: "metric" }] }] }] };
   const shown = visible(layout.views[0].components, { fl: "Role light is excluded", "metric-1": "Role light is excluded" });
