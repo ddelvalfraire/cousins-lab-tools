@@ -1,12 +1,12 @@
 //! Derived-value expressions: arithmetic over column and parameter names only.
 //!
-//! One parse feeds both the DuckDB SQL of aligned views and the evaluator of live values, so
-//! the two can never disagree about what an expression means.
+//! `eval` is the only evaluator. Live points and the stored-data review both run it through
+//! `calc::Evaluator`, so there is no second semantics to keep in step.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use crate::pycompat::{float_repr, str_repr};
+use crate::pycompat::str_repr;
 
 /// Template parameters by name. A name found here is a parameter, never a column.
 pub type Params = BTreeMap<String, f64>;
@@ -75,55 +75,13 @@ impl Expression {
         &self.names
     }
 
-    /// DuckDB SQL with parameters inlined as float literals and other names quoted as columns.
-    pub fn sql(&self, params: &Params) -> String {
-        let mut out = String::new();
-        self.root.sql(params, &mut out);
-        out
-    }
-
     /// The value for one row, or None when an operand is missing or a divisor is zero.
     pub fn eval(&self, params: &Params, row: impl Fn(&str) -> Option<f64>) -> Option<f64> {
         self.root.eval(params, &row)
     }
 }
 
-impl Op {
-    fn symbol(self) -> char {
-        match self {
-            Op::Add => '+',
-            Op::Sub => '-',
-            Op::Mul => '*',
-            Op::Div => '/',
-        }
-    }
-}
-
 impl Node {
-    fn sql(&self, params: &Params, out: &mut String) {
-        match self {
-            Node::Number { text, .. } => push(out, text),
-            Node::Name(name) => match params.get(name) {
-                Some(value) => push(out, &float_repr(*value)),
-                None => push(out, &format!("\"{name}\"")),
-            },
-            Node::Group(inner) => {
-                push(out, "(");
-                inner.sql(params, out);
-                push(out, ")");
-            }
-            Node::Unary { op, operand } => {
-                push(out, &op.symbol().to_string());
-                operand.sql(params, out);
-            }
-            Node::Binary { op, left, right } => {
-                left.sql(params, out);
-                push(out, &op.symbol().to_string());
-                right.sql(params, out);
-            }
-        }
-    }
-
     fn eval(&self, params: &Params, row: &dyn Fn(&str) -> Option<f64>) -> Option<f64> {
         match self {
             Node::Number { value, .. } => Some(*value),
@@ -145,15 +103,6 @@ impl Node {
             }
         }
     }
-}
-
-// Tokens are joined without spaces, as the Python engine does, except that two minus signs
-// are kept apart: `--` would start an SQL comment.
-fn push(out: &mut String, piece: &str) {
-    if out.ends_with('-') && piece.starts_with('-') {
-        out.push(' ');
-    }
-    out.push_str(piece);
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -377,22 +326,10 @@ mod tests {
     }
 
     #[test]
-    fn sql_inlines_parameters_and_quotes_columns_as_python_does() {
-        let cases = [
-            (
-                "(m44 - co2_zero_mv) * ubar_per_mv",
-                "(\"m44\"-0.303)*1831.1123481696839",
-            ),
-            ("(S - ambit_offset) / R", "(\"S\"-815.52)/\"R\""),
-            (" -S + 1.5e3*k ", "-\"S\"+1.5e3*2.0"),
-            ("a / (b - 2.)", "\"a\"/(\"b\"-2.)"),
-            ("-(-a)", "-(-\"a\")"),
-        ];
-        for (text, sql) in cases {
-            assert_eq!(parse(text).unwrap().sql(&params()), sql, "{text}");
-        }
+    fn names_are_every_operand_the_expression_reads() {
         let e = parse("(m44 - co2_zero_mv) * ubar_per_mv").unwrap();
         assert_eq!(names(&e), ["co2_zero_mv", "m44", "ubar_per_mv"]);
+        assert_eq!(names(&parse("a / (b - 2.) + a").unwrap()), ["a", "b"]);
     }
 
     #[test]
@@ -422,15 +359,22 @@ mod tests {
     fn parameters_shadow_columns_of_the_same_name() {
         let e = parse("k * 3").unwrap();
         assert_eq!(e.eval(&params(), row(&[("k", 10.0)])), Some(6.0));
-        assert_eq!(e.sql(&params()), "2.0*3");
     }
 
     #[test]
-    fn double_minus_is_never_emitted_as_an_sql_comment() {
+    fn a_negative_parameter_after_a_minus_subtracts_it() {
         let mut p = params();
         p.insert("neg".into(), -0.5);
-        assert_eq!(parse("a - neg").unwrap().sql(&p), "\"a\"- -0.5");
-        assert_eq!(parse("a - -b").unwrap().sql(&p), "\"a\"- -\"b\"");
+        assert_eq!(
+            parse("a - neg").unwrap().eval(&p, row(&[("a", 1.0)])),
+            Some(1.5)
+        );
+        assert_eq!(
+            parse("a - -b")
+                .unwrap()
+                .eval(&p, row(&[("a", 1.0), ("b", 2.0)])),
+            Some(3.0)
+        );
     }
 
     #[test]
