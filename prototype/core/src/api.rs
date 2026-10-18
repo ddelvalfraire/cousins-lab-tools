@@ -25,7 +25,9 @@ use crate::query::{AnalysisError, run_query, session_events};
 use crate::run::{Cursors, GroupRun, RunError, Sources};
 use crate::schemas;
 use crate::session::{Manifest, SessionError, SessionStatus, SessionStore, iso};
-use crate::templates::{Paths, StoreError, Template, TemplateStore, load_profiles};
+use crate::templates::{
+    Paths, StoreError, Template, TemplateStore, compatible_profiles, load_profiles,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -344,6 +346,8 @@ impl Engine {
     }
 
     fn template_view(&self, t: &Template) -> Result<Value> {
+        let profiles = load_profiles(&self.paths.instruments)
+            .map_err(|e| ApiError::new(ErrorKind::Internal, e))?;
         let plans: Map<String, Value> = t
             .roles()
             .keys()
@@ -360,6 +364,7 @@ impl Engine {
             "enabled_roles": t.enabled_roles().into_iter().map(|(role, _)| role).collect::<Vec<_>>(),
             "layout": t.layout(),
             "hidden_components": t.hidden_components(),
+            "compatible_instruments": compatible_profiles(t.data(), &profiles),
         }))
     }
 
@@ -388,7 +393,7 @@ impl Engine {
                 entry.insert("capabilities".into(), json!(["acquire"]));
                 entry.insert("control".into(), json!(control));
                 entry.insert("columns".into(), schema["columns"].clone());
-                entry.insert("clocks".into(), schema["clocks"].clone());
+                entry.insert("clocks".into(), json!(schemas::profile_clocks(profile)));
             }
             out.push(Value::Object(entry));
         }

@@ -479,3 +479,138 @@ fn module1_extract_rows_fill_the_velocity_chart_from_both_calibrations_and_the_b
     assert_eq!(velocity[0]["name"], "V0 vs [O2]");
     assert_eq!(velocity[1]["name"], "Vc vs [CO2]");
 }
+
+fn wait_until(what: &str, mut done: impl FnMut() -> bool) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+    while !done() {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "timed out waiting for {what}"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+}
+
+#[test]
+fn a_preset_role_offers_every_profile_whose_columns_cover_it_and_saves_with_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), dir.path()).unwrap();
+    let ids = |template: &str, role: &str| -> Vec<String> {
+        let view = call(&engine, "get_template", json!({"template_id": template}));
+        serde_json::from_value(view["compatible_instruments"][role].clone()).unwrap()
+    };
+    for preset in [
+        "legacy-module1-rubisco",
+        "legacy-module2-co2-o2",
+        "legacy-module3-atom49",
+    ] {
+        assert_eq!(
+            ids(preset, "ms"),
+            ["ms-ezview-spool-masses", "ms-legacy-frames-replay"],
+            "{preset}"
+        );
+    }
+    assert_eq!(
+        ids("jii-leaf-co2-fluorescence", "ms"),
+        [
+            "ms-ezview-spool-masses",
+            "ms-legacy-frames-replay",
+            "ms2-ezview",
+            "ms2-ezview-simulated"
+        ]
+    );
+    assert_eq!(
+        ids("jii-leaf-co2-fluorescence", "light"),
+        ["ambit-replay-150-pl1", "ambit-replay-150-pl2"]
+    );
+
+    let view = call(
+        &engine,
+        "get_template",
+        json!({"template_id": "legacy-module2-co2-o2"}),
+    );
+    let mut data = view["data"].clone();
+    data["roles"]["ms"]["instrument"] = json!("ms2-ezview");
+    let refused = engine
+        .call(
+            "save_template",
+            json!({"template_id": "legacy-module2-co2-o2", "data": data}),
+        )
+        .unwrap_err();
+    assert!(
+        refused
+            .message
+            .contains("Chart raw: 'm32' is not a column or derived value of ms"),
+        "{}",
+        refused.message
+    );
+    data["roles"]["ms"]["instrument"] = json!("ms-ezview-spool-masses");
+    let saved = call(
+        &engine,
+        "save_template",
+        json!({"template_id": "legacy-module2-co2-o2", "data": data}),
+    );
+    assert_eq!(saved["data"]["revision"], 2);
+}
+
+#[test]
+fn module2_on_the_eight_mass_spool_profile_reads_a_spool_file_with_the_legacy_channels() {
+    let dir = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), dir.path()).unwrap();
+    let view = call(
+        &engine,
+        "get_template",
+        json!({"template_id": "legacy-module2-co2-o2"}),
+    );
+    let mut data = view["data"].clone();
+    data["roles"]["ms"]["instrument"] = json!("ms-ezview-spool-masses");
+    call(
+        &engine,
+        "save_template",
+        json!({"template_id": "legacy-module2-co2-o2", "data": data}),
+    );
+    let spool =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/spool/packed.txt");
+    let fast = engine
+        .call(
+            "start_run",
+            json!({"template_id": "legacy-module2-co2-o2", "speed": 20.0, "sources": {"ms": spool}}),
+        )
+        .unwrap_err();
+    assert!(fast.message.contains("real time"), "{}", fast.message);
+    let manifest = call(
+        &engine,
+        "start_run",
+        json!({"template_id": "legacy-module2-co2-o2", "speed": 1.0, "sources": {"ms": spool}}),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    let ms = &manifest["captures"]["ms"];
+    assert_eq!(ms["input_kind"], "hardware");
+    assert_eq!(ms["readiness"]["ok"], true);
+    assert_eq!(ms["clocks"][2]["column"], "t_legacy_ms");
+    assert_eq!(ms["clocks"][2]["kind"], "elapsed");
+    let live = || call(&engine, "session_live", json!({"session_id": id}));
+    wait_until("the spool's frames", || {
+        live()["captures"]["ms"]["rows"].as_array().unwrap().len() >= 3
+    });
+    let row = live()["captures"]["ms"]["rows"][0].clone();
+    assert!(row["m44"].is_number() && row["m32"].is_number(), "{row}");
+    call(&engine, "stop_session", json!({"session_id": id}));
+    wait_until("the run to stop", || {
+        !call(&engine, "get_session", json!({"session_id": id}))["live"]
+            .as_bool()
+            .unwrap()
+    });
+    let stored = call(
+        &engine,
+        "query_session",
+        json!({"session_id": id, "sql":
+        "SELECT m32 = ch5 AND m34 = ch2 AND m36 = ch4 AND m44 = ch3 AND m45 = ch1 \
+         AND m46 = ch6 AND m47 = ch7 AND m49 = ch8 AND t_ms = t_legacy_ms AS mapped, \
+         ch3 FROM \"cap:ms\" ORDER BY seq"}),
+    );
+    let stored = stored["rows"].as_array().unwrap();
+    assert!(stored.len() >= 3);
+    assert!(stored.iter().all(|r| r["mapped"] == true), "{stored:?}");
+    assert!(stored.iter().any(|r| r["ch3"].as_f64() > Some(0.0)));
+}

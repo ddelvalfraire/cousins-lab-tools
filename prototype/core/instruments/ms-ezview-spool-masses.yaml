@@ -1,0 +1,12 @@
+id: ms-ezview-spool-masses
+label: Mass spectrometer, EZView spool, eight masses
+adapter: ezview_spool
+input_kind: hardware
+model: Mass spectrometer read through EZ-Tap and EZView (model not documented)
+# The channel of each mass as readEZView.py:102-117 writes the legacy frame files, and t_ms as
+# its time column, so templates written for frame files run on the spool unchanged.
+aliases: {m32: ch5, m34: ch2, m36: ch4, m44: ch3, m45: ch1, m46: ch6, m47: ch7, m49: ch8, t_ms: t_legacy_ms}
+settings:
+  spool_path: ""
+  poll_interval_s: 0.1
+  legacy_elapsed_clock: true

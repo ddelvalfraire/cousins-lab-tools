@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { importFiles, importSlots, runInputs, runSources, sourcesFrom } from "../importing.js";
+import { importFiles, importSlots, profileChoices, runInputs, runSources, sourcesFrom } from "../importing.js";
 
 const recordings = {
   ms_workbook: ["/repo/reference/instruments/mass-spec/Raw data-mass spec.xlsx"],
@@ -78,4 +78,12 @@ test("a run offers a source field for replays and real spools, not for simulator
     { role: "live", label: "live", path: "", hardware: true },
   ]);
   assert.deepEqual(sourcesFrom([["ms", "  /lab/Acquisition12 "], ["live", ""], ["x", null]]), { ms: "/lab/Acquisition12" });
+});
+
+test("a role is offered the profiles the engine found compatible, and always its own", () => {
+  const instruments = ["frames", "spool8", "ms2", "ambit"].map(id => ({ id, adapter: id === "ambit" ? "ambit_replay" : "x" }));
+  const ids = list => list.map(p => p.id);
+  assert.deepEqual(ids(profileChoices({ ms: ["frames", "spool8"] }, "ms", "frames", instruments)), ["frames", "spool8"]);
+  assert.deepEqual(ids(profileChoices({}, "ms", "ms2", instruments)), ["ms2"]);
+  assert.deepEqual(ids(profileChoices(undefined, "light", "ambit", instruments)), ["ambit"]);
 });

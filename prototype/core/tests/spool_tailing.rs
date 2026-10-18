@@ -29,6 +29,7 @@ fn settings(spool_path: Option<PathBuf>) -> SpoolSettings {
         poll_interval: Duration::from_millis(20),
         spool_path,
         input_kind: InputKind::Simulated,
+        elapsed_clock: false,
     }
 }
 

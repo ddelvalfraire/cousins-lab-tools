@@ -23,7 +23,9 @@ use crate::contract::{
     Cell, InputKind, Instrument, InstrumentError, InstrumentInfo, Readiness, Row, Sink, StopSignal,
 };
 use crate::pycompat::{float_repr, is_space, os_error, round, str_repr, strip};
-use crate::schemas::{CHANNEL_RANGES, FULL_SCALE_COUNTS, spool_clocks, spool_columns};
+use crate::schemas::{
+    CHANNEL_RANGES, FULL_SCALE_COUNTS, spool_clocks, spool_columns, spool_elapsed_clock,
+};
 
 pub const TERMINATOR: &str = "ffffffff";
 pub const TIMESTAMP_FORMAT: &str = "%m/%d/%y %H:%M:%S.%f";
@@ -309,6 +311,8 @@ pub struct SpoolSettings {
     pub poll_interval: Duration,
     pub spool_path: Option<PathBuf>,
     pub input_kind: InputKind,
+    /// Also declare `t_legacy_ms` as an elapsed clock ([`spool_elapsed_clock`]).
+    pub elapsed_clock: bool,
 }
 
 /// Tails an EZView spool file. Reads from the beginning, as the legacy reader did.
@@ -330,7 +334,10 @@ impl Instrument for EzViewSpool {
             input_kind: self.settings.input_kind,
             capabilities: BTreeSet::from(["acquire".to_string()]),
             columns: spool_columns(),
-            clocks: spool_clocks(),
+            clocks: spool_clocks()
+                .into_iter()
+                .chain(self.settings.elapsed_clock.then(spool_elapsed_clock))
+                .collect(),
             aliases: self.settings.aliases.clone(),
         }
     }

@@ -47,6 +47,7 @@ pub fn build_adapter(
                 ),
                 spool_path: None,
                 input_kind: InputKind::Simulated,
+                elapsed_clock: settings["legacy_elapsed_clock"] == true,
             };
             let sim = &profile["simulate"];
             if sim.as_object().is_some_and(|s| !s.is_empty()) {

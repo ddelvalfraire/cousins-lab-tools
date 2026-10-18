@@ -73,3 +73,9 @@ export function runSources(template, instruments) {
 export function sourcesFrom(entries) {
   return Object.fromEntries(entries.map(([role, path]) => [role, String(path ?? "").trim()]).filter(([, path]) => path));
 }
+
+/** Profiles a role may use: the engine's compatible list for it, keeping the role's own profile even if the list lacks it. */
+export function profileChoices(compatible, role, current, instruments) {
+  const allowed = new Set([...(compatible?.[role] ?? []), current]);
+  return instruments.filter(p => allowed.has(p.id));
+}

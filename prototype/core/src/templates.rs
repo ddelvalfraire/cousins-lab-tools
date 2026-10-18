@@ -202,6 +202,27 @@ fn has_source_clock(clocks: &[crate::contract::Clock]) -> bool {
         .any(|c| matches!(c.kind, ClockKind::Elapsed | ClockKind::DeviceRelative))
 }
 
+/// Per role, the profiles the template would validate with in that role: every profile whose
+/// columns and clocks cover what the role's derived values, charts, readings and layout use.
+pub fn compatible_profiles(data: &Value, profiles: &Profiles) -> BTreeMap<String, Vec<String>> {
+    let roles = object(data, "roles");
+    roles
+        .keys()
+        .map(|role| {
+            let fits = profiles
+                .keys()
+                .filter(|id| {
+                    let mut trial = data.clone();
+                    trial["roles"][role]["instrument"] = Value::from(id.as_str());
+                    validate(trial, profiles).is_ok()
+                })
+                .cloned()
+                .collect();
+            (role.clone(), fits)
+        })
+        .collect()
+}
+
 /// A template document that passed validation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Template {
@@ -544,9 +565,8 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
         };
         let mut columns: BTreeSet<String> = adapter_columns.into_iter().map(|c| c.name).collect();
         columns.extend(object(profile, "aliases").keys().cloned());
-        let adapter = adapter.and_then(Value::as_str).unwrap_or_default();
         let mut source_clock =
-            schemas::adapter_clocks(adapter).is_some_and(|c| has_source_clock(&c));
+            schemas::profile_clocks(profile).is_some_and(|c| has_source_clock(&c));
         if let Some(import) = role.get("import").filter(|v| truthy(v)) {
             match import.as_str().and_then(schemas::import_columns) {
                 Some(imported) => {

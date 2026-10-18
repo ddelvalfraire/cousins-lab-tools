@@ -3,6 +3,8 @@
 //! Adapters, importers and template validation all read these tables, so a column a template
 //! may reference is exactly a column some reader writes.
 
+use serde_json::Value;
+
 use crate::contract::{Clock, ClockKind, Column, ColumnType};
 
 pub const FULL_SCALE_COUNTS: i64 = 234_800_968;
@@ -273,6 +275,29 @@ pub fn import_columns(importer: &str) -> Option<Vec<Column>> {
         "legacy_frames" => Some(legacy_frames_columns()),
         _ => None,
     }
+}
+
+/// `t_legacy_ms` read as elapsed time, as the legacy frame files' time column is. A spool
+/// profile declares it with `settings.legacy_elapsed_clock: true`.
+pub fn spool_elapsed_clock() -> Clock {
+    Clock::new(
+        "t_legacy_ms",
+        ClockKind::Elapsed,
+        0.001,
+        "Frame timestamp minus engine start, the legacy frame files' time column; frames already \
+         in the spool at start are negative",
+    )
+}
+
+/// Clocks a profile's adapter declares: [`adapter_clocks`], plus the spool's elapsed clock
+/// when the profile asks for it.
+pub fn profile_clocks(profile: &Value) -> Option<Vec<Clock>> {
+    let adapter = profile["adapter"].as_str()?;
+    let mut clocks = adapter_clocks(adapter)?;
+    if adapter == "ezview_spool" && profile["settings"]["legacy_elapsed_clock"] == true {
+        clocks.push(spool_elapsed_clock());
+    }
+    Some(clocks)
 }
 
 /// Clocks a live adapter declares, keyed by the profile's `adapter`.

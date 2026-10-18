@@ -1,7 +1,7 @@
 import { call, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
-import { runInputs, runSources, sourcesFrom } from "./importing.js";
+import { profileChoices, runInputs, runSources, sourcesFrom } from "./importing.js";
 
 export async function renderTemplates(page) {
   const templates = await call("list_templates");
@@ -48,7 +48,7 @@ export async function renderTemplate(page, id, revision, tab) {
           <tr>
             <td><strong>${esc(role)}</strong><br><span class="small muted">${esc(r.label)}</span></td>
             <td><input type="checkbox" data-role="${esc(role)}" data-key="enabled" ${r.enabled === false ? "" : "checked"}></td>
-            <td><select data-role="${esc(role)}" data-key="instrument">${instruments.filter(p => p.adapter === profiles[r.instrument]?.adapter)
+            <td><select data-role="${esc(role)}" data-key="instrument">${profileChoices(view.compatible_instruments, role, r.instrument, instruments)
               .map(p => `<option value="${esc(p.id)}" ${p.id === r.instrument ? "selected" : ""}>${esc(p.label)}</option>`).join("")}</select>
               <div class="small">${inputBadge(profiles[r.instrument]?.input_kind)}</div></td>
             <td><input type="number" min="0" step="1" style="width:90px" data-role="${esc(role)}" data-key="start_delay_s" value="${r.start_delay_s ?? 0}"></td>

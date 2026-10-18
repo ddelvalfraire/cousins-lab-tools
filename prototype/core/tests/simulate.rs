@@ -90,6 +90,7 @@ fn simulated_frames_reach_the_spool_adapter_at_the_requested_speed() {
         poll_interval: Duration::from_millis(5),
         spool_path: Some(path),
         input_kind: InputKind::Simulated,
+        elapsed_clock: false,
     });
     assert!(adapter.check_ready().ok, "start creates the spool file");
     let (sink, stop) = (CollectingSink::default(), StopSignal::default());
