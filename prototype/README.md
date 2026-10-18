@@ -233,8 +233,7 @@ the lab should confirm:
   reading in this session.
 - A raw-data CSV at stop. The export is the aligned CSV, after saving an alignment.
 - Live charts keep the last 50,000 rows, so *All* on a long live run starts part-way in.
-- Chart images cannot be exported, and legacy frame gaps are stored as events but not drawn on
-  charts on the recording clock.
+- Legacy frame gaps are stored as events but not drawn on charts on the recording clock.
 
 ## Demonstration guide
 

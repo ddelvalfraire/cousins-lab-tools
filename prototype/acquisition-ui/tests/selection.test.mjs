@@ -46,7 +46,7 @@ test("the selection is drawn as a band in the rebuilt option, so every notMerge 
     const option = paint.option();
     assert.deepEqual(option.series[0].markArea.data, [[{ xAxis: 905.1 }, { xAxis: 958.0 }]]);
     assert.equal(option.series[1].markArea, undefined, "one band per chart");
-    assert.deepEqual(option.brush, { brushType: "lineX", brushMode: "single", xAxisIndex: 0, seriesIndex: [], transformable: false, removeOnClick: true });
+    assert.deepEqual(option.brush, { brushType: "lineX", brushMode: "single", xAxisIndex: 0, seriesIndex: [], transformable: false, removeOnClick: true, toolbox: [] });
   }
   assert.notEqual(first.key, later.key, "new data rebuilds the option");
   assert.equal(first.takeCursor, false, "pan mode leaves the inside zoom its drag");
@@ -95,4 +95,12 @@ test("a rebuilt chart keeps the template's series colours and the series hidden 
   assert.equal("color" in option.series[1], false, "no colour: the palette picks one");
   assert.deepEqual(option.legend.selected, { "Mass 32": false });
   assert.deepEqual(timeChartPaint(pressure, "pressure", coloured).option().legend.selected, {}, "nothing hidden yet");
+});
+
+test("every rebuilt chart offers Reset zoom and Save as PNG under the chart's title, and no brush buttons", () => {
+  const live = { live: true, range: null, active: true, version: 1 };
+  const option = timeChartPaint({ ...pressure, title: "Pressure" }, "pressure", frame(live)).option();
+  assert.deepEqual(Object.keys(option.toolbox.feature), ["restore", "saveAsImage"]);
+  assert.equal(option.toolbox.feature.saveAsImage.name, "Pressure");
+  assert.deepEqual(option.brush.toolbox, [], "the page's Select range toggle drives the brush");
 });

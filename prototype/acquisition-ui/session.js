@@ -122,7 +122,7 @@ async function alignTab(el, session) {
       const trials = new Set(c.series.map(s => s.trial)).size;
       chart.chart.setOption(lineOption({
         series: c.series.map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, points: s.points })),
-        markers: c.markers, xName, xFormatter,
+        markers: c.markers, xName, xFormatter, title: c.title,
       }));
       charts.push(chart);
     }

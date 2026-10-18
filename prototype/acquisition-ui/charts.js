@@ -18,19 +18,33 @@ export function markLines(markers, cursor) {
   return { symbol: "none", silent: true, animation: false, label: { show: false }, data: marks };
 }
 
+/** Reset zoom and Save as PNG, top right of every chart. `name` is the file name the image saves under. */
+export function chartToolbox(name) {
+  const muted = cssVar("--muted");
+  return {
+    right: 4, top: 0, itemSize: 14, itemGap: 10,
+    iconStyle: { borderColor: muted },
+    feature: {
+      restore: { title: "Reset zoom" },
+      saveAsImage: { title: "Save as PNG", name: name || "chart", pixelRatio: 2, backgroundColor: cssVar("--surface") },
+    },
+  };
+}
+
 /**
  * series: [{name, points: [[x, y]...]}], markers: [{x, label}], cursor: x of the replay playhead.
  * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
  * selection: {from, to} drawn as a band; brush: the chart takes a range selection.
  */
-export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false, legendSelected = {} }) {
+export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false, legendSelected = {}, title = "" }) {
   const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
   return {
     animation: false,
     color: PALETTE_VARS.map(cssVar),
     textStyle: { fontFamily: cssVar("--font-body"), color: text },
     grid: { left: 56, right: 16, top: compact ? 28 : 36, bottom: compact ? 36 : 56 },
-    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1, selected: legendSelected },
+    legend: { top: 0, left: 8, right: 64, type: "scroll", textStyle: { color: text }, show: series.length > 1, selected: legendSelected },
+    toolbox: chartToolbox(title),
     tooltip: { trigger: "axis", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
     xAxis: {
       type: "value", name: compact ? "" : xName, nameLocation: "middle", nameGap: 32, scale: true,
@@ -70,7 +84,8 @@ export function xyOption(spec, series = []) {
     animation: false,
     textStyle: { fontFamily: cssVar("--font-body"), color: text },
     grid: { left: 64, right: 16, top: 28, bottom: 44 },
-    legend: { top: 0, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
+    legend: { top: 0, left: 8, right: 64, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
+    toolbox: chartToolbox(spec?.title),
     tooltip: { trigger: "item", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
     xAxis: axis(spec?.x_label || ""),
     yAxis: { ...axis(spec?.y_label || ""), nameGap: 48 },

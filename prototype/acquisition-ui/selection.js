@@ -17,8 +17,9 @@ export function rangeFromBrush(areas) {
 /** What takeGlobalCursor hands the brush. A notMerge repaint builds a new brush model without it. */
 export const BRUSH = { brushType: "lineX", brushMode: "single" };
 
-// seriesIndex [] keeps the brush from testing every point of every series while it is dragged.
-export const brushComponent = () => ({ ...BRUSH, xAxisIndex: 0, seriesIndex: [], transformable: false, removeOnClick: true });
+// seriesIndex [] keeps the brush from testing every point of every series while it is dragged. No toolbox
+// buttons: the page's Select range toggle drives the brush.
+export const brushComponent = () => ({ ...BRUSH, xAxisIndex: 0, seriesIndex: [], transformable: false, removeOnClick: true, toolbox: [] });
 
 /** The band on the first series. It lives in the rebuilt option, so a notMerge repaint keeps it. */
 export const selectionArea = (selection, color) => ({
