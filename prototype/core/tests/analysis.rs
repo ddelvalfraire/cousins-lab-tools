@@ -44,6 +44,11 @@ fn template() -> Value {
             "ubar_per_pct": {"value": 9200, "unit": "µbar/%", "label": "µbar per %CO2"},
             "temp_c": {"entry": true, "unit": "°C", "label": "Temperature"},
             "o2_scale": {"expr": "temp_c * 2", "entry": true, "unit": "x", "label": "O2 scale"},
+            "zero_p": {"unit": "mV", "label": "Zero"},
+            "offset_p": {"expr": "zero_p * 2", "unit": "mV"},
+        },
+        "calibrations": {
+            "zero": {"label": "Zero", "role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}},
         },
         "derived": {
             "scaled": {"role": "ms", "expr": "m44 * ubar_per_pct"},
@@ -90,7 +95,10 @@ fn the_view_lists_every_parameter_with_its_value_and_where_it_came_from() {
     let view = call(&engine, "analysis", json!({"session_id": id}));
     assert_eq!(view["rev"], 0);
     let names: Vec<&String> = view["parameters"].as_object().unwrap().keys().collect();
-    assert_eq!(names, ["ubar_per_pct", "temp_c", "o2_scale"]);
+    assert_eq!(
+        names,
+        ["ubar_per_pct", "temp_c", "o2_scale", "zero_p", "offset_p"]
+    );
     assert_eq!(
         view["parameters"]["temp_c"],
         json!({"value": null, "unit": "°C", "label": "Temperature", "note": "", "entry": true,
@@ -283,4 +291,119 @@ fn a_range_reads_every_stored_row_inside_it() {
         "Rows after 3.15 s are not stored yet; try again in a moment"
     );
     assert_eq!(read(3.0, 4.0, &params, true).unwrap()["mean"].n, 2);
+}
+
+const CAPTURE: &str = "ms-legacy-frames";
+
+fn reading(step: &str, range: [f64; 2]) -> Value {
+    json!({"action": "reading", "step": step, "capture": CAPTURE, "range_s": range})
+}
+
+#[test]
+fn a_reading_is_saved_with_its_values_and_a_set_calibration_fills_its_parameter() {
+    let (engine, dir, id) = imported(template());
+    let fresh = call(&engine, "analysis", json!({"session_id": id}));
+    assert_eq!(
+        fresh["steps"]["zero"],
+        json!({"label": "Zero", "owner": "zero", "role": "ms", "kind": "set", "known": null,
+               "reading": null})
+    );
+    let first = (211.692 + 191.442 + 171.192) / 3.0;
+    let saved = record(&engine, &id, reading("zero", [0.2, 0.45]));
+    let step = &saved["steps"]["zero"]["reading"];
+    assert_eq!(step["record"], "rec-000001");
+    assert_eq!(
+        (step["capture"].clone(), step["range_s"].clone()),
+        (json!(CAPTURE), json!([0.2, 0.45]))
+    );
+    assert_eq!(
+        step["values"]["zero_p"],
+        json!({"stat": "mean", "of": "m44", "value": first, "n": 3, "t_first_s": 0.21, "t_last_s": 0.42})
+    );
+    assert_eq!(saved["parameters"]["zero_p"]["value"], first);
+    assert_eq!(saved["parameters"]["zero_p"]["source"], "fitted");
+    assert_eq!(saved["parameters"]["zero_p"]["calibration"], "zero");
+    assert_eq!(saved["parameters"]["offset_p"]["value"], first * 2.0);
+    let file = dir
+        .path()
+        .join("sessions")
+        .join(&id)
+        .join("analysis/rec-000001.json");
+    let stored: Value = serde_json::from_str(&std::fs::read_to_string(file).unwrap()).unwrap();
+    assert_eq!(stored["clock"], "t_ms");
+    assert_eq!(stored["params"]["ubar_per_pct"], 9200.0);
+    assert_eq!(stored["values"], step["values"]);
+
+    let redone = record(&engine, &id, reading("zero", [2.9, 3.2]));
+    let second = (-314.808 + -335.058 + -355.308) / 3.0;
+    assert_eq!(redone["parameters"]["zero_p"]["value"], second);
+    let retracted = record(
+        &engine,
+        &id,
+        json!({"action": "retract", "records": ["rec-000002"]}),
+    );
+    assert_eq!(
+        retracted["steps"]["zero"]["reading"]["record"],
+        "rec-000001"
+    );
+    assert_eq!(retracted["parameters"]["zero_p"]["value"], first);
+    let cleared = record(
+        &engine,
+        &id,
+        json!({"action": "retract", "records": ["rec-000001"]}),
+    );
+    assert_eq!(cleared["steps"]["zero"]["reading"], Value::Null);
+    assert_eq!(cleared["parameters"]["zero_p"]["source"], "unset");
+    assert_eq!(cleared["parameters"]["offset_p"]["why"], "needs zero_p");
+}
+
+#[test]
+fn a_reading_refuses_unknown_steps_and_captures_and_empty_ranges() {
+    let (engine, dir, id) = imported(template());
+    for (request, message) in [
+        (reading("nope", [0.2, 0.45]), "No step nope"),
+        (
+            reading("zero", [1.0, 1.9]),
+            "No stored rows between 1 and 1.9 s",
+        ),
+        (
+            reading("zero", [0.45, 0.2]),
+            "Bad arguments: A range is two finite times in seconds, the first before the second",
+        ),
+        (
+            json!({"action": "reading", "step": "zero", "capture": "ms", "range_s": [0.2, 0.45]}),
+            "No capture ms",
+        ),
+    ] {
+        let mut args = request.clone();
+        args["session_id"] = json!(id);
+        let e = refused(&engine, "record_analysis", args);
+        assert_eq!((e.kind, e.message.as_str()), (ErrorKind::Invalid, message));
+    }
+    assert_eq!(record_files(&dir, &id), 0);
+}
+
+#[test]
+fn a_reading_refuses_a_capture_of_another_role() {
+    let mut data = template();
+    data["roles"]["other"] = data["roles"]["ms"].clone();
+    let (engine, _dir, id) = imported(data);
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": TEMPLATE, "files": [
+            {"role": "ms", "path": fixture("legacy-frames.zip"), "label": "a"},
+            {"role": "other", "path": fixture("legacy-frames.zip"), "label": "b"},
+        ]}),
+    );
+    let two = manifest["id"].as_str().unwrap();
+    assert_ne!(two, id);
+    let mut args =
+        json!({"action": "reading", "step": "zero", "capture": "other-b", "range_s": [0.2, 0.45]});
+    args["session_id"] = json!(two);
+    let e = refused(&engine, "record_analysis", args);
+    assert_eq!(
+        e.message,
+        "Capture other-b records role other; step zero reads role ms"
+    );
 }

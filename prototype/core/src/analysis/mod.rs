@@ -13,14 +13,17 @@ mod view;
 
 use std::path::Path;
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use crate::alignment::TemplateRef;
-use crate::query::AnalysisError;
+use crate::calc::Program;
+use crate::expr::Params;
+use crate::query::{AnalysisError, SessionDb};
 use crate::session::{Manifest, utc_now};
 use crate::templates::{Template, from_snapshot};
 
-pub use fold::{AnalysisState, fold};
+pub use fold::{AnalysisState, StepState, fold};
 pub use reading::{Range, RangeError, ReadingValue, read_range};
 pub use spec::{
     AnalysisSpec, CalPoint, Calibration, CalibrationKind, MeasureStep, Measurement, ReadingSpec,
@@ -28,12 +31,17 @@ pub use spec::{
 };
 pub use store::{Action, Record, RecordId, append, load_records};
 use view::view_of;
-pub use view::{AnalysisView, Origin, ParameterView};
+pub use view::{AnalysisView, Origin, ParameterView, StepReading, StepView};
 
 /// One operator action as the UI sends it.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum Request {
+    Reading {
+        step: String,
+        capture: String,
+        range_s: Range,
+    },
     Entry {
         parameter: String,
         value: Option<f64>,
@@ -61,13 +69,85 @@ pub fn view(session_dir: &Path, manifest: &Manifest) -> Result<AnalysisView, Ana
     Ok(view_of(&template, &load_records(session_dir)?))
 }
 
+/// What reading `step` over `range` of `capture` gives now: the source clock's column, the
+/// values from stored rows, and the parameters they used.
+fn take_reading(
+    session_dir: &Path,
+    manifest: &Manifest,
+    template: &Template,
+    log: &[Record],
+    step: &str,
+    capture: &str,
+    range: Range,
+) -> Result<(String, IndexMap<String, ReadingValue>, Params), AnalysisError> {
+    let spec = template
+        .analysis()
+        .steps
+        .get(step)
+        .ok_or_else(|| invalid(format!("No step {step}")))?;
+    let recorded = manifest
+        .captures
+        .get(capture)
+        .ok_or_else(|| invalid(format!("No capture {capture}")))?;
+    if recorded.role != spec.role {
+        return Err(invalid(format!(
+            "Capture {capture} records role {}; step {step} reads role {}",
+            recorded.role, spec.role
+        )));
+    }
+    let program = Program::for_role(template, &spec.role, &recorded.clocks)
+        .map_err(|e| invalid(e.to_string()))?;
+    let clock = program
+        .clock()
+        .map(|c| c.column.clone())
+        .unwrap_or_default();
+    let params = fold(template.analysis(), log).resolve(template).values;
+    let db = SessionDb::open(session_dir, manifest)?;
+    let complete = recorded.status.is_finished();
+    let values = read_range(
+        &db,
+        &program,
+        &params,
+        capture,
+        range,
+        &spec.readings,
+        complete,
+    )?;
+    Ok((clock, values, params))
+}
+
 /// The record `request` makes, checked against the template and the log so far.
 fn action_for(
+    session_dir: &Path,
+    manifest: &Manifest,
     template: &Template,
     log: &[Record],
     request: Request,
 ) -> Result<Action, AnalysisError> {
     match request {
+        Request::Reading {
+            step,
+            capture,
+            range_s,
+        } => {
+            let (clock, values, params) = take_reading(
+                session_dir,
+                manifest,
+                template,
+                log,
+                &step,
+                &capture,
+                range_s,
+            )?;
+            Ok(Action::Reading {
+                step,
+                capture,
+                range_s,
+                clock,
+                values,
+                params,
+            })
+        }
         Request::Entry { parameter, value } => {
             let spec = template
                 .param_specs()
@@ -123,7 +203,7 @@ pub fn record(
             view: view_of(&template, &log),
         });
     }
-    let action = action_for(&template, &log, request)?;
+    let action = action_for(session_dir, manifest, &template, &log, request)?;
     let saved = append(
         session_dir,
         TemplateRef {

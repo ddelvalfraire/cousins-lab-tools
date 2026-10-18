@@ -4,10 +4,13 @@ use indexmap::IndexMap;
 use serde::Serialize;
 
 use crate::params::ParamSource;
+use crate::session::iso_time;
 use crate::templates::Template;
 
-use super::fold::fold;
-use super::store::Record;
+use super::fold::{StepState, fold};
+use super::reading::{Range, ReadingValue};
+use super::spec::StepKind;
+use super::store::{Record, RecordId};
 
 /// Where a parameter's value came from, or why it has none.
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -35,6 +38,44 @@ pub struct AnalysisView {
     pub rev: u64,
     /// Every template parameter in template order, with its effective value.
     pub parameters: IndexMap<String, ParameterView>,
+    /// Every step in template order, with the reading that fills it.
+    pub steps: IndexMap<String, StepView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct StepReading {
+    pub record: RecordId,
+    #[serde(with = "iso_time")]
+    pub created_utc: chrono::DateTime<chrono::Utc>,
+    pub capture: String,
+    pub range_s: Range,
+    pub values: IndexMap<String, ReadingValue>,
+}
+
+impl From<&StepState> for StepReading {
+    fn from(s: &StepState) -> StepReading {
+        StepReading {
+            record: s.record.clone(),
+            created_utc: s.created_utc,
+            capture: s.capture.clone(),
+            range_s: s.range_s,
+            values: s.values.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct StepView {
+    pub label: String,
+    /// The calibration or measurement the step belongs to.
+    pub owner: String,
+    pub role: String,
+    /// `set`, `point` or `measure`.
+    pub kind: &'static str,
+    /// A calibration point's known value.
+    pub known: Option<f64>,
+    /// None until the step is read, and again once its reading is retracted.
+    pub reading: Option<StepReading>,
 }
 
 pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
@@ -65,8 +106,30 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
             (spec.name.clone(), view)
         })
         .collect();
+    let steps = template
+        .analysis()
+        .steps
+        .iter()
+        .map(|(id, step)| {
+            let (kind, known) = match step.kind {
+                StepKind::Set => ("set", None),
+                StepKind::Point { known } => ("point", Some(known)),
+                StepKind::Measure => ("measure", None),
+            };
+            let view = StepView {
+                label: step.label.clone(),
+                owner: step.owner.clone(),
+                role: step.role.clone(),
+                kind,
+                known,
+                reading: state.steps.get(id).map(StepReading::from),
+            };
+            (id.clone(), view)
+        })
+        .collect();
     AnalysisView {
         rev: state.rev,
         parameters,
+        steps,
     }
 }
