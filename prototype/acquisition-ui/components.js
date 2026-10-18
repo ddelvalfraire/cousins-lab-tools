@@ -182,18 +182,16 @@ export function mountGrid(root, items, ctx) {
   for (const inst of charts) inst.chart.on("brushEnd", e => setTimeout(() => ctx.onSelect?.(rangeFromBrush(e.areas))));
   const derived = ctx.template.data.derived;
 
-  root.addEventListener("click", event => {
-    const button = event.target.closest("[data-action]");
-    if (button && root.contains(button)) ctx.actions?.[button.dataset.action]?.(button.dataset);
-  });
-  root.addEventListener("change", event => {
-    const field = event.target.closest("[data-change]");
-    if (field && root.contains(field)) ctx.actions?.[field.dataset.change]?.(field.dataset, field.value);
-  });
-  root.addEventListener("input", event => {
-    const field = event.target.closest("[data-input]");
-    if (field && root.contains(field)) ctx.actions?.[field.dataset.input]?.(field.dataset, field.value);
-  });
+  // root outlives this grid, since a view switch mounts the next grid into it; dispose drops these listeners
+  // so a click is not handled once per grid ever mounted, which would save a reading twice.
+  const listening = new AbortController();
+  const delegate = (type, attr, args) => root.addEventListener(type, event => {
+    const el = event.target.closest(`[data-${attr}]`);
+    if (el && root.contains(el)) ctx.actions?.[el.dataset[attr]]?.(...args(el));
+  }, { signal: listening.signal });
+  delegate("click", "action", el => [el.dataset]);
+  delegate("change", "change", el => [el.dataset, el.value]);
+  delegate("input", "input", el => [el.dataset, el.value]);
 
   let stateKey = null, analysisKey = null, paramsKey = null;
   const tableKeys = {};
@@ -257,7 +255,10 @@ export function mountGrid(root, items, ctx) {
         root.querySelector(`[data-captures-for="${CSS.escape(c.id)}"]`).innerHTML = captureTable({ ...ctx.session, captures: frame.captures }, c.role);
       }
     },
-    dispose: () => charts.forEach(c => c.dispose()),
+    dispose: () => {
+      listening.abort();
+      charts.forEach(c => c.dispose());
+    },
   };
 }
 
