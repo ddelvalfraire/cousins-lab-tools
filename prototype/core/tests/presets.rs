@@ -371,3 +371,107 @@ fn module3_get_mean_averages_the_rate_over_the_selected_rows() {
     assert_eq!(row["labels"], json!({"sample_name": "leaf 1"}));
     assert_close(&row["results"]["mean"], mean, "table row");
 }
+
+fn hand_slope(range_s: [f64; 2], mass: usize) -> f64 {
+    hand_line(&rows_in(range_s, |m| m[mass])).0
+}
+
+/// The first mass 44 staircase of the sample (about 7, 53, 96 and 137 mV), read as the
+/// bicarbonate additions. The second staircase serves as the assay buffer CO2 injections.
+const M1_BICARB: [(&str, [f64; 2], f64); 4] = [
+    ("bicarb.zero", [480.0, 499.0], 0.0),
+    ("bicarb.ul2", [520.0, 545.0], 33.3),
+    ("bicarb.ul4", [568.0, 588.0], 66.6),
+    ("bicarb.ul6", [612.0, 650.0], 99.9),
+];
+const M1_BLANK: [f64; 2] = [720.0, 765.0];
+const M1_EXTRACTS: [[f64; 2]; 2] = [[4100.0, 4600.0], [6000.0, 6600.0]];
+
+#[test]
+fn module1_extract_rows_fill_the_velocity_chart_from_both_calibrations_and_the_blank() {
+    let (engine, _dir, id) = imported("legacy-module1-rubisco");
+    let zero_range = M2_CAL[0].1;
+    reading(&engine, &id, "o2_zero", zero_range);
+    record(
+        &engine,
+        &id,
+        json!({"action": "entry", "parameter": "temp_c", "value": 25}),
+    );
+    let assay: Vec<(&str, [f64; 2], f64)> = M2_CAL
+        .iter()
+        .zip(["zero", "ul6", "ul12", "ul18"])
+        .map(|((_, range, known), point)| (point, *range, known * 1000.0))
+        .collect();
+    for (point, range, _) in &assay {
+        reading(&engine, &id, &format!("co2_assay.{point}"), *range);
+    }
+    for (step, range, _) in M1_BICARB {
+        reading(&engine, &id, step, range);
+    }
+    reading(&engine, &id, "co2_zero", zero_range);
+    let blanked = reading(&engine, &id, "blank", M1_BLANK);
+
+    let line = |points: &[([f64; 2], f64)]| {
+        let cal: Vec<(f64, f64)> = points
+            .iter()
+            .map(|(range, known)| (hand_mean(*range, M44).0, *known))
+            .collect();
+        hand_line(&cal)
+    };
+    let (co2_cal, co2_intercept) = line(&assay.iter().map(|a| (a.1, a.2)).collect::<Vec<_>>());
+    let (bicarb_cal, _) = line(&M1_BICARB.map(|b| (b.1, b.2)));
+    let params = &blanked["parameters"];
+    assert_close(&params["co2_cal"]["value"], co2_cal, "CO2 cal");
+    assert_close(
+        &params["co2_cal_intercept"]["value"],
+        co2_intercept,
+        "intercept (B1)",
+    );
+    assert_close(&params["bicarb_cal"]["value"], bicarb_cal, "BiCarb cal");
+    let ratio = co2_cal / bicarb_cal;
+    assert_close(&params["bicarb_per_co2"]["value"], ratio, "BiCarb/CO2");
+    let o2_cal = o2_air(25.0) / hand_mean(zero_range, M32).0;
+    assert_close(&params["o2_cal"]["value"], o2_cal, "O2 calibration");
+    let (co2_blank, o2_blank) = (hand_slope(M1_BLANK, M44), hand_slope(M1_BLANK, M32));
+    assert_close(&params["co2_blank"]["value"], co2_blank, "CO2 blank (B8)");
+    assert_close(&params["o2_blank"]["value"], o2_blank, "O2 blank (B8)");
+    for chart in ["assay_buffer", "hcl"] {
+        let series = &blanked["xy"][chart]["series"][0];
+        assert_eq!(series["points"].as_array().unwrap().len(), 4, "{chart}");
+        assert!(series["line"].is_array(), "{chart}");
+    }
+
+    let zero44 = hand_mean(zero_range, M44).0;
+    let mut expected = Vec::new();
+    let mut view = Value::Null;
+    for range in M1_EXTRACTS {
+        reading(&engine, &id, "extract", range);
+        view = record(
+            &engine,
+            &id,
+            json!({"action": "add_row", "measurement": "extract"}),
+        );
+        let v0 = -(hand_slope(range, M32) - o2_blank) * o2_cal;
+        let vc = -(hand_slope(range, M44) - co2_blank) * co2_cal;
+        let co2 = co2_cal * (hand_mean(range, M44).0 - zero44) / ratio;
+        let o2 = o2_cal * hand_mean(range, M32).0;
+        expected.push((v0, vc, co2, o2));
+    }
+    let rows = view["tables"]["extract"]["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    let velocity = &view["xy"]["velocity"]["series"];
+    for (i, (v0, vc, co2, o2)) in expected.into_iter().enumerate() {
+        let row = &rows[i]["results"];
+        assert_close(&row["v0"], v0, "V0");
+        assert_close(&row["vc"], vc, "Vc");
+        assert_close(&row["co2_conc"], co2, "[CO2]");
+        assert_close(&row["o2_conc"], o2, "[O2]");
+        assert_eq!(velocity[0]["points"][i], json!([row["o2_conc"], row["v0"]]));
+        assert_eq!(
+            velocity[1]["points"][i],
+            json!([row["co2_conc"], row["vc"]])
+        );
+    }
+    assert_eq!(velocity[0]["name"], "V0 vs [O2]");
+    assert_eq!(velocity[1]["name"], "Vc vs [CO2]");
+}

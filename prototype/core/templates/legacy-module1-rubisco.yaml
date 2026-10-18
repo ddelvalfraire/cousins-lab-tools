@@ -1,0 +1,154 @@
+id: legacy-module1-rubisco
+revision: 1
+name: Rubisco kinetics (legacy module 1)
+summary: >
+  The module 1 screen as a template. Mass 44 is calibrated twice, with CO2 injections into
+  assay buffer and with bicarbonate into HCl; O2 uses the air-saturation polynomial at the
+  entered temperature over the O2 zero. Blank and Extract are least-squares rates over the
+  selected range; each Extract row gives V0, Vc, [CO2] and [O2] for the velocity chart.
+evidence:
+  - "Formulas: module1/application/calculations/Calculations.py:17-79 and mainUI/main.py:1338-1673"
+  - "Calibration points: module1/application/mainUI/main.py:853-877"
+  - "Screen: module1/application/mainUI/main.py:214-739"
+  - "Bug fixes B1-B10: docs/legacy-screens.md section 5"
+
+roles:
+  ms:
+    label: Mass spectrometer (legacy frame files)
+    instrument: ms-legacy-frames-replay
+    import: legacy_frames
+    start_delay_s: 0
+    on_failure: stop_group
+
+parameters:
+  temp_c: {entry: true, unit: °C, label: Temperature (C), note: "Required; no default (B19)"}
+  o2_zero_mv: {unit: mV, label: O2 Assay Buffer Zero}
+  o2_cal: {expr: "(-0.0018*temp_c*temp_c*temp_c + 0.2229*temp_c*temp_c - 12.387*temp_c + 456.49) / o2_zero_mv",
+           entry: true, unit: nmol/ml/mV, label: O2 Calibration,
+           note: "Air-saturated O2 polynomial S(T) over O2 Zero. Source of the polynomial is a lab check (B18)"}
+  co2_cal: {unit: nmol/ml/mV, label: CO2 cal (nmol/ml/mV), note: "Least-squares fit of the assay buffer points. Legacy label 'BiCarb cal' was wrong (B2, B6)"}
+  co2_cal_intercept: {unit: nmol/ml, label: Intercept, note: "In nmol/ml, not mV (B1)"}
+  bicarb_cal: {unit: nmol/ml/mV, label: BiCarb cal (nmol/ml/mV), note: "Least-squares fit of the HCL points (B2, B6)"}
+  bicarb_cal_intercept: {unit: nmol/ml, label: Intercept 2, note: "In nmol/ml, not mV (B1)"}
+  bicarb_per_co2: {expr: "co2_cal / bicarb_cal", entry: true, unit: ratio, label: BiCarb/CO2}
+  co2_zero_m44: {unit: mV, label: CO2 Zero (Mass 44)}
+  co2_zero_m45: {unit: mV, label: CO2 Zero (Mass 45), note: "Shown as on the legacy screen; no formula uses it"}
+  co2_blank: {unit: mV/s, label: CO2 blank rate, note: "Least-squares slope over the range, not two end points. Lab check (B8)"}
+  o2_blank: {unit: mV/s, label: O2 blank rate, note: "Least-squares slope over the range, not two end points. Lab check (B8)"}
+
+calibrations:
+  o2_zero:
+    label: O2 Zero
+    role: ms
+    set: {o2_zero_mv: {stat: mean, of: m32}}
+  co2_assay:
+    label: Assay Buffer
+    role: ms
+    line:
+      reading: {stat: mean, of: m44}
+      points:
+        zero: {label: CO2 Cal Zero, known: 0}
+        ul6: {label: CO2 Cal 6 µl, known: 1000}
+        ul12: {label: CO2 Cal 12 µl, known: 2000}
+        ul18: {label: CO2 Cal 18 µl, known: 3000}
+      sets: {slope: co2_cal, intercept: co2_cal_intercept}
+      x_label: Voltage (mV)
+      y_label: CO2 (nmol/ml)
+  bicarb:
+    label: HCL
+    role: ms
+    line:
+      reading: {stat: mean, of: m44}
+      points:
+        zero: {label: BiCarb Cal Zero, known: 0}
+        ul2: {label: BiCarb Cal 2 µl, known: 33.3}
+        ul4: {label: BiCarb Cal 4 µl, known: 66.6}
+        ul6: {label: BiCarb Cal 6 µl, known: 99.9}
+      sets: {slope: bicarb_cal, intercept: bicarb_cal_intercept}
+      x_label: Voltage (mV)
+      y_label: BiCarb (nmol/ml)
+  co2_zero:
+    label: CO2 Zero
+    role: ms
+    set: {co2_zero_m44: {stat: mean, of: m44}, co2_zero_m45: {stat: mean, of: m45}}
+  blank:
+    label: Blank
+    role: ms
+    set: {co2_blank: {stat: slope, of: m44}, o2_blank: {stat: slope, of: m32}}
+
+measurements:
+  extract:
+    label: Extract
+    role: ms
+    readings:
+      co2_ext: {stat: slope, of: m44}
+      o2_ext: {stat: slope, of: m32}
+      co2_reading: {stat: mean, of: m44}
+      o2_reading: {stat: mean, of: m32}
+    results:
+      v0: {expr: "-(o2_ext - o2_blank) * o2_cal", unit: nmol/ml/s, label: V0}
+      vc: {expr: "-(co2_ext - co2_blank) * co2_cal", unit: nmol/ml/s, label: Vc}
+      co2_conc: {expr: "co2_cal * (co2_reading - co2_zero_m44) / bicarb_per_co2", unit: nmol/ml, label: "[CO2]"}
+      o2_conc: {expr: "o2_cal * o2_reading", unit: nmol/ml, label: "[O2]"}
+
+events:
+  missing_frames:
+    label: Frame files missing from the recording
+
+alignment:
+  default_reference: elapsed
+
+charts:
+  - id: assay_buffer
+    kind: xy
+    title: Assay Buffer
+    x_label: Voltage (mV)
+    y_label: CO2 (nmol/ml)
+    series: [{calibration: co2_assay, color: "#00fa9a"}]
+  - id: hcl
+    kind: xy
+    title: HCL
+    x_label: Voltage (mV)
+    y_label: BiCarb (nmol/ml)
+    series: [{calibration: bicarb, color: "#00fa9a"}]
+  - id: velocity
+    kind: xy
+    title: Velocity - Concentration
+    x_label: "[CO2], [O2] (nmol/ml)"
+    y_label: Velocity (nmol/ml/s)
+    series:
+      - {measurement: extract, x: o2_conc, y: v0, label: "V0 vs [O2]", color: "#00fa9a"}
+      - {measurement: extract, x: co2_conc, y: vc, label: "Vc vs [CO2]", color: "#ff0000"}
+  - id: raw
+    title: Raw data
+    unit: mV
+    x: source
+    series:
+      - {role: ms, value: m32, label: Mass 32, color: "#800000"}
+      - {role: ms, value: m34, label: Mass 34, color: "#9A6324"}
+      - {role: ms, value: m36, label: Mass 36, color: "#808000"}
+      - {role: ms, value: m44, label: Mass 44, color: "#4363d8"}
+      - {role: ms, value: m45, label: Mass 45, color: "#e6194B"}
+      - {role: ms, value: m46, label: Mass 46, color: "#911eb4"}
+      - {role: ms, value: m47, label: Mass 47, color: "#42d4f4"}
+      - {role: ms, value: m49, label: Mass 49, color: "#f58231"}
+    markers: {role: ms, kind: missing_frames}
+
+layout:
+  views:
+    - id: screen
+      name: Rubisco kinetics
+      components:
+        - {id: assay-values, kind: inputs, title: Assay Buffer, parameters: [co2_cal_intercept, co2_cal], x: 0, y: 0, w: 4, h: 2}
+        - {id: assay-chart, kind: chart, chart: assay_buffer, x: 0, y: 2, w: 4, h: 5}
+        - {id: hcl-values, kind: inputs, title: HCL, parameters: [bicarb_cal_intercept, bicarb_cal], x: 4, y: 0, w: 4, h: 2}
+        - {id: hcl-chart, kind: chart, chart: hcl, x: 4, y: 2, w: 4, h: 5}
+        - {id: velocity-chart, kind: chart, chart: velocity, x: 8, y: 0, w: 4, h: 7}
+        - {id: raw-chart, kind: chart, chart: raw, x: 0, y: 7, w: 12, h: 7}
+        - {id: controls, kind: controls, x: 0, y: 14, w: 12, h: 2}
+        - {id: assay-steps, kind: readings, role: ms, steps: [o2_zero, co2_assay.zero, co2_assay.ul6, co2_assay.ul12, co2_assay.ul18], x: 0, y: 16, w: 2, h: 5}
+        - {id: assay-inputs, kind: inputs, title: Temperature, parameters: [temp_c], x: 0, y: 21, w: 2, h: 2}
+        - {id: bicarb-steps, kind: readings, role: ms, steps: [bicarb.zero, bicarb.ul2, bicarb.ul4, bicarb.ul6], x: 2, y: 16, w: 2, h: 5}
+        - {id: bicarb-inputs, kind: inputs, title: Ratios, parameters: [bicarb_per_co2, o2_cal], x: 2, y: 21, w: 2, h: 2}
+        - {id: rate-steps, kind: readings, role: ms, steps: [co2_zero, blank, extract], x: 4, y: 16, w: 3, h: 7}
+        - {id: extract-table, kind: table, measurement: extract, x: 7, y: 16, w: 5, h: 7}
