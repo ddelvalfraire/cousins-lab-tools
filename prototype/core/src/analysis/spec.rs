@@ -638,6 +638,53 @@ pub fn check(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
     errors
 }
 
+/// Every reason the series of xy chart `id` do not name a line calibration, or a measurement
+/// with two of its results.
+pub fn xy_errors(id: &str, series: &[Value], spec: &AnalysisSpec) -> Vec<String> {
+    let mut errors = Vec::new();
+    for s in series {
+        match (s.get("calibration"), s.get("measurement")) {
+            (Some(c), None) => {
+                let line = c
+                    .as_str()
+                    .and_then(|c| spec.calibrations.get(c))
+                    .is_some_and(|c| matches!(c.kind, CalibrationKind::Line { .. }));
+                if !line {
+                    errors.push(format!(
+                        "Chart {id}: calibration {} is not a line calibration",
+                        repr(c)
+                    ));
+                }
+            }
+            (None, Some(m)) => {
+                let Some((name, measurement)) = m
+                    .as_str()
+                    .and_then(|name| Some((name, spec.measurements.get(name)?)))
+                else {
+                    errors.push(format!("Chart {id}: unknown measurement {}", repr(m)));
+                    continue;
+                };
+                for axis in ["x", "y"] {
+                    let key = s.get(axis);
+                    if !key
+                        .and_then(Value::as_str)
+                        .is_some_and(|k| measurement.results.contains_key(k))
+                    {
+                        let shown = key.map_or_else(|| "None".into(), repr);
+                        errors.push(format!(
+                            "Chart {id}: {axis} {shown} is not a result of {name}"
+                        ));
+                    }
+                }
+            }
+            _ => errors.push(format!(
+                "Chart {id}: an xy series names a calibration, or a measurement with x and y"
+            )),
+        }
+    }
+    errors
+}
+
 /// Reading names and result keys share one namespace with parameters and derived values,
 /// because expressions, charts and tables look a name up without saying where it lives.
 /// Clashes between parameters and derived values are reported where those are parsed.
@@ -1069,6 +1116,67 @@ mod tests {
                 "'d44' is defined under both derived and results of measurement sample",
                 "'zero_p' is defined under both parameters and readings of measurement extract",
                 "'pct' is defined under both results of measurement sample and results of measurement extract",
+            ]
+        );
+    }
+
+    #[test]
+    fn an_xy_chart_names_a_line_calibration_or_two_results_of_a_measurement() {
+        let mut data = base();
+        data["calibrations"] = json!({
+            "co2": co2_line(),
+            "zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}},
+        });
+        data["measurements"] = json!({"sample": sample()});
+        data["charts"] = json!([
+            {"id": "cal", "kind": "xy", "series": [{"calibration": "co2"}]},
+            {"id": "rows", "kind": "xy", "series": [{"measurement": "sample", "x": "pct", "y": "twice"}]},
+            {"id": "raw", "kind": "time", "x": "source", "series": [{"role": "ms", "value": "m44"}]},
+        ]);
+        let profiles = load_profiles(&Paths::default().instruments).unwrap();
+        let template = validate(data.clone(), &profiles).unwrap();
+        let ids: Vec<Value> = template.charts().iter().map(|c| c["id"].clone()).collect();
+        assert_eq!(ids, [json!("cal"), json!("rows"), json!("raw")]);
+        data["layout"] = json!({"views": [{"id": "v", "components": [
+            {"id": "a", "kind": "chart", "chart": "cal", "x": 0, "y": 0, "w": 4, "h": 4},
+            {"id": "b", "kind": "chart", "chart": "raw", "x": 4, "y": 0, "w": 4, "h": 4},
+        ]}]});
+        assert!(
+            validate(data.clone(), &profiles).is_ok(),
+            "xy charts have no time axis"
+        );
+        data["roles"]["ms"]["enabled"] = json!(false);
+        assert!(
+            validate(data.clone(), &profiles)
+                .unwrap()
+                .charts()
+                .is_empty()
+        );
+
+        data["charts"] = json!([
+            {"id": "bad", "kind": "xy", "series": [
+                {"calibration": "zero"},
+                {"calibration": "nope"},
+                {"measurement": "sample", "x": "pct", "y": "o2c"},
+                {"measurement": "extract", "x": "a", "y": "b"},
+                {"role": "ms", "value": "m44"},
+            ]},
+            {"id": "pie", "kind": "pie", "series": []},
+        ]);
+        data.as_object_mut().unwrap().remove("layout");
+        assert_eq!(
+            validate(data, &profiles)
+                .unwrap_err()
+                .0
+                .split("; ")
+                .collect::<Vec<_>>(),
+            [
+                "Chart bad: calibration 'zero' is not a line calibration",
+                "Chart bad: calibration 'nope' is not a line calibration",
+                "Chart bad: y 'o2c' is not a result of sample",
+                "Chart bad: unknown measurement 'extract'",
+                "Chart bad: an xy series names a calibration, or a measurement with x and y",
+                "Chart pie: kind must be one of ['time', 'xy']",
             ]
         );
     }

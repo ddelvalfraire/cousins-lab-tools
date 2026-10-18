@@ -82,6 +82,10 @@ fn template() -> Value {
              "series": [{"role": "ms", "value": "m44"}]},
             {"id": "zeroed", "title": "Zeroed", "unit": "mV", "x": "source",
              "series": [{"role": "ms", "value": "zeroed"}]},
+            {"id": "line_cal", "kind": "xy", "title": "Line", "x_label": "mV", "y_label": "µl",
+             "series": [{"calibration": "line", "color": "#00fa9a"}]},
+            {"id": "samples", "kind": "xy", "title": "Samples",
+             "series": [{"measurement": "sample", "x": "co2_zeroed", "y": "ratio", "label": "Ratio"}]},
         ],
     })
 }
@@ -501,6 +505,22 @@ fn a_calibration_recomputes_review_charts_and_a_saved_alignment_keeps_its_values
         review(json!({})),
         json!([]),
         "zero_p is unset, so nothing plots"
+    );
+    let preview = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "elapsed"}),
+    );
+    let ids: Vec<&str> = preview["charts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        ids,
+        ["raw", "zeroed"],
+        "xy charts come from the analysis view"
     );
     record(&engine, &id, reading("zero", [0.2, 0.45]));
     let zero = (211.692 + 191.442 + 171.192) / 3.0;

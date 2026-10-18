@@ -174,7 +174,7 @@ fn repr_of(value: Option<&Value>) -> String {
 
 struct Check<'a> {
     data: &'a Value,
-    /// Chart id to its time axis, `run` or `source`.
+    /// Chart id to its time axis, `run` or `source`, or `xy` for a chart with no time axis.
     charts: BTreeMap<&'a str, &'a str>,
     seen: BTreeSet<String>,
     errors: Vec<String>,
@@ -188,6 +188,7 @@ fn chart_axes<'a>(items: &[Value], charts: &BTreeMap<&str, &'a str>, out: &mut B
                 .get("chart")
                 .and_then(Value::as_str)
                 .and_then(|ch| charts.get(ch))
+                .filter(|axis| **axis != "xy")
         {
             out.insert(axis);
         }
@@ -369,7 +370,10 @@ pub(crate) fn errors(data: &Value) -> Vec<String> {
         charts: array(data, "charts")
             .iter()
             .filter_map(|c| {
-                let axis = c.get("x").and_then(Value::as_str).unwrap_or("run");
+                let axis = match c.get("kind").and_then(Value::as_str) {
+                    Some("xy") => "xy",
+                    _ => c.get("x").and_then(Value::as_str).unwrap_or("run"),
+                };
                 Some((c.get("id")?.as_str()?, axis))
             })
             .collect(),

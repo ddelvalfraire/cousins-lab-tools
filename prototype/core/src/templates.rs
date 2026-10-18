@@ -26,6 +26,7 @@ use crate::schemas;
 const ON_FAILURE: [&str; 2] = ["continue_others", "stop_group"];
 const REFERENCES: [&str; 3] = ["clock", "elapsed", "event"];
 const CHART_AXES: [&str; 2] = ["run", "source"];
+const CHART_KINDS: [&str; 2] = ["time", "xy"];
 const IMPORTERS: [&str; 3] = ["ambit_csv", "legacy_frames", "ms_workbook"];
 const DEFAULT_FLASH_RED_LEVEL: i64 = 2500;
 static SAVE_ATTEMPTS: AtomicU64 = AtomicU64::new(0);
@@ -277,6 +278,23 @@ impl Template {
         self.data.get("protocols")?.get(name)
     }
 
+    /// The role a chart series plots: its own, or that of the calibration or measurement an
+    /// xy series names.
+    fn series_role<'a>(&'a self, series: &'a Value) -> Option<&'a str> {
+        if let Some(role) = series["role"].as_str() {
+            return Some(role);
+        }
+        let calibration = series["calibration"].as_str();
+        let measurement = series["measurement"].as_str();
+        calibration
+            .and_then(|c| self.analysis.calibrations.get(c))
+            .map(|c| c.role.as_str())
+            .or_else(|| {
+                let m = self.analysis.measurements.get(measurement?)?;
+                Some(m.role.as_str())
+            })
+    }
+
     /// Charts with their series cut to enabled roles; a chart left with none is dropped.
     pub fn charts(&self) -> Vec<Value> {
         let enabled = self.enabled_names();
@@ -285,7 +303,7 @@ impl Template {
             .filter_map(|chart| {
                 let series: Vec<Value> = array(chart, "series")
                     .iter()
-                    .filter(|s| s["role"].as_str().is_some_and(|r| enabled.contains(r)))
+                    .filter(|s| self.series_role(s).is_some_and(|r| enabled.contains(r)))
                     .cloned()
                     .collect();
                 let mut chart = chart.as_object()?.clone();
@@ -402,6 +420,11 @@ impl Template {
     fn enabled_names(&self) -> BTreeSet<&str> {
         self.enabled_roles().into_iter().map(|(r, _)| r).collect()
     }
+}
+
+/// Whether a template chart plots one value against another rather than against time.
+pub fn is_xy(chart: &Value) -> bool {
+    chart["kind"] == "xy"
 }
 
 pub(crate) fn truthy(value: &Value) -> bool {
@@ -711,6 +734,20 @@ pub fn validate(data: Value, profiles: &Profiles) -> Result<Template, TemplateEr
                 continue;
             }
         };
+        match chart.get("kind").map(Value::as_str) {
+            None | Some(Some("time")) => {}
+            Some(Some("xy")) => {
+                errors.extend(spec::xy_errors(id, series, &analysis));
+                continue;
+            }
+            Some(_) => {
+                errors.push(format!(
+                    "Chart {id}: kind must be one of {}",
+                    list_repr(CHART_KINDS)
+                ));
+                continue;
+            }
+        }
         let axis = chart.get("x");
         let source_axis = match axis.map(Value::as_str) {
             None => false,

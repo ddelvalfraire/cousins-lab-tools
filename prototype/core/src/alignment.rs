@@ -30,7 +30,7 @@ use crate::expr::Params;
 use crate::pycompat::{float_repr, round};
 use crate::query::{AnalysisError, SessionDb, clock_seconds_sql, ident, sql_string};
 use crate::session::{Capture, Manifest, iso_time_opt, utc_now};
-use crate::templates::{Template, from_snapshot};
+use crate::templates::{Template, from_snapshot, is_xy};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -886,6 +886,7 @@ pub fn chart_data(
     template
         .charts()
         .iter()
+        .filter(|chart| !is_xy(chart))
         .map(|chart| {
             let mut series = Vec::new();
             for s in chart["series"].as_array().into_iter().flatten() {
