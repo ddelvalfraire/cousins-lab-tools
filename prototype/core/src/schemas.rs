@@ -213,6 +213,28 @@ pub fn legacy_frames_columns() -> Vec<Column> {
     columns
 }
 
+/// Columns for the fields after the masses, named by [`crate::legacy_frames::extra_names`].
+/// Templates cannot name them; they are kept so the stored rows hold the whole file.
+pub fn legacy_frames_extra_columns(names: &[String]) -> Vec<Column> {
+    names
+        .iter()
+        .map(|name| {
+            let description = match name.strip_prefix("ch") {
+                Some(channel) => format!(
+                    "EZView channel {channel}, written by readEZView.py after the eight masses"
+                ),
+                None => format!("Field {} of the frame file; no known layout", &name[5..]),
+            };
+            Column::new(
+                name,
+                ColumnType::Float64,
+                "legacy scaled units (unverified)",
+                &description,
+            )
+        })
+        .collect()
+}
+
 pub fn legacy_frames_clocks() -> Vec<Clock> {
     let mut clocks = legacy_frames_import_clocks();
     clocks.push(Clock::new(

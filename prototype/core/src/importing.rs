@@ -18,8 +18,8 @@ use crate::legacy_frames::{frame_row, missing_frames_event, read_frames};
 use crate::ms_workbook::{RAW_SHEET, read_raw_sheet};
 use crate::pycompat::str_repr;
 use crate::schemas::{
-    ambit_columns, ambit_import_clocks, legacy_frames_columns, legacy_frames_import_clocks,
-    ms_import_clocks, ms_import_columns,
+    ambit_columns, ambit_import_clocks, legacy_frames_columns, legacy_frames_extra_columns,
+    legacy_frames_import_clocks, ms_import_clocks, ms_import_columns,
 };
 use crate::session::{
     Capture, CaptureStatus, Manifest, SegmentWriter, SessionError, SessionKind, SessionStatus,
@@ -243,6 +243,9 @@ pub fn import_session(
             Importer::LegacyFrames => {
                 let recording = read_frames(source).map_err(|e| ImportError::Read(e.into()))?;
                 capture.columns = legacy_frames_columns();
+                capture
+                    .columns
+                    .extend(legacy_frames_extra_columns(&recording.extra));
                 capture.clocks = legacy_frames_import_clocks();
                 let rows = (0..)
                     .zip(&recording.rows)

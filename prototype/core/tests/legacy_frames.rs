@@ -92,6 +92,60 @@ fn a_source_without_frames_or_with_a_frame_twice_is_refused() {
     );
 }
 
+#[test]
+fn eleven_field_files_from_the_legacy_ezview_reader_keep_channels_11_and_12() {
+    let recording = read_frames(&fixture("legacy-frames-ezview/Acquisition0")).unwrap();
+    assert_eq!(recording.extra, ["ch11", "ch12"]);
+    let rows: Vec<(i64, i64, f64, f64, &[f64])> = recording
+        .rows
+        .iter()
+        .map(|r| {
+            (
+                r.frame,
+                r.t_ms,
+                r.masses[0],
+                r.masses[3],
+                r.extra.as_slice(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            (0, 1250, 0.512, 4.81, &[0.118, 0.236][..]),
+            (1, 1350, 0.513, 4.79, &[0.119, 0.237][..]),
+            (3, 1550, 0.511, 4.775, &[0.12, 0.235][..]),
+        ]
+    );
+    assert_eq!(
+        recording.missing,
+        [MissingFrames {
+            after_t_ms: 1350,
+            first: 2,
+            last: 2
+        }]
+    );
+    let nine = read_frames(&fixture("legacy-frames.zip")).unwrap();
+    assert!(nine.extra.is_empty());
+    assert!(nine.rows.iter().all(|r| r.extra.is_empty()));
+}
+
+#[test]
+fn a_recording_whose_files_disagree_on_their_fields_is_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("0.csv"), "1250.0,1,2,3,4,5,6,7,8,9,10\n").unwrap();
+    std::fs::write(dir.path().join("1.csv"), "1350.0,1,2,3,4,5,6,7,8\n").unwrap();
+    let error = read_frames(dir.path()).unwrap_err().to_string();
+    assert!(
+        [
+            "0.csv line 1: expected 9 fields, found 11",
+            "1.csv line 1: expected 11 fields, found 9"
+        ]
+        .contains(&error.as_str()),
+        "{error}"
+    );
+}
+
 /// The lab's sample export: 10001 files, 84,665 rows, and the 1228 frames the download lost,
 /// exactly the names `___All_Errors.txt` lists.
 #[test]
@@ -309,6 +363,52 @@ fn a_replay_paces_rows_by_t_ms_and_reports_each_gap_after_the_row_before_it() {
     assert_eq!(
         (info.adapter.as_str(), info.input_kind, info.clocks.len()),
         ("legacy_frames_replay", InputKind::Replay, 2)
+    );
+}
+
+#[test]
+fn a_replay_of_eleven_field_files_stores_channels_11_and_12_after_the_masses() {
+    let mut eleven = FramesReplay::new(FramesReplaySettings {
+        model: "Frames".into(),
+        path: fixture("legacy-frames-ezview/Acquisition0"),
+        speed: 100.0,
+    });
+    let names: Vec<String> = eleven
+        .describe()
+        .columns
+        .into_iter()
+        .map(|c| c.name)
+        .collect();
+    assert_eq!(
+        names[4..],
+        [
+            "m32", "m34", "m36", "m44", "m45", "m46", "m47", "m49", "ch11", "ch12"
+        ]
+    );
+    assert!(eleven.check_ready().ok);
+    let mut sink = CollectingSink::default();
+    eleven.run(&mut sink, &StopSignal::default()).unwrap();
+    let rows = sink.batches().concat();
+    assert_eq!(rows.len(), 3);
+    assert_eq!(rows[2][2..4], [Cell::Int(1550), Cell::Int(3)]);
+    assert_eq!(rows[2][12..], [Cell::Float(0.12), Cell::Float(0.235)]);
+    assert_eq!(replay(1.0).describe().columns.len(), 12);
+}
+
+#[test]
+fn a_replay_of_files_it_cannot_parse_is_not_ready_and_says_why() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("1.csv"), "105,1,2\n").unwrap();
+    let replay = FramesReplay::new(FramesReplaySettings {
+        model: "Frames".into(),
+        path: dir.path().to_path_buf(),
+        speed: 1.0,
+    });
+    let readiness = replay.check_ready();
+    assert!(!readiness.ok);
+    assert_eq!(
+        readiness.detail,
+        "Recording cannot be read: 1.csv line 1: expected 9 fields, found 3"
     );
 }
 
