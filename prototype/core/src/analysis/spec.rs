@@ -1,6 +1,6 @@
 //! What a template declares about analysis: calibrations and measurements, parsed into
-//! typed specs once at validation. `parse` checks shapes; `check` checks the calibrations'
-//! names against the rest of the template. `parse` checks shapes; `check` checks names against the rest of the template.
+//! typed specs once at validation. `parse` checks shapes; `check` checks names against the
+//! rest of the template. `parse` checks shapes; `check` checks names against the rest of the template.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -570,6 +570,113 @@ pub fn check(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
             }
         }
     }
+    for (id, m) in &spec.measurements {
+        let mut error = |e: String| errors.push(format!("Measurement {id}: {e}"));
+        if spec.calibrations.contains_key(id) {
+            error("the id is already used by a calibration".into());
+        }
+        if !names.roles.contains_key(&m.role) {
+            error(format!(
+                "unknown role {}",
+                repr(&Value::from(m.role.as_str()))
+            ));
+            continue;
+        }
+        if !names
+            .role_source_clock
+            .get(m.role.as_str())
+            .copied()
+            .unwrap_or(true)
+        {
+            error(format!(
+                "readings need role {} to record an elapsed or device clock",
+                m.role
+            ));
+        }
+        for (step, name, r) in m.readings() {
+            if !names.readable(&m.role, &r.of) {
+                let place = if step == id {
+                    String::new()
+                } else {
+                    format!("step {step} ")
+                };
+                error(format!(
+                    "{place}reading {name} reads {}, which is not a column or derived value of {}",
+                    str_repr(&r.of),
+                    m.role
+                ));
+            }
+        }
+        let readings: BTreeSet<&str> = m.readings().map(|(_, name, _)| name).collect();
+        let keys: Vec<&str> = m.results.keys().map(String::as_str).collect();
+        for (i, (key, r)) in m.results.iter().enumerate() {
+            let unknown: Vec<&str> = r
+                .expr
+                .names()
+                .iter()
+                .map(String::as_str)
+                .filter(|n| names.param(n).is_none() && !readings.contains(n))
+                .filter(|n| !keys[..i].contains(n))
+                .collect();
+            let (later, unknown): (Vec<&str>, Vec<&str>) =
+                unknown.into_iter().partition(|n| keys.contains(n));
+            if !unknown.is_empty() {
+                error(format!(
+                    "result {key} reads unknown names {}",
+                    list_repr(unknown)
+                ));
+            }
+            if !later.is_empty() {
+                error(format!(
+                    "result {key} reads {}, which come later in results",
+                    list_repr(later)
+                ));
+            }
+        }
+    }
+    errors.extend(namespace_errors(spec, names));
+    errors
+}
+
+/// Reading names and result keys share one namespace with parameters and derived values,
+/// because expressions, charts and tables look a name up without saying where it lives.
+/// Clashes between parameters and derived values are reported where those are parsed.
+fn namespace_errors(spec: &AnalysisSpec, names: &Names) -> Vec<String> {
+    let mut defined: BTreeMap<&str, String> = BTreeMap::new();
+    for p in names.params {
+        defined
+            .entry(&p.name)
+            .or_insert_with(|| "parameters".into());
+    }
+    for d in names.derived {
+        defined.entry(&d.name).or_insert_with(|| "derived".into());
+    }
+    let mut errors = Vec::new();
+    for (id, m) in &spec.measurements {
+        let readings = m.readings().map(|(step, name, _)| {
+            let place = if step == id {
+                format!("readings of measurement {id}")
+            } else {
+                format!("readings of step {step}")
+            };
+            (name, place)
+        });
+        let results = m
+            .results
+            .keys()
+            .map(|key| (key.as_str(), format!("results of measurement {id}")));
+        for (name, place) in readings.chain(results) {
+            match defined.get(name) {
+                Some(first) => errors.push(format!(
+                    "{} is defined under both {first} and {place}",
+                    str_repr(name)
+                )),
+                None => {
+                    defined.insert(name, place);
+                }
+            }
+        }
+    }
     errors
 }
 
@@ -899,6 +1006,70 @@ mod tests {
         assert_eq!(
             with("measurements", json!("sample")).unwrap_err(),
             "measurements must be a mapping"
+        );
+    }
+
+    #[test]
+    fn measurements_must_read_what_their_role_has_and_compute_in_order() {
+        let mut bad = sample();
+        bad["steps"]["o2"]["readings"]["o2_mv"]["of"] = json!("m99");
+        bad["results"]["o2"] = json!({"expr": "o2_mvv * later"});
+        bad["results"]["later"] = json!({"expr": "1"});
+        let error = with(
+            "measurements",
+            json!({
+                "sample": bad,
+                "zero": {"role": "ms", "readings": {"z": {"stat": "mean", "of": "m99"}},
+                         "results": {"z2": {"expr": "z"}}},
+                "far": {"role": "light", "readings": {"f": {"stat": "mean", "of": "m44"}},
+                        "results": {"f2": {"expr": "f"}}},
+            }),
+        );
+        let mut data = base();
+        data["measurements"] = json!({"zero": {"role": "ms", "readings": {"r": {"stat": "mean", "of": "m44"}},
+                                              "results": {"r2": {"expr": "r"}}}});
+        data["calibrations"] =
+            json!({"zero": {"role": "ms", "set": {"zero_p": {"stat": "mean", "of": "m44"}}}});
+        let profiles = load_profiles(&Paths::default().instruments).unwrap();
+        assert_eq!(
+            error.unwrap_err().split("; ").collect::<Vec<_>>(),
+            [
+                "Measurement sample: step sample.o2 reading o2_mv reads 'm99', which is not a column or derived value of ms",
+                "Measurement sample: result o2 reads unknown names ['o2_mvv']",
+                "Measurement sample: result o2 reads ['later'], which come later in results",
+                "Measurement zero: reading z reads 'm99', which is not a column or derived value of ms",
+                "Measurement far: unknown role 'light'",
+            ]
+        );
+        assert_eq!(
+            validate(data, &profiles).unwrap_err().0,
+            "Measurement zero: the id is already used by a calibration"
+        );
+    }
+
+    #[test]
+    fn reading_names_and_result_keys_share_one_namespace_with_parameters_and_derived() {
+        let mut clash = sample();
+        clash["steps"]["o2"]["readings"] = json!({"co2_mv": {"stat": "mean", "of": "m32"}});
+        clash["results"]["twice"] = json!({"expr": "pct * 2"});
+        clash["results"]["d44"] = json!({"expr": "co2_mv"});
+        let error = with(
+            "measurements",
+            json!({
+                "sample": clash,
+                "extract": {"role": "ms", "readings": {"zero_p": {"stat": "mean", "of": "m44"}},
+                            "results": {"pct": {"expr": "zero_p"}}},
+            }),
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.split("; ").collect::<Vec<_>>(),
+            [
+                "'co2_mv' is defined under both readings of step sample.co2 and readings of step sample.o2",
+                "'d44' is defined under both derived and results of measurement sample",
+                "'zero_p' is defined under both parameters and readings of measurement extract",
+                "'pct' is defined under both results of measurement sample and results of measurement extract",
+            ]
         );
     }
 
