@@ -17,6 +17,7 @@ use crate::alignment::{
     self, Alignment, Inputs, Manual, Reference, TrialParams, chart_data, list_alignments,
     load_alignment, metric_series, propose,
 };
+use crate::analysis;
 use crate::export::{export_aligned, export_legacy_frames};
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
@@ -256,6 +257,13 @@ impl Engine {
                     &dir,
                     &self.manifest(&a.session_id)?,
                     &a.capture,
+                )?)
+            }
+            "analysis" => {
+                let id = parse::<SessionRef>(args)?.session_id;
+                reply(analysis::view(
+                    &self.session_dir(&id)?,
+                    &self.manifest(&id)?,
                 )?)
             }
             "query_session" => {
