@@ -1,0 +1,79 @@
+id: legacy-module3-atom49
+revision: 1
+name: Atom% 49 isotope enrichment (legacy module 3)
+summary: >
+  The module 3 screen as a template. Atom% 49 is mass 49 over masses 45, 47 and 49, with
+  negative signals counted as 0. Its rate of change is the least-squares slope of ln(atom% 49)
+  over a trailing 12 s window on the recording's clock. Get Mean averages that rate over the
+  selected range of stored rows.
+evidence:
+  - "Formulas: module3/application/calculations/Calculations.py:152-170 and mainUI/main.py:907-976"
+  - "Spreadsheet: module3/testing/Acquisition 4336 Mockup.xlsx, columns L to O"
+  - "Screen: module3/application/mainUI/main.py:189-464"
+  - "Bug fixes B22-B28: docs/legacy-screens.md section 5"
+
+roles:
+  ms:
+    label: Mass spectrometer (legacy frame files)
+    instrument: ms-legacy-frames-replay
+    import: legacy_frames
+    start_delay_s: 0
+    on_failure: stop_group
+
+derived:
+  atom49: {role: ms, expr: "100 * max(m49, 0) / (max(m45, 0) + max(m47, 0) + max(m49, 0))", unit: "%", label: atom% 49,
+           note: "No value when all three masses are 0 or below (B26)"}
+  ln_atom49: {role: ms, expr: "ln(atom49)", unit: "ln(%)", label: ln(atom% 49),
+              note: "No value when atom% 49 is 0 (B26)"}
+  ln_atom49_rate: {role: ms, slope: {of: ln_atom49, window_s: 12, min_points: 60}, unit: 1/s, label: d ln(atom% 49)/dt,
+                   note: "12 s is about the spreadsheet's 14 files. Lab check (B24)"}
+  atom49_rate: {role: ms, slope: {of: atom49, window_s: 12, min_points: 60}, unit: "%/s", label: d atom% 49/dt,
+                note: "The spreadsheet's EnrichRate. Not charted; whether the rate chart shows this or the log rate is a lab check"}
+
+measurements:
+  rate_mean:
+    label: Get Mean
+    role: ms
+    labels: {sample_name: Sample Name}
+    readings: {mean_rate: {stat: mean, of: ln_atom49_rate}}
+    results: {mean: {expr: "mean_rate", unit: 1/s, label: Mean}}
+
+events:
+  missing_frames:
+    label: Frame files missing from the recording
+
+alignment:
+  default_reference: elapsed
+
+charts:
+  - id: atom49
+    title: Atom49%
+    unit: "%"
+    x: source
+    series: [{role: ms, value: atom49}]
+  - id: atom49_rate
+    title: Atom49% rate of change
+    unit: 1/s
+    x: source
+    series: [{role: ms, value: ln_atom49_rate}]
+  - id: raw
+    title: Raw data
+    unit: mV
+    x: source
+    series:
+      - {role: ms, value: m45, label: Mass 45, color: "#800000"}
+      - {role: ms, value: m47, label: Mass 47, color: "#4363d8"}
+      - {role: ms, value: m49, label: Mass 49, color: "#008000"}
+    markers: {role: ms, kind: missing_frames}
+
+layout:
+  views:
+    - id: screen
+      name: atom% 49
+      components:
+        - {id: atom49-chart, kind: chart, chart: atom49, x: 0, y: 0, w: 6, h: 9}
+        - {id: rate-chart, kind: chart, chart: atom49_rate, x: 6, y: 0, w: 6, h: 9}
+        - {id: raw-chart, kind: chart, chart: raw, x: 0, y: 9, w: 12, h: 7}
+        - {id: controls, kind: controls, x: 0, y: 16, w: 12, h: 2}
+        - {id: mean-steps, kind: readings, role: ms, steps: [rate_mean], x: 4, y: 18, w: 4, h: 2}
+        - {id: mean-table, kind: table, measurement: rate_mean, x: 4, y: 20, w: 4, h: 7}

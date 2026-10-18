@@ -260,3 +260,114 @@ fn module2_adds_a_sample_row_with_co2_and_o2_from_the_entered_temperature() {
     assert_close(&row["o2"], o2_air(25.0) / o2_zero * o2_mv, "O2");
     assert_eq!(table["rows"].as_array().unwrap().len(), 1);
 }
+
+const M45: usize = 4;
+const M47: usize = 6;
+const M49: usize = 7;
+
+/// Atom% 49 with negative masses counted as 0, as module 3 and the spreadsheet compute it.
+fn atom49(m: &[f64; 8]) -> Option<f64> {
+    let (m45, m47, m49) = (m[M45].max(0.0), m[M47].max(0.0), m[M49].max(0.0));
+    let total = m45 + m47 + m49;
+    (total != 0.0).then(|| 100.0 * m49 / total)
+}
+
+/// Per sample row, `(t_s, rate)`: the least-squares slope of ln(atom% 49) over the trailing
+/// 12 s, once 12 s have been recorded and the window holds at least 60 values.
+fn hand_log_rates() -> &'static [(f64, Option<f64>)] {
+    static RATES: OnceLock<Vec<(f64, Option<f64>)>> = OnceLock::new();
+    RATES.get_or_init(|| {
+        let logs: Vec<(f64, Option<f64>)> = sample()
+            .rows
+            .iter()
+            .map(|r| {
+                let ln = atom49(&r.masses).filter(|a| *a > 0.0).map(f64::ln);
+                (r.t_ms as f64 / 1000.0, ln)
+            })
+            .collect();
+        let first = logs[0].0;
+        let mut start = 0;
+        logs.iter()
+            .enumerate()
+            .map(|(i, &(t, _))| {
+                while logs[start].0 < t - 12.0 {
+                    start += 1;
+                }
+                let window: Vec<(f64, f64)> = logs[start..=i]
+                    .iter()
+                    .filter_map(|&(t, v)| v.map(|v| (t, v)))
+                    .collect();
+                let full = first <= t - 12.0 && window.len() >= 60;
+                (t, full.then(|| hand_line(&window).0))
+            })
+            .collect()
+    })
+}
+
+fn row_index(t_s: &Value) -> usize {
+    let t_ms = (t_s.as_f64().unwrap() * 1000.0).round() as i64;
+    sample()
+        .rows
+        .binary_search_by_key(&t_ms, |r| r.t_ms)
+        .unwrap_or_else(|_| panic!("no sample row at {t_s} s"))
+}
+
+#[test]
+fn module3_plots_atom_percent_and_the_rate_of_its_log_from_every_stored_row() {
+    let (engine, _dir, id) = imported("legacy-module3-atom49");
+    let charts = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "elapsed"}),
+    );
+    let atom = chart_points(&charts, "atom49", 0);
+    let first = atom[0][0].as_f64().unwrap();
+    assert!(
+        first < 5.0,
+        "atom% plots from the first decimation bucket, at {first}"
+    );
+    for point in atom {
+        let row = &sample().rows[row_index(&point[0])];
+        assert_close(&point[1], atom49(&row.masses).unwrap(), "atom% 49 (B23)");
+    }
+    let rates = chart_points(&charts, "atom49_rate", 0);
+    let first = rates[0][0].as_f64().unwrap();
+    assert!(
+        (12.105..12.3).contains(&first),
+        "only full 12 s windows emit (B25), first at {first}"
+    );
+    for point in rates {
+        let (_, rate) = hand_log_rates()[row_index(&point[0])];
+        assert_close(&point[1], rate.unwrap(), "d ln(atom% 49)/dt");
+    }
+}
+
+#[test]
+fn module3_get_mean_averages_the_rate_over_the_selected_rows() {
+    let (engine, _dir, id) = imported("legacy-module3-atom49");
+    let range = [2000.0, 2100.0];
+    let inside: Vec<f64> = hand_log_rates()
+        .iter()
+        .filter(|(t, _)| (range[0]..=range[1]).contains(t))
+        .filter_map(|(_, rate)| *rate)
+        .collect();
+    let mean = inside.iter().sum::<f64>() / inside.len() as f64;
+
+    let view = reading(&engine, &id, "rate_mean", range);
+    let read = &view["steps"]["rate_mean"]["reading"]["values"]["mean_rate"];
+    assert_close(&read["value"], mean, "Get Mean (B22)");
+    assert_eq!(read["n"], inside.len());
+    assert_close(
+        &view["drafts"]["rate_mean"]["results"]["mean"],
+        mean,
+        "draft",
+    );
+    let added = record(
+        &engine,
+        &id,
+        json!({"action": "add_row", "measurement": "rate_mean", "labels": {"sample_name": "leaf 1"}}),
+    );
+    let row = &added["tables"]["rate_mean"]["rows"][0];
+    assert_eq!(row["labels"], json!({"sample_name": "leaf 1"}));
+    assert_close(&row["results"]["mean"], mean, "table row");
+}

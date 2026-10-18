@@ -214,7 +214,8 @@ fn listing_gives_the_latest_revision_of_each_template() {
         listed,
         [
             (TEMPLATE.to_string(), 2),
-            ("legacy-module2-co2-o2".to_string(), 1)
+            ("legacy-module2-co2-o2".to_string(), 1),
+            ("legacy-module3-atom49".to_string(), 1)
         ]
     );
 }
