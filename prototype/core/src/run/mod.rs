@@ -24,6 +24,7 @@ use indexmap::IndexMap;
 use serde_json::Value;
 
 use crate::contract::{Clock, Column, InstrumentError, StopSignal};
+use crate::expr::Params;
 use crate::pycompat::str_repr;
 use crate::session::{
     Capture, CaptureStatus, FLUSH_EVERY, FLUSH_ROWS, Manifest, OnFailure, RunInfo, SegmentWriter,
@@ -507,6 +508,21 @@ impl GroupRun {
             captures,
             markers: self.markers(),
             manifest_captures: manifest.captures.clone(),
+            params_rev: self
+                .0
+                .live
+                .values()
+                .map(|b| b.params_rev())
+                .max()
+                .unwrap_or(0),
+        }
+    }
+
+    /// Recomputes every live point with `params`, the session's parameters as of analysis
+    /// revision `rev`, and computes later rows with them. An older `rev` changes nothing.
+    pub fn set_params(&self, params: &Params, rev: u64) {
+        for buffer in self.0.live.values() {
+            buffer.set_params(params, rev);
         }
     }
 

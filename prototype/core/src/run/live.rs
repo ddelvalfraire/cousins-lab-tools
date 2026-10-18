@@ -3,7 +3,8 @@
 //! Each capture has its own buffer behind its own lock. The buffers are not the manifest;
 //! they hold only what the live charts need, and the oldest points fall off after
 //! [`LIVE_BUFFER_ROWS`]. A buffer keeps each row's program inputs beside its point and owns
-//! the evaluator, so the buffer alone decides which parameters its points are computed with.
+//! the evaluator, so a parameter change recomputes every buffered point under the same lock
+//! that new rows take.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::sync::Mutex;
@@ -17,6 +18,7 @@ use super::Marker;
 use super::seconds_since;
 use crate::calc::{CalcError, Evaluator, Program, Sample};
 use crate::contract::{Cell, Clock, Event, Row};
+use crate::expr::Params;
 use crate::session::{Capture, CaptureStatus, SessionStatus, iso};
 use crate::templates::Template;
 
@@ -52,6 +54,9 @@ pub struct LiveView {
     pub captures: IndexMap<String, LiveCaptureView>,
     pub markers: Vec<Marker>,
     pub manifest_captures: IndexMap<String, Capture>,
+    /// Changes when the points were recomputed with new parameters; the UI then drops what
+    /// it holds and polls every buffered point again.
+    pub params_rev: u64,
 }
 
 #[derive(Default)]
@@ -64,6 +69,7 @@ struct LiveState {
     received: u64,
     events: Vec<LiveEvent>,
     evaluation: Evaluation,
+    params_rev: u64,
 }
 
 impl LiveBuffer {
@@ -83,6 +89,27 @@ impl LiveBuffer {
         let excess = state.points.len().saturating_sub(LIVE_BUFFER_ROWS);
         state.points.drain(..excess);
         state.raw.drain(..excess);
+    }
+
+    /// Recomputes every buffered point with `params`, unless `rev` is not newer than the
+    /// revision the points already have. Rows that fell off the buffer stay gone.
+    pub fn set_params(&self, params: &Params, rev: u64) {
+        let mut guard = self.0.lock().unwrap();
+        let state = &mut *guard;
+        if rev <= state.params_rev {
+            return;
+        }
+        state.evaluation.restart(params);
+        state.points = state
+            .raw
+            .iter()
+            .map(|r| state.evaluation.point(r))
+            .collect();
+        state.params_rev = rev;
+    }
+
+    pub fn params_rev(&self) -> u64 {
+        self.0.lock().unwrap().params_rev
     }
 
     pub fn push_event(&self, event: LiveEvent) {
@@ -152,6 +179,13 @@ impl Evaluation {
             point.insert(name.clone(), value);
         }
         point
+    }
+
+    /// A fresh evaluator with `params`, so slope windows refill from the rows pushed next.
+    fn restart(&mut self, params: &Params) {
+        if let Some(evaluator) = &mut self.evaluator {
+            *evaluator = evaluator.program().evaluator(params);
+        }
     }
 }
 

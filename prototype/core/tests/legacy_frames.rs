@@ -442,3 +442,65 @@ fn an_imported_zip_plots_on_t_ms_and_computes_slopes_over_it() {
         assert!((rate - -20.25 / 0.105).abs() < 1e-9, "{p}");
     }
 }
+
+#[test]
+fn an_entry_during_a_replay_recomputes_the_live_points() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = engine_replaying_the_fixture(data.path());
+    let template = json!({
+        "id": "legacy-frames-test",
+        "revision": 1,
+        "name": "Legacy frames",
+        "roles": {"ms": {"instrument": "ms-legacy-frames-replay", "import": "legacy_frames"}},
+        "parameters": {"gain": {"entry": true}},
+        "derived": {"scaled": {"role": "ms", "expr": "m44 * gain"}},
+        "charts": [{"id": "scaled", "title": "Scaled", "unit": "mV", "x": "source",
+                    "series": [{"role": "ms", "value": "scaled"}, {"role": "ms", "value": "m44"}]}],
+    });
+    call(
+        &engine,
+        "save_template",
+        json!({"template_id": "legacy-frames-test", "data": template}),
+    );
+    let manifest = call(
+        &engine,
+        "start_run",
+        json!({"template_id": "legacy-frames-test", "speed": 1.0}),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    let live = || call(&engine, "session_live", json!({"session_id": id}));
+    wait_until("a few rows", || {
+        live()["captures"]["ms"]["rows"].as_array().unwrap().len() >= 3
+    });
+    let before = live();
+    assert_eq!(before["params_rev"], 0);
+    assert!(
+        before["captures"]["ms"]["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["scaled"].is_null())
+    );
+    call(
+        &engine,
+        "record_analysis",
+        json!({"session_id": id, "action": "entry", "parameter": "gain", "value": 2}),
+    );
+    let after = live();
+    assert_eq!(after["params_rev"], 1);
+    let rows = after["captures"]["ms"]["rows"].as_array().unwrap();
+    assert!(rows.len() >= 3);
+    for row in rows {
+        assert_eq!(
+            row["scaled"].as_f64(),
+            Some(row["m44"].as_f64().unwrap() * 2.0),
+            "{row}"
+        );
+    }
+    call(&engine, "stop_session", json!({"session_id": id}));
+    wait_until("the run to stop", || {
+        !call(&engine, "get_session", json!({"session_id": id}))["live"]
+            .as_bool()
+            .unwrap()
+    });
+}

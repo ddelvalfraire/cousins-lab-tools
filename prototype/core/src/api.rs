@@ -19,6 +19,7 @@ use crate::alignment::{
 };
 use crate::analysis::{self, Request};
 use crate::export::{export_aligned, export_legacy_frames};
+use crate::expr::Params;
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
 use crate::run::{Cursors, GroupRun, RunError};
@@ -270,12 +271,22 @@ impl Engine {
             }
             "record_analysis" => {
                 let a: RecordArgs = parse(args)?;
-                reply(analysis::record(
+                let recorded = analysis::record(
                     &self.session_dir(&a.session_id)?,
                     &self.manifest(&a.session_id)?,
                     a.request_id,
                     a.request,
-                )?)
+                )?;
+                if let Some(run) = self.run(&a.session_id) {
+                    let params: Params = recorded
+                        .view
+                        .parameters
+                        .iter()
+                        .filter_map(|(name, p)| Some((name.clone(), p.value?)))
+                        .collect();
+                    run.set_params(&params, recorded.view.rev);
+                }
+                reply(recorded)
             }
             "preview_reading" => {
                 let a: PreviewArgs = parse(args)?;

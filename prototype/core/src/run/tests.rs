@@ -11,7 +11,7 @@ use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde_json::{Value, json};
 
-use super::live::{LiveBuffer, RawPoint};
+use super::live::{LiveBuffer, PointMaker, RawPoint};
 use super::*;
 use crate::calc::Program;
 use crate::contract::{Cell, InputKind, Instrument, InstrumentInfo, Readiness, Sink};
@@ -1076,4 +1076,97 @@ fn review_computes_the_same_rate_and_ratio_as_the_live_points() {
             row.seq
         );
     }
+}
+
+#[test]
+fn new_parameters_recompute_every_buffered_point_of_a_run() {
+    let _shared = shared();
+    let data = tempfile::tempdir().unwrap();
+    let template = template_with(data.path(), json!({"light": {"start_delay_s": 0}}));
+    let rows = 40;
+    let run = launch(
+        data.path(),
+        template.clone(),
+        &profiles(),
+        &light_as_line(rows),
+        JOIN_TIMEOUT,
+        Arc::new(utc_now),
+    );
+    let fluorescence = |cursors: &Cursors| -> Vec<Option<f64>> {
+        run.live(cursors).captures["light"]
+            .rows
+            .iter()
+            .map(|r| r["fluorescence"].as_f64())
+            .collect()
+    };
+    assert!(wait_until(20.0, || fluorescence(&Cursors::new()).len()
+        as i64
+        == rows));
+    assert_eq!(run.live(&Cursors::new()).params_rev, 0);
+    let expected = |offset: f64| -> Vec<Option<f64>> {
+        (0..rows)
+            .map(|i| (i % 3 != 0).then(|| (10.0 * i as f64 - offset) / (i % 3) as f64))
+            .collect()
+    };
+    assert_eq!(fluorescence(&Cursors::new()), expected(815.52));
+
+    let mut params = template.params();
+    params.insert("ambit_offset".into(), 15.0);
+    run.set_params(&params, 3);
+    let live = run.live(&Cursors::new());
+    assert_eq!(live.params_rev, 3);
+    assert_eq!(fluorescence(&Cursors::new()), expected(15.0));
+    run.set_params(&template.params(), 2);
+    assert_eq!(
+        run.live(&Cursors::new()).params_rev,
+        3,
+        "an older revision is ignored"
+    );
+    assert_eq!(fluorescence(&Cursors::new()), expected(15.0));
+    stop(&run, false);
+}
+
+#[test]
+fn rows_after_new_parameters_are_computed_with_them() {
+    let data = tempfile::tempdir().unwrap();
+    let template = template_with(data.path(), json!({}));
+    let names = schemas::ambit_columns()
+        .into_iter()
+        .map(|c| c.name)
+        .collect();
+    let (maker, evaluation) = PointMaker::new(
+        &template,
+        "light",
+        names,
+        Default::default(),
+        Some(1),
+        &schemas::ambit_clocks(),
+    )
+    .unwrap();
+    let buffer = LiveBuffer::default();
+    buffer.attach(evaluation);
+    let row = |s: i64| {
+        let mut row = vec![
+            Cell::Int(0),
+            Cell::TimeUtc(utc_now()),
+            Cell::Int(0),
+            Cell::Int(s),
+            Cell::Int(2),
+        ];
+        row.extend(std::iter::repeat_n(Cell::Int(0), 5));
+        maker.raw(&row)
+    };
+    buffer.push_rows(vec![row(1000)]);
+    let mut params = template.params();
+    params.insert("ambit_offset".into(), 0.0);
+    buffer.set_params(&params, 1);
+    buffer.push_rows(vec![row(400)]);
+    let view = buffer.view(0, 0, CaptureStatus::Running);
+    let values: Vec<Option<f64>> = view
+        .rows
+        .iter()
+        .map(|r| r["fluorescence"].as_f64())
+        .collect();
+    assert_eq!(values, [Some(500.0), Some(200.0)]);
+    assert_eq!(buffer.params_rev(), 1);
 }
