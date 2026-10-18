@@ -69,3 +69,19 @@ test("a chart that takes no selection has no band or brush, and the selection do
   assert.equal(paint.takeCursor, false);
   assert.equal(paint.key, timeChartPaint(pressure, "pressure", frame({ ...review, range: null, version: 4 })).key);
 });
+
+test("a repaint for a new selection, mode or recomputed values keeps the extent, so the chart keeps its zoom; a new window does not", () => {
+  const range = { from: 905.1, to: 958.0 };
+  const live = { live: true, range: null, active: true, version: 1 };
+  const before = timeChartPaint(pressure, "pressure", frame(live, 1));
+  const brushed = timeChartPaint(pressure, "pressure", frame({ ...live, range, version: 2 }, 1));
+  const panning = timeChartPaint(pressure, "pressure", frame({ ...live, range, active: false, version: 2 }, 1));
+  assert.notEqual(brushed.key, before.key);
+  assert.equal(brushed.extent, before.extent, "brushing a range keeps the zoom");
+  assert.equal(panning.extent, before.extent, "switching back to pan keeps the zoom");
+  const recomputed = timeChartPaint(pressure, "pressure", frame(live, 2));
+  assert.notEqual(recomputed.key, before.key, "new data repaints");
+  assert.equal(recomputed.extent, before.extent, "values recomputed after a reading keep the zoom");
+  const moved = { ...frame(live, 1), window: { start: 0, end: 960 } };
+  assert.notEqual(timeChartPaint(pressure, "pressure", moved).extent, before.extent, "a new window");
+});

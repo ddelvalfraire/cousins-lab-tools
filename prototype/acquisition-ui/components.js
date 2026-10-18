@@ -161,9 +161,11 @@ export function timeChartPaint(spec, chartId, frame) {
   const ds = frame.dataset;
   const sel = frame.select || {};
   const brush = selectable(spec, sel);
-  const key = JSON.stringify([ds.version, frame.window.start, frame.window.end, brush && [sel.range, !!sel.active, sel.version]]);
+  const extent = JSON.stringify([frame.window.start, frame.window.end]);
+  const key = JSON.stringify([ds.version, extent, brush && [sel.range, !!sel.active, sel.version]]);
   return {
     key,
+    extent,
     takeCursor: brush && !!sel.active,
     option: () => lineOption({ series: ds.chartSeries(chartId), markers: ds.chartMarkers(chartId), cursor: frame.cursor, window: frame.window,
       xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true, selection: brush ? sel.range : null, brush }),
@@ -209,9 +211,14 @@ export function mountGrid(root, items, ctx) {
         const markers = ds.chartMarkers(inst.c.chart);
         const next = timeChartPaint(inst.spec, inst.c.chart, frame);
         if (next.key !== inst.key) {
+          // Same window: keep the operator's zoom across a new selection, a mode switch, or values recomputed
+          // after a reading, so a calibration can be read step after step without zooming in again.
+          const zoom = next.extent === inst.extent ? inst.chart.getOption()?.dataZoom?.[0] : null;
           inst.chart.setOption(next.option(), { notMerge: true });
+          if (zoom) inst.chart.dispatchAction({ type: "dataZoom", start: zoom.start, end: zoom.end });
           if (next.takeCursor) inst.chart.dispatchAction({ type: "takeGlobalCursor", key: "brush", brushOption: BRUSH });
           inst.key = next.key;
+          inst.extent = next.extent;
         } else if (frame.cursor != null) {
           inst.chart.setOption({ series: [{ markLine: markLines(markers, frame.cursor) }] });
         }
