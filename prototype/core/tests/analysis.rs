@@ -57,6 +57,21 @@ fn template() -> Value {
                 "sets": {"slope": "gain_p", "intercept": "base_p"},
             }},
         },
+        "measurements": {
+            "sample": {
+                "label": "Sample",
+                "role": "ms",
+                "labels": {"name": "Sample Name"},
+                "steps": {
+                    "co2": {"label": "CO2 Sample", "readings": {"co2_mv": {"stat": "mean", "of": "m44"}}},
+                    "o2": {"label": "Calculate", "readings": {"o2_mv": {"stat": "mean", "of": "m32"}}},
+                },
+                "results": {
+                    "co2_zeroed": {"expr": "co2_mv - zero_p", "unit": "mV", "label": "CO2 above zero"},
+                    "ratio": {"expr": "o2_mv / co2_zeroed", "unit": "", "label": "Ratio"},
+                },
+            },
+        },
         "derived": {
             "scaled": {"role": "ms", "expr": "m44 * ubar_per_pct"},
             "rate": {"role": "ms", "slope": {"of": "m44", "window_s": 0.3, "min_points": 3}},
@@ -514,4 +529,68 @@ fn a_calibration_recomputes_review_charts_and_a_saved_alignment_keeps_its_values
         json!([0.105, 231.942 - zero]),
         "a saved alignment keeps the parameters it was saved with"
     );
+}
+
+#[test]
+fn a_table_row_keeps_what_it_was_added_with_after_a_later_calibration() {
+    let (engine, _dir, id) = imported(template());
+    let add =
+        |labels: Value| json!({"action": "add_row", "measurement": "sample", "labels": labels});
+    let refuse = |request: Value| {
+        let mut args = request;
+        args["session_id"] = json!(id);
+        refused(&engine, "record_analysis", args).message
+    };
+    assert_eq!(refuse(add(json!({}))), "Draft has no readings");
+    let zero = (211.692 + 191.442 + 171.192) / 3.0;
+    let co2 = (-314.808 + -335.058 + -355.308) / 3.0;
+    record(&engine, &id, reading("zero", [0.2, 0.45]));
+    let drafted = record(&engine, &id, reading("sample.co2", [2.9, 3.2]));
+    let draft = &drafted["drafts"]["sample"];
+    assert_eq!(
+        draft["results"],
+        json!({"co2_zeroed": co2 - zero, "ratio": null})
+    );
+    assert_eq!(draft["unset"], json!(["o2_mv"]));
+    assert_eq!(draft["records"], json!(["rec-000002"]));
+    assert_eq!(
+        drafted["tables"]["sample"]["columns"],
+        json!([
+            {"key": "name", "label": "Sample Name", "unit": "", "kind": "label"},
+            {"key": "co2_zeroed", "label": "CO2 above zero", "unit": "mV", "kind": "result"},
+            {"key": "ratio", "label": "Ratio", "unit": "", "kind": "result"},
+        ])
+    );
+    assert_eq!(
+        refuse(add(json!({"nickname": "x"}))),
+        "Measurement sample has no label nickname"
+    );
+    assert_eq!(
+        refuse(json!({"action": "add_row", "measurement": "extract"})),
+        "No measurement extract"
+    );
+
+    let added = record(&engine, &id, add(json!({"name": "leaf 1"})));
+    assert_eq!(added["record"], "rec-000003");
+    let rows = &added["tables"]["sample"]["rows"];
+    assert_eq!(rows.as_array().unwrap().len(), 1);
+    assert_eq!(rows[0]["record"], "rec-000003");
+    assert_eq!(rows[0]["labels"], json!({"name": "leaf 1"}));
+    assert_eq!(
+        rows[0]["results"],
+        json!({"co2_zeroed": co2 - zero, "ratio": null})
+    );
+    assert_eq!(added["steps"]["sample.co2"]["reading"], Value::Null);
+    assert_eq!(added["drafts"]["sample"]["records"], json!([]));
+
+    let recalibrated = record(&engine, &id, reading("zero", [0.7, 0.9]));
+    assert_ne!(recalibrated["parameters"]["zero_p"]["value"], zero);
+    assert_eq!(recalibrated["tables"]["sample"]["rows"], *rows);
+    let cleared = record(
+        &engine,
+        &id,
+        json!({"action": "retract", "records": ["rec-000003"]}),
+    );
+    assert_eq!(cleared["tables"]["sample"]["rows"], json!([]));
+    assert_eq!(refuse(add(json!({}))), "Draft has no readings");
 }

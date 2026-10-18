@@ -7,7 +7,7 @@ use crate::params::ParamSource;
 use crate::session::iso_time;
 use crate::templates::Template;
 
-use super::fold::{FitState, StepState, fold};
+use super::fold::{Draft, FitState, StepState, TableRow, draft, fold};
 use super::reading::{Range, ReadingValue};
 use super::spec::StepKind;
 use super::store::{Record, RecordId};
@@ -42,6 +42,45 @@ pub struct AnalysisView {
     pub steps: IndexMap<String, StepView>,
     /// Every line calibration's fit, in template order.
     pub fits: IndexMap<String, FitState>,
+    /// Every measurement's next row, in template order.
+    pub drafts: IndexMap<String, Draft>,
+    pub tables: IndexMap<String, TableView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct ColumnView {
+    pub key: String,
+    pub label: String,
+    pub unit: String,
+    /// `label` for text the operator types, `result` for a computed value.
+    pub kind: &'static str,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct RowView {
+    pub record: RecordId,
+    #[serde(with = "iso_time")]
+    pub created_utc: chrono::DateTime<chrono::Utc>,
+    pub labels: IndexMap<String, String>,
+    pub results: IndexMap<String, Option<f64>>,
+}
+
+impl From<&TableRow> for RowView {
+    fn from(row: &TableRow) -> RowView {
+        RowView {
+            record: row.record.clone(),
+            created_utc: row.created_utc,
+            labels: row.labels.clone(),
+            results: row.results.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct TableView {
+    /// Labels first, then results, each in template order.
+    pub columns: Vec<ColumnView>,
+    pub rows: Vec<RowView>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -129,10 +168,35 @@ pub(super) fn view_of(template: &Template, log: &[Record]) -> AnalysisView {
             (id.clone(), view)
         })
         .collect();
+    let mut drafts = IndexMap::new();
+    let mut tables = IndexMap::new();
+    for (id, m) in &template.analysis().measurements {
+        drafts.insert(id.clone(), draft(m, &state, &resolved.values));
+        let labels = m.labels.iter().map(|(key, label)| ColumnView {
+            key: key.clone(),
+            label: label.clone(),
+            unit: String::new(),
+            kind: "label",
+        });
+        let results = m.results.iter().map(|(key, r)| ColumnView {
+            key: key.clone(),
+            label: r.label.clone(),
+            unit: r.unit.clone(),
+            kind: "result",
+        });
+        let rows = state.tables.get(id).into_iter().flatten();
+        let table = TableView {
+            columns: labels.chain(results).collect(),
+            rows: rows.map(RowView::from).collect(),
+        };
+        tables.insert(id.clone(), table);
+    }
     AnalysisView {
         rev: state.rev,
         parameters,
         steps,
         fits: state.fits,
+        drafts,
+        tables,
     }
 }

@@ -31,7 +31,9 @@ pub use spec::{
 };
 pub use store::{Action, Record, RecordId, append, load_records};
 use view::view_of;
-pub use view::{AnalysisView, Origin, ParameterView, StepReading, StepView};
+pub use view::{
+    AnalysisView, ColumnView, Origin, ParameterView, RowView, StepReading, StepView, TableView,
+};
 
 /// One operator action as the UI sends it.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -45,6 +47,11 @@ pub enum Request {
     Entry {
         parameter: String,
         value: Option<f64>,
+    },
+    AddRow {
+        measurement: String,
+        #[serde(default)]
+        labels: IndexMap<String, String>,
     },
     Retract {
         records: Vec<String>,
@@ -195,6 +202,39 @@ fn action_for(
                 )));
             }
             Ok(Action::Entry { parameter, value })
+        }
+        Request::AddRow {
+            measurement,
+            labels,
+        } => {
+            let m = template
+                .analysis()
+                .measurements
+                .get(&measurement)
+                .ok_or_else(|| invalid(format!("No measurement {measurement}")))?;
+            if let Some(key) = labels.keys().find(|k| !m.labels.contains_key(*k)) {
+                return Err(invalid(format!(
+                    "Measurement {measurement} has no label {key}"
+                )));
+            }
+            let state = fold(template.analysis(), log);
+            let params = state.resolve(template).values;
+            let next = draft(m, &state, &params);
+            if next.records.is_empty() {
+                return Err(invalid("Draft has no readings"));
+            }
+            let labels = m
+                .labels
+                .keys()
+                .map(|k| (k.clone(), labels.get(k).cloned().unwrap_or_default()))
+                .collect();
+            Ok(Action::AddRow {
+                measurement,
+                labels,
+                readings: next.records,
+                results: next.results,
+                params,
+            })
         }
         Request::Retract { records } => {
             if records.is_empty() {
