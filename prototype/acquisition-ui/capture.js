@@ -232,7 +232,11 @@ async function mount(page, id, restart) {
         const mk = await call("mark_session", { session_id: m.id, event });
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
       }),
-      stop: logged("Stop requested", async () => { await call("stop_session", { session_id: m.id, cancel: false }); toast("Stopping…"); }),
+      // Stopping ends acquisition for good, as legacy STOP did after its confirm (m1:2131-2169).
+      stop: () => openDialog(`
+        <form><h2>Stop the run?</h2><p>Recording ends for every capture. Everything recorded so far is kept and the page switches to replay.</p><p class="error-text"></p>
+          <div class="actions"><button value="cancel">Keep running</button><button class="danger" value="ok">Stop run</button></div></form>`,
+        logged("Stop requested", async () => { await call("stop_session", { session_id: m.id, cancel: false }); toast("Stopping…"); })),
       cancel: () => openDialog(`
         <form><h2>Cancel the run?</h2><p>Data recorded so far is kept.</p><p class="error-text"></p>
           <div class="actions"><button value="cancel">Keep running</button><button class="danger" value="ok">Cancel run</button></div></form>`,
