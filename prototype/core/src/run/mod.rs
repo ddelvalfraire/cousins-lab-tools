@@ -12,6 +12,7 @@ mod owner;
 
 use std::collections::BTreeMap;
 use std::fmt;
+use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc;
@@ -23,8 +24,10 @@ use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
 use serde_json::Value;
 
+use crate::ambit::read_ambit_csv;
 use crate::contract::{Clock, Column, InstrumentError, StopSignal};
 use crate::expr::Params;
+use crate::legacy_frames::read_frames;
 use crate::pycompat::str_repr;
 use crate::session::{
     Capture, CaptureStatus, FLUSH_EVERY, FLUSH_ROWS, Manifest, OnFailure, RunInfo, SegmentWriter,
@@ -86,6 +89,67 @@ impl From<SessionError> for RunError {
     fn from(e: SessionError) -> Self {
         RunError::Session(e)
     }
+}
+
+/// A replacement for the file a role's profile reads, keyed by role. The profile on disk and
+/// the template stay as they are; the capture's manifest records the path used.
+pub type Sources = BTreeMap<String, PathBuf>;
+
+/// The profile setting that names the file a role reads, for adapters whose source a run may
+/// replace. A simulated spool writes its own file, so it has none.
+fn source_setting(profile: &Value) -> Option<&'static str> {
+    match profile["adapter"].as_str()? {
+        "legacy_frames_replay" => Some("path"),
+        "ambit_replay" => Some("recording"),
+        "ezview_spool" if profile.get("simulate").is_none_or(Value::is_null) => Some("spool_path"),
+        _ => None,
+    }
+}
+
+/// Refuses a replacement source for a role the run does not start, for an input that has no
+/// source file, or one that does not exist or cannot be read the way its adapter reads it.
+pub fn check_sources(
+    template: &Template,
+    profiles: &Profiles,
+    sources: &Sources,
+) -> Result<(), RunError> {
+    let enabled: BTreeMap<&str, &Value> = template.enabled_roles().into_iter().collect();
+    for (role, path) in sources {
+        let cfg = enabled
+            .get(role.as_str())
+            .ok_or_else(|| RunError::Invalid(format!("Role {role} is not in this run")))?;
+        let profile = profile(profiles, cfg)?;
+        if source_setting(profile).is_none() {
+            return Err(RunError::Invalid(format!(
+                "Role {role} reads a simulated input; it has no source file to replace"
+            )));
+        }
+        if path.as_os_str().is_empty() || !path.exists() {
+            return Err(RunError::Invalid(format!(
+                "Source for role {role} not found: {}",
+                path.display()
+            )));
+        }
+        let readable = match profile["adapter"].as_str() {
+            Some("legacy_frames_replay") => read_frames(path).map(drop).map_err(|e| e.to_string()),
+            Some("ambit_replay") => read_ambit_csv(path).map(drop).map_err(|e| e.to_string()),
+            _ if path.is_dir() => Err("it is a folder, not a spool file".to_string()),
+            _ => File::open(path).map(drop).map_err(|e| e.to_string()),
+        };
+        readable.map_err(|e| {
+            RunError::Invalid(format!("Source for role {role} cannot be read: {e}"))
+        })?;
+    }
+    Ok(())
+}
+
+/// `profile` with its source setting pointing at `path`, when the run replaces it.
+fn with_source(profile: &Value, path: Option<&PathBuf>) -> Value {
+    let mut profile = profile.clone();
+    if let (Some(path), Some(key)) = (path, source_setting(&profile)) {
+        profile["settings"][key] = Value::from(path.to_string_lossy().into_owned());
+    }
+    profile
 }
 
 /// Refuses speeds outside 0.1x to 100x, and any speed but 1x when an enabled role reads
@@ -157,6 +221,7 @@ struct Launch<'a> {
     profiles: &'a Profiles,
     speed: f64,
     name: &'a str,
+    sources: &'a Sources,
     build: &'a BuildAdapter,
     join_timeout: Duration,
     clock: HostClock,
@@ -185,8 +250,10 @@ impl GroupRun {
         profiles: &Profiles,
         speed: f64,
         name: Option<&str>,
+        sources: &Sources,
     ) -> Result<GroupRun, RunError> {
         check_request(&template, profiles, speed)?;
+        check_sources(&template, profiles, sources)?;
         let fallback = template.data()["name"]
             .as_str()
             .unwrap_or_default()
@@ -199,6 +266,7 @@ impl GroupRun {
             profiles,
             speed,
             name,
+            sources,
             build: &build_adapter,
             join_timeout: JOIN_TIMEOUT,
             clock: Arc::new(utc_now),
@@ -213,6 +281,7 @@ impl GroupRun {
             profiles,
             speed,
             name,
+            sources,
             build,
             join_timeout,
             clock,
@@ -221,7 +290,7 @@ impl GroupRun {
         let mut prepared = Vec::new();
         let mut ready = true;
         for (role, cfg) in template.enabled_roles() {
-            let profile = profile(profiles, cfg)?;
+            let profile = &with_source(profile(profiles, cfg)?, sources.get(role));
             let dir = store.capture_dir(&manifest.id, role);
             let built = build(profile, role, &template, &dir, speed, paths)?;
             let info = built.adapter.describe();

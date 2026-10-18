@@ -575,6 +575,85 @@ fn a_replay_run_ends_with_the_source_and_stores_t_ms_unchanged() {
 }
 
 #[test]
+fn a_run_can_replay_another_recording_without_changing_the_profile_or_template() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = engine_replaying_the_fixture(data.path());
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let folder = fixture("legacy-frames-ezview/Acquisition0");
+    let manifest = call(
+        &engine,
+        "start_run",
+        json!({"template_id": "legacy-frames-test", "speed": 100.0, "sources": {"ms": folder}}),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    let ms = &manifest["captures"]["ms"];
+    assert_eq!(ms["instrument"]["settings"]["path"], json!(folder));
+    assert_eq!(ms["sources"][0]["path"], json!(folder));
+    let session = || call(&engine, "get_session", json!({"session_id": id}));
+    wait_until("the replay to reach its end", || {
+        session()["manifest"]["captures"]["ms"]["status"] == "source_ended"
+    });
+    call(&engine, "stop_session", json!({"session_id": id}));
+    wait_until("the run to stop", || !session()["live"].as_bool().unwrap());
+    let stored = call(
+        &engine,
+        "query_session",
+        json!({"session_id": id, "sql": "SELECT t_ms, ch12 FROM \"cap:ms\" ORDER BY seq"}),
+    );
+    assert_eq!(
+        stored["rows"],
+        json!([{"t_ms": 1250, "ch12": 0.236}, {"t_ms": 1350, "ch12": 0.237}, {"t_ms": 1550, "ch12": 0.235}])
+    );
+    let profile =
+        std::fs::read_to_string(data.path().join("instruments/ms-legacy-frames-replay.yaml"))
+            .unwrap();
+    assert!(profile.contains("legacy-frames.zip"), "{profile}");
+    let template = call(
+        &engine,
+        "get_template",
+        json!({"template_id": "legacy-frames-test"}),
+    );
+    assert_eq!(template["revisions"], json!([1]));
+    assert_eq!(
+        template["data"]["roles"]["ms"]["instrument"],
+        "ms-legacy-frames-replay"
+    );
+}
+
+#[test]
+fn a_replacement_source_that_is_missing_or_unreadable_is_refused_before_a_session_exists() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = engine_replaying_the_fixture(data.path());
+    frames_template(&engine, "ms-legacy-frames-replay");
+    let bad = tempfile::tempdir().unwrap();
+    std::fs::write(bad.path().join("1.csv"), "105,1,2\n").unwrap();
+    let missing = fixture("no-such-folder");
+    let refusal = |sources: Value| {
+        let e = engine
+            .call(
+                "start_run",
+                json!({"template_id": "legacy-frames-test", "speed": 100.0, "sources": sources}),
+            )
+            .unwrap_err();
+        assert_eq!(e.kind, cousinslab::api::ErrorKind::Invalid);
+        e.message
+    };
+    assert_eq!(
+        refusal(json!({"ms": missing})),
+        format!("Source for role ms not found: {}", missing.display())
+    );
+    assert_eq!(
+        refusal(json!({"ms": bad.path()})),
+        "Source for role ms cannot be read: 1.csv line 1: expected 9 fields, found 3"
+    );
+    assert_eq!(
+        refusal(json!({"pump": bad.path()})),
+        "Role pump is not in this run"
+    );
+    assert_eq!(call(&engine, "list_sessions", json!({})), json!([]));
+}
+
+#[test]
 fn the_import_dialog_is_offered_the_module2_sample_zip() {
     let data = tempfile::tempdir().unwrap();
     let engine = Engine::open(Paths::default(), data.path()).unwrap();

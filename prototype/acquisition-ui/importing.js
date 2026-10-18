@@ -51,3 +51,25 @@ export function runInputs(template, instruments) {
   const kinds = [...new Set(used.map(p => p.input_kind))];
   return { labels: used.map(p => p.label), suffix: kinds.join(" and ") || "run" };
 }
+
+// The profile setting that names the file each adapter reads; start_run accepts a replacement per role.
+const SOURCE_SETTING = { legacy_frames_replay: "path", ambit_replay: "recording", ezview_spool: "spool_path" };
+
+/**
+ * Enabled roles of `template` whose source a run may replace: replays and real spools, not simulators. Each comes
+ * with the profile's own path, shown as the placeholder, and whether its profile reads hardware.
+ */
+export function runSources(template, instruments) {
+  const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
+  return Object.entries(template.roles ?? {}).flatMap(([role, spec]) => {
+    const profile = profiles[spec.instrument];
+    const key = SOURCE_SETTING[profile?.adapter];
+    if (spec.enabled === false || !key || profile.simulate) return [];
+    return [{ role, label: spec.label || role, path: profile.settings?.[key] ?? "", hardware: profile.input_kind === "hardware" }];
+  });
+}
+
+/** The start_run `sources` object from typed paths; blank fields keep the profile's source. */
+export function sourcesFrom(entries) {
+  return Object.fromEntries(entries.map(([role, path]) => [role, String(path ?? "").trim()]).filter(([, path]) => path));
+}

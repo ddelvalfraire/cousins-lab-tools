@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { importFiles, importSlots, runInputs } from "../importing.js";
+import { importFiles, importSlots, runInputs, runSources, sourcesFrom } from "../importing.js";
 
 const recordings = {
   ms_workbook: ["/repo/reference/instruments/mass-spec/Raw data-mass spec.xlsx"],
@@ -60,4 +60,22 @@ test("a run names the profiles its template's roles use and takes its name suffi
   const module2 = { roles: { ms: { instrument: "ms-legacy-frames-replay" } } };
   assert.deepEqual(runInputs(module2, instruments), { labels: ["Mass spectrometer, replay of legacy frame files"], suffix: "replay" });
   assert.deepEqual(runInputs({ roles: { ms: { instrument: "gone" } } }, instruments), { labels: [], suffix: "run" });
+});
+
+test("a run offers a source field for replays and real spools, not for simulators or excluded roles", () => {
+  const instruments = [
+    { id: "frames", adapter: "legacy_frames_replay", input_kind: "replay", settings: { path: "/repo/module2/SampleData.zip" } },
+    { id: "ambit", adapter: "ambit_replay", input_kind: "replay", settings: { recording: "/repo/pl1.csv" } },
+    { id: "spool", adapter: "ezview_spool", input_kind: "hardware", settings: { spool_path: "" } },
+    { id: "sim", adapter: "ezview_spool", input_kind: "simulated", settings: {}, simulate: { workbook: "x" } },
+  ];
+  const template = { roles: {
+    ms: { instrument: "frames", label: "Mass spectrometer" }, light: { instrument: "ambit", enabled: false },
+    live: { instrument: "spool" }, sim: { instrument: "sim" }, gone: { instrument: "missing" },
+  } };
+  assert.deepEqual(runSources(template, instruments), [
+    { role: "ms", label: "Mass spectrometer", path: "/repo/module2/SampleData.zip", hardware: false },
+    { role: "live", label: "live", path: "", hardware: true },
+  ]);
+  assert.deepEqual(sourcesFrom([["ms", "  /lab/Acquisition12 "], ["live", ""], ["x", null]]), { ms: "/lab/Acquisition12" });
 });

@@ -74,6 +74,7 @@ fn launch(
         profiles,
         speed: SPEED,
         name: "group test",
+        sources: &Sources::new(),
         build,
         join_timeout,
         clock,
@@ -645,6 +646,7 @@ fn hardware_profile_reports_why_it_is_not_ready() {
             &profiles(),
             speed,
             None,
+            &Sources::new(),
         )
     };
     assert!(start(20.0).err().unwrap().to_string().contains("real time"));

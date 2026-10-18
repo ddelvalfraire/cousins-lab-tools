@@ -1,7 +1,7 @@
 import { call, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./util.js";
 import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
-import { runInputs } from "./importing.js";
+import { runInputs, runSources, sourcesFrom } from "./importing.js";
 
 export async function renderTemplates(page) {
   const templates = await call("list_templates");
@@ -150,19 +150,26 @@ export async function startRunDialog(templateId, templates, revision) {
   templates ??= await call("list_templates");
   const template = templates.find(t => t.data.id === templateId) || templates[0];
   const rev = revision ?? template.data.revision;
-  const inputs = runInputs(template.data, await instruments);
+  const profiles = await instruments;
+  const inputs = runInputs(template.data, profiles);
+  const sources = runSources(template.data, profiles);
+  const hardware = sources.some(s => s.hardware);
+  const speeds = hardware ? [[1, "1x (real time)"]] : [[1, "1x (real time)"], [10, "10x"], [20, "20x"], [50, "50x"]];
   openDialog(`
     <form>
       <h2>Start run</h2>
       <p>${esc(template.data.name)} · revision ${rev}</p>
-      <div class="notice warn">No hardware is connected. This run reads: ${inputs.labels.map(esc).join("; ")}. Clock times are this computer's, at the chosen speed.</div>
+      <div class="notice warn">${hardware ? "" : "No hardware is connected. "}This run reads: ${inputs.labels.map(esc).join("; ")}. Clock times are this computer's${hardware ? ", in real time" : ", at the chosen speed"}.</div>
       <label class="field">Session name <input name="name" value="${esc(template.data.name)} · ${esc(inputs.suffix)}"></label>
       <label class="field">Replay speed
-        <select name="speed"><option value="1">1x (real time)</option><option value="10">10x</option><option value="20" selected>20x</option><option value="50">50x</option></select></label>
+        <select name="speed">${speeds.map(([v, label]) => `<option value="${v}"${v === (hardware ? 1 : 20) ? " selected" : ""}>${label}</option>`).join("")}</select></label>
+      ${sources.map((s, i) => `<label class="field">${s.hardware ? "Spool file" : "Recording to replay"} for ${esc(s.label)} (role ${esc(s.role)})
+        <input name="source${i}" placeholder="${esc(s.path)}"><span class="small muted">Leave empty to use the profile's. Not saved to the profile or the template.</span></label>`).join("")}
       <p class="error-text"></p>
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Check readiness and start</button></div>
     </form>`, async form => {
-      const manifest = await call("start_run", { template_id: template.data.id, revision: rev, speed: Number(form.get("speed")), name: form.get("name") });
+      const chosen = sourcesFrom(sources.map((s, i) => [s.role, form.get(`source${i}`)]));
+      const manifest = await call("start_run", { template_id: template.data.id, revision: rev, speed: Number(form.get("speed")), name: form.get("name"), sources: chosen });
       location.hash = `#/sessions/${manifest.id}`;
     });
 }

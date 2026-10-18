@@ -22,7 +22,7 @@ use crate::export::{export_aligned, export_legacy_frames};
 use crate::expr::Params;
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
-use crate::run::{Cursors, GroupRun, RunError};
+use crate::run::{Cursors, GroupRun, RunError, Sources};
 use crate::schemas;
 use crate::session::{Manifest, SessionError, SessionStatus, SessionStore, iso};
 use crate::templates::{Paths, StoreError, Template, TemplateStore, load_profiles};
@@ -462,6 +462,7 @@ impl Engine {
             &profiles,
             a.speed.unwrap_or(DEFAULT_SPEED),
             a.name.as_deref(),
+            &a.sources,
         )?;
         let manifest = (*run.manifest()).clone();
         self.runs.lock().unwrap().insert(manifest.id.clone(), run);
@@ -632,6 +633,8 @@ struct StartRun {
     revision: Option<i64>,
     speed: Option<f64>,
     name: Option<String>,
+    #[serde(default)]
+    sources: Sources,
 }
 
 #[derive(Deserialize)]
