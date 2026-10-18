@@ -1,4 +1,4 @@
-//! Derived-value expressions: arithmetic over column and parameter names only.
+//! Derived-value expressions: arithmetic over column and parameter names, plus `max` and `ln`.
 //!
 //! `eval` is the only evaluator. Live points and the stored-data review both run it through
 //! `calc::Evaluator`, so there is no second semantics to keep in step.
@@ -26,8 +26,36 @@ enum Op {
     Div,
 }
 
+/// The functions an expression may call. Each takes a fixed number of arguments.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Func {
+    Max,
+    Ln,
+}
+
+impl Func {
+    fn parse(name: &str) -> Option<Func> {
+        match name {
+            "max" => Some(Func::Max),
+            "ln" => Some(Func::Ln),
+            _ => None,
+        }
+    }
+
+    fn arity(self) -> usize {
+        match self {
+            Func::Max => 2,
+            Func::Ln => 1,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum Node {
+    Call {
+        func: Func,
+        args: Vec<Node>,
+    },
     Number {
         text: String,
         value: f64,
@@ -45,21 +73,37 @@ enum Node {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Reason {
+    Syntax,
+    /// A call to a name that is not a function.
+    UnknownFunction(String),
+}
+
 /// The expression text and the character position where it stops making sense.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExprError {
     pub text: String,
     pub position: usize,
+    pub reason: Reason,
 }
 
 impl fmt::Display for ExprError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Unsupported syntax in expression {} at position {}",
-            str_repr(&self.text),
-            self.position
-        )
+        match &self.reason {
+            Reason::Syntax => write!(
+                f,
+                "Unsupported syntax in expression {} at position {}",
+                str_repr(&self.text),
+                self.position
+            ),
+            Reason::UnknownFunction(name) => write!(
+                f,
+                "Unknown function {} at position {}",
+                str_repr(name),
+                self.position
+            ),
+        }
     }
 }
 
@@ -70,21 +114,26 @@ impl Expression {
         &self.text
     }
 
-    /// Every name the expression reads, parameters included.
+    /// Every name the expression reads, parameters included. Function names are not names.
     pub fn names(&self) -> &BTreeSet<String> {
         &self.names
     }
 
-    /// The value for one row, or None when an operand is missing or a divisor is zero.
+    /// The value for one row. None when an operand is missing, a divisor is zero, or any
+    /// step's result is not finite, which covers `ln` of a value at or below zero.
     pub fn eval(&self, params: &Params, row: impl Fn(&str) -> Option<f64>) -> Option<f64> {
         self.root.eval(params, &row)
     }
 }
 
+fn finite(value: f64) -> Option<f64> {
+    value.is_finite().then_some(value)
+}
+
 impl Node {
     fn eval(&self, params: &Params, row: &dyn Fn(&str) -> Option<f64>) -> Option<f64> {
         match self {
-            Node::Number { value, .. } => Some(*value),
+            Node::Number { value, .. } => finite(*value),
             Node::Name(name) => params.get(name).copied().or_else(|| row(name)),
             Node::Group(inner) => inner.eval(params, row),
             Node::Unary { op, operand } => {
@@ -94,13 +143,38 @@ impl Node {
             Node::Binary { op, left, right } => {
                 let (a, b) = (left.eval(params, row)?, right.eval(params, row)?);
                 match op {
-                    Op::Add => Some(a + b),
-                    Op::Sub => Some(a - b),
-                    Op::Mul => Some(a * b),
+                    Op::Add => finite(a + b),
+                    Op::Sub => finite(a - b),
+                    Op::Mul => finite(a * b),
                     Op::Div if b == 0.0 => None,
-                    Op::Div => Some(a / b),
+                    Op::Div => finite(a / b),
                 }
             }
+            Node::Call { func, args } => {
+                let mut values = Vec::with_capacity(args.len());
+                for arg in args {
+                    values.push(arg.eval(params, row)?);
+                }
+                match func {
+                    Func::Max => finite(values[0].max(values[1])),
+                    Func::Ln => finite(values[0].ln()),
+                }
+            }
+        }
+    }
+
+    fn names(&self, out: &mut BTreeSet<String>) {
+        match self {
+            Node::Number { .. } => {}
+            Node::Name(name) => {
+                out.insert(name.clone());
+            }
+            Node::Group(inner) | Node::Unary { operand: inner, .. } => inner.names(out),
+            Node::Binary { left, right, .. } => {
+                left.names(out);
+                right.names(out);
+            }
+            Node::Call { args, .. } => args.iter().for_each(|a| a.names(out)),
         }
     }
 }
@@ -124,13 +198,8 @@ pub fn parse(text: &str) -> Result<Expression, ExprError> {
     if let Some((_, position)) = parser.peek() {
         return Err(parser.error(position));
     }
-    let names = tokens
-        .iter()
-        .filter_map(|(tok, _)| match tok {
-            Tok::Name(name) => Some(name.clone()),
-            _ => None,
-        })
-        .collect();
+    let mut names = BTreeSet::new();
+    root.names(&mut names);
     Ok(Expression {
         text: text.to_string(),
         root,
@@ -153,6 +222,7 @@ fn tokenize(text: &str) -> Result<Vec<(Tok, usize)>, ExprError> {
     let error = |position| ExprError {
         text: text.to_string(),
         position,
+        reason: Reason::Syntax,
     };
     let digits_from = |mut i: usize| {
         while i < chars.len() && chars[i].is_ascii_digit() {
@@ -190,7 +260,7 @@ fn tokenize(text: &str) -> Result<Vec<(Tok, usize)>, ExprError> {
             let name: String = chars[pos..i].iter().collect();
             pos = i;
             Tok::Name(name)
-        } else if "-+*/()".contains(c) {
+        } else if "-+*/(),".contains(c) {
             pos += 1;
             Tok::Op(c)
         } else {
@@ -217,7 +287,39 @@ impl Parser<'_> {
         ExprError {
             text: self.text.to_string(),
             position,
+            reason: Reason::Syntax,
         }
+    }
+
+    fn expect(&mut self, symbol: char) -> Result<(), ExprError> {
+        match self.peek() {
+            Some((Tok::Op(c), _)) if *c == symbol => {
+                self.next += 1;
+                Ok(())
+            }
+            Some((_, position)) => Err(self.error(position)),
+            None => Err(self.error(self.end)),
+        }
+    }
+
+    /// `name(` has been seen: the arguments, exactly as many as the function takes, then `)`.
+    fn call(&mut self, name: &str, position: usize) -> Result<Node, ExprError> {
+        let Some(func) = Func::parse(name) else {
+            return Err(ExprError {
+                text: self.text.to_string(),
+                position,
+                reason: Reason::UnknownFunction(name.to_string()),
+            });
+        };
+        let mut args = Vec::with_capacity(func.arity());
+        for i in 0..func.arity() {
+            if i > 0 {
+                self.expect(',')?;
+            }
+            args.push(self.sum()?);
+        }
+        self.expect(')')?;
+        Ok(Node::Call { func, args })
     }
 
     fn take_op(&mut self, ops: &[char]) -> Option<Op> {
@@ -282,7 +384,16 @@ impl Parser<'_> {
                 value: text.parse().map_err(|_| self.error(position))?,
                 text: text.clone(),
             },
-            Tok::Name(name) => Node::Name(name.clone()),
+            Tok::Name(name) => {
+                if let Some((Tok::Op('('), _)) =
+                    self.tokens.get(self.next + 1).map(|(t, p)| (t, *p))
+                {
+                    let name = name.clone();
+                    self.next += 2;
+                    return self.call(&name, position);
+                }
+                Node::Name(name.clone())
+            }
             Tok::Op('(') => {
                 self.next += 1;
                 let inner = self.sum()?;
@@ -353,6 +464,64 @@ mod tests {
         assert_eq!(parse("2 * (3 + 4)").unwrap().eval(&p, row(&[])), Some(14.0));
         assert_eq!(parse("8 / 4 / 2").unwrap().eval(&p, row(&[])), Some(1.0));
         assert_eq!(parse("8 - 4 - 2").unwrap().eval(&p, row(&[])), Some(2.0));
+    }
+
+    #[test]
+    fn functions_follow_the_contract_table() {
+        let p = params();
+        let v = |text: &str, values: &[(&str, f64)]| parse(text).unwrap().eval(&p, row(values));
+        assert_eq!(v("ln(1)", &[]), Some(0.0));
+        assert_eq!(v("ln(x)", &[("x", 0.0)]), None);
+        assert_eq!(v("ln(x)", &[("x", -1.0)]), None);
+        assert_eq!(v("ln(x)", &[]), None);
+        assert_eq!(v("max(2, 3)", &[]), Some(3.0));
+        assert_eq!(v("max(a, -1)", &[("a", -4.0)]), Some(-1.0));
+        assert_eq!(v("max(a, 1)", &[]), None);
+        assert_eq!(v("1e308 * 10", &[]), None);
+        assert_eq!(v("-(1e308 * 10) + 1", &[]), None);
+        assert_eq!(
+            v(
+                "100 * max(m49, 0) / (max(m45, 0) + max(m47, 0) + max(m49, 0))",
+                &[("m45", -1.0), ("m47", 0.0), ("m49", -0.5)]
+            ),
+            None
+        );
+        assert_eq!(
+            v(
+                "100 * max(m49, 0) / (max(m45, 0) + max(m47, 0) + max(m49, 0))",
+                &[("m45", 1.0), ("m47", 1.0), ("m49", 2.0)]
+            ),
+            Some(50.0)
+        );
+    }
+
+    #[test]
+    fn function_names_are_not_operand_names() {
+        let e = parse("100 * max(m49, 0) / ln(k)").unwrap();
+        assert_eq!(names(&e), ["k", "m49"]);
+    }
+
+    #[test]
+    fn unknown_functions_and_wrong_arities_name_the_position() {
+        let unknown = parse("exp(1) + a").unwrap_err();
+        assert_eq!(unknown.to_string(), "Unknown function 'exp' at position 0");
+        assert_eq!(unknown.reason, Reason::UnknownFunction("exp".into()));
+        assert_eq!(
+            parse("a + Max(1, 2)").unwrap_err().to_string(),
+            "Unknown function 'Max' at position 3"
+        );
+        for (text, position) in [("max(a)", 5), ("max(a, b, c)", 8), ("ln()", 3), ("a, b", 1)] {
+            let error = parse(text).unwrap_err();
+            assert_eq!(
+                (error.position, &error.reason),
+                (position, &Reason::Syntax),
+                "{text:?}"
+            );
+        }
+        assert_eq!(
+            parse("max(a, b, c)").unwrap_err().to_string(),
+            "Unsupported syntax in expression 'max(a, b, c)' at position 8"
+        );
     }
 
     #[test]
