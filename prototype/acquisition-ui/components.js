@@ -4,6 +4,7 @@ import { deltaSeconds, esc, fmtClock, fmtSeconds, icon, inputBadge, statusBadge 
 import { lineOption, makeChart, markLines, xyOption } from "./charts.js";
 import { valueAt } from "./timerange.js";
 import { BRUSH, rangeFromBrush, selectable } from "./selection.js";
+import { startWait } from "./starts.js";
 import { capturesFor, fmtValue, parameterRows, readingRows, readingsTitle, selectionLines, stepProgress, stepReadings, tableModel } from "./analysis.js";
 
 const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 });
@@ -35,13 +36,21 @@ export function captureTable(m, role = null) {
           <td>${inputBadge(c.input_kind)}</td>
           <td>${statusBadge(c.status)}${c.error ? `<div class="small error-text">${esc(c.error)}</div>` : ""}
               ${c.readiness && !c.readiness.ok ? `<div class="small error-text">${esc(c.readiness.detail)}</div>` : ""}</td>
-          <td class="small">${c.requested_start_utc ? `${esc(fmtClock(c.requested_start_utc))}<br><span class="muted">+${c.requested_delay_s} s${c.host_delay_s !== c.requested_delay_s ? ` (${fmtSeconds(c.host_delay_s)} at ${run.speed}x)` : ""}</span>` : "<span class='muted'>n/a</span>"}</td>
+          <td class="small">${c.start?.manual ? `${c.requested_start_utc ? esc(fmtClock(c.requested_start_utc)) : "<span class='muted'>waiting</span>"}<br><span class="muted">by hand</span>`
+            : c.requested_start_utc ? `${esc(fmtClock(c.requested_start_utc))}<br><span class="muted">+${c.requested_delay_s} s${c.host_delay_s !== c.requested_delay_s ? ` (${fmtSeconds(c.host_delay_s)} at ${run.speed}x)` : ""}</span>` : "<span class='muted'>n/a</span>"}</td>
           <td class="small">${c.start_command_utc ? `${esc(fmtClock(c.start_command_utc))}<br><span class="muted">${fmtSeconds(deltaSeconds(c.requested_start_utc, c.start_command_utc))} after requested</span>` : ""}</td>
           <td class="small">${c.first_sample_utc ? `${esc(fmtClock(c.first_sample_utc))}<br><span class="muted">${fmtSeconds(deltaSeconds(c.start_command_utc, c.first_sample_utc))} after command</span>` : c.input_kind === "import" ? "<span class='muted'>no clock time in file</span>" : ""}</td>
           <td class="num">${c.rows ?? ""}</td>
         </tr>`).join("")}</tbody>
     </table></div>
     ${run.note ? `<p class="small muted">${esc(run.note)}</p>` : ""}`;
+}
+
+function startControl(cid, cap, frame, running) {
+  const wait = frame.live ? startWait(cap, frame.elapsed) : null;
+  if (!wait) return "";
+  if (wait.hand) return `<button class="primary small" data-action="startCapture" data-role="${esc(cid)}" ${running ? "" : "disabled"}>${icon("play")}Start ${esc(cap.label)}</button>`;
+  return `<span class="small">Starts in ${wait.inS} s</span>`;
 }
 
 function controlsBody(c, ctx, frame) {
@@ -56,7 +65,7 @@ function controlsBody(c, ctx, frame) {
       <button class="danger" data-action="cancel" ${running ? "" : "disabled"}>Cancel</button>`}
     </div>
     <ul class="capture-list">${captures.map(([cid, cap]) => `
-      <li><span><strong>${esc(cid)}</strong> ${inputBadge(cap.input_kind)}</span>${statusBadge(cap.status)}
+      <li><span><strong>${esc(cid)}</strong> ${inputBadge(cap.input_kind)}</span>${statusBadge(cap.status)}${startControl(cid, cap, frame, running)}
         <span class="small muted">${cap.readiness ? (cap.readiness.ok ? "Ready: " : "Not ready: ") + esc(cap.readiness.detail) : ""}</span></li>`).join("")}</ul>
     <p class="small muted">${frame.live ? (running ? "" : "Waiting for the run to start.") : "The run has finished; these controls apply only while it runs."}
       No commands are sent to instruments. Ambit and pulser serial control is deferred.</p>`;
@@ -321,7 +330,8 @@ export function mountGrid(root, items, ctx) {
         tableKeys[c.id] = tkey;
         root.querySelector(`[data-table-for="${CSS.escape(c.id)}"]`).innerHTML = tableBody(c, a);
       }
-      const key = JSON.stringify([frame.live, frame.status, frame.captures]);
+      const waits = Object.values(frame.captures).map(cap => (frame.live ? startWait(cap, frame.elapsed) : null));
+      const key = JSON.stringify([frame.live, frame.status, frame.captures, waits]);
       if (key === stateKey) return;
       stateKey = key;
       for (const c of all.filter(c => c.kind === "controls")) root.querySelector(`[data-controls-for="${CSS.escape(c.id)}"]`).innerHTML = controlsBody(c, ctx, frame);

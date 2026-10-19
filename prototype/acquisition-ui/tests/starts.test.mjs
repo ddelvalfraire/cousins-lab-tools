@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { startRoles, startsFrom } from "../starts.js";
+import { startRoles, startsFrom, startWait } from "../starts.js";
 
 const template = {
   roles: {
@@ -51,3 +51,11 @@ test("by hand marks the ticked roles manual and starts the others at once, and m
   });
 });
 
+test("a waiting capture shows its Start button or the whole seconds left, and nothing once it starts", () => {
+  assert.deepEqual(startWait({ status: "waiting", start: { manual: true } }, 3), { hand: true });
+  assert.deepEqual(startWait({ status: "waiting", start: { delay_s: 10 }, host_delay_s: 0.5 }, 0.2), { inS: 1 });
+  assert.deepEqual(startWait({ status: "waiting", start: { delay_s: 240 }, host_delay_s: 12 }, 0.4), { inS: 12 });
+  assert.deepEqual(startWait({ status: "waiting", start: { delay_s: 10 }, host_delay_s: 0.5 }, 0.7), { inS: 0 });
+  assert.equal(startWait({ status: "starting", start: { manual: true } }, 3), null);
+  assert.equal(startWait({ status: "running", start: { delay_s: 0 }, host_delay_s: 0 }, 3), null);
+});

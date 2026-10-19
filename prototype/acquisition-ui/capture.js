@@ -177,6 +177,7 @@ async function mount(page, id, restart) {
   let source = session.live ? liveSource(m, template, currentView) : await replaySource(m, session, template);
   let grid = null, timer = null, storedEvents = null, panelKey = null, stopped = false;
   const actions = [];
+  const starting = new Set();
   const logged = (text, request) => async (...args) => {
     actions.push({ when: new Date().toISOString(), source: "this page", text, tone: "info" });
     try {
@@ -285,6 +286,20 @@ async function mount(page, id, restart) {
         const mk = await call("mark_session", { session_id: m.id, event });
         toast(`Marked ${mk.label} at ${fmtClock(mk.t_host_utc)}`);
       }),
+      // A second click before the page repaints would be refused as already started; it does nothing instead.
+      startCapture: async ({ role }) => {
+        if (starting.has(role)) return;
+        starting.add(role);
+        await logged(`Start requested for ${role}`, async () => {
+          try {
+            await call("start_capture", { session_id: m.id, role });
+            toast(`Starting ${source.captures[role]?.label ?? role}`);
+          } catch (e) {
+            starting.delete(role);
+            throw e;
+          }
+        })();
+      },
       // Stopping ends acquisition for good, as legacy STOP did after its confirm (m1:2131-2169).
       stop: () => openDialog(`
         <form><h2>Stop the run?</h2><p>Recording ends for every capture. Everything recorded so far is kept and the page switches to replay.</p><p class="error-text"></p>
@@ -320,7 +335,7 @@ async function mount(page, id, restart) {
     const window = windowOf(dataset);
     if (!source.live) view.cursor = Math.min(window.end, Math.max(window.start, view.cursor ?? window.end));
     const select = { ...selectOn(), range: view.selection, active: view.selecting, version: view.selectionVersion };
-    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures, select, analysis };
+    return { dataset, window, cursor: source.live ? null : view.cursor, live: source.live, status: source.status, captures: source.captures, elapsed: source.elapsed, select, analysis };
   };
   const paintToolbar = f => {
     const fmt = f.dataset.axis.format;

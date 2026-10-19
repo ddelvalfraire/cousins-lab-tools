@@ -24,3 +24,12 @@ export function startsFrom(mode, roles, { delays = {}, hand = {} } = {}) {
   }));
 }
 
+/**
+ * What a live capture waits for: `{ hand: true }` for its Start button, `{ inS }` whole seconds until its delayed
+ * start, or null once it is starting. `elapsedS` is the run clock, which the host delay is measured on.
+ */
+export function startWait(capture, elapsedS) {
+  if (capture.status !== "waiting") return null;
+  if (capture.start?.manual) return { hand: true };
+  return { inS: Math.max(0, Math.ceil((capture.host_delay_s ?? 0) - elapsedS)) };
+}
