@@ -6,6 +6,7 @@ use std::sync::Arc;
 use cousinslab::api::{ApiError, Engine, ErrorKind};
 use cousinslab::templates::Paths;
 use serde_json::Value;
+use tauri::webview::DownloadEvent;
 use tauri::{Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -87,6 +88,19 @@ fn main() {
                 .inner_size(1440.0, 900.0)
                 .min_inner_size(1024.0, 700.0)
                 .additional_browser_args(&args)
+                // WebView2 saves a chart's Save as PNG to Downloads without any sign it happened, so the saved
+                // file is shown in Explorer.
+                .on_download(|webview, event| {
+                    if let DownloadEvent::Finished {
+                        path: Some(path),
+                        success: true,
+                        ..
+                    } = event
+                    {
+                        let _ = webview.opener().reveal_item_in_dir(&path);
+                    }
+                    true
+                })
                 .build()?;
             Ok(())
         })
