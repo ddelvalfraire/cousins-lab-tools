@@ -28,3 +28,11 @@ test("without a fit, or for a measurement, only the points are plotted", () => {
   assert.equal(option.legend.show, true);
   assert.deepEqual(xyOption(spec).series, [], "no analysis yet");
 });
+
+test("the plot starts below the toolbox, so a point at the top of the axis is not under Reset zoom or Save as PNG", () => {
+  const option = xyOption(spec, [{ name: "CO2 Calibrations", points: [[0, 0], [150, 3000]], line: null }]);
+  const padding = 5;
+  const toolboxBottom = option.toolbox.top + 2 * padding + option.toolbox.itemSize;
+  assert.ok(option.grid.top - option.series[0].symbolSize / 2 >= toolboxBottom + 4,
+    `plot top ${option.grid.top} is under the toolbox, which ends at ${toolboxBottom}`);
+});

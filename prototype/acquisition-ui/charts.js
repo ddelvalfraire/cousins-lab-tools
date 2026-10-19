@@ -131,7 +131,7 @@ export function xyOption(spec, series = []) {
   return {
     animation: false,
     textStyle: { fontFamily: cssVar("--font-body"), color: text },
-    grid: { left: 64, right: 16, top: 28, bottom: 44 },
+    grid: { left: 64, right: 16, top: 44, bottom: 44 },
     legend: { top: 0, left: 8, right: 64, type: "scroll", textStyle: { color: text }, show: series.length > 1 },
     toolbox: chartToolbox(spec?.title),
     tooltip: { trigger: "item", valueFormatter: v => (typeof v === "number" ? v.toPrecision(6) : v) },
