@@ -12,7 +12,7 @@ __status__ = "Completed"
 # This will contain a class for the thread to notify that a new file has been added
 # As soon as a new file is found, it will add them to the shared memory.
 import sys
-import time
+from threading import Event
 import os
 from PyQt5.QtCore import QObject
 from watchdog.observers import Observer
@@ -27,6 +27,7 @@ class NewFileNotifierThread(QObject):
     def __init__(self, folder_path):
         super(NewFileNotifierThread, self).__init__()
         self.folder_path = folder_path
+        self.stopped = Event()
 
     def run(self):
         # print("Thread Started")
@@ -36,16 +37,13 @@ class NewFileNotifierThread(QObject):
         self.observer.start()
 
         try:
-            while True:
-                time.sleep(5)
-        except:
-            self.observer.stop()
-        self.observer.join()
-
-    def stop(self):
-        if self.observer:
+            self.stopped.wait()
+        finally:
             self.observer.stop()
             self.observer.join()
+
+    def stop(self):
+        self.stopped.set()
 
 
 class NewFileHandler(FileSystemEventHandler):
