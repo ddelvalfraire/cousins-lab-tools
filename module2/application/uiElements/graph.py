@@ -11,6 +11,7 @@ __status__ = "Completed"
 import pyqtgraph as pg
 from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import Qt
+from appearance import AppearanceRegistry
 
 class Graph(pg.PlotWidget):
 
@@ -26,6 +27,8 @@ class Graph(pg.PlotWidget):
         self.setYRange(0, yRange)
         self.plotItem.hideButtons()
         self.graphInteraction = False
+        self.appearance = AppearanceRegistry(self)
+        self.clear = self._clear_series
 
         # self.plotItem.ctrlMenu = None
 
@@ -62,3 +65,25 @@ class Graph(pg.PlotWidget):
 
     def setNewYRange(self, start, end):
         self.setYRange(start, end)
+
+    def registerSeries(self, key, item, name, kind='line', color_changed=None):
+        self.appearance.register(key, item, name, kind, color_changed)
+
+    def plot(self, *args, style_key=None, series_name=None, **kwargs):
+        item = self.plotItem.plot(*args, **kwargs)
+        if style_key is not None:
+            self.registerSeries(style_key, item, series_name, 'scatter')
+        return item
+
+    def _clear_series(self):
+        self.appearance.clear_items()
+        self.plotItem.clear()
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            keys = self.appearance.hits(self.mapToScene(event.pos()))
+            if keys:
+                self.appearance.edit(keys)
+                event.accept()
+                return
+        super().mouseDoubleClickEvent(event)
