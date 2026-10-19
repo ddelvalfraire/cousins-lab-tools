@@ -336,7 +336,7 @@ class LabView(QtWidgets.QMainWindow):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
         
         # Graph
-        self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph = Graph(100,100, 'raw-masses')
         self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
@@ -407,7 +407,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(180, 3)
+        self.assayBufferGraph = Graph(180, 3, 'assay-buffer')
         self.assayBufferGraph.setAccessibleName('Assay buffer calibration')
         self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (µL)')
         self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
@@ -424,7 +424,7 @@ class LabView(QtWidgets.QMainWindow):
 
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} #######################
-        self.uBarGraph = Graph(100,180)
+        self.uBarGraph = Graph(100,180, 'ubar')
         self.uBarGraph.setAccessibleName('uBar')
         self.uBarGraph.setLabel(axis='left', text = 'uBar')
         self.uBarGraph.setLabel(axis='bottom', text = 'Time (s)')
@@ -439,7 +439,7 @@ class LabView(QtWidgets.QMainWindow):
         ################################################################################################
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
-        self.DuBarGraph = Graph(100,180)
+        self.DuBarGraph = Graph(100,180, 'derivative')
         self.DuBarGraph.setAccessibleName('D[uBar]')
         self.DuBarGraph.setLabel(axis='left', text = 'D[uBar]')
         self.DuBarGraph.setLabel(axis='bottom', text = 'Time (s)')
