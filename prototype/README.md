@@ -122,6 +122,16 @@ keeps the exact geometry. Run controls show only while the session is running: o
 run or an import their buttons can do nothing, and the header's status card shows the captures. A layout edit is saved as a new revision,
 and a session keeps the layout of the revision it ran with.
 
+**Starting the instruments.** The Start run dialog's *Start* choice applies to that run only and
+is never saved to the template. *Together*, the default, starts every instrument when the run
+starts. *Stagger* starts each after its own delay in seconds, prefilled from the template's start
+delays and divided by the replay speed as they are. *By hand* leaves each ticked instrument
+waiting, and the run controls show a *Start* button for it; its requested start is the moment
+the button is pressed. While a capture waits on a delay, the controls count down to it. Stop run
+still stops everything, and an instrument never started ends as `not_started` with no rows. Each
+capture in `session.json` records how it started (`start`: `{"delay_s": 10}` or
+`{"manual": true}`) next to its requested start, start command, and first sample.
+
 ## Legacy module presets
 
 Three built-in templates rebuild the chart screens of the legacy PyQt modules. Each preset is
@@ -377,7 +387,10 @@ requested timing, the parameters, the derived values, the alignment event, and t
 - The MS is a simulated EZView spool. It holds the researcher's recorded values, written
   now with this computer's clock.
 - The Ambit replays `Ambit raw data_sample_150_pl1.csv`.
-- The Ambit starts after its 30 s delay, which the 20x compression turns into 1.5 s.
+- *Start* is *Together* by default, so both captures start at once and their first samples land
+  a fraction of a second apart in the capture table. *Stagger* starts the Ambit after its
+  template delay of 30 s, which 20x turns into 1.5 s, and the run controls count down to it.
+  *By hand* with the Ambit ticked gives the run controls a *Start* button for it.
 - The run opens on the capture page. CO2 and fluorescence charts sit side by side, with the
   CO2 and fluorescence metrics and the run controls beside them and the capture table below.
   *Mass 44 and parameters* is the second view.
