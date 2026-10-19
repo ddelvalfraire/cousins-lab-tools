@@ -16,11 +16,30 @@ class SeriesStyle:
 
 
 class AppearanceRegistry:
-    def __init__(self, graph):
+    def __init__(self, graph, module, chart_key):
         self.graph = graph
         self.series = {}
         self.dialog = None
+        self.settings = QtCore.QSettings(
+            QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'CousinsLab', module)
+        self.settings.setFallbacksEnabled(False)
+        self.settings.beginGroup('chart-appearance/' + chart_key)
 
+    def _load_pen(self, key, default_pen):
+        color_name = self.settings.value(key + '/color')
+        if not isinstance(color_name, str):
+            return None
+        color = QtGui.QColor(color_name)
+        try:
+            width = float(self.settings.value(key + '/width'))
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if not color.isValid() or not 0 <= width <= 20:
+            return None
+        pen = QtGui.QPen(default_pen)
+        pen.setColor(color)
+        pen.setWidthF(width)
+        return pen
 
     def register(self, key, item, name, kind='line', color_changed=None):
         if key not in self.series:
@@ -33,6 +52,7 @@ class AppearanceRegistry:
                 pen, brush = item.opts['pen'], None
             self.series[key] = SeriesStyle(name, kind, QtGui.QPen(pg.mkPen(pen)), brush,
                                            color_changed=color_changed)
+            self.series[key].pen = self._load_pen(key, self.series[key].default_pen)
         entry = self.series[key]
         if color_changed is not None:
             entry.color_changed = color_changed
@@ -41,13 +61,13 @@ class AppearanceRegistry:
         if kind == 'line':
             item.curve.setClickable(True, width=12)
         if entry.pen is not None:
-            self.apply(key, entry.pen)
+            self.apply(key, entry.pen, persist=False)
 
     def clear_items(self):
         for entry in self.series.values():
             entry.items.clear()
 
-    def apply(self, key, pen):
+    def apply(self, key, pen, persist=True):
         entry = self.series[key]
         entry.pen = QtGui.QPen(pen)
         for item in entry.items:
@@ -59,6 +79,13 @@ class AppearanceRegistry:
                 item.setPen(pen)
         if entry.color_changed:
             entry.color_changed(pen.color())
+        if persist:
+            if pen == entry.default_pen:
+                self.settings.remove(key)
+            else:
+                self.settings.setValue(key + '/color', pen.color().name(QtGui.QColor.HexArgb))
+                self.settings.setValue(key + '/width', pen.widthF())
+            self.settings.sync()
 
     def hits(self, scene_pos):
         view = self.graph.plotItem.getViewBox()

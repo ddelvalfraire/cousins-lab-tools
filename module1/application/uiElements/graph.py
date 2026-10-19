@@ -16,7 +16,7 @@ from appearance import AppearanceRegistry
 class Graph(pg.PlotWidget):
 
 
-    def __init__(self, xRange, yRange):
+    def __init__(self, xRange, yRange, chart_key='raw-masses'):
         super(Graph, self).__init__()
 
         self.showGrid(x=True, y=True)
@@ -27,7 +27,7 @@ class Graph(pg.PlotWidget):
         self.setYRange(0, yRange)
         self.plotItem.hideButtons()
         self.graphInteraction = False
-        self.appearance = AppearanceRegistry(self)
+        self.appearance = AppearanceRegistry(self, 'module1', chart_key)
         self.clear = self._clear_series
 
         # self.plotItem.ctrlMenu = None

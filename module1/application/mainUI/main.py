@@ -346,7 +346,7 @@ class LabView(QtWidgets.QMainWindow):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
         
         # Graph
-        self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph = Graph(100,100, 'raw-masses')
         self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
@@ -422,7 +422,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(100,180)
+        self.assayBufferGraph = Graph(100,180, 'assay-buffer')
         self.assayBufferGraph.setAccessibleName('Assay buffer calibration')
         self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (nmol/ml)')
         self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
@@ -438,7 +438,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for HCL} AND {HCL Graph} #######################
 
-        self.hclGraph = Graph(100,180)
+        self.hclGraph = Graph(100,180, 'hcl')
         self.hclGraph.setAccessibleName('HCl calibration')
         self.hclGraph.setLabel(axis='left', text = 'BiCarb (nmol/ml)')
         self.hclGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
@@ -456,7 +456,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {Concentration Label} AND {Concentration Graph} #######################
 
-        self.concentrationGraph = Graph(100,180)
+        self.concentrationGraph = Graph(100,180, 'concentration')
         self.concentrationGraph.setAccessibleName('Velocity and concentration')
         self.concentrationGraph.setLabel(axis='left', text = 'Velocity')
         self.concentrationGraph.setLabel(axis='bottom', text = '[CO2] (nmol/ml/sec)')
