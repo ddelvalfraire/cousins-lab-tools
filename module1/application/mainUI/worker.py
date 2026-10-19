@@ -54,7 +54,7 @@ class Worker(QObject):
         #     self.filesParsed.emit()
 
         # Setting the timer after which the graph will be updated.
-        self.timer = QtCore.QTimer()
+        self.timer = QtCore.QTimer(self)
         self.timer.setInterval(self.globalObject.delay)
         self.timer.timeout.connect(self.getNextPoint)
         self.timer.start()
@@ -93,6 +93,9 @@ class Worker(QObject):
                     if self.firstFlag == False:
                         self.anchorTime = self.lastDataPoint[0]
                         self.firstFlag = True
+
+                else:
+                    return
 
 
             stopwatch_time = self.globalObject.stopwatch.get_elapsed_time()
