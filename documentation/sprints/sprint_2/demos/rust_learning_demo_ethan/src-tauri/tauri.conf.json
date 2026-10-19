@@ -1,19 +1,20 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Rust learning demo - Ethan",
+  "productName": "Rust Learning Demo - Ethan",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.ethan.rustdemo",
   "build": {
     "frontendDist": "../web/static"
   },
   "app": {
     "windows": [
       {
-        "title": "Rust demo - Ethan",
+        "title": "Rust Learning Demo - Ethan",
         "width": 800,
         "height": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "url": "/index.html"
       }
     ],
     "security": {
