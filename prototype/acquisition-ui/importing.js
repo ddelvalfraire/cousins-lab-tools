@@ -54,7 +54,7 @@ export function importFiles(slots, values) {
  */
 export function runInputs(template, instruments) {
   const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
-  const used = Object.values(template.roles ?? {}).map(r => profiles[r.instrument]).filter(Boolean);
+  const used = Object.values(template.roles ?? {}).filter(r => r.enabled !== false).map(r => profiles[r.instrument]).filter(Boolean);
   const kinds = [...new Set(used.map(p => p.input_kind))];
   return { labels: used.map(p => p.label), suffix: kinds.join(" and ") || "run" };
 }

@@ -560,11 +560,10 @@ first proof of concept.
   no `webkit2gtk-4.1`.
 - **Reference recordings.** The Mac demo app includes its profiles, templates, and reference
   files. Unpackaged builds read them from the checkout the app was built from.
-- **Slow previews in debug builds.** An alignment preview takes 4 to 7 s in a Windows debug
-  build. In the window, saving while previews were still redrawing stored an alignment without
-  the entered event times and parameter once; with each redraw finished first, the save was
-  correct. The cause in the alignment tab is not yet found. Release builds are faster (about
-  0.3 s per preview on Linux).
+- **Alignment previews.** Debug builds can take several seconds to redraw. The controls show
+  an updating state until the current preview is ready. Save uses the inputs of that preview,
+  and leaving the tab discards late results. A delayed-response check verifies that the two
+  entered workbook event times survive saving and that an old preview cannot replace Export.
 - **Replay speed.** Simulated runs compress sample spacing and start delays by the speed
   factor. Replayed Ambit device counters keep their recorded values. Clock times in those
   sessions are real host times of the replay, not of the original experiment.

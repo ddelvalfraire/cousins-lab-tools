@@ -25,21 +25,26 @@ async function renderReview(page, session) {
     <nav class="tabs" role="tablist">${tabs.map(([k, label], i) => `<button role="tab" data-tab="${k}" aria-selected="${i === 0}">${label}</button>`).join("")}</nav>
     <div id="tab"></div></div>`;
   let dispose = null;
+  let generation = 0;
   const show = async key => {
+    const current = ++generation;
     dispose?.();
     dispose = null;
     page.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === key));
-    const el = page.querySelector("#tab");
+    const el = document.createElement("div");
+    page.querySelector("#tab").replaceChildren(el);
     el.innerHTML = '<p class="muted">Loading…</p>';
     try {
-      dispose = await { overview: overviewTab, align: alignTab, data: dataTab, export: exportTab }[key](el, session);
+      const cleanup = await { overview: overviewTab, align: alignTab, data: dataTab, export: exportTab }[key](el, session);
+      if (current === generation) dispose = cleanup;
+      else cleanup?.();
     } catch (e) {
       el.innerHTML = `<div class="notice bad">${esc(e.message)}</div>`;
     }
   };
   page.querySelectorAll("[data-tab]").forEach(b => (b.onclick = () => show(b.dataset.tab)));
   show(m.kind === "import" ? "align" : "overview");
-  return () => dispose?.();
+  return () => { generation++; dispose?.(); };
 }
 
 function overviewTab(el, session) {
@@ -72,84 +77,138 @@ const REFERENCES = [
   ["clock", "Clock time"],
 ];
 
-async function alignTab(el, session) {
+function alignTab(el, session) {
   const m = session.manifest;
   const spec = m.template.alignment || {};
-  const saved = session.alignments.at(-1);
+  let saved = session.alignments.at(-1);
   const state = saved?.inputs ? structuredClone(saved.inputs) : { reference: spec.default_reference || "event", manual: {}, trial_params: {} };
   const inputs = () => ({ session_id: m.id, reference: state.reference, manual: state.manual, trial_params: state.trial_params });
   let charts = [];
+  let active = true, request = 0, readyInputs = null, saving = false;
   const disposeCharts = () => { charts.forEach(c => c.dispose()); charts = []; };
+  const feedback = (message, error = false) => {
+    let output = el.querySelector("[data-alignment-feedback]");
+    if (!output) {
+      output = document.createElement("p");
+      output.dataset.alignmentFeedback = "";
+      el.prepend(output);
+    }
+    output.className = error ? "small error-text" : "small muted";
+    output.textContent = message;
+  };
 
   const render = async () => {
-    const { alignment, charts: data } = await call("preview_alignment", inputs());
-    disposeCharts();
-    const clockOrigin = alignment.clock_origin_utc ? new Date(alignment.clock_origin_utc).getTime() : null;
-    const xName = {
-      event: `Seconds from "${alignment.event_label}"`,
-      elapsed: "Seconds since each capture's own start (starts not assumed simultaneous)",
-      clock: "Clock time (host clock)",
-    }[alignment.reference];
-    el.innerHTML = `
-      <section class="card">
-        <div class="card-head"><h2>Alignment reference</h2>
-          <div class="actions">${REFERENCES.map(([k, label]) => `<button data-ref="${k}" aria-pressed="${k === state.reference}">${label}</button>`).join("")}</div></div>
-        ${alignment.reference === "elapsed" ? `<div class="notice warn">Each capture is placed from its own start. This does not mean the recordings started at the same experimental moment.</div>` : ""}
-        ${alignment.reference === "event" && alignment.event_note ? `<div class="notice info">${esc(alignment.event_note)}</div>` : ""}
-        ${alignment.unaligned.length ? `<div class="notice bad"><strong>Not aligned:</strong><ul>${alignment.unaligned.map(u => `
-            <li><code>${esc(u.capture)}</code> in ${esc(u.trial)}: ${esc(u.reason)}
-            ${u.needs_event_time ? `<div class="inline"><label class="field">Event time on <code>${esc(u.clocks)}</code> (s)<input type="number" step="any" data-manual="${esc(u.trial)}|${esc(u.capture)}|${esc(u.clocks.split(",")[0].trim())}"></label>
-              <label class="field">How was it chosen?<input data-method="${esc(u.trial)}|${esc(u.capture)}" placeholder="e.g. workbook row 7405"></label></div>` : ""}</li>`).join("")}</ul>
-            ${alignment.unaligned.some(u => u.needs_event_time) ? `<button id="apply-manual">Apply entered times</button>` : ""}</div>` : ""}
-        ${alignment.trials.map(t => `
-          <h3>${esc(t.label)}</h3>
-          <div class="table-wrap"><table><thead><tr><th>Capture</th><th>Clock</th><th>Zero on that clock</th><th>How</th><th>± (s)</th></tr></thead><tbody>
-            ${t.members.map(mb => `<tr><td><code>${esc(mb.capture)}</code></td><td><code>${esc(mb.clock.column)}</code></td>
-              <td class="mono">${mb.clock.kind === "host_utc" || mb.clock.kind === "source_local" ? esc(new Date(mb.zero * 1000).toISOString()) : esc(mb.zero)}</td>
-              <td class="small">${esc(mb.method)}</td><td>${mb.uncertainty_s ?? "?"}</td></tr>`).join("") || '<tr><td colspan="5" class="muted">No capture in this trial could be placed.</td></tr>'}
-          </tbody></table></div>
-          ${Object.keys(t.params).length ? `<div class="inline small">${Object.entries(t.params).map(([k, v]) =>
-            `<label class="field">${esc(k)}<input type="number" step="any" style="width:150px" data-param="${esc(t.id)}|${esc(k)}" value="${v}"></label>`).join("")}</div>` : ""}`).join("")}
-        <p class="small muted">${esc(alignment.uncertainty_note)} Offsets are stored in an alignment record; captured data is never shifted.
-          ${saved ? `Opened from saved alignment <code>${esc(saved.id)}</code>.` : ""}</p>
-        <div class="actions"><button class="primary" id="save-alignment" ${alignment.trials.some(t => t.members.length) ? "" : "disabled"}>Save this alignment</button></div>
-      </section>
-      <div class="grid charts">${data.map(c => `<section class="card"><div class="card-head"><h2>${esc(c.title)}</h2><span class="small muted">${esc(c.unit)}</span></div>
-        ${c.series.length ? `<div class="chart" data-chart="${esc(c.id)}"></div>` : '<p class="muted">Nothing aligned for this chart.</p>'}</section>`).join("")}</div>`;
+    const current = ++request;
+    const requested = structuredClone(inputs());
+    readyInputs = null;
+    el.setAttribute("aria-busy", "true");
+    el.querySelectorAll("button, input").forEach(control => (control.disabled = true));
+    if (el.querySelector("#save-alignment")) feedback("Updating alignment…");
+    try {
+      const { alignment, charts: data } = await call("preview_alignment", requested);
+      if (!active || current !== request) return;
+      disposeCharts();
+      const clockOrigin = alignment.clock_origin_utc ? new Date(alignment.clock_origin_utc).getTime() : null;
+      const xName = {
+        event: `Seconds from "${alignment.event_label}"`,
+        elapsed: "Seconds since each capture's own start (starts not assumed simultaneous)",
+        clock: "Clock time (host clock)",
+      }[alignment.reference];
+      el.innerHTML = `
+        <section class="card">
+          <div class="card-head"><h2>Alignment reference</h2>
+            <div class="actions">${REFERENCES.map(([k, label]) => `<button data-ref="${k}" aria-pressed="${k === state.reference}">${label}</button>`).join("")}</div></div>
+          ${alignment.reference === "elapsed" ? `<div class="notice warn">Each capture is placed from its own start. This does not mean the recordings started at the same experimental moment.</div>` : ""}
+          ${alignment.reference === "event" && alignment.event_note ? `<div class="notice info">${esc(alignment.event_note)}</div>` : ""}
+          ${alignment.unaligned.length ? `<div class="notice bad"><strong>Not aligned:</strong><ul>${alignment.unaligned.map(u => `
+              <li><code>${esc(u.capture)}</code> in ${esc(u.trial)}: ${esc(u.reason)}
+              ${u.needs_event_time ? `<div class="inline"><label class="field">Event time on <code>${esc(u.clocks)}</code> (s)<input type="number" step="any" data-manual="${esc(u.trial)}|${esc(u.capture)}|${esc(u.clocks.split(",")[0].trim())}"></label>
+                <label class="field">How was it chosen?<input data-method="${esc(u.trial)}|${esc(u.capture)}" placeholder="e.g. workbook row 7405"></label></div>` : ""}</li>`).join("")}</ul>
+              ${alignment.unaligned.some(u => u.needs_event_time) ? `<button id="apply-manual">Apply entered times</button>` : ""}</div>` : ""}
+          ${alignment.trials.map(t => `
+            <h3>${esc(t.label)}</h3>
+            <div class="table-wrap"><table><thead><tr><th>Capture</th><th>Clock</th><th>Zero on that clock</th><th>How</th><th>± (s)</th></tr></thead><tbody>
+              ${t.members.map(mb => `<tr><td><code>${esc(mb.capture)}</code></td><td><code>${esc(mb.clock.column)}</code></td>
+                <td class="mono">${mb.clock.kind === "host_utc" || mb.clock.kind === "source_local" ? esc(new Date(mb.zero * 1000).toISOString()) : esc(mb.zero)}</td>
+                <td class="small">${esc(mb.method)}</td><td>${mb.uncertainty_s ?? "?"}</td></tr>`).join("") || '<tr><td colspan="5" class="muted">No capture in this trial could be placed.</td></tr>'}
+            </tbody></table></div>
+            ${Object.keys(t.params).length ? `<div class="inline small">${Object.entries(t.params).map(([k, v]) =>
+              `<label class="field">${esc(k)}<input type="number" step="any" style="width:150px" data-param="${esc(t.id)}|${esc(k)}" value="${v}"></label>`).join("")}</div>` : ""}`).join("")}
+          <p class="small muted">${esc(alignment.uncertainty_note)} Offsets are stored in an alignment record; captured data is never shifted.
+            ${saved ? `Opened from saved alignment <code>${esc(saved.id)}</code>.` : ""}</p>
+          <div class="actions"><button class="primary" id="save-alignment" ${alignment.trials.some(t => t.members.length) ? "" : "disabled"}>Save this alignment</button></div>
+          <p data-alignment-feedback role="status" aria-live="polite"></p>
+        </section>
+        <div class="grid charts">${data.map(c => `<section class="card"><div class="card-head"><h2>${esc(c.title)}</h2><span class="small muted">${esc(c.unit)}</span></div>
+          ${c.series.length ? `<div class="chart" data-chart="${esc(c.id)}"></div>` : '<p class="muted">Nothing aligned for this chart.</p>'}</section>`).join("")}</div>`;
 
-    for (const c of data.filter(c => c.series.length)) {
-      const chart = makeChart(el.querySelector(`[data-chart="${c.id}"]`));
-      const xFormatter = clockOrigin ? v => new Date(clockOrigin + v * 1000).toLocaleTimeString([], { hour12: false }) : undefined;
-      const trials = new Set(c.series.map(s => s.trial)).size;
-      chart.chart.setOption(lineOption({
-        series: c.series.map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, trial: s.trial, points: s.points })),
-        markers: c.markers, gaps: c.gaps, xName, xFormatter, title: c.title,
-      }));
-      charts.push(chart);
-    }
-    el.querySelectorAll("[data-ref]").forEach(b => (b.onclick = () => { state.reference = b.dataset.ref; render(); }));
-    el.querySelector("#apply-manual")?.addEventListener("click", () => {
-      el.querySelectorAll("[data-manual]").forEach(input => {
-        if (input.value === "") return;
-        const [trial, capture, clock] = input.dataset.manual.split("|");
-        const method = el.querySelector(`[data-method="${trial}|${capture}"]`).value || "Entered by researcher";
-        ((state.manual[trial] ||= {})[capture] = { clock, zero: Number(input.value), method });
+      for (const c of data.filter(c => c.series.length)) {
+        const chart = makeChart(el.querySelector(`[data-chart="${c.id}"]`));
+        const xFormatter = clockOrigin ? v => new Date(clockOrigin + v * 1000).toLocaleTimeString([], { hour12: false }) : undefined;
+        const trials = new Set(c.series.map(s => s.trial)).size;
+        chart.chart.setOption(lineOption({
+          series: c.series.map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, trial: s.trial, points: s.points })),
+          markers: c.markers, gaps: c.gaps, xName, xFormatter, title: c.title,
+        }));
+        charts.push(chart);
+      }
+      el.querySelectorAll("[data-ref]").forEach(b => (b.onclick = () => { state.reference = b.dataset.ref; render(); }));
+      el.querySelector("#apply-manual")?.addEventListener("click", () => {
+        el.querySelectorAll("[data-manual]").forEach(input => {
+          if (input.value === "") return;
+          const [trial, capture, clock] = input.dataset.manual.split("|");
+          const method = el.querySelector(`[data-method="${trial}|${capture}"]`).value || "Entered by researcher";
+          ((state.manual[trial] ||= {})[capture] = { clock, zero: Number(input.value), method });
+        });
+        render();
       });
-      render();
-    });
-    el.querySelectorAll("[data-param]").forEach(input => (input.onchange = () => {
-      const [trial, key] = input.dataset.param.split("|");
-      (state.trial_params[trial] ||= {})[key] = Number(input.value);
-      render();
-    }));
-    el.querySelector("#save-alignment").onclick = async () => {
-      const saved = await call("save_alignment", inputs());
-      toast(`Saved ${saved.id}`);
-      session.alignments.push(saved);
-    };
+      el.querySelectorAll("[data-param]").forEach(input => (input.onchange = () => {
+        const [trial, key] = input.dataset.param.split("|");
+        (state.trial_params[trial] ||= {})[key] = Number(input.value);
+        render();
+      }));
+      el.querySelector("#save-alignment").onclick = async () => {
+        if (saving || !readyInputs) return;
+        saving = true;
+        const button = el.querySelector("#save-alignment");
+        const controls = [...el.querySelectorAll("button, input")].map(control => [control, control.disabled]);
+        controls.forEach(([control]) => (control.disabled = true));
+        el.setAttribute("aria-busy", "true");
+        button.textContent = "Saving…";
+        let success = false;
+        try {
+          saved = await call("save_alignment", readyInputs);
+          session.alignments.push(saved);
+          success = true;
+          if (active) {
+            toast(`Saved ${saved.id}`);
+            feedback("Alignment saved. Open Export to download the aligned CSV.");
+          }
+        } catch (e) {
+          if (active) feedback(e.message, true);
+        } finally {
+          saving = false;
+          if (active) {
+            controls.forEach(([control, disabled]) => (control.disabled = disabled));
+            button.disabled = success;
+            button.textContent = success ? "Saved" : "Save this alignment";
+            el.removeAttribute("aria-busy");
+          }
+        }
+      };
+      readyInputs = requested;
+    } catch (e) {
+      if (!active || current !== request) return;
+      feedback(e.message, true);
+      el.querySelectorAll("button, input").forEach(control => (control.disabled = false));
+      const save = el.querySelector("#save-alignment");
+      if (save) save.disabled = true;
+    } finally {
+      if (active && current === request) el.removeAttribute("aria-busy");
+    }
   };
-  await render();
-  return disposeCharts;
+  render();
+  return () => { active = false; request++; disposeCharts(); };
 }
 
 const EXAMPLE_QUERIES = (alignmentId, lightCapture) => [

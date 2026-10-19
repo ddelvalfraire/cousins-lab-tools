@@ -85,6 +85,8 @@ export function openDialog(html, onSubmit) {
   dialog.innerHTML = html;
   addBrowse(dialog);
   const form = dialog.querySelector("form");
+  let submitting = false;
+  dialog.oncancel = event => { if (submitting) event.preventDefault(); };
   // Enter submits with the form's first submit button. Cancel comes first in every dialog, so make it a plain
   // button: Enter then confirms, and only a click on Cancel closes.
   for (const cancel of form.querySelectorAll('button[value="cancel"]')) {
@@ -94,13 +96,27 @@ export function openDialog(html, onSubmit) {
   form.addEventListener("submit", async event => {
     event.preventDefault();
     if (event.submitter?.value === "cancel") return dialog.close();
+    if (submitting) return;
+    const values = new FormData(form);
+    const controls = [...form.querySelectorAll("input, select, textarea, button")].map(el => [el, el.disabled]);
+    const button = event.submitter;
+    const label = button?.innerHTML;
+    submitting = true;
+    form.setAttribute("aria-busy", "true");
+    controls.forEach(([el]) => (el.disabled = true));
+    if (button) button.textContent = "Working…";
     const error = form.querySelector(".error-text");
     try {
       error.textContent = "";
-      await onSubmit(new FormData(form), form);
+      await onSubmit(values, form);
       dialog.close();
     } catch (e) {
       error.textContent = e.message;
+    } finally {
+      submitting = false;
+      form.removeAttribute("aria-busy");
+      controls.forEach(([el, disabled]) => (el.disabled = disabled));
+      if (button) button.innerHTML = label;
     }
   });
   dialog.showModal();

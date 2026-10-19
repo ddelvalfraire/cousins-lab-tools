@@ -102,6 +102,11 @@ input, select, textarea { font: inherit; font-size: 15px; border: 1px solid var(
 textarea { width: 100%; font-family: var(--font-mono); font-size: 13px; }
 label.field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 label.field > :is(input, select) { color: var(--fg); }
+.template-parameters { display: flex; flex-direction: column; gap: 14px; }
+.calculated-parameter { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--workspace); border: 1px solid var(--border-soft); border-radius: 8px; font-size: 14px; }
+.calculated-parameter .badge { font-size: 11px; }
+.calculated-parameter code { overflow-wrap: anywhere; }
+[aria-busy="true"] button { cursor: wait; }
 .inline { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
 .browse { display: flex; gap: 8px; }
 .browse > input { flex: 1; }

@@ -3,6 +3,7 @@ import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
 import { profileChoices, runInputs, runSources, sourcesFrom } from "./importing.js";
 import { START_MODES, startRoles, startsFrom } from "./starts.js";
+import { parameterField, parameterWithDefault } from "./template-parameters.js";
 
 export async function renderTemplates(page) {
   const templates = await call("list_templates");
@@ -70,9 +71,7 @@ export async function renderTemplate(page, id, revision, tab) {
           <p class="small muted">Requested timing only. Actual sample times come from the device counter and are compared after the run.</p>
         </section>`).join("")}
       <section class="card"><h2>Parameters</h2>
-        ${Object.entries(data.parameters || {}).map(([k, p]) => `
-          <label class="field">${esc(k)} (${esc(p.unit)})<input type="number" step="any" data-param="${esc(k)}" value="${p.value}">
-            <span class="small">${esc(p.note || "")}</span></label>`).join("")}
+        <div class="template-parameters">${Object.entries(data.parameters || {}).map(([k, p]) => parameterField(k, p)).join("")}</div>
       </section>
       <section class="card"><h2>Derived values</h2>
         <dl class="kv">${Object.entries(data.derived || {}).map(([k, d]) => `<dt>${esc(k)} (${esc(d.role)})</dt><dd><code>${esc(d.expr)}</code> ${esc(d.unit)}</dd>`).join("")}</dl>
@@ -136,7 +135,8 @@ export async function renderTemplate(page, id, revision, tab) {
     drawTimeline();
   }));
   page.querySelectorAll("[data-param]").forEach(input => (input.onchange = () => {
-    data.parameters[input.dataset.param].value = Number(input.value);
+    if (!input.reportValidity()) return;
+    data.parameters[input.dataset.param] = parameterWithDefault(data.parameters[input.dataset.param], input.value);
     save.disabled = false;
   }));
   const saved = t => {
@@ -156,8 +156,13 @@ export async function renderTemplate(page, id, revision, tab) {
 
 export async function startRunDialog(templateId, templates, revision) {
   const instruments = call("list_instruments");
-  templates ??= await call("list_templates");
-  const template = templates.find(t => t.data.id === templateId) || templates[0];
+  let template;
+  if (revision != null) {
+    template = await call("get_template", { template_id: templateId, revision });
+  } else {
+    templates ??= await call("list_templates");
+    template = templates.find(t => t.data.id === templateId) || templates[0];
+  }
   const rev = revision ?? template.data.revision;
   const profiles = await instruments;
   const inputs = runInputs(template.data, profiles);

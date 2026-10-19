@@ -80,6 +80,13 @@ test("a run offers a source field for replays and real spools, not for simulator
   assert.deepEqual(sourcesFrom([["ms", "  /lab/Acquisition12 "], ["live", ""], ["x", null]]), { ms: "/lab/Acquisition12" });
 });
 
+test("the run description and session name exclude instruments disabled in that revision", () => {
+  const instruments = [{ id: "ms", label: "Mass spec simulator", input_kind: "simulated" },
+    { id: "light", label: "Ambit replay", input_kind: "replay" }];
+  const template = { roles: { ms: { instrument: "ms" }, light: { instrument: "light", enabled: false } } };
+  assert.deepEqual(runInputs(template, instruments), { labels: ["Mass spec simulator"], suffix: "simulated" });
+});
+
 test("Browse offers a folder only where the engine reads a zip or a folder of frame files", () => {
   const roles = { ms: { import: "ms_workbook", instrument: "frames" }, light: { import: "ambit_csv", instrument: "ambit" }, old: { import: "legacy_frames" } };
   assert.deepEqual(importSlots({ roles }, {}).map(s => [s.role, s.browse]), [["ms", "file"], ["light", "file"], ["old", "file folder"]]);
