@@ -6,7 +6,8 @@ use std::sync::Arc;
 use cousinslab::api::{ApiError, Engine, ErrorKind};
 use cousinslab::templates::Paths;
 use serde_json::Value;
-use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
 /// Runs one engine command. The engine blocks on files and DuckDB, so it runs off the async
@@ -47,8 +48,22 @@ fn show_in_folder(
         })
 }
 
+/// Asks for a file or a folder with the system's dialog; `None` when the user cancels. It is async because a sync
+/// command runs on the main thread, which the dialog needs, and the wait would deadlock.
+#[tauri::command]
+async fn pick_path(window: WebviewWindow, folder: bool) -> Option<PathBuf> {
+    let dialog = window.dialog().file().set_parent(&window);
+    let picked = if folder {
+        dialog.blocking_pick_folder()
+    } else {
+        dialog.blocking_pick_file()
+    };
+    picked.and_then(|path| path.into_path().ok())
+}
+
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let data_dir = match std::env::var_os("COUSINSLAB_DATA") {
@@ -75,7 +90,7 @@ fn main() {
                 .build()?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![api, show_in_folder])
+        .invoke_handler(tauri::generate_handler![api, show_in_folder, pick_path])
         .run(tauri::generate_context!())
         .expect("error while running the Cousins Lab app");
 }
