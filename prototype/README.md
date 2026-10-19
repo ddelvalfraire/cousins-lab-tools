@@ -47,9 +47,11 @@ as `list_templates`, `start_run`, `session_live`, `preview_alignment`, and `quer
 Each command parses its arguments into a struct. Every failure comes back as `{kind, message}`
 with `kind` one of `not_found`, `invalid`, `conflict`, or `internal`.
 
-- The desktop app registers one Tauri command, `api`, that runs `Engine::call` on a blocking
-  thread, and `show_in_folder`, which reveals an export in Explorer and refuses paths outside
-  the data folder.
+- The desktop app registers three Tauri commands. `api` runs `Engine::call` on a blocking
+  thread, `show_in_folder` reveals an export in Explorer and refuses paths outside the data
+  folder, and `pick_path` opens the system's file or folder dialog for Browse. In the window a
+  chart's Save as PNG goes to Downloads and the app then shows the file in Explorer, since
+  WebView2 gives no other sign. Show in folder and the table's Copy work as in a browser.
 - The UI calls `call(command, args)` in `acquisition-ui/util.js`, which goes through
   `window.__TAURI__.core.invoke("api", ...)`.
 - `core/examples/dev_server.rs` serves the same UI and the same `Engine::call` on 127.0.0.1
@@ -182,7 +184,7 @@ header has a Calibrations menu for the whole session:
   that compute them; otherwise the session computes them and says so.
 
 Every copied or loaded value is a new record, so Remove on a step brings back what it held
-before. The path is typed in; there is no Browse button yet.
+before. The path is typed in, or in the desktop app picked with Browse.
 
 The sample recording is not a Rubisco assay, so module 1's velocities only show the screen
 working. Module 2's %CO2 per mV comes out at 0.00062752 with the ranges above, 0.2 % from the
@@ -211,7 +213,7 @@ review of the legacy modules.
 | B18 | O2 labelled µbar | µmol/L (module 2) and nmol/ml (module 1), flagged as a lab check |
 | B19 | Temperature defaults to 0 and applies only on Enter | No default; O2 Cal stays unset until a temperature is typed; saved on change |
 | B20 | Module 2's calibration save writes module 1's header over its 9 values, and its load indexes past them and fails | Both modules export and load the app's own calibration file; module 1 also loads its legacy file; a legacy module 2 file is refused and named as such |
-| B21 | Copy never connected in modules 1 and 2 (module 3's copied the selected cells) | Copy puts the whole table on the clipboard as tab-separated text (checked in a browser, not yet in the Tauri window) |
+| B21 | Copy never connected in modules 1 and 2 (module 3's copied the selected cells) | Copy puts the whole table on the clipboard as tab-separated text (checked in a browser and in the Windows window) |
 | B22 | Get Mean takes the first rate of a batch | Mean of the rate over the stored rows in the range |
 | B23 | ln(atom%) plotted under "Atom49%" | The chart plots atom%; ln is a separate value |
 | B24, B25 | 15-point rate window, emitted from partial windows | 12 s window on the clock, full windows of at least 60 points only |
@@ -243,10 +245,13 @@ the lab should confirm:
   file between its bars. Means and slopes differ slightly from legacy for that reason.
 
 **The lab's own data.** Import recordings takes a zip or a folder of frame files, picked from
-the suggested list or typed as a path (there is no native Browse button yet). Frame files may
-have the nine fields of the sample or the eleven `readEZView.py` writes: the two extra fields
-are EZView channels 11 and 12, stored as `ch11` and `ch12`, and a time written as `1250.0`
-reads as 1250 ms. A folder's files are copied into the capture's `raw/`, and its source hash is
+the suggested list or typed as a path. In the desktop app each path field, here, at Start run
+and in Load calibration file, has Browse: it opens the system's file dialog (File and Folder
+where a zip or a folder is accepted) and fills the field; nothing runs until you press Import,
+Start or Load. A browser on `dev_server` has no native dialog, so it shows no Browse. Frame
+files may have the nine fields of the sample or the eleven `readEZView.py` writes: the two
+extra fields are EZView channels 11 and 12, stored as `ch11` and `ch12`, and a time written
+as `1250.0` reads as 1250 ms. A folder's files are copied into the capture's `raw/`, and its source hash is
 the SHA-256 of the `sha256sum` listing of those files in name order. Start run has a field per
 replay role for the recording to replay; empty keeps the profile's. The engine refuses a path
 that is missing or that it cannot read before it creates the session, and changes neither the
@@ -500,7 +505,7 @@ first proof of concept.
   Python `open_session` helper went away with the Python engine.
 - **Live updates.** The capture page polls every 500 ms. A Tauri channel could push updates
   instead.
-- **Other sources and tools.** A native Browse button for import and replay paths (the Tauri
-  dialog plugin), a protocol editor, and recovering unflushed rows from the raw spool copy.
+- **Other sources and tools.** A protocol editor, and recovering unflushed rows from the raw
+  spool copy.
 - **Layout.** Dragging between groups, and deleting
   views.
