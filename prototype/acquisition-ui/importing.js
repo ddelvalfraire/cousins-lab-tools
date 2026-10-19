@@ -1,13 +1,19 @@
 import { fileName } from "./util.js";
 
-// Keyed by a template role's `import`. The default label names the capture `<role>-<label>`.
+// Keyed by a template role's `import`. The default label names the capture `<role>-<label>`. `browse` is what the
+// path field's Browse buttons pick: "file", "folder", or "file folder".
 const IMPORT_KINDS = {
-  ms_workbook: { title: "Mass spectrometer workbook", label: () => "workbook" },
+  ms_workbook: { title: "Mass spectrometer workbook", browse: "file", label: () => "workbook" },
   ambit_csv: {
     title: "Ambit recording",
+    browse: "file",
     label: path => fileName(path).replace(/^Ambit raw data_sample_/, "").replace(/\.csv$/, "").replace("_", "-"),
   },
-  legacy_frames: { title: "Legacy frame files (zip or folder)", label: path => fileName(path.replace(/[\\/]+$/, "")).replace(/\.zip$/i, "") },
+  legacy_frames: {
+    title: "Legacy frame files (zip or folder)",
+    browse: "file folder",
+    label: path => fileName(path.replace(/[\\/]+$/, "")).replace(/\.zip$/i, ""),
+  },
 };
 
 /** One file slot per offered recording of each importing role, or one empty slot when none is offered. */
@@ -24,6 +30,7 @@ export function importSlots(template, recordings) {
       path,
       label: path ? kind.label(path) : "",
       labelFor: kind.label,
+      browse: kind.browse,
     }));
   });
 }
@@ -52,8 +59,13 @@ export function runInputs(template, instruments) {
   return { labels: used.map(p => p.label), suffix: kinds.join(" and ") || "run" };
 }
 
-// The profile setting that names the file each adapter reads; start_run accepts a replacement per role.
-const SOURCE_SETTING = { legacy_frames_replay: "path", ambit_replay: "recording", ezview_spool: "spool_path" };
+// The profile setting that names the file each adapter reads, which start_run accepts a replacement for per role,
+// and what Browse picks for it.
+const SOURCE_SETTING = {
+  legacy_frames_replay: { key: "path", browse: "file folder" },
+  ambit_replay: { key: "recording", browse: "file" },
+  ezview_spool: { key: "spool_path", browse: "file" },
+};
 
 /**
  * Enabled roles of `template` whose source a run may replace: replays and real spools, not simulators. Each comes
@@ -63,12 +75,12 @@ export function runSources(template, instruments) {
   const profiles = Object.fromEntries(instruments.map(p => [p.id, p]));
   return Object.entries(template.roles ?? {}).flatMap(([role, spec]) => {
     const profile = profiles[spec.instrument];
-    const key = SOURCE_SETTING[profile?.adapter];
-    if (spec.enabled === false || !key || profile.simulate) return [];
-    const path = profile.settings?.[key] ?? "";
+    const source = SOURCE_SETTING[profile?.adapter];
+    if (spec.enabled === false || !source || profile.simulate) return [];
+    const path = profile.settings?.[source.key] ?? "";
     // The profile's path can hold ${repo}; the field shows only the file it names.
     const hint = path ? `Profile's recording: ${fileName(path)}` : "Path to the file to read";
-    return [{ role, label: spec.label || role, path, hint, hardware: profile.input_kind === "hardware" }];
+    return [{ role, label: spec.label || role, path, hint, hardware: profile.input_kind === "hardware", browse: source.browse }];
   });
 }
 

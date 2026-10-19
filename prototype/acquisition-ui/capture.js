@@ -526,7 +526,7 @@ async function mount(page, id, restart) {
       showCalibrations(false);
       const dialog = openDialog(`
         <form><h2>Load a calibration file</h2>
-          <label class="field">File path<input name="path" autocomplete="off"></label>
+          <label class="field">File path<input name="path" autocomplete="off" data-browse="file"></label>
           <p class="small muted">${esc(loadHint(m.template.id))}</p>
           <p class="error-text"></p>
           <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Load</button></div></form>`,

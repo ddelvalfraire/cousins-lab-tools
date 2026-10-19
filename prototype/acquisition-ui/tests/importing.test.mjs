@@ -74,10 +74,20 @@ test("a run offers a source field for replays and real spools, not for simulator
     live: { instrument: "spool" }, sim: { instrument: "sim" }, gone: { instrument: "missing" },
   } };
   assert.deepEqual(runSources(template, instruments), [
-    { role: "ms", label: "Mass spectrometer", path: "/repo/module2/SampleData.zip", hint: "Profile's recording: SampleData.zip", hardware: false },
-    { role: "live", label: "live", path: "", hint: "Path to the file to read", hardware: true },
+    { role: "ms", label: "Mass spectrometer", path: "/repo/module2/SampleData.zip", hint: "Profile's recording: SampleData.zip", hardware: false, browse: "file folder" },
+    { role: "live", label: "live", path: "", hint: "Path to the file to read", hardware: true, browse: "file" },
   ]);
   assert.deepEqual(sourcesFrom([["ms", "  /lab/Acquisition12 "], ["live", ""], ["x", null]]), { ms: "/lab/Acquisition12" });
+});
+
+test("Browse offers a folder only where the engine reads a zip or a folder of frame files", () => {
+  const roles = { ms: { import: "ms_workbook", instrument: "frames" }, light: { import: "ambit_csv", instrument: "ambit" }, old: { import: "legacy_frames" } };
+  assert.deepEqual(importSlots({ roles }, {}).map(s => [s.role, s.browse]), [["ms", "file"], ["light", "file"], ["old", "file folder"]]);
+  const instruments = [
+    { id: "frames", adapter: "legacy_frames_replay", input_kind: "replay", settings: {} },
+    { id: "ambit", adapter: "ambit_replay", input_kind: "replay", settings: {} },
+  ];
+  assert.deepEqual(runSources({ roles }, instruments).map(s => [s.role, s.browse]), [["ms", "file folder"], ["light", "file"]]);
 });
 
 test("a role is offered the profiles the engine found compatible, and always its own", () => {

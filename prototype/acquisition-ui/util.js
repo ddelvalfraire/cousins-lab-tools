@@ -16,6 +16,32 @@ export const pathRow = path =>
 export const bindReveal = root =>
   root.querySelectorAll("[data-reveal]").forEach(b => (b.onclick = () => showInFolder(b.dataset.reveal).catch(e => toast(e.message))));
 
+/**
+ * Puts Browse buttons after each `input[data-browse]` under root, one per kind it lists ("file", "folder"). A pick fills
+ * the field as typing would. Only the desktop window has a native dialog (the dev server's bridge sets no `isTauri`),
+ * so a browser gets no buttons.
+ */
+export function addBrowse(root) {
+  if (!globalThis.window?.isTauri) return;
+  for (const input of root.querySelectorAll("input[data-browse]:not(.browse > input)")) {
+    const kinds = input.dataset.browse.split(" ");
+    const row = document.createElement("span");
+    row.className = "browse";
+    input.replaceWith(row);
+    row.append(input);
+    for (const kind of kinds) {
+      const label = kinds.length === 1 ? "Browse…" : kind === "folder" ? "Folder…" : "File…";
+      row.insertAdjacentHTML("beforeend", `<button type="button" title="Choose a ${kind}">${icon(kind)}${label}</button>`);
+      row.lastElementChild.onclick = () => invoke("pick_path", { folder: kind === "folder" }).then(path => {
+        if (!path) return;
+        input.value = path;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      }).catch(e => toast(e.message));
+    }
+  }
+}
+
 /** The last part of a path the engine sent, which uses \ on Windows and / elsewhere. */
 export const fileName = path => String(path).split(/[\\/]/).pop();
 export const esc = value =>
@@ -57,6 +83,7 @@ export function hms(totalSeconds) {
 export function openDialog(html, onSubmit) {
   const dialog = document.getElementById("dialog");
   dialog.innerHTML = html;
+  addBrowse(dialog);
   const form = dialog.querySelector("form");
   // Enter submits with the form's first submit button. Cancel comes first in every dialog, so make it a plain
   // button: Enter then confirms, and only a click on Cancel closes.

@@ -1,4 +1,4 @@
-import { call, esc, fileName, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
+import { addBrowse, call, esc, fileName, fmtTime, icon, inputBadge, openDialog, pageHeader, statusBadge } from "./util.js";
 import { importFiles, importSlots } from "./importing.js";
 import { startRunDialog } from "./templates.js";
 
@@ -58,9 +58,10 @@ async function importDialog(templates) {
       <div class="inline">
         <label class="field" style="flex:1">${esc(slot.title)}
           <select name="path${i}"><option value="">Not included</option>${options(slot.files, slot.path)}</select></label>
-        <label class="field" style="flex:1">Or a path on this computer <input name="typed${i}" placeholder="a file, a zip, or a folder"></label>
+        <label class="field" style="flex:1">Or a path on this computer <input name="typed${i}" placeholder="a file, a zip, or a folder" data-browse="${slot.browse}"></label>
         <label class="field">Label <input name="label${i}" value="${esc(slot.label)}"></label>
       </div>`).join("");
+    addBrowse(form);
     slots.forEach((slot, i) => {
       const typed = form.elements[`typed${i}`];
       typed.oninput = () => (form.elements[`label${i}`].value = slot.labelFor(typed.value.trim() || form.elements[`path${i}`].value || ""));
