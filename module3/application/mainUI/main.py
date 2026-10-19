@@ -302,7 +302,7 @@ class LabView(QtWidgets.QMainWindow):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
         
         # Graph
-        self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph = Graph(100,100, 'raw-masses')
         self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
@@ -350,7 +350,7 @@ class LabView(QtWidgets.QMainWindow):
 
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} now being used for atom49% #######################
-        self.uBarGraph = Graph(100,1)
+        self.uBarGraph = Graph(100,1, 'ubar')
         self.uBarGraph.setAccessibleName('Atom49')
         self.uBarGraph.setLabel(axis='left', text = 'atom49%')
         self.uBarGraph.setLabel(axis='bottom', text = 'Time (s)')
@@ -364,7 +364,7 @@ class LabView(QtWidgets.QMainWindow):
         ################################################################################################
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
-        self.DuBarGraph = Graph(100,0.02)
+        self.DuBarGraph = Graph(100,0.02, 'derivative')
         self.DuBarGraph.setAccessibleName('Atom49 derivative')
         self.DuBarGraph.setLabel(axis='left', text = 'D[atom49%]')
         self.DuBarGraph.setLabel(axis='bottom', text = 'Time (s)')
