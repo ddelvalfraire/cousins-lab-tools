@@ -27,7 +27,7 @@ function liveSource(m, template, currentView) {
     absorbRows(rows, live);
     source.paramsRev = rows.paramsRev;
     for (const [role, cap] of Object.entries(live.captures)) {
-      for (const ev of cap.events) events.push({ source: role, kind: ev.kind, label: ev.label, x: ev.x_run_s });
+      for (const ev of cap.events) events.push({ source: role, kind: ev.kind, label: ev.label, x: ev.x_run_s, t: ev.t_s });
     }
     for (const mk of live.markers.slice(events.filter(e => e.source === "operator").length)) {
       events.push({ source: "operator", kind: mk.kind, label: mk.label, x: mk.x_run_s, t_host_utc: mk.t_host_utc });
@@ -35,7 +35,8 @@ function liveSource(m, template, currentView) {
     Object.assign(source, { elapsed: live.elapsed_s, status: live.status, captures: live.manifest_captures, version: source.version + 1 });
   };
 
-  // Events carry only host time, so a view on the recording's clock shows no markers yet.
+  // Markers use host time only, so a view on the recording's clock shows none yet. A gap also carries t, seconds on
+  // its capture's own clock.
   source.dataset = () => {
     const axis = axisKeyFor(currentView().components, specs);
     const run = axis === "x";
@@ -46,6 +47,8 @@ function liveSource(m, template, currentView) {
       chartSeries: id => specs[id].series.map(s => ({ name: s.label || `${s.role} · ${s.value}`, color: s.color, points: points.series(axis, s.role, s.value) })),
       chartMarkers: id => run ? events.filter(e => e.x != null && (e.source === "operator"
         || (specs[id].markers && e.source === specs[id].markers.role && e.kind === specs[id].markers.kind))) : [],
+      chartGaps: id => events.filter(e => e.kind === "missing_frames" && specs[id].series.some(s => s.role === e.source))
+        .map(e => ({ label: e.label, x: run ? e.x : e.t })).filter(g => g.x != null),
       valueSeries: (value, role) => [{ name: role, points: points.series(axis, role, value) }],
     };
   };
@@ -85,9 +88,10 @@ async function replaySource(m, session, template, reference) {
     // One trial: the template's label and colour per series. Several: trial names, and colours that tell trials apart.
     chartSeries: id => (charts[id]?.series || []).map(s => {
       const spec = trials > 1 ? null : specOf(id, s.value);
-      return { name: trials > 1 ? `${s.trial} · ${s.value}` : spec?.label || s.name, color: spec?.color, points: s.points };
+      return { name: trials > 1 ? `${s.trial} · ${s.value}` : spec?.label || s.name, color: spec?.color, trial: s.trial, points: s.points };
     }),
     chartMarkers: id => charts[id]?.markers || [],
+    chartGaps: id => charts[id]?.gaps || [],
     valueSeries: value => (aligned.values[value] || []).map(s => ({ name: s.trial, points: s.points })),
   });
   return source;

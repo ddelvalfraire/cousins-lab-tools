@@ -18,6 +18,48 @@ export function markLines(markers, cursor) {
   return { symbol: "none", silent: true, animation: false, label: { show: false }, data: marks };
 }
 
+// A live row can sit a bit above the x of the gap it comes before: the row's t is t_ms * 0.001 and the event's is
+// t_ms / 1000. No two rows are this close.
+const SAME_ROW_S = 1e-6;
+
+/** The first x after `x` in points sorted by x, or null. */
+function firstAfter(points, x) {
+  let lo = 0, hi = points.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (points[mid][0] > x) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo < points.length ? points[lo][0] : null;
+}
+
+/**
+ * gaps: [{trial, label, x}], x the last row before frames went missing. Each becomes {from, to, label}, to the
+ * first point after x in a series of the same trial. A gap at the tail of a live run has no band until a row after
+ * it arrives.
+ */
+export function gapBands(gaps, series) {
+  return gaps.flatMap(g => {
+    const ends = series.filter(s => s.trial === g.trial).map(s => firstAfter(s.points, g.x + SAME_ROW_S)).filter(x => x != null);
+    return ends.length ? [{ from: g.x, to: Math.min(...ends), label: g.label }] : [];
+  });
+}
+
+/** Gap bands and the selection band share the first series' markArea; a gap's label shows on hover. */
+function markAreas(bands, selection) {
+  const area = selection ? selectionArea(selection, cssVar("--accent")) : undefined;
+  if (!bands.length) return area;
+  const tint = { color: cssVar("--warning-text"), opacity: 0.16 };
+  const gaps = bands.map(b => [{ xAxis: b.from, name: b.label, itemStyle: tint }, { xAxis: b.to }]);
+  return {
+    ...area,
+    silent: false,
+    label: { show: false, position: "insideTop", color: cssVar("--warning-text") },
+    emphasis: { label: { show: true } },
+    data: [...gaps, ...(area?.data ?? [])],
+  };
+}
+
 /**
  * Reset zoom and Save as PNG, top right of every chart. `name` is the file name the image saves under. A chart
  * with a brush hides the toolbox's brush feature: on a notMerge repaint ECharts refills an empty one with its four
@@ -37,12 +79,13 @@ export function chartToolbox(name, brush = false) {
 }
 
 /**
- * series: [{name, points: [[x, y]...]}], markers: [{x, label}], cursor: x of the replay playhead.
- * window: {start, end} limits the x axis without dropping data. The card header shows the unit.
- * selection: {from, to} drawn as a band; brush: the chart takes a range selection.
+ * series: [{name, trial, points: [[x, y]...]}], markers: [{x, label}], gaps: [{trial, x, label}] drawn as bands,
+ * cursor: x of the replay playhead. window: {start, end} limits the x axis without dropping data. The card header
+ * shows the unit. selection: {from, to} drawn as a band; brush: the chart takes a range selection.
  */
-export function lineOption({ series, markers = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false, legendSelected = {}, title = "" }) {
+export function lineOption({ series, markers = [], gaps = [], cursor = null, window = null, xName, xFormatter, compact = false, selection = null, brush = false, legendSelected = {}, title = "" }) {
   const muted = cssVar("--muted"), line = cssVar("--border"), text = cssVar("--fg");
+  const areas = markAreas(gapBands(gaps, series), selection);
   return {
     animation: false,
     color: PALETTE_VARS.map(cssVar),
@@ -68,7 +111,7 @@ export function lineOption({ series, markers = [], cursor = null, window = null,
       lineStyle: { width: 1.5 },
       data: s.points,
       markLine: i === 0 ? markLines(markers, cursor) : undefined,
-      markArea: i === 0 && selection ? selectionArea(selection, cssVar("--accent")) : undefined,
+      markArea: i === 0 ? areas : undefined,
     })),
     ...(brush ? { brush: brushComponent() } : {}),
   };

@@ -33,6 +33,7 @@ const frame = (select, version = 1) => ({
     version, axis: { name: "Recording clock" },
     chartSeries: () => [{ name: "ms · ubar_co2", points: [[900, 1], [960, 2]] }, { name: "ms · m44", points: [[900, 3]] }],
     chartMarkers: () => [],
+    chartGaps: () => [],
   },
   window: { start: 900, end: 960 }, cursor: null, select,
 });

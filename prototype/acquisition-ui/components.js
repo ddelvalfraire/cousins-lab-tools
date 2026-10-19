@@ -206,7 +206,7 @@ export function timeChartPaint(spec, chartId, frame) {
     key,
     extent,
     takeCursor: brush && !!sel.active,
-    option: () => lineOption({ series: ds.chartSeries(chartId), markers: ds.chartMarkers(chartId), cursor: frame.cursor, window: frame.window,
+    option: () => lineOption({ series: ds.chartSeries(chartId), markers: ds.chartMarkers(chartId), gaps: ds.chartGaps(chartId), cursor: frame.cursor, window: frame.window,
       xName: ds.axis.name, xFormatter: ds.axis.tickFormat, compact: true, selection: brush ? sel.range : null, brush,
       legendSelected: frame.legend?.[chartId], title: spec?.title }),
   };

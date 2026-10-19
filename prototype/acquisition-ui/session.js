@@ -122,8 +122,8 @@ async function alignTab(el, session) {
       const xFormatter = clockOrigin ? v => new Date(clockOrigin + v * 1000).toLocaleTimeString([], { hour12: false }) : undefined;
       const trials = new Set(c.series.map(s => s.trial)).size;
       chart.chart.setOption(lineOption({
-        series: c.series.map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, points: s.points })),
-        markers: c.markers, xName, xFormatter, title: c.title,
+        series: c.series.map(s => ({ name: trials > 1 ? `${s.trial} · ${s.value}` : s.name, trial: s.trial, points: s.points })),
+        markers: c.markers, gaps: c.gaps, xName, xFormatter, title: c.title,
       }));
       charts.push(chart);
     }
