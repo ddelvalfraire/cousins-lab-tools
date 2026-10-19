@@ -38,8 +38,9 @@ Say: "One run owns both captures. The app records requested starts, actual start
 1. Use the floating replay bar to play and seek through the stopped recording.
 2. Choose **Review & export**.
 3. Open **Align & compare** and select **Clock time** for this simulated run.
-4. Open **Export** and export the aligned data.
-5. Use **Show in folder** to reveal the CSV and its JSON metadata file.
+4. Wait for the alignment charts to redraw, then choose **Save this alignment**.
+5. Open **Export** and export the aligned data.
+6. Use **Show in folder** to reveal the CSV and its JSON metadata file.
 
 Say: "Review uses the saved data. The export preserves the original time columns and records its alignment, units, and source hashes."
 
