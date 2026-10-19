@@ -58,8 +58,8 @@ async function importDialog(templates) {
       <div class="inline">
         <label class="field" style="flex:1">${esc(slot.title)}
           <select name="path${i}"><option value="">Not included</option>${options(slot.files, slot.path)}</select></label>
-        <label class="field" style="flex:1">Or a path on this computer <input name="typed${i}" placeholder="a file, a zip, or a folder" data-browse="${slot.browse}"></label>
         <label class="field">Label <input name="label${i}" value="${esc(slot.label)}"></label>
+        <label class="field" style="flex:1 1 100%">Or a path on this computer <input name="typed${i}" placeholder="a file, a zip, or a folder" data-browse="${slot.browse}"></label>
       </div>`).join("");
     addBrowse(form);
     slots.forEach((slot, i) => {
