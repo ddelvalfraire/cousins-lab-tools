@@ -2,6 +2,7 @@ import { call, esc, icon, inputBadge, openDialog, pageHeader, toast } from "./ut
 import { mountEditor } from "./editor.js";
 import { componentCount, layoutThumb } from "./components.js";
 import { profileChoices, runInputs, runSources, sourcesFrom } from "./importing.js";
+import { START_MODES, startRoles, startsFrom } from "./starts.js";
 
 export async function renderTemplates(page) {
   const templates = await call("list_templates");
@@ -154,8 +155,9 @@ export async function startRunDialog(templateId, templates, revision) {
   const inputs = runInputs(template.data, profiles);
   const sources = runSources(template.data, profiles);
   const hardware = sources.some(s => s.hardware);
+  const roles = startRoles(template.data);
   const speeds = hardware ? [[1, "1x (real time)"]] : [[1, "1x (real time)"], [10, "10x"], [20, "20x"], [50, "50x"]];
-  openDialog(`
+  const dialog = openDialog(`
     <form>
       <h2>Start run</h2>
       <p>${esc(template.data.name)} · revision ${rev}</p>
@@ -163,13 +165,28 @@ export async function startRunDialog(templateId, templates, revision) {
       <label class="field">Session name <input name="name" value="${esc(template.data.name)} · ${esc(inputs.suffix)}"></label>
       <label class="field">Replay speed
         <select name="speed">${speeds.map(([v, label]) => `<option value="${v}"${v === (hardware ? 1 : 20) ? " selected" : ""}>${label}</option>`).join("")}</select></label>
+      <label class="field">Start
+        <select name="start">${START_MODES.map(([v, label]) => `<option value="${v}">${label}</option>`).join("")}</select></label>
+      <p class="small muted" data-start-for="together">Every instrument starts when the run starts. Stop run stops them all.</p>
+      <div class="inline" data-start-for="stagger">${roles.map(r => `<label class="field">${esc(r.label)}, after (s)
+        <input type="number" min="0" step="any" name="delay:${esc(r.role)}" value="${r.delay}" style="width:90px"></label>`).join("")}</div>
+      <div data-start-for="hand">${roles.map(r => `<label class="check"><input type="checkbox" name="hand:${esc(r.role)}">${esc(r.label)}: start it from the run page</label>`).join("")}
+        <span class="small muted">Unticked instruments start when the run starts.</span></div>
       ${sources.map((s, i) => `<label class="field">${s.hardware ? "Spool file" : "Recording to replay"} for ${esc(s.label)} (role ${esc(s.role)})
         <input name="source${i}" placeholder="${esc(s.hint)}" title="${esc(s.path)}" data-browse="${s.browse}"><span class="small muted">Leave empty to use the profile's. Not saved to the profile or the template.</span></label>`).join("")}
       <p class="error-text"></p>
       <div class="actions"><button value="cancel">Cancel</button><button class="primary" value="ok">Check readiness and start</button></div>
     </form>`, async form => {
       const chosen = sourcesFrom(sources.map((s, i) => [s.role, form.get(`source${i}`)]));
-      const manifest = await call("start_run", { template_id: template.data.id, revision: rev, speed: Number(form.get("speed")), name: form.get("name"), sources: chosen });
+      const starts = startsFrom(form.get("start"), roles, {
+        delays: Object.fromEntries(roles.map(r => [r.role, form.get(`delay:${r.role}`)])),
+        hand: Object.fromEntries(roles.map(r => [r.role, form.has(`hand:${r.role}`)])),
+      });
+      const manifest = await call("start_run", { template_id: template.data.id, revision: rev, speed: Number(form.get("speed")), name: form.get("name"), sources: chosen, starts });
       location.hash = `#/sessions/${manifest.id}`;
     });
+  const mode = dialog.querySelector('[name="start"]');
+  const showMode = () => dialog.querySelectorAll("[data-start-for]").forEach(el => (el.hidden = el.dataset.startFor !== mode.value));
+  mode.onchange = showMode;
+  showMode();
 }

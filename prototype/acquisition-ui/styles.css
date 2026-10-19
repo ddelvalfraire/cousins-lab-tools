@@ -156,6 +156,7 @@ details summary { cursor: pointer; color: var(--accent); }
 dialog { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; width: min(640px, 92vw); background: var(--surface); color: var(--fg); }
 dialog::backdrop { background: var(--backdrop); }
 dialog form { display: flex; flex-direction: column; gap: 14px; }
+[data-start-for][hidden] { display: none; }
 #toast { position: fixed; bottom: 20px; right: 20px; background: var(--fg); color: var(--surface); padding: 10px 14px; border-radius: 10px; max-width: 420px; z-index: 20; }
 .error-text { color: var(--destructive-text); white-space: pre-wrap; }
 
