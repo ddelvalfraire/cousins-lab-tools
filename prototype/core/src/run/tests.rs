@@ -75,6 +75,7 @@ fn launch(
         speed: SPEED,
         name: "group test",
         sources: &Sources::new(),
+        starts: &Starts::new(),
         build,
         join_timeout,
         clock,
@@ -557,6 +558,190 @@ fn roles_start_after_their_delays_and_record_requested_and_actual_times() {
     ));
 }
 
+/// Starts a group with `starts`, written as `start_run` takes them, in place of the template's
+/// delays for the roles it names.
+fn start_with(data_dir: &Path, template: Template, starts: Value, clock: HostClock) -> GroupRun {
+    let starts: Starts = serde_json::from_value(starts).unwrap();
+    let run = GroupRun::launch(Launch {
+        store: store(data_dir),
+        paths: &Paths::default(),
+        template,
+        profiles: &profiles(),
+        speed: SPEED,
+        name: "start test",
+        sources: &Sources::new(),
+        starts: &starts,
+        build: &build_adapter,
+        join_timeout: JOIN_TIMEOUT,
+        clock,
+    })
+    .unwrap();
+    assert_eq!(run.manifest().status, SessionStatus::Running);
+    run
+}
+
+#[test]
+fn together_starts_every_capture_at_the_group_start_whatever_the_template_delays() {
+    let _alone = alone();
+    let data = tempfile::tempdir().unwrap();
+    let run = start_with(
+        data.path(),
+        template_with(data.path(), json!({"light": {"start_delay_s": 75}})),
+        json!({"ms": {"delay_s": 0}, "light": {"delay_s": 0}}),
+        steady_clock(),
+    );
+    assert!(wait_until(20.0, || {
+        let m = run.manifest();
+        m.captures.values().all(|c| c.first_sample_utc.is_some())
+    }));
+    let manifest = stop(&run, false);
+    let t0 = manifest.run.as_ref().unwrap().group_start_utc.unwrap();
+    for c in manifest.captures.values() {
+        assert_eq!(
+            c.start,
+            Some(StartPlan::After { delay_s: 0.0 }),
+            "{}",
+            c.role
+        );
+        assert_eq!(c.requested_start_utc, Some(t0), "{}", c.role);
+        let gap = seconds(t0, c.start_command_utc.unwrap());
+        assert!(
+            (0.0..0.2).contains(&gap),
+            "{}: commanded {gap} s after t0",
+            c.role
+        );
+    }
+    assert_eq!(manifest.status, SessionStatus::Completed);
+}
+
+#[test]
+fn a_stagger_starts_the_second_capture_that_many_seconds_later() {
+    let _alone = alone();
+    let data = tempfile::tempdir().unwrap();
+    let run = start_with(
+        data.path(),
+        template_with(data.path(), json!({"light": {"start_delay_s": 75}})),
+        json!({"ms": {"delay_s": 0}, "light": {"delay_s": 25}}),
+        steady_clock(),
+    );
+    assert!(wait_until(20.0, || {
+        let m = run.manifest();
+        m.captures.values().all(|c| c.first_sample_utc.is_some())
+    }));
+    let manifest = stop(&run, false);
+    let t0 = manifest.run.as_ref().unwrap().group_start_utc.unwrap();
+    let (ms, light) = (&manifest.captures["ms"], &manifest.captures["light"]);
+    assert_eq!(light.start, Some(StartPlan::After { delay_s: 25.0 }));
+    assert_eq!(light.requested_delay_s, Some(25.0));
+    assert!((light.host_delay_s.unwrap() - 25.0 / SPEED).abs() < 1e-9);
+    assert!((seconds(t0, light.requested_start_utc.unwrap()) - 25.0 / SPEED).abs() < 1e-6);
+    let stagger = seconds(
+        ms.start_command_utc.unwrap(),
+        light.start_command_utc.unwrap(),
+    );
+    assert!(
+        (stagger - 25.0 / SPEED).abs() < 0.2,
+        "light commanded {stagger} s after ms"
+    );
+}
+
+#[test]
+fn a_hand_started_capture_waits_for_its_command_and_refuses_a_second() {
+    let _alone = alone();
+    let data = tempfile::tempdir().unwrap();
+    let clock = steady_clock();
+    let run = start_with(
+        data.path(),
+        template_with(data.path(), json!({"light": {"start_delay_s": 0}})),
+        json!({"light": {"manual": true}}),
+        Arc::clone(&clock),
+    );
+    assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
+    let waiting = &run.manifest().captures["light"];
+    assert_eq!(waiting.status, CaptureStatus::Waiting);
+    assert_eq!(
+        (
+            waiting.requested_start_utc,
+            waiting.start_command_utc,
+            waiting.rows
+        ),
+        (None, None, 0)
+    );
+    assert_eq!(
+        (waiting.requested_delay_s, waiting.host_delay_s),
+        (None, None)
+    );
+    assert_eq!(
+        invalid(run.start_capture("ms")),
+        "Mass spectrometer (mass 44 = CO2) starts after its delay, not by hand"
+    );
+    assert_eq!(
+        invalid(run.start_capture("pump")),
+        "Role pump is not in this run"
+    );
+
+    let before = clock();
+    run.start_capture("light").unwrap();
+    let after = clock();
+    assert!(matches!(
+        run.start_capture("light"),
+        Err(RunError::Conflict(m)) if m == "Ambit fluorometer with red actinic LED has already started"
+    ));
+    assert!(wait_until(20.0, || run.manifest().captures["light"].rows > 20));
+    let manifest = stop(&run, false);
+    let light = &manifest.captures["light"];
+    assert_eq!(light.start, Some(StartPlan::OnCommand));
+    let requested = light.requested_start_utc.unwrap();
+    assert!(before <= requested && requested <= after);
+    let gap = seconds(requested, light.start_command_utc.unwrap());
+    assert!(
+        (0.0..0.2).contains(&gap),
+        "commanded {gap} s after the start"
+    );
+    assert!(light.first_sample_utc.unwrap() >= light.start_command_utc.unwrap());
+    assert_eq!(manifest.status, SessionStatus::Completed);
+    assert!(matches!(
+        run.start_capture("light"),
+        Err(RunError::NotRunning)
+    ));
+}
+
+#[test]
+fn stopping_while_a_capture_waits_for_its_hand_start_ends_it_unstarted() {
+    let _shared = shared();
+    let data = tempfile::tempdir().unwrap();
+    let run = start_with(
+        data.path(),
+        template_with(data.path(), json!({"light": {"start_delay_s": 0}})),
+        json!({"light": {"manual": true}}),
+        Arc::new(utc_now),
+    );
+    assert!(wait_until(20.0, || run.manifest().captures["ms"].rows > 5));
+    let stopped = Instant::now();
+    let manifest = stop(&run, false);
+    assert!(
+        stopped.elapsed() < JOIN_TIMEOUT / 2,
+        "the stop waited for the unstarted capture"
+    );
+    let light = &manifest.captures["light"];
+    assert_eq!(light.status, CaptureStatus::NotStarted);
+    assert_eq!(
+        (
+            light.requested_start_utc,
+            light.start_command_utc,
+            light.first_sample_utc
+        ),
+        (None, None, None)
+    );
+    assert_eq!(light.rows, 0);
+    let samples = store(data.path())
+        .capture_dir(run.id(), "light")
+        .join("samples");
+    assert!(segments(&samples).unwrap().is_empty());
+    assert_eq!(manifest.captures["ms"].status, CaptureStatus::Completed);
+    assert_eq!(manifest.status, SessionStatus::Completed);
+}
+
 #[test]
 fn disabling_a_role_runs_the_remaining_roles_only() {
     let _shared = shared();
@@ -647,6 +832,7 @@ fn hardware_profile_reports_why_it_is_not_ready() {
             speed,
             None,
             &Sources::new(),
+            &Starts::new(),
         )
     };
     assert!(start(20.0).err().unwrap().to_string().contains("real time"));

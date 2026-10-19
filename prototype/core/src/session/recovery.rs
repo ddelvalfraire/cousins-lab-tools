@@ -87,6 +87,7 @@ mod tests {
             status,
             rows: 0,
             protocol_plan: None,
+            start: None,
             ignored_columns: None,
             timing: None,
             requested_start_utc: None,

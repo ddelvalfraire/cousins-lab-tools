@@ -83,6 +83,55 @@ pub enum OnFailure {
     StopGroup,
 }
 
+/// How one capture of a live run starts, chosen for that run only. In JSON it is
+/// `{"delay_s": 10}` or `{"manual": true}`, both in `start_run` and in the manifest.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(try_from = "StartJson", into = "StartJson")]
+pub enum StartPlan {
+    /// This many requested seconds after the group start; the host waits that divided by speed.
+    After { delay_s: f64 },
+    /// When the operator sends `start_capture` for the role.
+    OnCommand,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StartJson {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    delay_s: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    manual: Option<bool>,
+}
+
+impl TryFrom<StartJson> for StartPlan {
+    type Error = String;
+
+    fn try_from(json: StartJson) -> Result<Self, String> {
+        match (json.delay_s, json.manual) {
+            (Some(delay_s), None) if delay_s.is_finite() && delay_s >= 0.0 => {
+                Ok(StartPlan::After { delay_s })
+            }
+            (None, Some(true)) => Ok(StartPlan::OnCommand),
+            _ => Err("a start is {\"delay_s\": seconds, 0 or more} or {\"manual\": true}".into()),
+        }
+    }
+}
+
+impl From<StartPlan> for StartJson {
+    fn from(plan: StartPlan) -> Self {
+        match plan {
+            StartPlan::After { delay_s } => StartJson {
+                delay_s: Some(delay_s),
+                manual: None,
+            },
+            StartPlan::OnCommand => StartJson {
+                delay_s: None,
+                manual: Some(true),
+            },
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Host {
     pub hostname: String,
@@ -134,6 +183,8 @@ pub struct Capture {
     pub status: CaptureStatus,
     pub rows: u64,
     pub protocol_plan: Option<Value>,
+    /// How a live capture was started.
+    pub start: Option<StartPlan>,
     pub ignored_columns: Option<Vec<String>>,
     pub timing: Option<Value>,
     #[serde(default, with = "iso_time_opt")]
@@ -216,6 +267,7 @@ impl Serialize for Capture {
             map.serialize_entry("status", &self.status)?;
             map.serialize_entry("rows", &self.rows)?;
             map.serialize_entry("protocol_plan", &self.protocol_plan)?;
+            some(&mut map, "start", &self.start)?;
             some_time(&mut map, "requested_start_utc", &self.requested_start_utc)?;
             some_time(&mut map, "start_command_utc", &self.start_command_utc)?;
             some_time(&mut map, "first_sample_utc", &self.first_sample_utc)?;
@@ -346,6 +398,36 @@ mod tests {
         assert!(!CaptureStatus::Waiting.is_finished());
         assert!(!SessionStatus::Stopping.is_finished());
         assert!(SessionStatus::NotReady.is_finished());
+    }
+
+    #[test]
+    fn a_start_is_a_delay_or_a_hand_start_and_nothing_in_between() {
+        let read = |v: Value| serde_json::from_value::<StartPlan>(v);
+        assert_eq!(
+            read(serde_json::json!({"delay_s": 10})).unwrap(),
+            StartPlan::After { delay_s: 10.0 }
+        );
+        assert_eq!(
+            read(serde_json::json!({"manual": true})).unwrap(),
+            StartPlan::OnCommand
+        );
+        for refused in [
+            serde_json::json!({}),
+            serde_json::json!({"manual": false}),
+            serde_json::json!({"delay_s": -1}),
+            serde_json::json!({"delay_s": 5, "manual": true}),
+            serde_json::json!({"delay": 5}),
+        ] {
+            assert!(read(refused.clone()).is_err(), "{refused}");
+        }
+        assert_eq!(
+            serde_json::to_value(StartPlan::After { delay_s: 10.0 }).unwrap(),
+            serde_json::json!({"delay_s": 10.0})
+        );
+        assert_eq!(
+            serde_json::to_value(StartPlan::OnCommand).unwrap(),
+            serde_json::json!({"manual": true})
+        );
     }
 
     #[test]

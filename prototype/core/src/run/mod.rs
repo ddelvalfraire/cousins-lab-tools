@@ -1,4 +1,5 @@
-//! Group runs: start every enabled role of a template together, each after its own delay.
+//! Group runs: start every enabled role of a template together, each after its own delay or
+//! when the operator starts it.
 //!
 //! Requested start, the moment the engine started the adapter, and the first sample's receipt
 //! time are recorded separately. Starting adapters together does not make the instruments
@@ -31,10 +32,11 @@ use crate::legacy_frames::read_frames;
 use crate::pycompat::str_repr;
 use crate::session::{
     Capture, CaptureStatus, FLUSH_EVERY, FLUSH_ROWS, Manifest, OnFailure, RunInfo, SegmentWriter,
-    SessionError, SessionKind, SessionStatus, SessionStore, Source, event_columns, utc_now,
+    SessionError, SessionKind, SessionStatus, SessionStore, Source, StartPlan, event_columns,
+    utc_now,
 };
 use crate::templates::{Paths, Profiles, Template};
-use capture::{CaptureTask, Output};
+use capture::{CaptureTask, Output, Start};
 use live::{LiveBuffer, PointMaker, StoredRows};
 use markers::MarkerLog;
 use owner::{CaptureControl, Message, Owner, Published};
@@ -64,6 +66,8 @@ pub enum RunError {
     UnknownInstrument(String),
     /// Stop or mark on a session that is not running.
     NotRunning,
+    /// The run is in a state that refuses the request. The text says why.
+    Conflict(String),
     Instrument(InstrumentError),
     Session(SessionError),
 }
@@ -71,7 +75,7 @@ pub enum RunError {
 impl fmt::Display for RunError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            RunError::Invalid(message) => write!(f, "{message}"),
+            RunError::Invalid(message) | RunError::Conflict(message) => write!(f, "{message}"),
             RunError::UnknownInstrument(id) => write!(f, "Not found: {}", str_repr(id)),
             RunError::NotRunning => write!(f, "This session is not running"),
             RunError::Instrument(e) => write!(f, "{e}"),
@@ -97,6 +101,22 @@ impl From<SessionError> for RunError {
 /// A replacement for the file a role's profile reads, keyed by role. The profile on disk and
 /// the template stay as they are; the capture's manifest records the path used.
 pub type Sources = BTreeMap<String, PathBuf>;
+
+/// How each role starts in one run, keyed by role. A role left out starts after its template's
+/// `start_delay_s`. Never written to the template.
+pub type Starts = BTreeMap<String, StartPlan>;
+
+/// Refuses a start for a role the run does not start.
+pub fn check_starts(template: &Template, starts: &Starts) -> Result<(), RunError> {
+    let enabled: BTreeMap<&str, &Value> = template.enabled_roles().into_iter().collect();
+    match starts
+        .keys()
+        .find(|role| !enabled.contains_key(role.as_str()))
+    {
+        Some(role) => Err(RunError::Invalid(format!("Role {role} is not in this run"))),
+        None => Ok(()),
+    }
+}
 
 /// The profile setting that names the file a role reads, for adapters whose source a run may
 /// replace. A simulated spool writes its own file, so it has none.
@@ -225,6 +245,7 @@ struct Launch<'a> {
     speed: f64,
     name: &'a str,
     sources: &'a Sources,
+    starts: &'a Starts,
     build: &'a BuildAdapter,
     join_timeout: Duration,
     clock: HostClock,
@@ -240,12 +261,14 @@ struct Prepared {
     clocks: Vec<Clock>,
     aliases: BTreeMap<String, String>,
     live: Arc<LiveBuffer>,
+    start: StartPlan,
 }
 
 impl GroupRun {
     /// Checks the request, creates the session, prepares every enabled role and, when all are
     /// ready, starts them. A group with a role that is not ready is saved as `not_ready` and
     /// starts nothing. `name` falls back to the template's name.
+    #[allow(clippy::too_many_arguments)]
     pub fn start(
         store: Arc<SessionStore>,
         paths: &Paths,
@@ -254,9 +277,11 @@ impl GroupRun {
         speed: f64,
         name: Option<&str>,
         sources: &Sources,
+        starts: &Starts,
     ) -> Result<GroupRun, RunError> {
         check_request(&template, profiles, speed)?;
         check_sources(&template, profiles, sources)?;
+        check_starts(&template, starts)?;
         let fallback = template.data()["name"]
             .as_str()
             .unwrap_or_default()
@@ -270,6 +295,7 @@ impl GroupRun {
             speed,
             name,
             sources,
+            starts,
             build: &build_adapter,
             join_timeout: JOIN_TIMEOUT,
             clock: Arc::new(utc_now),
@@ -285,6 +311,7 @@ impl GroupRun {
             speed,
             name,
             sources,
+            starts,
             build,
             join_timeout,
             clock,
@@ -299,7 +326,13 @@ impl GroupRun {
             let info = built.adapter.describe();
             let readiness = built.adapter.check_ready();
             ready &= readiness.ok;
-            let delay = cfg["start_delay_s"].as_f64().unwrap_or(0.0);
+            let start = starts.get(role).copied().unwrap_or(StartPlan::After {
+                delay_s: cfg["start_delay_s"].as_f64().unwrap_or(0.0),
+            });
+            let delay = match start {
+                StartPlan::After { delay_s } => Some(delay_s),
+                StartPlan::OnCommand => None,
+            };
             let capture = Capture {
                 role: role.into(),
                 label: cfg["label"].as_str().unwrap_or(role).into(),
@@ -313,8 +346,8 @@ impl GroupRun {
                 columns: info.columns.clone(),
                 clocks: info.clocks.clone(),
                 aliases: info.aliases.clone().into_iter().collect(),
-                requested_delay_s: Some(delay),
-                host_delay_s: Some(delay / speed),
+                requested_delay_s: delay,
+                host_delay_s: delay.map(|d| d / speed),
                 on_failure: Some(
                     serde_json::from_value(cfg["on_failure"].clone())
                         .unwrap_or(OnFailure::ContinueOthers),
@@ -329,6 +362,7 @@ impl GroupRun {
                 protocol_plan: template
                     .protocol_plan(role)
                     .map(|plan| serde_json::to_value(plan).expect("a plan is plain data")),
+                start: Some(start),
                 ignored_columns: None,
                 timing: None,
                 requested_start_utc: None,
@@ -348,6 +382,7 @@ impl GroupRun {
                 live: Arc::default(),
                 output_dir: dir,
                 built,
+                start,
             });
         }
         manifest.run = Some(RunInfo {
@@ -418,7 +453,7 @@ impl GroupRun {
             };
             simulators.extend(p.built.simulator);
             let stored = (p.output_dir.join("samples"), p.columns);
-            tasks.push((p.built.adapter, output, stored));
+            tasks.push((p.built.adapter, output, stored, p.start));
         }
 
         let (t0, t0_utc) = (Instant::now(), clock());
@@ -430,7 +465,7 @@ impl GroupRun {
             run.group_start_utc = Some(t0_utc);
         }
         let mut controls = IndexMap::new();
-        for (adapter, mut output, (samples, columns)) in tasks {
+        for (adapter, mut output, (samples, columns), plan) in tasks {
             output.points.t0 = t0_utc;
             output.live.attach_stored(StoredRows {
                 samples,
@@ -438,19 +473,32 @@ impl GroupRun {
                 maker: output.points.clone(),
             });
             let capture = &mut manifest.captures[&output.role];
-            let delay =
-                Duration::from_micros((capture.host_delay_s.unwrap_or(0.0) * 1e6).round() as u64);
-            capture.requested_start_utc = Some(after(t0_utc, delay));
-            capture.status = if delay.is_zero() {
-                CaptureStatus::Starting
-            } else {
-                CaptureStatus::Waiting
+            let mut command = None;
+            let start = match plan {
+                StartPlan::After { .. } => {
+                    let delay = Duration::from_micros(
+                        (capture.host_delay_s.unwrap_or(0.0) * 1e6).round() as u64,
+                    );
+                    capture.requested_start_utc = Some(after(t0_utc, delay));
+                    capture.status = if delay.is_zero() {
+                        CaptureStatus::Starting
+                    } else {
+                        CaptureStatus::Waiting
+                    };
+                    Start::At(t0 + delay)
+                }
+                StartPlan::OnCommand => {
+                    capture.status = CaptureStatus::Waiting;
+                    let (send, receive) = mpsc::channel();
+                    command = Some(send);
+                    Start::OnCommand(receive)
+                }
             };
             let role = output.role.clone();
             let stop = output.stop.clone();
             let task = CaptureTask {
                 adapter,
-                start_at: t0 + delay,
+                start,
                 cancel: Arc::clone(&cancel),
                 clock: Arc::clone(&clock),
                 output,
@@ -463,6 +511,7 @@ impl GroupRun {
                 role,
                 CaptureControl {
                     stop,
+                    start: command,
                     thread: Some(thread),
                     ended: false,
                 },
@@ -536,6 +585,21 @@ impl GroupRun {
         let started = self.0.started.as_ref().ok_or(RunError::NotRunning)?;
         let (reply, answer) = mpsc::channel();
         if started.owner.send(Message::Stop { cancel, reply }).is_err() {
+            return Err(RunError::NotRunning);
+        }
+        answer.recv().unwrap_or(Err(RunError::NotRunning))
+    }
+
+    /// Starts a capture that waits for the operator. Refused for a role the run does not
+    /// have, one that starts on a delay, one already started, and once the run is not running.
+    pub fn start_capture(&self, role: &str) -> Result<(), RunError> {
+        let started = self.0.started.as_ref().ok_or(RunError::NotRunning)?;
+        let (reply, answer) = mpsc::channel();
+        let message = Message::StartCapture {
+            role: role.into(),
+            reply,
+        };
+        if started.owner.send(message).is_err() {
             return Err(RunError::NotRunning);
         }
         answer.recv().unwrap_or(Err(RunError::NotRunning))

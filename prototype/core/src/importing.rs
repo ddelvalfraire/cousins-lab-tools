@@ -247,6 +247,7 @@ pub fn import_session(
             status: CaptureStatus::Imported,
             rows: 0,
             protocol_plan: None,
+            start: None,
             ignored_columns: None,
             timing: None,
             requested_start_utc: None,

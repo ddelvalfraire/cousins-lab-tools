@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Receiver, Sender};
 use std::time::Instant;
 
 use chrono::{DateTime, Utc};
@@ -18,10 +18,17 @@ use crate::session::{SegmentWriter, SessionError, event_row};
 
 pub(super) struct CaptureTask {
     pub adapter: Box<dyn Instrument>,
-    pub start_at: Instant,
+    pub start: Start,
     pub cancel: Arc<AtomicBool>,
     pub clock: HostClock,
     pub output: Output,
+}
+
+/// When the thread starts its adapter.
+pub(super) enum Start {
+    At(Instant),
+    /// When the owner sends on the channel. The owner drops the sender to say it never will.
+    OnCommand(Receiver<()>),
 }
 
 /// Where a capture's rows and events go: its segments, and reports to the owner.
@@ -44,13 +51,17 @@ impl CaptureTask {
     pub fn run(self) {
         let CaptureTask {
             mut adapter,
-            start_at,
+            start,
             cancel,
             clock,
             mut output,
         } = self;
         let stop = output.stop.clone();
-        if stop.wait(start_at.saturating_duration_since(Instant::now())) {
+        let stopped = match start {
+            Start::At(at) => stop.wait(at.saturating_duration_since(Instant::now())),
+            Start::OnCommand(command) => command.recv().is_err() || stop.is_set(),
+        };
+        if stopped {
             end(&*adapter, &cancel, &output, Report::NotStarted);
             return;
         }

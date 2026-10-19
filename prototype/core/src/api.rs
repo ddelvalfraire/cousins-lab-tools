@@ -22,7 +22,7 @@ use crate::export::{export_aligned, export_capture_csv, export_legacy_frames};
 use crate::expr::Params;
 use crate::importing::{ImportError, ImportFile, import_session};
 use crate::query::{AnalysisError, run_query, session_events};
-use crate::run::{Cursors, GroupRun, RunError, Sources};
+use crate::run::{Cursors, GroupRun, RunError, Sources, Starts};
 use crate::schemas;
 use crate::session::{Manifest, SessionError, SessionStatus, SessionStore, iso};
 use crate::templates::{
@@ -83,7 +83,7 @@ impl From<RunError> for ApiError {
         let kind = match e {
             RunError::Invalid(_) => ErrorKind::Invalid,
             RunError::UnknownInstrument(_) => ErrorKind::NotFound,
-            RunError::NotRunning => ErrorKind::Conflict,
+            RunError::NotRunning | RunError::Conflict(_) => ErrorKind::Conflict,
             RunError::Instrument(_) | RunError::Session(_) => ErrorKind::Internal,
         };
         ApiError::new(kind, e)
@@ -217,6 +217,12 @@ impl Engine {
                 let run = self.running(&a.session_id, "This session is not running")?;
                 run.stop(a.cancel)?;
                 reply(json!({"status": "stopping"}))
+            }
+            "start_capture" => {
+                let a: StartCaptureArgs = parse(args)?;
+                let run = self.running(&a.session_id, "This session is not running")?;
+                run.start_capture(&a.role)?;
+                reply(json!({"status": "starting"}))
             }
             "mark_session" => {
                 let a: MarkArgs = parse(args)?;
@@ -547,6 +553,7 @@ impl Engine {
             a.speed.unwrap_or(DEFAULT_SPEED),
             a.name.as_deref(),
             &a.sources,
+            &a.starts,
         )?;
         let manifest = (*run.manifest()).clone();
         self.runs.lock().unwrap().insert(manifest.id.clone(), run);
@@ -706,6 +713,12 @@ struct StopArgs {
 }
 
 #[derive(Deserialize)]
+struct StartCaptureArgs {
+    session_id: String,
+    role: String,
+}
+
+#[derive(Deserialize)]
 struct MarkArgs {
     session_id: String,
     event: String,
@@ -719,6 +732,8 @@ struct StartRun {
     name: Option<String>,
     #[serde(default)]
     sources: Sources,
+    #[serde(default)]
+    starts: Starts,
 }
 
 #[derive(Deserialize)]

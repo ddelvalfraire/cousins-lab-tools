@@ -26,7 +26,8 @@ use crate::contract::StopSignal;
 use crate::protocol::ProtocolPlan;
 use crate::pycompat::format_g;
 use crate::session::{
-    CaptureStatus, Manifest, OnFailure, SessionError, SessionStatus, SessionStore, segments,
+    CaptureStatus, Manifest, OnFailure, SessionError, SessionStatus, SessionStore, StartPlan,
+    segments,
 };
 use crate::simulate::SpoolSimulator;
 
@@ -37,6 +38,10 @@ pub(super) enum Message {
     },
     Stop {
         cancel: bool,
+        reply: Sender<Result<(), RunError>>,
+    },
+    StartCapture {
+        role: String,
         reply: Sender<Result<(), RunError>>,
     },
 }
@@ -70,8 +75,18 @@ pub(super) enum Outcome {
 
 pub(super) struct CaptureControl {
     pub stop: StopSignal,
+    /// Present while a capture waits for the operator's start.
+    pub start: Option<Sender<()>>,
     pub thread: Option<JoinHandle<()>>,
     pub ended: bool,
+}
+
+impl CaptureControl {
+    /// Dropping the start sender ends a capture still waiting for the operator, unstarted.
+    fn ask_to_stop(&mut self) {
+        self.start = None;
+        self.stop.set();
+    }
 }
 
 /// What the owner shares with the handle. Only the owner writes `manifest`.
@@ -152,6 +167,12 @@ impl Owner {
                 let _ = reply.send(result);
                 false
             }
+            Message::StartCapture { role, reply } => {
+                let result = self.start_capture(&role);
+                let saved = result.is_ok();
+                let _ = reply.send(result);
+                saved
+            }
         }
     }
 
@@ -191,8 +212,8 @@ impl Owner {
                 {
                     self.manifest.stopped_by =
                         Some(format!("{role} failed and its policy is stop_group"));
-                    for other in self.captures.values() {
-                        other.stop.set();
+                    for other in self.captures.values_mut() {
+                        other.ask_to_stop();
                     }
                 }
             }
@@ -210,9 +231,39 @@ impl Owner {
         self.save();
         self.publish();
         self.cancel.store(cancel, Ordering::SeqCst);
-        for capture in self.captures.values() {
-            capture.stop.set();
+        for capture in self.captures.values_mut() {
+            capture.ask_to_stop();
         }
+        Ok(())
+    }
+
+    /// The requested start of a hand-started capture is the moment its command arrives here.
+    fn start_capture(&mut self, role: &str) -> Result<(), RunError> {
+        if self.manifest.status != SessionStatus::Running {
+            return Err(RunError::NotRunning);
+        }
+        let (Some(control), Some(capture)) = (
+            self.captures.get_mut(role),
+            self.manifest.captures.get_mut(role),
+        ) else {
+            return Err(RunError::Invalid(format!("Role {role} is not in this run")));
+        };
+        if capture.start != Some(StartPlan::OnCommand) {
+            return Err(RunError::Invalid(format!(
+                "{} starts after its delay, not by hand",
+                capture.label
+            )));
+        }
+        let Some(start) = control.start.take() else {
+            return Err(RunError::Conflict(match capture.requested_start_utc {
+                Some(_) => format!("{} has already started", capture.label),
+                None => format!("{} was stopped before it started", capture.label),
+            }));
+        };
+        capture.requested_start_utc = Some((self.clock)());
+        capture.status = CaptureStatus::Starting;
+        // The thread waits on this until the sender is dropped, so it is still there to receive.
+        let _ = start.send(());
         Ok(())
     }
 

@@ -610,3 +610,56 @@ fn session_events_place_flashes_and_operator_markers_on_the_run_clock() {
         "events are in run-clock order"
     );
 }
+
+#[test]
+fn a_run_starts_a_role_by_hand_through_start_capture() {
+    let _one_run = RUNS.lock().unwrap_or_else(|e| e.into_inner());
+    let (engine, _data) = engine();
+    let request =
+        |starts: Value| json!({"template_id": TEMPLATE, "speed": SPEED, "starts": starts});
+    let error = refused(
+        &engine,
+        "start_run",
+        request(json!({"light": {"manual": false}})),
+    );
+    assert_eq!(error.kind, ErrorKind::Invalid);
+    let error = refused(
+        &engine,
+        "start_run",
+        request(json!({"pump": {"delay_s": 0}})),
+    );
+    assert_eq!(
+        (error.kind, error.message.as_str()),
+        (ErrorKind::Invalid, "Role pump is not in this run")
+    );
+
+    let manifest = call(
+        &engine,
+        "start_run",
+        request(json!({"light": {"manual": true}})),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    assert_eq!(
+        manifest["captures"]["light"]["start"],
+        json!({"manual": true})
+    );
+    assert_eq!(manifest["captures"]["light"]["status"], "waiting");
+    let start = json!({"session_id": id, "role": "light"});
+    assert_eq!(
+        call(&engine, "start_capture", start.clone()),
+        json!({"status": "starting"})
+    );
+    let error = refused(&engine, "start_capture", start.clone());
+    assert_eq!(error.kind, ErrorKind::Conflict);
+    assert!(
+        error.message.ends_with("has already started"),
+        "{}",
+        error.message
+    );
+    wait_until(20, || rows(&engine, &id, "light") > 0);
+    stop(&engine, &id);
+    assert_eq!(
+        refused(&engine, "start_capture", start).kind,
+        ErrorKind::Conflict
+    );
+}

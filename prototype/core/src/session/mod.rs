@@ -30,6 +30,7 @@ use sha2::{Digest, Sha256};
 pub use events::{event_columns, event_row};
 pub use manifest::{
     Capture, CaptureStatus, Host, Manifest, OnFailure, RunInfo, SessionKind, SessionStatus, Source,
+    StartPlan,
 };
 pub use segment::{
     FLUSH_EVERY, FLUSH_ROWS, SegmentWriter, arrow_schema, read_segment, segment_rows, segments,

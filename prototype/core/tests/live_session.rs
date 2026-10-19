@@ -44,6 +44,7 @@ fn capture(role: &str, columns: Vec<Column>, aliases: &[(&str, &str)]) -> Captur
         status: CaptureStatus::Completed,
         rows: 2,
         protocol_plan: None,
+        start: None,
         ignored_columns: None,
         timing: None,
         requested_start_utc: None,
