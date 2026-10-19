@@ -1,0 +1,275 @@
+id: jii-leaf-disc-preset
+revision: 1
+name: Leaf disc gas exchange and PSII yield (JII preset)
+summary: >
+  One leaf disc per run. Mass 44 is calibrated with 0, 1, 2 and 3 µl CO2 injections into the
+  cuvette and zeroed per leaf; µbar CO2 and its rate follow every stored row. The Ambit runs
+  Protocol 2 under red actinic light, and the CO2 needle is removed after the 4th flash
+  ("closed system"). Each leaf gives dark respiration, net uptake after closing and the CO2
+  compensation point; each saturation flash gives Fs, Fm' and PhiPSII.
+evidence:
+  - "Protocol 2 and the closed-system comment: Python script to control Ambit system.ipynb, cell 11"
+  - "Offset 815.52 and (S - OFFSET) / R: notebook cell 13; Fluorescence column of Ambit raw data_sample_150_pl1.csv"
+  - "Injection curve, cuvette 1.38 ml, pressure 92.2 kPa and SLOPE 1831.11 µbar/mV: Raw data-mass spec.xlsx, RawDataAcquisition67Data I8:Q24"
+  - "Per-leaf mzero and ubar = (m44 - mzero) * P14: Raw data-mass spec.xlsx, sheets 150-pl1 and 150-pl2"
+  - "Dark respiration, flush, close, drawdown to the compensation point: MoM_2026-09-11-{Client}.md"
+  - "A sample's time range averaged by hand, fluorescence alongside: MoM_2026-09-25-{Client}.md"
+
+roles:
+  ms:
+    label: Mass spectrometer (mass 44 = CO2)
+    # The EZView simulator stamps frames with this machine's clock, which replay speed
+    # stretches, so readings cannot use it. Frame replay and the workbook carry elapsed time.
+    instrument: ms-legacy-frames-replay
+    import: ms_workbook
+    start_delay_s: 0
+    on_failure: continue_others
+  light:
+    label: Ambit fluorometer with red actinic LED
+    instrument: ambit-replay-150-pl1
+    import: ambit_csv
+    protocol: protocol_2
+    start_delay_s: 30
+    on_failure: continue_others
+
+protocols:
+  protocol_2:
+    source: notebook cell 11, Protocol_2, with ACTINIC_INT 225 as recorded in the sample 150 files
+    flash_red_level: 2500
+    vars: {$actinic: 225}
+    blocks:
+      sat_flash: [[M, 25, 0.05, 0], [A, R, 2500], [M, 10, 0.05, 250], [M, 5, 0.05, 150], [M, 5, 0.05, 100], [M, 10, 0.05, 250], [A, R, 0], [M, 10, 0.05, 0]]
+    steps:
+      - [A, R, $actinic]
+      - [M, 700, 0.1, 0]
+      - [P]
+      - [M, 700, 0.1, 0]
+      - [P]
+      - [M, 700, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 300, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 300, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 300, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 200, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 250, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 400, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 400, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 400, 0.1, 0]
+      - [P]
+      - {block: sat_flash}
+      - [A, R, $actinic]
+      - [M, 300, 0.1, 0]
+      - [P]
+      - [M, 300, 0.1, 0]
+      - [P]
+      - [M, 600, 0.1, 0]
+      - [P]
+
+parameters:
+  cuvette_ml: {value: 1.38, entry: true, unit: ml, label: Cuvette volume, note: "Workbook K21. Lab check"}
+  pressure_kpa: {value: 92.2, entry: true, unit: kPa, label: Barometric pressure,
+                 note: "Pullman pressure, workbook I21. Lab check: the day's reading or this constant"}
+  ubar_per_ul: {expr: "pressure_kpa * 10 / cuvette_ml", unit: µbar/µl, label: µbar per µl injected,
+                note: "1 µl is a fraction 1 / (ml * 1000) of the cuvette at the pressure: workbook I12 = M12 / (K21 * 1000) * I21 * 10000"}
+  ul_per_mv: {unit: µl/mV, label: CO2 cal slope, note: "Least-squares fit of the injection points"}
+  cal_intercept_ul: {unit: µl, label: Intercept}
+  ubar_per_mv: {expr: "ul_per_mv * ubar_per_ul", unit: µbar/mV, label: CO2 per mV,
+                note: "Workbook P14, SLOPE of µbar on mV: 1831.11 on its four points"}
+  co2_zero_mv: {unit: mV, label: CO2 Zero, note: "Mass 44 at zero CO2 for this leaf; the workbook's mzero is 0.303 (pl1) and 0.302 (pl2)"}
+  temp_c: {entry: true, unit: °C, label: Temperature, note: "Required for µmol; no default"}
+  umol_per_ubar: {expr: "0.1 * cuvette_ml / (8.314462618 * (temp_c + 273.15))", unit: µmol/µbar, label: µmol CO2 per µbar,
+                  note: "n = pV/RT for the cuvette: 1 µbar is 0.1 Pa, 1 ml is 1e-6 m³"}
+  leaf_area_cm2: {entry: true, unit: cm², label: Leaf disc area, note: "Optional; the per m² columns stay empty until it is typed. Lab check"}
+  ambit_offset: {value: 815.52, unit: counts, label: Ambit offset, note: "No-chlorophyll baseline (notebook OFFSET)"}
+
+derived:
+  ubar_co2: {role: ms, expr: "(m44 - co2_zero_mv) * ubar_per_mv", unit: µbar, label: CO2}
+  # The workbook samples every 0.5 s, so a 10 s window holds about 20 rows.
+  d_ubar_co2: {role: ms, slope: {of: ubar_co2, window_s: 10, min_points: 15}, unit: µbar/s, label: dCO2/dt,
+               note: "Slope per second on the recording clock, rising is positive. Window is a lab check"}
+  fluorescence: {role: light, expr: "(S - ambit_offset) / R", unit: ratio, label: Fluorescence}
+
+calibrations:
+  co2:
+    label: CO2 injections
+    role: ms
+    line:
+      reading: {stat: mean, of: m44}
+      points:
+        zero: {label: CO2 Cal 0 µl, known: 0}
+        ul1: {label: CO2 Cal 1 µl, known: 1}
+        ul2: {label: CO2 Cal 2 µl, known: 2}
+        ul3: {label: CO2 Cal 3 µl, known: 3}
+      sets: {slope: ul_per_mv, intercept: cal_intercept_ul}
+      x_label: Mass 44 (mV)
+      y_label: CO2 injected (µl)
+  co2_zero:
+    label: CO2 Zero
+    role: ms
+    set: {co2_zero_mv: {stat: mean, of: m44}}
+
+measurements:
+  leaf:
+    label: Leaf disc
+    role: ms
+    labels: {leaf_name: Leaf}
+    steps:
+      dark: {label: Dark respiration, readings: {dark_slope: {stat: slope, of: ubar_co2}}}
+      uptake: {label: Net uptake after closing, readings: {closed_slope: {stat: slope, of: ubar_co2}}}
+      compensation: {label: Compensation point, readings: {plateau_ubar: {stat: mean, of: ubar_co2}}}
+    results:
+      respiration_ubar_s: {expr: "dark_slope", unit: µbar/s, label: "Dark respiration (release +)"}
+      uptake_ubar_s: {expr: "-closed_slope", unit: µbar/s, label: "Net uptake (uptake +)"}
+      compensation_ubar: {expr: "plateau_ubar", unit: µbar, label: CO2 compensation point}
+      respiration_umol_s: {expr: "respiration_ubar_s * umol_per_ubar", unit: µmol/s, label: Dark respiration}
+      uptake_umol_s: {expr: "uptake_ubar_s * umol_per_ubar", unit: µmol/s, label: Net uptake}
+      respiration_m2: {expr: "respiration_umol_s / (leaf_area_cm2 * 0.0001)", unit: µmol/m²/s, label: Dark respiration per m²}
+      uptake_m2: {expr: "uptake_umol_s / (leaf_area_cm2 * 0.0001)", unit: µmol/m²/s, label: Net uptake per m²}
+  flash:
+    label: Saturation flash
+    role: light
+    labels: {flash_name: Flash}
+    steps:
+      fs: {label: Fs before the flash, readings: {fs_mean: {stat: mean, of: fluorescence}}}
+      fm: {label: "Fm' during the flash", readings: {fm_max: {stat: max, of: fluorescence}}}
+    results:
+      fs: {expr: "fs_mean", unit: ratio, label: Fs}
+      fm_prime: {expr: "fm_max", unit: ratio, label: "Fm'"}
+      # The notebook names PSII but computes only (S - offset) / R; the yield formula is the
+      # usual light-adapted one, not something the lab's code does.
+      phi_psii: {expr: "(fm_max - fs_mean) / fm_max", unit: "ratio (lab check)", label: "PhiPSII = (Fm' - Fs) / Fm'"}
+
+events:
+  closed_system:
+    label: Closed system (CO2 supply needle removed)
+    operator_marker: true
+    detect: {role: light, kind: sat_flash, number: 4}
+    note: >
+      The notebook places needle removal right after the 4th flash. Using the 4th flash
+      as the event is an inference: it matches the workbook zero rows to within the MS
+      sample interval but has not been confirmed with the researcher.
+  missing_frames:
+    label: Frame files missing from the recording
+
+# On a finished run a range can be read only on the elapsed reference, so review opens there;
+# the Together view lines the plants up when the reference is switched to the shared event.
+alignment:
+  default_reference: elapsed
+  event: closed_system
+  trial_role: light
+  window_s: [-320, 438.5]
+
+charts:
+  - id: co2
+    title: CO2 in cuvette
+    unit: µbar
+    x: source
+    series: [{role: ms, value: ubar_co2}]
+  - id: co2_rate
+    title: CO2 rate
+    unit: µbar/s
+    x: source
+    series: [{role: ms, value: d_ubar_co2}]
+  - id: mass44
+    title: Mass 44 signal
+    unit: mV
+    x: source
+    series: [{role: ms, value: m44}]
+  - id: co2_cal
+    kind: xy
+    title: CO2 injections
+    x_label: Mass 44 (mV)
+    y_label: CO2 injected (µl)
+    series: [{calibration: co2}]
+  - id: fluorescence
+    title: PSII fluorescence
+    unit: (S - offset) / R
+    x: source
+    series: [{role: light, value: fluorescence}]
+    markers: {role: light, kind: sat_flash}
+  - id: co2_together
+    title: CO2 in cuvette
+    unit: µbar
+    series: [{role: ms, value: ubar_co2}]
+  - id: fluorescence_together
+    title: PSII fluorescence
+    unit: (S - offset) / R
+    series: [{role: light, value: fluorescence}]
+    markers: {role: light, kind: sat_flash}
+
+layout:
+  views:
+    - id: gas
+      name: Gas
+      components:
+        - {id: co2-chart, kind: chart, chart: co2, x: 0, y: 0, w: 8, h: 5}
+        - {id: cal-values, kind: inputs, title: CO2 calibration, parameters: [ubar_per_mv, co2_zero_mv, ul_per_mv, cal_intercept_ul], x: 8, y: 0, w: 4, h: 4}
+        - {id: cal-chart, kind: chart, chart: co2_cal, x: 8, y: 4, w: 4, h: 5}
+        - {id: rate-chart, kind: chart, chart: co2_rate, x: 0, y: 5, w: 8, h: 4}
+        - {id: mass44-chart, kind: chart, chart: mass44, x: 0, y: 9, w: 8, h: 4}
+        - {id: constants, kind: inputs, title: Cuvette, parameters: [cuvette_ml, pressure_kpa, ubar_per_ul], x: 8, y: 9, w: 4, h: 4}
+        - {id: gas-controls, kind: controls, role: ms, x: 0, y: 13, w: 12, h: 2}
+        - {id: cal-steps, kind: readings, title: Calibration, role: ms, steps: [co2.zero, co2.ul1, co2.ul2, co2.ul3, co2_zero], x: 0, y: 15, w: 4, h: 7}
+        - {id: leaf-steps, kind: readings, title: Leaf disc, role: ms, steps: [leaf.dark, leaf.uptake, leaf.compensation], x: 4, y: 15, w: 4, h: 7}
+        - {id: leaf-inputs, kind: inputs, title: Leaf, parameters: [temp_c, leaf_area_cm2, umol_per_ubar], x: 8, y: 15, w: 4, h: 7}
+        - {id: leaf-table, kind: table, measurement: leaf, x: 0, y: 22, w: 12, h: 6}
+    - id: fluorescence
+      name: Fluorescence
+      components:
+        - {id: fluorescence-chart, kind: chart, chart: fluorescence, x: 0, y: 0, w: 12, h: 6}
+        - {id: light-controls, kind: controls, role: light, x: 0, y: 6, w: 12, h: 2}
+        - {id: flash-steps, kind: readings, title: Flash, role: light, steps: [flash.fs, flash.fm], x: 0, y: 8, w: 3, h: 4}
+        - {id: light-values, kind: inputs, title: Ambit, parameters: [ambit_offset], x: 0, y: 12, w: 3, h: 3}
+        - {id: flash-table, kind: table, measurement: flash, x: 3, y: 8, w: 9, h: 7}
+    - id: together
+      name: Together
+      components:
+        - {id: co2-together-chart, kind: chart, chart: co2_together, x: 0, y: 0, w: 6, h: 6}
+        - {id: fluorescence-together-chart, kind: chart, chart: fluorescence_together, x: 6, y: 0, w: 6, h: 6}
+        - {id: co2-now, kind: metric, value: ubar_co2, x: 0, y: 6, w: 6, h: 2}
+        - {id: fluorescence-now, kind: metric, value: fluorescence, x: 6, y: 6, w: 6, h: 2}
+        - {id: controls, kind: controls, x: 0, y: 8, w: 12, h: 2}
+        - {id: captures, kind: captures, x: 0, y: 10, w: 12, h: 3}
