@@ -292,6 +292,80 @@ row before it to the first row after it, and hovering the band names the missing
 - Saving calibrations at STOP. Legacy kept them for the next run on its own; here the next
   session copies them or loads an exported file.
 
+## JII leaf-disc preset
+
+`core/templates/jii-leaf-disc-preset.yaml` does for the JII fluorometer and the mass spectrometer
+what the module presets do for the legacy screens. It moves the analysis Diego does in his
+workbook onto the run page. Roles, Protocol 2 and the closed-system event are those of the JII
+template, which stays as it was. The Gas view is in
+[jii-preset](docs/screenshots/jii-preset-1440.png).
+
+| View | For |
+|---|---|
+| Gas | CO2 in µbar, its rate, raw mass 44 and the injection curve, on the mass spec's own clock. Calibration and zero steps, the leaf steps, and the leaf table |
+| Fluorescence | Fluorescence with the saturation flashes marked, on the Ambit's own clock. Fs and Fm' steps and a row per flash |
+| Together | CO2 and fluorescence on one axis around the closed-system moment, as in the JII template. No readings |
+
+**Formulas.**
+
+- µbar per µl injected is `pressure_kpa * 10 / cuvette_ml`, from 92.2 kPa and 1.38 ml. The
+  workbook's I12 computes the same value as µl / (ml * 1000) * kPa * 10000.
+- A least-squares line of µl on mass 44 over the 0, 1, 2 and 3 µl injections, times µbar per µl,
+  gives `ubar_per_mv`. With the workbook's readings typed in (0.3111, 0.6912, 1.0681, 1.4005 mV)
+  it is 1831.1123, the workbook's P14.
+- `ubar_co2 = (m44 - co2_zero_mv) * ubar_per_mv`, with a zero per leaf, as in sheets 150-pl1
+  and 150-pl2. The rate is the slope over a 10 s window.
+- The leaf row has three readings. Dark respiration and net uptake are slopes of µbar CO2 over a
+  range, and the compensation point is the mean over the plateau. µmol/s comes from
+  n = pV/RT, which needs the temperature. Per m² comes from the leaf disc area and stays empty
+  until the area is typed.
+- Fluorescence is `(S - 815.52) / R` (notebook cell 13). A flash row reads Fs as the mean before
+  the flash and Fm' as the maximum during it (the `max` statistic). PhiPSII is
+  (Fm' - Fs) / Fm'.
+
+**Try it.** Import `Raw data-mass spec.xlsx` for ms and `Ambit raw data_sample_150_pl1.csv` for
+light. Typing the four injection readings and a zero of 0.303 reproduces the workbook's µbar
+column for 150-pl1: 981.03 at its first row and 6.015 at its last. On the sample:
+
+| Step | Range (s on that capture's clock) | Result |
+|---|---|---|
+| Net uptake after closing | 3713-3725 | 18.81 µbar/s, 0.00105 µmol/s at 25 °C |
+| Compensation point | 4100-4140 | 6.34 µbar (the workbook ends pl1 at 6.0) |
+| Dark respiration | 4186-4209 | 0.026 µbar/s |
+| Flashes 1 to 5 | Fs over the 2 s before each flash, Fm' over the 1.4 s from its start | PhiPSII 0.38, 0.36, 0.35, 0.35, 0.31 |
+
+Each of these readings was checked by hand against the workbook and the CSV.
+
+**How the page behaves.**
+
+- On a finished session a range can be selected only with the reference *Elapsed since each
+  start*, which is the preset's default. The Together view needs *Shared event*. The workbook has
+  no clock time, so the mass spec's event time is entered once under Align & compare. For
+  150-pl1 it is 3701.772 s, the workbook's zero row.
+- The selected range and the time window are shared by all views. A range brushed on the Gas
+  view, in mass spec seconds, still applies when you switch to Fluorescence, where the seconds are
+  the Ambit's. *All* spans the whole mass spec acquisition, so the Fluorescence view needs
+  *Custom* (for example 200-345 s) to show the flashes.
+- Start run replays the legacy frame files for ms. The EZView simulator stamps its frames with
+  this computer's clock, which replay speed stretches, so readings cannot use it. A live
+  EZView spool goes through `ms-ezview-spool-masses`.
+
+**Lab checks.**
+
+- PhiPSII is an inference. The notebook names PSII but computes only (S - offset) / R.
+- Sign convention: net uptake is positive when CO2 falls, and dark respiration is positive when
+  CO2 rises.
+- The sample has no dark stretch with the chamber closed before the light. The dark respiration
+  range above comes after the Ambit protocol ends (about 4146 s) and before the next flush.
+- The linear stretch after closing is short (CO2 falls about 18 µbar/s, then levels off), so
+  the uptake range is a judgement call.
+- Cuvette volume 1.38 ml and pressure 92.2 kPa are the workbook's constants. Both can be typed
+  over per session.
+- The leaf disc area has no default.
+- The workbook's µmol column (K12) gives 0.0222 µmol per µl injected. pV/RT at 92.2 kPa and
+  25 °C gives 0.0372. The preset uses pV/RT.
+- The 10 s rate window.
+
 ## Demonstration guide
 
 **1. Template.** Open *Experiment templates*, then the leaf-disc template. *Setup* lists the
