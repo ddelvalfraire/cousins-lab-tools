@@ -278,11 +278,14 @@ older points from the stored rows, so rates keep full windows. Readings and anal
 stored rows as before. The page keeps the same bound per series: past 75,000 points it halves
 all but the last 25,000.
 
+**Missing frame files.** Legacy drew a straight line across frames missing from a recording.
+Here every time chart of that capture's role shades the hole, live and on review, from the last
+row before it to the first row after it, and hovering the band names the missing frames.
+
 **Known gaps.** These are legacy features the presets do not have yet:
 
 - Saving calibrations at STOP. Legacy kept them for the next run on its own; here the next
   session copies them or loads an exported file.
-- Legacy frame gaps are stored as events but not drawn on charts on the recording clock.
 
 ## Demonstration guide
 
