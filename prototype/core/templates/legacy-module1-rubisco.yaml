@@ -135,7 +135,6 @@ charts:
       - {role: ms, value: m46, label: Mass 46, color: "#911eb4"}
       - {role: ms, value: m47, label: Mass 47, color: "#42d4f4"}
       - {role: ms, value: m49, label: Mass 49, color: "#f58231"}
-    markers: {role: ms, kind: missing_frames}
 
 layout:
   views:

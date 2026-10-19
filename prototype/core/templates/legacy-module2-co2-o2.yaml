@@ -105,7 +105,6 @@ charts:
     series:
       - {role: ms, value: m32, label: Mass 32, color: "#800000"}
       - {role: ms, value: m44, label: Mass 44, color: "#4363d8"}
-    markers: {role: ms, kind: missing_frames}
 
 layout:
   views:
