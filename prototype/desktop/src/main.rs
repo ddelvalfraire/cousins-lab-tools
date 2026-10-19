@@ -72,7 +72,17 @@ fn main() {
                 None => app.path().app_data_dir()?,
             };
             std::fs::create_dir_all(&data_dir)?;
-            let engine = Engine::open(Paths::default(), &data_dir).map_err(|e| e.message)?;
+            let repo = app.path().resource_dir()?.join("demo-resources");
+            let paths = if repo.is_dir() {
+                Paths {
+                    templates: repo.join("prototype/core/templates"),
+                    instruments: repo.join("prototype/core/instruments"),
+                    repo,
+                }
+            } else {
+                Paths::default()
+            };
+            let engine = Engine::open(paths, &data_dir).map_err(|e| e.message)?;
             app.manage(Arc::new(engine));
 
             // wry sets WebView2's browser arguments itself, which overrides the environment

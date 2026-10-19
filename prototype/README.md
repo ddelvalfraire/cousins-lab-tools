@@ -59,6 +59,10 @@ with `kind` one of `not_found`, `invalid`, `conflict`, or `internal`.
 
 ## Run it
 
+For a Mac demo, run `bash prototype/scripts/build-macos-demo.sh` from the repository root.
+It builds a local app with the templates and reference recordings bundled inside and places
+it in `~/Downloads/Cousins Lab Demo`. See [the Mac demo walkthrough](docs/MAC-DEMO.md).
+
 Rust 1.90 or later. The engine's tests run anywhere:
 
 ```
@@ -546,10 +550,11 @@ first proof of concept.
 
 - **No hardware.** Neither the EZView spool format nor Ambit serial timing has been checked
   against the instruments. The simulator follows the format `readEZView.py` parses.
-- **The window is verified on Windows 11 only.** Linux and macOS builds of the desktop crate
-  are untested; the WSL machine used here has no `webkit2gtk-4.1`.
-- **Profiles read files from the repository.** `${repo}` in an instrument profile resolves to
-  the checkout the app was built from. A packaged app would need the reference files bundled.
+- **Desktop platform checks.** The original window checks were on Windows 11. The Mac demo
+  build uses the native macOS webview. Linux remains untested; the WSL machine used here has
+  no `webkit2gtk-4.1`.
+- **Reference recordings.** The Mac demo app includes its profiles, templates, and reference
+  files. Unpackaged builds read them from the checkout the app was built from.
 - **Slow previews in debug builds.** An alignment preview takes 4 to 7 s in a Windows debug
   build. In the window, saving while previews were still redrawing stored an alignment without
   the entered event times and parameter once; with each redraw finished first, the save was
