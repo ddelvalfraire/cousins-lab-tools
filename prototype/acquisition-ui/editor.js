@@ -4,6 +4,7 @@ import { call, esc, icon, openDialog } from "./util.js";
 import { CATALOG, find, placeBelow, settle, SIZES, uniqueId } from "./layout.js";
 import { componentTitle } from "./components.js";
 import { templateSteps } from "./analysis.js";
+import { mountPreviews, previewBody } from "./editor-preview.js";
 
 const SECTIONS = ["Visualize", "Configure", "Operate", "Arrange"];
 const KIND_ICON = Object.fromEntries(CATALOG.map(c => [c.kind, c.icon]));
@@ -31,7 +32,7 @@ function editGrid(items, ctx) {
       <header class="tile-header"><div class="tile-title"><button class="drag-handle quiet icon-only" data-drag="${esc(c.id)}" aria-label="Move">${icon("grip")}</button>
         <h3>${esc(componentTitle(c, ctx.template))}</h3></div><span class="source-tag">${icon(KIND_ICON[c.kind])}</span></header>
       ${c.kind === "group" ? editGrid(c.components, { ...ctx, listId: c.id })
-        : `<p class="small muted">${esc(binding(c, ctx.template))}</p>`}
+        : previewBody(c, ctx.template)}
       ${ctx.hidden[c.id] ? `<p class="small hidden-note">${icon("info")}Hidden in this revision: ${esc(ctx.hidden[c.id])}</p>` : ""}
       <span class="tile-size small muted">${c.w} × ${c.h}</span>
       <button class="resize-handle quiet icon-only" data-resize="${esc(c.id)}" aria-label="Resize">${icon("resize")}</button>
@@ -46,6 +47,7 @@ function inspector(c, template) {
   return `
     <div class="section-head"><div><span class="small muted">${esc(CATALOG.find(x => x.kind === c.kind).name)}</span><h3>${esc(componentTitle(c, template))}</h3></div>
       <button class="quiet icon-only" data-deselect aria-label="Close">${icon("close")}</button></div>
+    <p class="small muted">${esc(binding(c, template))}</p>
     ${field("Title", `<input data-field="title" value="${esc(c.title || "")}" placeholder="${esc(componentTitle({ ...c, title: "" }, template))}">`)}
     ${c.kind === "chart" ? field("Chart", select("chart", d.charts.map(ch => [ch.id, ch.title]), c.chart)) : ""}
     ${c.kind === "metric" ? field("Derived value", select("value", Object.entries(d.derived).map(([k, v]) => [k, `${v.label} (${v.role}, ${v.unit})`]), c.value)) : ""}
@@ -103,11 +105,14 @@ function askName(title, value, apply) {
 export function mountEditor(el, template, { draft, onSaved }) {
   const { columns, ...initial } = structuredClone(template.layout);
   const layout = (draft.layout = initial);
+  template = { ...template, data: draft };
   const latest = Math.max(...template.revisions);
   const state = { view: layout.views[0].id, selected: null, dirty: false, catalogOpen: false, filter: "", error: "" };
   const currentView = () => layout.views.find(v => v.id === state.view);
+  let disposePreviews = () => {};
 
   const render = () => {
+    disposePreviews();
     const view = currentView();
     const selected = state.selected && find(layout, state.selected)?.component;
     el.innerHTML = `
@@ -123,10 +128,12 @@ export function mountEditor(el, template, { draft, onSaved }) {
       </div>
       ${state.error ? `<div class="notice bad">${icon("alert")}<div>${esc(state.error)}</div></div>` : ""}
       <p class="small muted">${state.dirty ? "Unsaved layout changes. Saving creates a new revision with them and any unsaved Setup changes; sessions keep the layout they ran with." : `Layout of revision ${template.data.revision}. Drag the handle to move, the corner to resize.`}</p>
+      <p class="layout-preview-notice">${icon("info")}<span><strong>Example preview</strong> Charts and readings use illustrative values. Select a tile to configure it; use its handle to move or resize it.</span></p>
       <div class="editor-workspace ${selected ? "has-inspector" : ""}">
         <div class="editor-canvas">${editGrid(view.components, { template, hidden: template.hidden_components, selected: state.selected, listId: view.id })}</div>
         ${selected ? `<aside class="inspector">${inspector(selected, template)}</aside>` : ""}
       </div>`;
+    disposePreviews = mountPreviews(el, template);
     if (state.catalogOpen) el.querySelector("[data-filter]")?.focus();
   };
 
@@ -268,4 +275,5 @@ export function mountEditor(el, template, { draft, onSaved }) {
   };
 
   render();
+  return () => disposePreviews();
 }

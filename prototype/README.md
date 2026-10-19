@@ -126,6 +126,11 @@ keeps the exact geometry. Run controls show only while the session is running: o
 run or an import their buttons can do nothing, and the header's status card shows the captures. A layout edit is saved as a new revision,
 and a session keeps the layout of the revision it ran with.
 
+The layout editor previews charts, metrics, controls, readings, parameters, and tables with
+labelled example data. The chart previews use the run page's chart renderer. Example values
+are for arranging the screen and are never saved as readings or session data. The editing
+grid keeps its columns when the inspector opens, with horizontal scrolling on smaller screens.
+
 **Starting the instruments.** The Start run dialog's *Start* choice applies to that run only and
 is never saved to the template. *Together*, the default, starts every instrument when the run
 starts. *Stagger* starts each after its own delay in seconds, prefilled from the template's start

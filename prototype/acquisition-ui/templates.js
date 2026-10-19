@@ -96,12 +96,13 @@ export async function renderTemplate(page, id, revision, tab) {
       <div class="actions"><button id="save-yaml">Validate and save as revision ${latest + 1}</button></div>
     </details></div></div>`;
 
+  let disposeEditor = () => {};
   const showTab = key => {
     page.querySelectorAll("[data-page-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.pageTab === key));
     page.querySelectorAll("[data-tab-panel]").forEach(p => (p.hidden = p.dataset.tabPanel !== key));
     const editor = page.querySelector('[data-tab-panel="layout"]');
     if (key === "layout" && !editor.childElementCount) {
-      mountEditor(editor, view, { draft: data, onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
+      disposeEditor = mountEditor(editor, view, { draft: data, onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
     }
   };
   page.querySelectorAll("[data-page-tab]").forEach(b => (b.onclick = () => showTab(b.dataset.pageTab)));
@@ -144,6 +145,7 @@ export async function renderTemplate(page, id, revision, tab) {
     catch (e) { page.querySelector("#yaml-error").textContent = e.message; }
   };
   page.querySelector("#start").onclick = () => startRunDialog(id, null, data.revision);
+  return () => disposeEditor();
 }
 
 export async function startRunDialog(templateId, templates, revision) {
