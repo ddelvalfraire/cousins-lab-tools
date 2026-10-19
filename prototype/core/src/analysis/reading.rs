@@ -182,10 +182,7 @@ pub fn read_range(
         .iter()
         .zip(points)
         .map(|((name, r), points)| {
-            let value = match r.stat {
-                Stat::Mean => mean(points.iter().map(|(_, v)| *v)),
-                Stat::Slope => slope(points.iter().copied()),
-            };
+            let value = statistic(r.stat, &points);
             let reading = ReadingValue {
                 stat: r.stat,
                 of: r.of.clone(),
@@ -197,6 +194,15 @@ pub fn read_range(
             (name.clone(), reading)
         })
         .collect())
+}
+
+/// `stat` over the `(t_s, value)` points of a range; None when it has no value.
+fn statistic(stat: Stat, points: &[(f64, f64)]) -> Option<f64> {
+    match stat {
+        Stat::Mean => mean(points.iter().map(|(_, v)| *v)),
+        Stat::Slope => slope(points.iter().copied()),
+        Stat::Max => points.iter().map(|(_, v)| *v).reduce(f64::max),
+    }
 }
 
 #[cfg(test)]
@@ -223,5 +229,13 @@ mod tests {
             refused.to_string(),
             "A range is two finite times in seconds, the first before the second"
         );
+    }
+
+    #[test]
+    fn a_max_is_the_largest_value_of_the_range_wherever_it_falls() {
+        let flash = [(212.4, 4.24), (212.5, 6.57), (213.0, 7.01), (213.5, 6.63)];
+        assert_eq!(statistic(Stat::Max, &flash), Some(7.01));
+        assert_eq!(statistic(Stat::Max, &flash[..2]), Some(6.57));
+        assert_eq!(statistic(Stat::Max, &[]), None);
     }
 }

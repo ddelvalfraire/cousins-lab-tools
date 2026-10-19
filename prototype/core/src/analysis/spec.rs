@@ -13,7 +13,7 @@ use crate::params::ParamSpec;
 use crate::pycompat::{list_repr, repr, str_repr};
 use crate::templates::{DerivedValue, object};
 
-const STATS: [&str; 2] = ["mean", "slope"];
+const STATS: [&str; 3] = ["mean", "slope", "max"];
 
 /// A statistic over the stored rows of a range. A slope is per second on the source clock.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -21,6 +21,7 @@ const STATS: [&str; 2] = ["mean", "slope"];
 pub enum Stat {
     Mean,
     Slope,
+    Max,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -170,6 +171,7 @@ fn reading(value: &Value) -> Result<ReadingSpec, String> {
     let stat = match value.get("stat").and_then(Value::as_str) {
         Some("mean") => Stat::Mean,
         Some("slope") => Stat::Slope,
+        Some("max") => Stat::Max,
         _ => return Err(format!("stat must be one of {}", list_repr(STATS))),
     };
     let of = value
@@ -819,7 +821,7 @@ mod tests {
                 "Calibration none: needs set or line",
                 "Calibration co.2: ids may use only letters, digits, '_' and '-'",
                 "Calibration empty: set must map parameters to {stat, of}",
-                "Calibration nostat: set zero_p: stat must be one of ['mean', 'slope']",
+                "Calibration nostat: set zero_p: stat must be one of ['mean', 'slope', 'max']",
                 "Calibration noof: set zero_p: of must be the name of a column or derived value",
                 "Calibration flat: settings must be a mapping",
             ]
@@ -908,7 +910,7 @@ mod tests {
         assert_eq!(
             error.split("; ").collect::<Vec<_>>(),
             [
-                "Calibration co2: line.reading: stat must be one of ['mean', 'slope']",
+                "Calibration co2: line.reading: stat must be one of ['mean', 'slope', 'max']",
                 "Calibration co2: point ul1: known must be a number",
                 "Calibration co2: point 'u.2': ids may use only letters, digits, '_' and '-'",
                 "Calibration co2: line.min_points must be a whole number from 2 to the number of points (3)",
@@ -1046,7 +1048,7 @@ mod tests {
                 "Measurement both: results must map result keys to {expr, unit, label}",
                 "Measurement neither: needs readings or steps",
                 "Measurement flat: steps must map step ids to {label, readings}",
-                "Measurement direct: reading r: stat must be one of ['mean', 'slope']",
+                "Measurement direct: reading r: stat must be one of ['mean', 'slope', 'max']",
                 "Measurement direct: results must map result keys to {expr, unit, label}",
             ]
         );
