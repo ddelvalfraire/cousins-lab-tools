@@ -30,7 +30,7 @@ function editGrid(items, ctx) {
       data-component="${esc(c.id)}" style="grid-column:${c.x + 1} / span ${c.w};grid-row:${c.y + 1} / span ${c.h}"
       aria-label="${esc(componentTitle(c, ctx.template))}, ${c.w} by ${c.h} at column ${c.x + 1}, row ${c.y + 1}">
       <header class="tile-header"><div class="tile-title"><button class="drag-handle quiet icon-only" data-drag="${esc(c.id)}" aria-label="Move">${icon("grip")}</button>
-        <h3>${esc(componentTitle(c, ctx.template))}</h3></div><span class="source-tag">${icon(KIND_ICON[c.kind])}</span></header>
+        <h3 title="${esc(componentTitle(c, ctx.template))}">${esc(componentTitle(c, ctx.template))}</h3></div><span class="source-tag">${icon(KIND_ICON[c.kind])}</span></header>
       ${c.kind === "group" ? editGrid(c.components, { ...ctx, listId: c.id })
         : previewBody(c, ctx.template)}
       ${ctx.hidden[c.id] ? `<p class="small hidden-note">${icon("info")}Hidden in this revision: ${esc(ctx.hidden[c.id])}</p>` : ""}
@@ -47,7 +47,8 @@ function inspector(c, template) {
   return `
     <div class="section-head"><div><span class="small muted">${esc(CATALOG.find(x => x.kind === c.kind).name)}</span><h3>${esc(componentTitle(c, template))}</h3></div>
       <button class="quiet icon-only" data-deselect aria-label="Close">${icon("close")}</button></div>
-    <p class="small muted">${esc(binding(c, template))}</p>
+    <p class="inspector-binding">${esc(binding(c, template))}</p>
+    <div class="inspector-section"><h4>Content</h4>
     ${field("Title", `<input data-field="title" value="${esc(c.title || "")}" placeholder="${esc(componentTitle({ ...c, title: "" }, template))}">`)}
     ${c.kind === "chart" ? field("Chart", select("chart", d.charts.map(ch => [ch.id, ch.title]), c.chart)) : ""}
     ${c.kind === "metric" ? field("Derived value", select("value", Object.entries(d.derived).map(([k, v]) => [k, `${v.label} (${v.role}, ${v.unit})`]), c.value)) : ""}
@@ -57,9 +58,20 @@ function inspector(c, template) {
     ${c.kind === "table" ? field("Measurement", select("measurement", Object.entries(d.measurements || {}).map(([k, m]) => [k, m.label || k]), c.measurement)) : ""}
     ${c.kind === "inputs" ? `<fieldset class="field"><legend>Parameters (none ticked shows all)</legend>${Object.keys(d.parameters || {}).map(k =>
       `<label class="check"><input type="checkbox" data-param="${esc(k)}" ${c.parameters?.includes(k) ? "checked" : ""}>${esc(k)}</label>`).join("")}</fieldset>` : ""}
-    <div class="inspector-geometry">${["x", "y", "w", "h"].map(k => field(k.toUpperCase(), `<input type="number" min="${k === "w" || k === "h" ? 1 : 0}" data-field="${k}" value="${c[k]}">`)).join("")}</div>
-    <p class="small muted">Columns 0 to 11; width and height in grid cells. Arrow keys move the selected component, Shift+arrows resize it.</p>
-    <button class="danger" data-remove>Remove component</button>`;
+    </div>
+    <div class="inspector-section"><h4>Position & size</h4>
+      <div class="inspector-geometry">${[["x", "Column"], ["y", "Row"], ["w", "Width"], ["h", "Height"]].map(([k, label]) => field(label, `<input type="number" min="${k === "w" || k === "h" ? 1 : 0}" data-field="${k}" value="${c[k]}">`)).join("")}</div>
+      <p class="inspector-help">Columns start at 0. Width and height are measured in grid cells.</p>
+    </div>
+    <div class="inspector-section inspector-shortcuts"><span><kbd>↑ ↓ ← →</kbd> Move</span><span><kbd>Shift + arrows</kbd> Resize</span></div>
+    <button class="quiet small danger-text" data-remove>${icon("close")}Remove component</button>`;
+}
+
+function inspectorEmpty(view) {
+  return `<div class="inspector-empty"><span class="inspector-empty-icon">${icon("sliders")}</span>
+    <h3>Component settings</h3><p>Select a tile on the canvas to change its content, size, or position.</p>
+    <div class="inspector-view"><span class="small muted">Current view</span><strong>${esc(view.name)}</strong><span class="small muted">${view.components.length} components</span></div>
+    <p class="inspector-help">Drag a tile's grip to move it. Drag its lower-right corner to resize.</p></div>`;
 }
 
 function catalog(filter) {
@@ -102,7 +114,7 @@ function askName(title, value, apply) {
 }
 
 /** draft is the template page's unsaved copy of the revision; the editor edits its layout, and saving posts all of it. */
-export function mountEditor(el, template, { draft, onSaved }) {
+export function mountEditor(el, template, { draft, onSaved, hasSetupChanges = () => false }) {
   const { columns, ...initial } = structuredClone(template.layout);
   const layout = (draft.layout = initial);
   template = { ...template, data: draft };
@@ -115,6 +127,7 @@ export function mountEditor(el, template, { draft, onSaved }) {
     disposePreviews();
     const view = currentView();
     const selected = state.selected && find(layout, state.selected)?.component;
+    const dirty = state.dirty || hasSetupChanges();
     el.innerHTML = `
       <div class="editor-toolbar">
         <div class="view-tabs" role="tablist">${layout.views.map(v => `<button role="tab" data-view="${esc(v.id)}" aria-selected="${v.id === state.view}">${esc(v.name)}</button>`).join("")}
@@ -123,15 +136,15 @@ export function mountEditor(el, template, { draft, onSaved }) {
           <button class="quiet" data-rename-view>Rename view</button>
           <div class="catalog-wrap"><button data-catalog aria-expanded="${state.catalogOpen}">${icon("plus")}Add component</button>
             ${state.catalogOpen ? `<div class="catalog" role="dialog" aria-label="Component catalog"><input type="search" data-filter placeholder="Find a component" value="${esc(state.filter)}">${catalog(state.filter)}</div>` : ""}</div>
-          <button class="primary" data-save ${state.dirty ? "" : "disabled"}>${icon("save")}Save as revision ${latest + 1}</button>
+          <button class="primary" data-save ${dirty ? "" : "disabled"}>${icon("save")}Save as revision ${latest + 1}</button>
         </div>
       </div>
       ${state.error ? `<div class="notice bad">${icon("alert")}<div>${esc(state.error)}</div></div>` : ""}
-      <p class="small muted">${state.dirty ? "Unsaved layout changes. Saving creates a new revision with them and any unsaved Setup changes; sessions keep the layout they ran with." : `Layout of revision ${template.data.revision}. Drag the handle to move, the corner to resize.`}</p>
-      <p class="layout-preview-notice">${icon("info")}<span><strong>Example preview</strong> Charts and readings use illustrative values. Select a tile to configure it; use its handle to move or resize it.</span></p>
-      <div class="editor-workspace ${selected ? "has-inspector" : ""}">
+      <div class="editor-status"><span class="editor-save-state ${dirty ? "is-dirty" : ""}"><i></i>${dirty ? "Unsaved changes" : `Revision ${template.data.revision}`}</span>
+        <span class="editor-example" title="Illustrative values are never saved as readings or session data.">${icon("info")}Example data for layout only</span></div>
+      <div class="editor-workspace has-inspector">
         <div class="editor-canvas">${editGrid(view.components, { template, hidden: template.hidden_components, selected: state.selected, listId: view.id })}</div>
-        ${selected ? `<aside class="inspector">${inspector(selected, template)}</aside>` : ""}
+        <aside class="inspector">${selected ? inspector(selected, template) : inspectorEmpty(view)}</aside>
       </div>`;
     disposePreviews = mountPreviews(el, template);
     if (state.catalogOpen) el.querySelector("[data-filter]")?.focus();
@@ -150,8 +163,10 @@ export function mountEditor(el, template, { draft, onSaved }) {
     const { component } = find(layout, id);
     const gridEl = event.target.closest(".bento-grid");
     const rect = gridEl.getBoundingClientRect();
-    const gap = parseFloat(getComputedStyle(gridEl).columnGap) || 16;
-    const colW = (rect.width - 11 * gap) / 12 + gap;
+    const style = getComputedStyle(gridEl);
+    const gap = parseFloat(style.columnGap) || 16;
+    const contentWidth = rect.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const colW = (contentWidth - 11 * gap) / 12 + gap;
     const rowH = parseFloat(getComputedStyle(gridEl).gridAutoRows.match(/[\d.]+px/)[0]) + gap;
     const start = { x: event.clientX, y: event.clientY, c: { ...component } };
     const tile = event.target.closest(".bento-tile");
@@ -275,5 +290,5 @@ export function mountEditor(el, template, { draft, onSaved }) {
   };
 
   render();
-  return () => disposePreviews();
+  return { refresh: render, dispose: () => disposePreviews() };
 }

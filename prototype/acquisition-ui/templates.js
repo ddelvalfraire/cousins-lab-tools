@@ -22,6 +22,7 @@ export async function renderTemplates(page) {
 }
 
 export async function renderTemplate(page, id, revision, tab) {
+  page.classList.add("template-page");
   const [view, instruments] = await Promise.all([
     call("get_template", { template_id: id, revision: revision ? Number(revision) : null }),
     call("list_instruments"),
@@ -96,13 +97,18 @@ export async function renderTemplate(page, id, revision, tab) {
       <div class="actions"><button id="save-yaml">Validate and save as revision ${latest + 1}</button></div>
     </details></div></div>`;
 
-  let disposeEditor = () => {};
+  let editorHandle = null;
   const showTab = key => {
+    page.dataset.templateTab = key;
+    page.querySelector("#save").hidden = key === "layout";
     page.querySelectorAll("[data-page-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.pageTab === key));
     page.querySelectorAll("[data-tab-panel]").forEach(p => (p.hidden = p.dataset.tabPanel !== key));
     const editor = page.querySelector('[data-tab-panel="layout"]');
     if (key === "layout" && !editor.childElementCount) {
-      disposeEditor = mountEditor(editor, view, { draft: data, onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
+      editorHandle = mountEditor(editor, view, { draft: data, hasSetupChanges: () => !page.querySelector("#save").disabled,
+        onSaved: t => { toast(`Saved revision ${t.data.revision}`); location.hash = `#/templates/${t.data.id}/r${t.data.revision}/layout`; } });
+    } else if (key === "layout") {
+      editorHandle.refresh();
     }
   };
   page.querySelectorAll("[data-page-tab]").forEach(b => (b.onclick = () => showTab(b.dataset.pageTab)));
@@ -145,7 +151,7 @@ export async function renderTemplate(page, id, revision, tab) {
     catch (e) { page.querySelector("#yaml-error").textContent = e.message; }
   };
   page.querySelector("#start").onclick = () => startRunDialog(id, null, data.revision);
-  return () => disposeEditor();
+  return () => editorHandle?.dispose();
 }
 
 export async function startRunDialog(templateId, templates, revision) {
