@@ -205,6 +205,9 @@ pub fn extra_names(count: usize) -> Vec<String> {
         .collect()
 }
 
+/// The event kind of a run of missing frames; every time chart of the capture's role shows it.
+pub const MISSING_FRAMES: &str = "missing_frames";
+
 /// One `missing_frames` event per run, placed at the last row before it on the `t_ms` clock.
 pub fn missing_frames_event(gap: &MissingFrames, t_host_utc: Option<DateTime<Utc>>) -> Event {
     let label = if gap.first == gap.last {
@@ -216,7 +219,7 @@ pub fn missing_frames_event(gap: &MissingFrames, t_host_utc: Option<DateTime<Utc
     payload.insert("first".into(), json!(gap.first));
     payload.insert("last".into(), json!(gap.last));
     Event {
-        kind: "missing_frames".into(),
+        kind: MISSING_FRAMES.into(),
         label,
         t_host_utc,
         clock: Some("t_ms".into()),

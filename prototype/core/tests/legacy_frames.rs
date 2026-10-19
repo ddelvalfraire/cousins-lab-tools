@@ -852,3 +852,136 @@ fn an_entry_during_a_replay_recomputes_the_live_points() {
             .unwrap()
     });
 }
+
+/// Each time chart's gaps as (label, x), and the x of every point of the raw chart.
+fn gaps_and_raw_xs(preview: &Value) -> (Vec<Vec<(String, f64)>>, Vec<f64>) {
+    let charts = preview["charts"].as_array().unwrap();
+    let gaps = charts
+        .iter()
+        .map(|c| {
+            c["gaps"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|g| {
+                    (
+                        g["label"].as_str().unwrap().into(),
+                        g["x"].as_f64().unwrap(),
+                    )
+                })
+                .collect()
+        })
+        .collect();
+    let raw = charts.iter().find(|c| c["id"] == "raw").unwrap();
+    let xs = raw["series"][0]["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p[0].as_f64().unwrap())
+        .collect();
+    (gaps, xs)
+}
+
+/// Asserts that every chart's gaps are `(label, row)` with x the raw chart's x of that row.
+fn assert_gaps_start_at_rows(preview: &Value, rows: usize, at: &[(&str, usize)]) -> Vec<f64> {
+    let (gaps, xs) = gaps_and_raw_xs(preview);
+    assert_eq!(xs.len(), rows);
+    let expected: Vec<(String, f64)> = at.iter().map(|&(l, row)| (l.into(), xs[row])).collect();
+    assert_eq!(gaps, vec![expected; 3], "pressure, its derivative and raw");
+    at.iter().map(|&(_, row)| xs[row]).collect()
+}
+
+/// Rows 7 and 12 of the fixture (t_ms 840 and 2415) are the last before frames 4 to 6 and 9.
+const FIXTURE_GAPS: [(&str, usize); 2] = [("Frames 4 to 6 missing", 7), ("Frame 9 missing", 12)];
+
+#[test]
+fn every_preset_time_chart_starts_each_gap_at_the_row_before_it_on_elapsed_and_event() {
+    let data = tempfile::tempdir().unwrap();
+    let engine = Engine::open(Paths::default(), data.path()).unwrap();
+    let manifest = call(
+        &engine,
+        "import_files",
+        json!({"template_id": "legacy-module2-co2-o2",
+               "files": [{"role": "ms", "path": fixture("legacy-frames.zip")}]}),
+    );
+    let id = manifest["id"].as_str().unwrap();
+    let elapsed = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "elapsed"}),
+    );
+    assert_eq!(
+        assert_gaps_start_at_rows(&elapsed, 16, &FIXTURE_GAPS),
+        [0.84, 2.415]
+    );
+
+    let trial = &elapsed["alignment"]["trials"][0];
+    let (trial, capture) = (
+        trial["id"].as_str().unwrap(),
+        trial["members"][0]["capture"].as_str().unwrap(),
+    );
+    let event = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "event",
+               "manual": {trial: {capture: {"clock": "t_ms", "zero": 0.105}}}}),
+    );
+    let xs = assert_gaps_start_at_rows(&event, 16, &FIXTURE_GAPS);
+    assert!((xs[0] - 0.735).abs() < 1e-12, "{xs:?}");
+}
+
+#[test]
+fn a_replay_places_each_gap_on_both_live_axes_and_on_the_clock_reference() {
+    let data = tempfile::tempdir().unwrap();
+    let folder = data.path().join("frames");
+    std::fs::create_dir(&folder).unwrap();
+    let masses = ",1,2,3,4,5,6,7,8\n";
+    for (frame, t_ms) in [(1, [3, 9].as_slice()), (3, &[13, 18]), (6, &[20])] {
+        let rows: String = t_ms.iter().map(|t| format!("{t}{masses}")).collect();
+        std::fs::write(folder.join(format!("{frame}.csv")), rows).unwrap();
+    }
+    let engine = Engine::open(Paths::default(), &data.path().join("data")).unwrap();
+    let manifest = call(
+        &engine,
+        "start_run",
+        json!({"template_id": "legacy-module2-co2-o2", "speed": 1.0, "sources": {"ms": folder}}),
+    );
+    let id = manifest["id"].as_str().unwrap().to_string();
+    let session = || call(&engine, "get_session", json!({"session_id": id}));
+    wait_until("the replay to reach its end", || {
+        session()["manifest"]["captures"]["ms"]["status"] == "source_ended"
+    });
+    let live = call(&engine, "session_live", json!({"session_id": id}));
+    let ms = &live["captures"]["ms"];
+    let rows = ms["rows"].as_array().unwrap();
+    let x = |row: usize| rows[row]["x"].as_f64();
+    let events: Vec<(&str, Option<f64>, Option<f64>)> = ms["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| {
+            let label = e["label"].as_str().unwrap();
+            (label, e["t_s"].as_f64(), e["x_run_s"].as_f64())
+        })
+        .collect();
+    assert_eq!(
+        events,
+        [
+            ("Frame 2 missing", Some(0.009), x(1)),
+            ("Frames 4 to 5 missing", Some(0.018), x(3)),
+        ]
+    );
+    for (row, t_s) in [(1, 0.009), (3, 0.018)] {
+        assert!((rows[row]["t"].as_f64().unwrap() - t_s).abs() < 1e-12);
+    }
+
+    call(&engine, "stop_session", json!({"session_id": id}));
+    wait_until("the run to stop", || !session()["live"].as_bool().unwrap());
+    let clock = call(
+        &engine,
+        "preview_alignment",
+        json!({"session_id": id, "reference": "clock"}),
+    );
+    let gaps = [("Frame 2 missing", 1), ("Frames 4 to 5 missing", 3)];
+    assert_gaps_start_at_rows(&clock, 5, &gaps);
+}

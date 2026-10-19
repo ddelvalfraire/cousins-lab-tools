@@ -42,6 +42,8 @@ pub struct LiveEvent {
     pub kind: String,
     pub label: String,
     pub x_run_s: Option<f64>,
+    /// Seconds on the capture's own clock, when the event was placed on it.
+    pub t_s: Option<f64>,
     pub value: Option<f64>,
 }
 
@@ -303,6 +305,7 @@ pub(super) struct PointMaker {
     inputs: Vec<Option<usize>>,
     /// Row position of the source clock and its seconds per unit, when the capture has one.
     clock: Option<(usize, f64)>,
+    clock_column: Option<String>,
     /// Row positions of the values copied as they are; None when the row has no such column.
     cells: Vec<Option<usize>>,
     host_time: Option<usize>,
@@ -351,6 +354,7 @@ impl PointMaker {
         let maker = PointMaker {
             inputs,
             clock,
+            clock_column: program.clock().map(|c| c.column.clone()),
             cells,
             host_time,
             t0: DateTime::UNIX_EPOCH,
@@ -389,6 +393,9 @@ impl PointMaker {
             kind: event.kind.clone(),
             label: event.label.clone(),
             x_run_s: event.t_host_utc.map(|t| seconds_since(self.t0, t)),
+            t_s: event
+                .t_native
+                .filter(|_| event.clock.is_some() && event.clock == self.clock_column),
             value: event.value,
         }
     }

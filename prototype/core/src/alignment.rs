@@ -27,6 +27,7 @@ use crate::analysis::{AnalysisState, fold, load_records};
 use crate::calc::Program;
 use crate::contract::{Clock, ClockKind};
 use crate::expr::Params;
+use crate::legacy_frames::MISSING_FRAMES;
 use crate::pycompat::{float_repr, round};
 use crate::query::{AnalysisError, SessionDb, clock_seconds_sql, ident, sql_string};
 use crate::session::{Capture, Manifest, iso_time_opt, utc_now};
@@ -754,6 +755,10 @@ pub struct Chart {
     pub unit: String,
     pub series: Vec<Series>,
     pub markers: Vec<Marker>,
+    /// Where each run of missing frames starts, for every role the chart has a series of. Left
+    /// out when empty, as Python's `chart_data` has no such key.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub gaps: Vec<Marker>,
 }
 
 /// The session's views plus `aligned`, with its column names and each member's label.
@@ -874,7 +879,8 @@ pub fn metric_series(
         .collect()
 }
 
-/// Every template chart with an enabled role, its series on the aligned axis and its markers.
+/// Every template chart with an enabled role, its series on the aligned axis, its markers and
+/// the gaps in its roles' captures.
 pub fn chart_data(
     session_dir: &Path,
     manifest: &Manifest,
@@ -889,11 +895,17 @@ pub fn chart_data(
         .filter(|chart| !is_xy(chart))
         .map(|chart| {
             let mut series = Vec::new();
+            let mut roles = BTreeSet::new();
             for s in chart["series"].as_array().into_iter().flatten() {
                 let value = text(&s["value"]);
                 if view.columns.contains(&value) {
                     series.extend(view.series(&text(&s["role"]), &value)?);
                 }
+                roles.insert(text(&s["role"]));
+            }
+            let mut gaps = Vec::new();
+            for role in &roles {
+                gaps.extend(view.markers(alignment, role, MISSING_FRAMES)?);
             }
             let markers = match (
                 chart["markers"]["role"].as_str(),
@@ -908,6 +920,7 @@ pub fn chart_data(
                 unit: text(&chart["unit"]),
                 series,
                 markers,
+                gaps,
             })
         })
         .collect()

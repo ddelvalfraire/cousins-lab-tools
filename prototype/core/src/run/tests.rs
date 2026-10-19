@@ -897,6 +897,7 @@ fn a_long_run_keeps_its_first_row_and_thins_older_rows_within_the_bound() {
             kind: kind.into(),
             label: kind.into(),
             x_run_s: None,
+            t_s: None,
             value: None,
         });
     }
