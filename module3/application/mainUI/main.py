@@ -303,6 +303,7 @@ class LabView(QtWidgets.QMainWindow):
         
         # Graph
         self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
         # self.realTimeGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -350,6 +351,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} now being used for atom49% #######################
         self.uBarGraph = Graph(100,1)
+        self.uBarGraph.setAccessibleName('Atom49')
         self.uBarGraph.setLabel(axis='left', text = 'atom49%')
         self.uBarGraph.setLabel(axis='bottom', text = 'Time (s)')
         self.uBarGraphVLayout = QtWidgets.QVBoxLayout()
@@ -363,6 +365,7 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
         self.DuBarGraph = Graph(100,0.02)
+        self.DuBarGraph.setAccessibleName('Atom49 derivative')
         self.DuBarGraph.setLabel(axis='left', text = 'D[atom49%]')
         self.DuBarGraph.setLabel(axis='bottom', text = 'Time (s)')
         self.DuBarGraphVLayout = QtWidgets.QVBoxLayout()
@@ -526,13 +529,19 @@ class LabView(QtWidgets.QMainWindow):
 
         # Adding the plot curves
         self.curve1 = Curve("Mass 45", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
-        self.curve1.plotCurve()
+        self.curve1.plotCurve(
+            color_changed=lambda color: self.graph1CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         self.curve2 = Curve("Mass 47", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
-        self.curve2.plotCurve()
+        self.curve2.plotCurve(
+            color_changed=lambda color: self.graph2CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         self.curve5 = Curve("Mass 49", [], pg.mkPen(color = "green", width=4), self.realTimeGraph)
-        self.curve5.plotCurve()
+        self.curve5.plotCurve(
+            color_changed=lambda color: self.graph3CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         self.curve3 = Curve("atom49%", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph)
         self.curve3.plotCurve()
@@ -545,6 +554,10 @@ class LabView(QtWidgets.QMainWindow):
         
         # Adding the Mean bars when the plotting is paused
         self.DuBarGraph.addItem(self.meanBar)
+        for index, line in enumerate(self.meanBar.lines):
+            self.DuBarGraph.registerSeries('mean-' + str(index), line,
+                                                   'Mean boundary ' + str(index + 1), 'boundary')
+
 
 
     def connectUItoMethods(self):
@@ -1471,7 +1484,7 @@ class LabView(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), pen=None, symbol='o',
+            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), style_key='assay-buffer', series_name='Assay buffer', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.assayBufferGraph.plotItem.getViewBox().autoRange()
@@ -1491,7 +1504,7 @@ class LabView(QtWidgets.QMainWindow):
             self.uBarGraph.clear()
             
             # plot point on the hcl graph
-            hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), pen=None, symbol='o',
+            hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), style_key='hcl', series_name='HCl calibration', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.uBarGraph.plotItem.getViewBox().autoRange()
