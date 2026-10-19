@@ -4,10 +4,20 @@ import numpy as np
 from numpy import blackman
 import datetime
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
 import time
+
+def set_capture_title(folder_path):
+    title = f"LabView - {folder_path}"
+    if os.name == 'nt':
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleTitleW(title)
+    elif sys.stdout is not None and sys.stdout.isatty():
+        sys.stdout.write(f"\033]0;{title}\007")
+        sys.stdout.flush()
 
 def df_column_switch(df, column1, column2):
     i = list(df.columns)
@@ -29,6 +39,8 @@ if spool_path:
     print("Selected file:", spool_path)
 else:
     print("No file selected")
+    root.destroy()
+    sys.exit(0)
 
 spool_file = open(spool_path,"r")
 
@@ -63,6 +75,9 @@ latest_file_index = len(os.listdir("Acquisitions"))
 directoryName = "Acquisition" + str(latest_file_index)
 if not os.path.exists("Acquisitions/" + directoryName):
     os.makedirs("Acquisitions/" + directoryName)
+
+folder_path = os.path.abspath(os.path.join("Acquisitions", directoryName))
+set_capture_title(folder_path)
 
 try:
     #raise Exception()
@@ -113,7 +128,7 @@ try:
         if len(current.index) >= 1: # row count
             #write current to csv
             #directoryPath = r'C:/Users/brayden.groshong/Workspace/Acquisition/'
-            filePath = "Acquisitions/" + directoryName + "/" + str(fileCount) + ".csv"
+            filePath = os.path.join(folder_path, str(fileCount) + ".csv")
             print("writing csv: ", filePath)
             current = current.drop(current.columns[[9, 10, 13]], axis=1)  # df.columns is zero-based pd.Index
 
