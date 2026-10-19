@@ -63,6 +63,27 @@ from readEZView import read_from_ezview
 
 class LabView(QtWidgets.QMainWindow):
 
+    def closeEvent(self, event):
+        self._closing = True
+        self.stopBackgroundTasks()
+        super().closeEvent(event)
+
+    def stopBackgroundTasks(self):
+        self.startBit = False
+        self.pauseBit = True
+        self.stopwatch.stop()
+        if self.delayTimer is not None:
+            self.delayTimer.stop()
+        notifier = getattr(self, 'newFileNotifierThread', None)
+        if notifier is not None:
+            notifier.stop()
+        threads = self.findChildren(QThread)
+        for thread in threads:
+            thread.requestInterruption()
+            thread.quit()
+        for thread in threads:
+            thread.wait()
+
     def __init__(self, width, height, app):
         """
         This method initializes the LabView class.
@@ -71,8 +92,10 @@ class LabView(QtWidgets.QMainWindow):
         super(LabView, self).__init__()
 
         self.delayTimer = None
+        self._closing = False
 
         self.app = app
+        app.aboutToQuit.connect(self.stopBackgroundTasks)
         self.screen_width = width
         self.screen_height = height
 
@@ -875,8 +898,6 @@ class LabView(QtWidgets.QMainWindow):
         # Step 5: Connect signals and slots and start the stop watch
         self.plotAllButtonThread.started.connect(self.plotAllThread.run)
         
-        self.plotAllButtonThread.start()
-
         self.plotAllThread.newDataPointSignal.connect(self.update_main_plot_data)
         self.plotAllThread.throwOutOfDataExceptionSignal.connect(self.throwOutOfDataException)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(self.throwFolderNotSelectedException)
@@ -889,6 +910,7 @@ class LabView(QtWidgets.QMainWindow):
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
         self.plotAllThread.finished.connect(self.plotAllThread.deleteLater)
+        self.plotAllButtonThread.start()
 
 
     def startButtonPressed(self):
@@ -899,6 +921,9 @@ class LabView(QtWidgets.QMainWindow):
             :return -> None
             
         """
+        if self._closing:
+            return
+
         if self.application_state == "Folder_Selected" or self.application_state == "Out_Of_Data":
             
             self.startBit = True
@@ -923,6 +948,7 @@ class LabView(QtWidgets.QMainWindow):
 
             # Deleting the reference of the worker and the thread from the memory to free up space.
             self.worker.finished.connect(self.worker.deleteLater)
+            self.realTimePlotthread.finished.connect(self.worker.deleteLater)
             self.realTimePlotthread.finished.connect(self.realTimePlotthread.deleteLater)
 
             # Step 6: Start the thread
@@ -931,6 +957,7 @@ class LabView(QtWidgets.QMainWindow):
             else:
                 self.stopwatch.start()
 
+            self.worker.filesParsedSignal.connect(self.startNewFileNotifier)
             self.realTimePlotthread.start()
 
             # Unhide graphs
@@ -942,9 +969,6 @@ class LabView(QtWidgets.QMainWindow):
             self.application_state = "Running"
 
 
-            # change-file-reading
-            # Write code to recieve the signal and start a new thread for dirwatch.
-            self.worker.filesParsedSignal.connect(self.startNewFileNotifier)
             
         else:
             self.throwFolderNotSelectedException()
@@ -1362,6 +1386,8 @@ class LabView(QtWidgets.QMainWindow):
     # change-file-reading
     # Start the thread as soon all files are read.
     def startNewFileNotifier(self):
+        if self._closing:
+            return
 
         if not self.fileCheckThreadStarted:
             self.fileNotiferThread = QThread(parent=self)
@@ -1759,23 +1785,7 @@ class LabView(QtWidgets.QMainWindow):
         saveCalsDlg.buttonBox.rejected.connect(lambda: self.keepCalsRejected(saveCalsDlg))
         saveCalsDlg.exec()
 
-        if self.application_state == "Out_Of_Data" or self.application_state == "Folder_Selected" or self.application_state == "Idle": 
-            
-            pass
-
-        else:
-
-            try:
-
-                self.realTimePlotthread.quit()
-                self.realTimePlotthread.wait()
-                self.realTimePlotthread.deleteLater()
-
-                self.newFileNotifierThread.stop()
-                self.fileNotiferThread.quit()
-            
-            except RuntimeError as exception:
-                print(exception)
+        self.stopBackgroundTasks()
 
         #export all raw data if there is data to load
         if self.folder_path != '':
@@ -1818,6 +1828,8 @@ class LabView(QtWidgets.QMainWindow):
 
 
     def throwOutOfDataException(self):
+        if self._closing:
+            return
         self.application_state = "Out_Of_Data"
 
         # Find minimum time between points
@@ -1833,12 +1845,16 @@ class LabView(QtWidgets.QMainWindow):
 
         self.speedSlider.setValue(floor(max_speed))
 
-        def delayedRestart(self):
-            self.startButton.setEnabled(True)
-            self.startButtonPressed()
-        if self.delayTimer is None or not self.delayTimer.is_alive():
-            self.delayTimer = threading.Timer(0.5,delayedRestart,[self])
-            self.delayTimer.start()
+        if self.delayTimer is None:
+            self.delayTimer = QtCore.QTimer(self)
+            self.delayTimer.setSingleShot(True)
+            self.delayTimer.timeout.connect(self.restartAcquisition)
+        if not self.delayTimer.isActive():
+            self.delayTimer.start(500)
+
+    def restartAcquisition(self):
+        self.startButton.setEnabled(True)
+        self.startButtonPressed()
 
     def outOfDataCondition(self):
         self.throwOutOfDataException()
