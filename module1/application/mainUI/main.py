@@ -954,8 +954,11 @@ class LabView(QtWidgets.QMainWindow):
         self.exportTableButton.clicked.connect(self.tableFileSave)
 
     def select_ezview(self):
-        # Open a file dialog to select a folder
-        #self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        spool_path, _ = QFileDialog.getOpenFileName(
+            self, 'Select Spooling File', '', 'Text Files (*.txt);;All Files(*)')
+        if not spool_path:
+            return
+        spool_path = os.path.abspath(spool_path)
 
         # make Acquisitions folder
         if not os.path.exists("../Acquisitions"):
@@ -967,9 +970,6 @@ class LabView(QtWidgets.QMainWindow):
         if not os.path.exists("../Acquisitions/" + directoryName):
             os.makedirs("../Acquisitions/" + directoryName)
 
-        spool_path = os.path.abspath(QFileDialog.getOpenFileName(self, 'Select Spooling File',"","Text Files (*.txt);;All Files(*)")[0])
-
-        
         folderPath = os.path.abspath("../Acquisitions/" + directoryName)
 
         thread = threading.Thread(target=read_from_ezview, daemon=True,args=(folderPath, spool_path))
@@ -979,16 +979,19 @@ class LabView(QtWidgets.QMainWindow):
 
         self.folder_path = folderPath
 
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
+        self.setWindowTitle(f"LabView - {self.folder_path}")
         self.dataObj.setDirectory(self.folder_path)
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
 
     def select_folder(self):
-        # Open a file dialog to select a folder
-        self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
+        folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        if not folder_path:
+            return
+
+        self.folder_path = os.path.abspath(folder_path)
         self.dataObj.setDirectory(self.folder_path)
+        self.setWindowTitle(f"LabView - {self.folder_path}")
         self.application_state = "Folder_Selected"
         self.select_folder_action.setEnabled(False)
 
@@ -2393,6 +2396,7 @@ class LabView(QtWidgets.QMainWindow):
         """
 
         # Reset all application global variables. These varibales are global to different components of the application.
+        self.folder_path = ''
         self.setWindowTitle("LabView")
         self.application_state = "Idle"
         self.pauseBit = False

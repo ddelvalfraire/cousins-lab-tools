@@ -607,13 +607,6 @@ class LabView(QtWidgets.QMainWindow):
         # Copy Table connect method
         self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
 
-    def select_folder(self):
-        # Open a file dialog to select a folder
-        self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
-        self.dataObj.setDirectory(self.folder_path)
-        self.application_state = "Folder_Selected"
-        #self.select_folder_action.setEnabled(False)
 
 
 
@@ -1440,17 +1433,16 @@ class LabView(QtWidgets.QMainWindow):
 
 
     def select_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        if not folder_path:
+            return
+
         self.plot_active = False
-
-
-
-        # Open a file dialog to select a folder
-        self.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
-        if self.folder_path != '':
-            self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
-            self.dataObj.setDirectory(self.folder_path)
-            self.application_state = "Folder_Selected"
-            self.select_folder_action.setEnabled(False)
+        self.folder_path = os.path.abspath(folder_path)
+        self.dataObj.setDirectory(self.folder_path)
+        self.setWindowTitle(f"LabView - {self.folder_path}")
+        self.application_state = "Folder_Selected"
+        self.select_folder_action.setEnabled(False)
 
     def select_file(self):
         # Open a file dialog to select a file
