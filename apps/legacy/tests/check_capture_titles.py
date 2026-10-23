@@ -1,4 +1,5 @@
-"""Run with .venv/bin/python tests/check_capture_titles.py.
+"""Run from the repository root with:
+    .venv/bin/python apps/legacy/tests/check_capture_titles.py.
 
 Each entry point runs in a separate process because the apps share import names.
 Only dialogs and the continuous acquisition loop are replaced during checks.
