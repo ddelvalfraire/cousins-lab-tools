@@ -65,6 +65,9 @@ class PlotAllThread(QObject):
             else:
             
                 while dataPoint:
+                    if QtCore.QThread.currentThread().isInterruptionRequested():
+                        self.finished.emit()
+                        return
                     dataPoints.append(dataPoint)
                     dataPoint = self.globalObject.dataObj.__next__()
 
