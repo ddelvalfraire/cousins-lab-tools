@@ -346,7 +346,8 @@ class LabView(QtWidgets.QMainWindow):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
         
         # Graph
-        self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph = Graph(100,100, 'raw-masses')
+        self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
         # self.realTimeGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -421,7 +422,8 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(100,180)
+        self.assayBufferGraph = Graph(100,180, 'assay-buffer')
+        self.assayBufferGraph.setAccessibleName('Assay buffer calibration')
         self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (nmol/ml)')
         self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
         self.assayBufferGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -436,7 +438,8 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for HCL} AND {HCL Graph} #######################
 
-        self.hclGraph = Graph(100,180)
+        self.hclGraph = Graph(100,180, 'hcl')
+        self.hclGraph.setAccessibleName('HCl calibration')
         self.hclGraph.setLabel(axis='left', text = 'BiCarb (nmol/ml)')
         self.hclGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
         self.hclGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -453,7 +456,8 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {Concentration Label} AND {Concentration Graph} #######################
 
-        self.concentrationGraph = Graph(100,180)
+        self.concentrationGraph = Graph(100,180, 'concentration')
+        self.concentrationGraph.setAccessibleName('Velocity and concentration')
         self.concentrationGraph.setLabel(axis='left', text = 'Velocity')
         self.concentrationGraph.setLabel(axis='bottom', text = '[CO2] (nmol/ml/sec)')
         self.concentrationGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -800,35 +804,55 @@ class LabView(QtWidgets.QMainWindow):
     def addCurveAndMeanBar(self):
 
         # Adding the plot curves
-        self.curve1 = Curve("Curve 1", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
-        self.curve1.plotCurve()
+        self.curve1 = Curve("Mass 32", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
+        self.curve1.plotCurve(
+            color_changed=lambda color: self.graph1CheckBox.setStyleSheet('color: ' + color.name()))
 
-        self.curve2 = Curve("Curve 2", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph)
-        self.curve2.plotCurve()
 
-        self.curve3 = Curve("Curve 3", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph)
-        self.curve3.plotCurve()
+        self.curve2 = Curve("Mass 34", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph)
+        self.curve2.plotCurve(
+            color_changed=lambda color: self.graph2CheckBox.setStyleSheet('color: ' + color.name()))
 
-        self.curve4 = Curve("Curve 4", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
-        self.curve4.plotCurve()
 
-        self.curve5 = Curve("Curve 5", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph)
-        self.curve5.plotCurve()
+        self.curve3 = Curve("Mass 36", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph)
+        self.curve3.plotCurve(
+            color_changed=lambda color: self.graph3CheckBox.setStyleSheet('color: ' + color.name()))
 
-        self.curve6 = Curve("Curve 6", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph)
-        self.curve6.plotCurve()
 
-        self.curve7 = Curve("Curve 7", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph)
-        self.curve7.plotCurve()
+        self.curve4 = Curve("Mass 44", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
+        self.curve4.plotCurve(
+            color_changed=lambda color: self.graph4CheckBox.setStyleSheet('color: ' + color.name()))
 
-        self.curve8 = Curve("Curve 8", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph)
-        self.curve8.plotCurve()
+
+        self.curve5 = Curve("Mass 45", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph)
+        self.curve5.plotCurve(
+            color_changed=lambda color: self.graph5CheckBox.setStyleSheet('color: ' + color.name()))
+
+
+        self.curve6 = Curve("Mass 46", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph)
+        self.curve6.plotCurve(
+            color_changed=lambda color: self.graph6CheckBox.setStyleSheet('color: ' + color.name()))
+
+
+        self.curve7 = Curve("Mass 47", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph)
+        self.curve7.plotCurve(
+            color_changed=lambda color: self.graph7CheckBox.setStyleSheet('color: ' + color.name()))
+
+
+        self.curve8 = Curve("Mass 49", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph)
+        self.curve8.plotCurve(
+            color_changed=lambda color: self.graph8CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         # Initializing the mean bars.
         self.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None, hoverBrush=None, hoverPen=None, movable=True, bounds=None, span=(0, 1), swapMode='sort', clipItem=None)
         
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
+        for index, line in enumerate(self.meanBar.lines):
+            self.realTimeGraph.registerSeries('mean-' + str(index), line,
+                                                   'Mean boundary ' + str(index + 1), 'boundary')
+
 
 
     def connectUItoMethods(self):
@@ -1694,10 +1718,10 @@ class LabView(QtWidgets.QMainWindow):
         self.o2VelocityConcentrationData[self.o2Concentration] = self.vO
         self.co2VelocityConcentrationData[self.co2Concentration] = self.vC
 
-        self.concentrationGraph.plot(list(self.o2VelocityConcentrationData.keys()), list(self.o2VelocityConcentrationData.values()), pen=None, symbol='o',
+        self.concentrationGraph.plot(list(self.o2VelocityConcentrationData.keys()), list(self.o2VelocityConcentrationData.values()), style_key='o2-concentration', series_name='O2 concentration', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
 
-        self.concentrationGraph.plot(list(self.co2VelocityConcentrationData.keys()), list(self.co2VelocityConcentrationData.values()), pen=None, symbol='o',
+        self.concentrationGraph.plot(list(self.co2VelocityConcentrationData.keys()), list(self.co2VelocityConcentrationData.values()), style_key='co2-concentration', series_name='CO2 concentration', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#ff0000", width=0), symbolBrush=pg.mkBrush("#ff0000"))
         
         self.concentrationGraph.plotItem.getViewBox().autoRange()
@@ -2316,7 +2340,7 @@ class LabView(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), pen=None, symbol='o',
+            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), style_key='assay-buffer', series_name='Assay buffer', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.assayBufferGraph.plotItem.getViewBox().autoRange()
@@ -2336,7 +2360,7 @@ class LabView(QtWidgets.QMainWindow):
             self.hclGraph.clear()
             
             # plot point on the hcl graph
-            hclLine = self.hclGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), pen=None, symbol='o',
+            hclLine = self.hclGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), style_key='hcl', series_name='HCl calibration', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.hclGraph.plotItem.getViewBox().autoRange()
