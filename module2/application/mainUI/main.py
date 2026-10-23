@@ -336,7 +336,8 @@ class LabView(QtWidgets.QMainWindow):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
         
         # Graph
-        self.realTimeGraph = Graph(100,100)
+        self.realTimeGraph = Graph(100,100, 'raw-masses')
+        self.realTimeGraph.setAccessibleName('Raw masses')
         self.realTimeGraph.setLabel(axis='left', text = 'Voltage (mV)')
         self.realTimeGraph.setLabel(axis='bottom', text = 'Time (s)')
         # self.realTimeGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -406,7 +407,8 @@ class LabView(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(180, 3)
+        self.assayBufferGraph = Graph(180, 3, 'assay-buffer')
+        self.assayBufferGraph.setAccessibleName('Assay buffer calibration')
         self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (µL)')
         self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
         self.assayBufferGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -422,7 +424,8 @@ class LabView(QtWidgets.QMainWindow):
 
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} #######################
-        self.uBarGraph = Graph(100,180)
+        self.uBarGraph = Graph(100,180, 'ubar')
+        self.uBarGraph.setAccessibleName('uBar')
         self.uBarGraph.setLabel(axis='left', text = 'uBar')
         self.uBarGraph.setLabel(axis='bottom', text = 'Time (s)')
         #self.uBarGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -436,7 +439,8 @@ class LabView(QtWidgets.QMainWindow):
         ################################################################################################
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
-        self.DuBarGraph = Graph(100,180)
+        self.DuBarGraph = Graph(100,180, 'derivative')
+        self.DuBarGraph.setAccessibleName('D[uBar]')
         self.DuBarGraph.setLabel(axis='left', text = 'D[uBar]')
         self.DuBarGraph.setLabel(axis='bottom', text = 'Time (s)')
         #self.DuBarGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -712,10 +716,14 @@ class LabView(QtWidgets.QMainWindow):
 
         # Adding the plot curves
         self.curve1 = Curve("Mass 32", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
-        self.curve1.plotCurve()
+        self.curve1.plotCurve(
+            color_changed=lambda color: self.graph1CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         self.curve2 = Curve("Mass 44", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
-        self.curve2.plotCurve()
+        self.curve2.plotCurve(
+            color_changed=lambda color: self.graph2CheckBox.setStyleSheet('color: ' + color.name()))
+
 
         self.curve3 = Curve("uBar", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph)
         self.curve3.plotCurve()
@@ -728,6 +736,10 @@ class LabView(QtWidgets.QMainWindow):
         
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
+        for index, line in enumerate(self.meanBar.lines):
+            self.realTimeGraph.registerSeries('mean-' + str(index), line,
+                                                   'Mean boundary ' + str(index + 1), 'boundary')
+
 
 
     def connectUItoMethods(self):
@@ -1965,7 +1977,7 @@ class LabView(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), pen=None, symbol='o',
+            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), style_key='assay-buffer', series_name='Assay buffer', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.assayBufferGraph.plotItem.getViewBox().autoRange()
@@ -1985,7 +1997,7 @@ class LabView(QtWidgets.QMainWindow):
             self.uBarGraph.clear()
             
             # plot point on the hcl graph
-            hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), pen=None, symbol='o',
+            hclLine = self.uBarGraph.plot(list(self.hclData.values()), list(self.hclData.keys()), style_key='hcl', series_name='HCl calibration', pen=None, symbol='o',
                                        symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
             
             self.uBarGraph.plotItem.getViewBox().autoRange()
