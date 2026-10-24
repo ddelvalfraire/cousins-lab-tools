@@ -12,8 +12,7 @@ The project is designed to provide a comprehensive platform for managing and int
 
 The React/TypeScript and Rust/Tauri starter lives in
 [`apps/desktop/`](apps/desktop/README.md). It does not yet implement instrument
-workflows. See the [application layout](documentation/desktop-migration.md) for
-the migration plan. Existing Python installation instructions follow below.
+workflows. Existing Python installation instructions follow below.
 
 ## Installation
 
