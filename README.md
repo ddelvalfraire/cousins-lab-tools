@@ -8,12 +8,6 @@ Each module in this project is a Python program that aids in the use of Mass Spe
 
 The project is designed to provide a comprehensive platform for managing and interpreting Mass Spectrometer data through various modules. It aims to present data insights through graphical and numerical perspectives while offering flexible data formatting and integration capabilities. The system consists of five primary modules: the first three focus on different ways to visualize and log Mass Spectrometer data, the fourth module reformats data from a secondary Mass Spectrometer, and the upcoming fifth module combines data streams from three distinct instruments. The general design for each of the modules is to accept input from a file or folder, which is selected by the user, process it in some way (reformat, normalize, derive calculations from, etc.), and then output that processed information, either to graphs on the screen, or to new files.
 
-## New desktop application
-
-The React/TypeScript and Rust/Tauri starter lives in
-[`apps/desktop/`](apps/desktop/README.md). It does not yet implement instrument
-workflows. Existing Python installation instructions follow below.
-
 ## Installation
 
 ### Prerequisites
