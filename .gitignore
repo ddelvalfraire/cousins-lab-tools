@@ -14,3 +14,5 @@ module4/application/build/main/
 module4/application/dist/
 
 .DS_Store
+
+/target/

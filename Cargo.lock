@@ -550,6 +550,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "test-crate",
 ]
 
 [[package]]
@@ -3633,6 +3634,10 @@ checksum = "5fed54709c5b3a53d09bb1c113ea4f5ceafd1e772ddcb0030a82e1d56c087b08"
 dependencies = [
  "new_debug_unreachable",
 ]
+
+[[package]]
+name = "test-crate"
+version = "0.1.0"
 
 [[package]]
 name = "thiserror"

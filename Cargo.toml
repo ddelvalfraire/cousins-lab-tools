@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "apps/desktop/src-tauri",
+    "crates/*",
+]
+resolver = "3"
+
+[workspace.dependencies]
+test-crate = { path = "crates/test-crate" }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
