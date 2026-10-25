@@ -12,7 +12,7 @@ function App() {
     try {
       setGreetMsg(await invoke<string>("greet", { name }));
     } catch {
-      setGreetMsg("The Rust command is unavailable. Use npm run tauri dev to check the native connection.");
+      setGreetMsg("The Rust command is unavailable. Use bun run tauri dev to check the native connection.");
     }
   }
 
