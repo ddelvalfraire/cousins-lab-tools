@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Cousins Lab Tools",
+  "productName": "DV-Dash",
   "version": "0.1.0",
   "identifier": "edu.wsu.cousins.labtools",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Cousins Lab Tools",
+        "title": "DV-Dash",
         "width": 800,
         "height": 600
       }

@@ -18,7 +18,7 @@ function App() {
 
   return (
     <main className="container">
-      <h1>Cousins Lab Tools</h1>
+      <h1>DV-Dash</h1>
       <p>Desktop starter. Instrument workflows have not been migrated yet.</p>
 
       <div className="row">
