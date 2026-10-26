@@ -1,0 +1,21 @@
+[package]
+name = "cousins_lab_desktop"
+version = "0.1.0"
+description = "Cousins Lab Tools desktop application"
+authors = ["Cousins Lab Tools contributors"]
+edition = "2024"
+rust-version = "1.90"
+
+[lib]
+name = "cousins_lab_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+test-crate.workspace = true
+tauri = { version = "2.12.5", features = [] }
+tauri-plugin-opener = "2.7.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

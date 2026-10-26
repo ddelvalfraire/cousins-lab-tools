@@ -14,3 +14,5 @@ apps/legacy/module4/application/build/main/
 apps/legacy/module4/application/dist/
 
 .DS_Store
+
+/target/
