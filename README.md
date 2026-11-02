@@ -78,28 +78,17 @@ Keep scientific units explicit, preserve original samples when changing display 
 
 Developed for the **WSU Cousins Plant Biology Lab** by successive WSU student teams.
 
-<table class="contributors" width="100%">
-  <tr>
-    <td align="center" width="33%"><a href="https://github.com/ddelvalfraire"><img src="design/readme-review/assets/contributors/david-del-val.png" alt="David Del Val" width="64" height="64"><br><strong>David Del Val</strong></a><br><sub>Current</sub></td>
-    <td align="center" width="33%"><a href="https://github.com/Inventor4life"><img src="design/readme-review/assets/contributors/ethan-goode.png" alt="Ethan Goode" width="64" height="64"><br><strong>Ethan Goode</strong></a><br><sub>Current</sub></td>
-    <td align="center" width="33%"><a href="https://github.com/MaxUpton"><img src="design/readme-review/assets/contributors/max-upton.png" alt="Max Upton" width="64" height="64"><br><strong>Max Upton</strong></a><br><sub>Current</sub></td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/matthew-heseltine.svg" alt="Matthew Heseltine initials" width="64" height="64"><br><strong>Matthew Heseltine</strong><br><sub>2025–26</sub></td>
-    <td align="center" width="33%"><a href="https://github.com/SkywalkerWesley"><img src="design/readme-review/assets/contributors/wesley-skywalker.png" alt="Wesley Skywalker" width="64" height="64"><br><strong>Wesley Skywalker</strong></a><br><sub>2025–26</sub></td>
-    <td align="center" width="33%"><a href="https://github.com/KylerKupp"><img src="design/readme-review/assets/contributors/kyler-kupp.png" alt="Kyler Kupp" width="64" height="64"><br><strong>Kyler Kupp</strong></a><br><sub>2024–25</sub></td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><a href="https://github.com/MetzgerH"><img src="design/readme-review/assets/contributors/erik-holtrop.png" alt="Erik Holtrop" width="64" height="64"><br><strong>Erik Holtrop</strong></a><br><sub>2024–25</sub></td>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/brayden-groshong.svg" alt="Brayden Groshong initials" width="64" height="64"><br><strong>Brayden Groshong</strong><br><sub>2023–24</sub></td>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/jack-leeper.svg" alt="Jack Leeper initials" width="64" height="64"><br><strong>Jack Leeper</strong><br><sub>2023–24</sub></td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/tomer-zangi.svg" alt="Tomer Zangi initials" width="64" height="64"><br><strong>Tomer Zangi</strong><br><sub>2023–24</sub></td>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/ritik-agarwal.svg" alt="Ritik Agarwal initials" width="64" height="64"><br><strong>Ritik Agarwal</strong><br><sub>2022–23</sub></td>
-    <td align="center" width="33%"><img src="design/readme-review/assets/contributors/zoe-parker.svg" alt="Zoe Parker initials" width="64" height="64"><br><strong>Zoe Parker</strong><br><sub>2022–23</sub></td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=ddelvalfraire/cousins-lab-tools" alt="Contributors to Cousins Lab Tools on GitHub">
+  </a>
+</p>
+
+**Additional contributors**
+
+- **2025–26:** Matthew Heseltine and [Wesley Skywalker](https://github.com/SkywalkerWesley)
+- **2023–24:** Brayden Groshong, Jack Leeper, and Tomer Zangi
+- **2022–23:** Ritik Agarwal and Zoe Parker
 
 With thanks to **Dr. Asaph Cousins**, the **Cousins lab research team**, and project mentor **Parteek Kumar** for their guidance and feedback.
 
