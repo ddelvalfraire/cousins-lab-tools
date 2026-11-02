@@ -635,6 +635,31 @@ class RawPlotFrame(Frame):
         else:
             pass
 
+    def stopBackgroundTasks(self):
+        """
+        Stop the plot-all worker and the file notifier, then wait for their
+        threads to finish. Called before the window closes so that no QThread
+        is destroyed while it is still running.
+        """
+        logging.debug("stopBackgroundTasks - BEGIN")
+        worker = getattr(self, "plotAllThread", None)
+        if worker is not None:
+            worker.stop()
+        notifier = getattr(self, "newFileNotifierThread", None)
+        if notifier is not None:
+            notifier.stop()
+        threads = [
+            getattr(self, "plotAllButtonThread", None),
+            getattr(self, "fileNotiferThread", None),
+        ]
+        for thread in threads:
+            if thread is not None:
+                thread.quit()
+        for thread in threads:
+            if thread is not None:
+                thread.wait()
+        logging.debug("stopBackgroundTasks - END")
+
     def endPlotAllThread(self):
         logging.debug("endPlotAllThread - BEGIN")
         try:
@@ -655,6 +680,7 @@ class RawPlotFrame(Frame):
         logging.debug("RawPlotFrame.clear - BEGIN")
         self.clearCurves()
         self.plotAllButton.setEnabled(True)
+        self.stopBackgroundTasks()
         self.endPlotAllThread()
         self.fileCheckThreadStarted = False
 
