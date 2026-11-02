@@ -2,10 +2,15 @@
 
 Use these recordings to explore Module 1 and 2.
 
-| Recording | Download | What to import |
-| --- | --- | --- |
-| Acquisition-4971 | [Acquisition recording ZIP](https://github.com/ddelvalfraire/cousins-lab-tools/raw/01c90e7e5917c94f593df1252398b4d7fd96d8c3/reference/instruments/mass-spec/acquisitions/Acquisition-4971.zip) | The extracted acquisition folder |
-| EZView · March 27, 2026 | [EZView recording ZIP](https://github.com/ddelvalfraire/cousins-lab-tools/raw/01c90e7e5917c94f593df1252398b4d7fd96d8c3/reference/instruments/mass-spec/ezview/EZView%20Data%20-%2003_27_2026_09_27_51.zip) | The extracted EZView data file |
+<table width="100%">
+  <thead>
+    <tr><th scope="col" align="left" width="250">Recording</th><th scope="col" align="left" width="350">Download</th><th scope="col" align="left" width="1000">What to import</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Acquisition-4971</td><td><a href="https://github.com/ddelvalfraire/cousins-lab-tools/raw/01c90e7e5917c94f593df1252398b4d7fd96d8c3/reference/instruments/mass-spec/acquisitions/Acquisition-4971.zip">Acquisition recording ZIP</a></td><td>The extracted acquisition folder</td></tr>
+    <tr><td>EZView · March 27, 2026</td><td><a href="https://github.com/ddelvalfraire/cousins-lab-tools/raw/01c90e7e5917c94f593df1252398b4d7fd96d8c3/reference/instruments/mass-spec/ezview/EZView%20Data%20-%2003_27_2026_09_27_51.zip">EZView recording ZIP</a></td><td>The extracted EZView data file</td></tr>
+  </tbody>
+</table>
 
 1. Download and extract one recording.
 2. Open Module 1 or 2 and select the matching input format.
