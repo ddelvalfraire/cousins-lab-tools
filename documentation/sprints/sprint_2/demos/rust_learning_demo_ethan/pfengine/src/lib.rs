@@ -1,9 +1,11 @@
 mod swap_buffer;
+mod shared_queue;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::any::Any;
 use std::io::{Error, ErrorKind};
 use crate::swap_buffer::SwapBuffer;
+use crate::shared_queue::{Producer, Consumer};
 
 pub fn test() {
     println!("Hello from the library!");
@@ -93,8 +95,14 @@ pub struct Packet {
     frame: DataFrame,
 }
 
+// Configuration for the ports that let us get data into and out of the engine
+pub struct PFEngineConfig {
+    in_ports: Vec<Port>,
+    out_ports: Vec<Port>,
+}
+
 pub struct PipeFilterEngine {
-    last_id: u32,
+    last_id: u32,  // TODO: rename this to not suggest that it contains a ComponentID struct
 
     tick_buffer: SwapBuffer<HashMap<ComponentID, VecDeque<Packet>>>,
     components: HashMap<ComponentID, Box<dyn Component>>,
@@ -104,6 +112,7 @@ pub struct PipeFilterEngine {
 }
 
 impl PipeFilterEngine {
+    pub const ENGINE_COMPONENT_ID: ComponentID = ComponentID(0);
     pub fn new() -> PipeFilterEngine {
         PipeFilterEngine {
             last_id: 0,
