@@ -57,6 +57,45 @@ jobs:
       - run: echo "No << parameters.section >> checks yet."
 
   # --- legacy ---
+  legacy-checks:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - legacy-pip-v1-{{ checksum "apps/legacy/Code/Module_Main_1_3/Application/requirements.txt" }}-{{ checksum "apps/legacy/requirements-dev.txt" }}
+            - legacy-pip-v1-
+      - run:
+          name: Install dependencies
+          working_directory: apps/legacy
+          command: |
+            python -m venv ~/venv
+            ~/venv/bin/pip install -r Code/Module_Main_1_3/Application/requirements.txt -r requirements-dev.txt
+      - save_cache:
+          key: legacy-pip-v1-{{ checksum "apps/legacy/Code/Module_Main_1_3/Application/requirements.txt" }}-{{ checksum "apps/legacy/requirements-dev.txt" }}
+          paths:
+            - ~/.cache/pip
+      - run:
+          name: Check formatting
+          working_directory: apps/legacy
+          command: ~/venv/bin/ruff format --check .
+      # Run the remaining checks even if an earlier one fails, so that one
+      # pipeline reports every problem.
+      - run:
+          name: Lint
+          working_directory: apps/legacy
+          command: ~/venv/bin/ruff check .
+          when: always
+      - run:
+          name: Test
+          working_directory: apps/legacy
+          command: ~/venv/bin/pytest --junitxml=test-results/junit.xml
+          environment:
+            QT_QPA_PLATFORM: offscreen
+          when: always
+      - store_test_results:
+          path: apps/legacy/test-results
 
   # --- desktop front end ---
 
@@ -75,9 +114,7 @@ workflows:
   legacy:
     when: << pipeline.parameters.run-legacy >>
     jobs:
-      - placeholder:
-          name: legacy-placeholder
-          section: legacy
+      - legacy-checks
 
   # --- desktop front end ---
   desktop-frontend:

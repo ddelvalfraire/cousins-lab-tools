@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,25 +8,23 @@ __status__ = "Completed"
 """
 
 import pyqtgraph as pg
-from PyQt5.QtCore import QEvent
-from PyQt5.QtCore import Qt
 from appearance import AppearanceRegistry
+from PyQt5.QtCore import Qt
+
 
 class Graph(pg.PlotWidget):
-
-
-    def __init__(self, xRange, yRange, chart_key='raw-masses'):
-        super(Graph, self).__init__()
+    def __init__(self, xRange, yRange, chart_key="raw-masses"):
+        super().__init__()
 
         self.showGrid(x=True, y=True)
-        self.setBackground('black')
+        self.setBackground("black")
         self.xRange = xRange
         self.yRange = yRange
         self.setXRange(0, xRange)
         self.setYRange(0, yRange)
         self.plotItem.hideButtons()
         self.graphInteraction = False
-        self.appearance = AppearanceRegistry(self, 'module3', chart_key)
+        self.appearance = AppearanceRegistry(self, "module3", chart_key)
         self.clear = self._clear_series
 
         # self.plotItem.ctrlMenu = None
@@ -35,13 +32,11 @@ class Graph(pg.PlotWidget):
     def mouseMoveEvent(self, event):
 
         if event.buttons() == Qt.RightButton:
-
             # consume the event and return without doing anything
             event.accept()
             return
-        
-        elif event.buttons() == Qt.LeftButton:
 
+        elif event.buttons() == Qt.LeftButton:
             self.graphInteraction = True
             event.accept()
 
@@ -53,10 +48,9 @@ class Graph(pg.PlotWidget):
         self.graphInteraction = True
         super().contextMenuEvent(event)
 
-    
     def getXAxisRange(self):
         return self.plotItem.getAxis("bottom").range
-        
+
     def getYAxisRange(self):
         return self.plotItem.getAxis("left").range
 
@@ -66,13 +60,13 @@ class Graph(pg.PlotWidget):
     def setNewYRange(self, start, end):
         self.setYRange(start, end)
 
-    def registerSeries(self, key, item, name, kind='line', color_changed=None):
+    def registerSeries(self, key, item, name, kind="line", color_changed=None):
         self.appearance.register(key, item, name, kind, color_changed)
 
     def plot(self, *args, style_key=None, series_name=None, **kwargs):
         item = self.plotItem.plot(*args, **kwargs)
         if style_key is not None:
-            self.registerSeries(style_key, item, series_name, 'scatter')
+            self.registerSeries(style_key, item, series_name, "scatter")
         return item
 
     def _clear_series(self):

@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,14 +8,13 @@ __status__ = "Completed"
 """
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QSizePolicy, QFrame
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QFrame, QSizePolicy
+
 
 class Frame(QtWidgets.QFrame):
-
-
     def __init__(self, scrollArea, heightFactor):
-        super(Frame, self).__init__()
+        super().__init__()
 
         self.scrollArea = scrollArea
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)

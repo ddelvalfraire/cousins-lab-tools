@@ -4,8 +4,8 @@ import re
 # Precompile once at import time
 _NAT_SORT_RE = re.compile(r"[^0-9]|[0-9]+")
 
-class DataUtility:
 
+class DataUtility:
     @staticmethod
     def setDataDirectory(filePath):
         # os.chdir("../Data/Acquisition-1111/Acquisition-1111")
@@ -19,5 +19,9 @@ class DataUtility:
         if ".DS_Store" in fileList:
             fileList.remove(".DS_Store")
         # print(fileList)
-        fileList.sort(key=lambda var:[int(x) if x.isdigit() else x for x in _NAT_SORT_RE.findall(var)])
+        fileList.sort(
+            key=lambda var: [
+                int(x) if x.isdigit() else x for x in _NAT_SORT_RE.findall(var)
+            ]
+        )
         return fileList

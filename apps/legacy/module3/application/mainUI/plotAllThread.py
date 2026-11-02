@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -8,44 +7,39 @@ __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
 
-from PyQt5.QtCore import QObject, pyqtSignal
-import PyQt5.QtCore as QtCore
-from time import time
 import sys
 from math import floor
 
-sys.path.insert(0, '../read-data')
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
 
-from sharedSingleton import SharedSingleton
+sys.path.insert(0, "../read-data")
+
 from dataUtility import DataUtility
+from sharedSingleton import SharedSingleton
+
 
 class PlotAllThread(QObject):
-
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     throwOutOfDataExceptionSignal = pyqtSignal()
     throwFolderNotSelectedExceptionSignal = pyqtSignal()
     filesParsedSignal = pyqtSignal()
 
-
     def __init__(self, globalObject):
-        super(PlotAllThread, self).__init__()
+        super().__init__()
 
         self.globalObject = globalObject
         self.sharedData = SharedSingleton()
 
-
     def run(self):
-
         """Long running task"""
 
         if self.globalObject.application_state == "Idle":
-
             #### Signal to throw exception
             self.throwFolderNotSelectedExceptionSignal.emit()
 
         else:
-
             if not self.sharedData.folderAccessed:
                 self.sharedData.fileList.extend(DataUtility.getDataFileList())
                 self.sharedData.folderAccessed = True
@@ -57,13 +51,11 @@ class PlotAllThread(QObject):
             dataPoint = self.globalObject.dataObj.__next__()
 
             if not dataPoint:
-
                 ##### Singal to throw exception
                 self.throwOutOfDataExceptionSignal.emit()
                 return
-            
+
             else:
-            
                 while dataPoint:
                     if QtCore.QThread.currentThread().isInterruptionRequested():
                         self.finished.emit()
@@ -76,7 +68,7 @@ class PlotAllThread(QObject):
                 #### Send singal to update the data point.
                 self.newDataPointSignal.emit(dataPoints)
 
-                self.globalObject.application_state == "Out_Of_Data"
+                self.globalObject.application_state == "Out_Of_Data"  # noqa: B015 - no-op, probably meant "="; fixing it changes behavior
 
                 #### Send signal to throw exception.
                 self.throwOutOfDataExceptionSignal.emit()

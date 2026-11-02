@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -11,21 +10,22 @@ __status__ = "Completed"
 # change-file-reading
 # This will contain a class for the thread to notify that a new file has been added
 # As soon as a new file is found, it will add them to the shared memory.
+import os
 import sys
 from threading import Event
-import os
-from PyQt5.QtCore import QObject
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
-sys.path.insert(0, '../read-data')
+from PyQt5.QtCore import QObject
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
+sys.path.insert(0, "../read-data")
 
 from sharedSingleton import SharedSingleton
 
-class NewFileNotifierThread(QObject):
 
+class NewFileNotifierThread(QObject):
     def __init__(self, folder_path):
-        super(NewFileNotifierThread, self).__init__()
+        super().__init__()
         self.folder_path = folder_path
         self.stopped = Event()
 
@@ -59,5 +59,3 @@ class NewFileHandler(FileSystemEventHandler):
         if os.path.isfile(file_path):
             self.sharedData.fileList.append(os.path.basename(file_path))
             # print("New file added:", os.path.basename(file_path))
-
-    
