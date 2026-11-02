@@ -65,6 +65,9 @@ class Graph(pg.PlotWidget):
     def registerSeries(self, key, item, name, kind="line", color_changed=None):
         self.appearance.register(key, item, name, kind, color_changed)
 
+    def unregisterSeries(self, item):
+        self.appearance.unregister_item(item)
+
     def plot(self, *args, style_key=None, series_name=None, **kwargs):
         item = self.plotItem.plot(*args, **kwargs)
         if style_key is not None:
