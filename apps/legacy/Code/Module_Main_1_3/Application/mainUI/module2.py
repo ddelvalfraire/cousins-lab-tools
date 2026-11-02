@@ -1,5 +1,3 @@
-
-
 # from PyQt5.uic import loadUi
 from PyQt5 import QtWidgets, QtCore
 import logging
@@ -26,13 +24,13 @@ from datetime import datetime
 #####################################################################
 
 # adding read_data to the system path
-sys.path.append('../read_data')
+sys.path.append("../read_data")
 
 # adding uiElements to the system path
-sys.path.append('../uiElements')
+sys.path.append("../uiElements")
 
 # adding read_data to the system path
-sys.path.append('../calculations')
+sys.path.append("../calculations")
 
 from Code.Module_Main_1_3.Application.read_data.getData import GetData
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
@@ -46,7 +44,6 @@ from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotF
 
 
 class LabViewModule2(QtWidgets.QMainWindow):
-
     def __init__(self, width, height, app):
         """
         This method initializes the LabView class.
@@ -69,9 +66,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.firstPoint = False
 
-        #self.yRealMax = None
-        #self.yRealMin = None
-        #self.isRealYChanged = False
+        # self.yRealMax = None
+        # self.yRealMin = None
+        # self.isRealYChanged = False
 
         self.yMinList = [None, None, None]
         self.yMaxList = [None, None, None]
@@ -103,7 +100,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.co2Extract = 0
         self.o2Extract = 0
 
-        #Initialize CO2 and O2 net rate of consumption
+        # Initialize CO2 and O2 net rate of consumption
         self.co2ConsumptionRate = 0
         self.o2ConsumptionRate = 0
 
@@ -117,16 +114,16 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.lastUbar = 0
         self.dubar_buffer = []
         self.x_buffer = []
-        
+
         # Initialize O2 calibration and measurements
         self.o2Temperature = 0
         self.o2Air = 0
         self.o2Calibration = 0
-        
+
         self.o2Zero = 0
         self.o2Measured = 0
         self.uBarO2 = 0
-        
+
         self.keepCals = False
 
         # Data Object for getting the points.
@@ -145,10 +142,17 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.calculationButtonsUI()
 
         # List of calibration line edits
-        self.calibrationLineEdits = [self.temperatureLineEdit, self.o2ZeroLineEdit, self.o2TemperatureLineEdit, self.o2CalibrationLineEdit,
-                                     self.o2AverageLineEdit, self.co2CalZeroLineEdit, self.co2Cal1ulLineEdit, self.co2Cal2ulLineEdit,
-                                     self.co2Cal3ulLineEdit
-                                    ]
+        self.calibrationLineEdits = [
+            self.temperatureLineEdit,
+            self.o2ZeroLineEdit,
+            self.o2TemperatureLineEdit,
+            self.o2CalibrationLineEdit,
+            self.o2AverageLineEdit,
+            self.co2CalZeroLineEdit,
+            self.co2Cal1ulLineEdit,
+            self.co2Cal2ulLineEdit,
+            self.co2Cal3ulLineEdit,
+        ]
 
         # Add curves and Mean bar to the real time plot
         self.addCurveAndMeanBar()
@@ -158,8 +162,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.show()
 
-#################################################################################################################################
-################################################# User Interface Creation #################################################
+    #################################################################################################################################
+    ################################################# User Interface Creation #################################################
     """
     The user interface is broken up into three frames:
     - one frame for the raw data plot (rawDataPlotUI)
@@ -190,16 +194,26 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.intercept1LineEdit = LineEdit()
         self.co2VoltLineEdit = LineEdit()
-        
+
         self.lineEditList.extend([self.intercept1LineEdit, self.co2VoltLineEdit])
 
         self.assayBufferBoxGridLayout = QtWidgets.QGridLayout()
-        #self.assayBufferBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.assayBufferBoxGridLayout.addWidget(self.intercept1Label, 1, 2, alignment=QtCore.Qt.AlignCenter)
-        self.assayBufferBoxGridLayout.addWidget(self.co2VoltLabel, 1, 3, alignment=QtCore.Qt.AlignCenter)
-        self.assayBufferBoxGridLayout.addWidget(self.assayBufferLabel, 2, 1, alignment=QtCore.Qt.AlignCenter)
-        self.assayBufferBoxGridLayout.addWidget(self.intercept1LineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter)
-        self.assayBufferBoxGridLayout.addWidget(self.co2VoltLineEdit, 2, 3, alignment=QtCore.Qt.AlignCenter)
+        # self.assayBufferBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
+        self.assayBufferBoxGridLayout.addWidget(
+            self.intercept1Label, 1, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.assayBufferBoxGridLayout.addWidget(
+            self.co2VoltLabel, 1, 3, alignment=QtCore.Qt.AlignCenter
+        )
+        self.assayBufferBoxGridLayout.addWidget(
+            self.assayBufferLabel, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.assayBufferBoxGridLayout.addWidget(
+            self.intercept1LineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.assayBufferBoxGridLayout.addWidget(
+            self.co2VoltLineEdit, 2, 3, alignment=QtCore.Qt.AlignCenter
+        )
         self.assayBufferBoxGridLayout.setHorizontalSpacing(10)
         ###############################################################################################
 
@@ -210,22 +224,24 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.DuBarGraphLabel = QtWidgets.QLabel("Pressure Derivative")
 
         self.uBarBoxGridLayout = QtWidgets.QGridLayout()
-        #self.uBarBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.uBarBoxGridLayout.addWidget(self.uBarGraphLabel, 2, 1, alignment=QtCore.Qt.AlignCenter)
+        # self.uBarBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
+        self.uBarBoxGridLayout.addWidget(
+            self.uBarGraphLabel, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
 
         self.DuBarBoxGridLayout = QtWidgets.QGridLayout()
-        #self.DuBarBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.DuBarBoxGridLayout.addWidget(self.DuBarGraphLabel, 2, 1, alignment=QtCore.Qt.AlignCenter)
+        # self.DuBarBoxGridLayout.addWidget(self.emptyLabel, 1, 1, alignment=QtCore.Qt.AlignCenter)
+        self.DuBarBoxGridLayout.addWidget(
+            self.DuBarGraphLabel, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
 
         ###############################################################################################
-
-
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
         self.assayBufferGraph = Graph(180, 3)
-        self.assayBufferGraph.setLabel(axis='left', text = 'CO2 (µL)')
-        self.assayBufferGraph.setLabel(axis='bottom', text = 'Voltage (mV)')
+        self.assayBufferGraph.setLabel(axis="left", text="CO2 (µL)")
+        self.assayBufferGraph.setLabel(axis="bottom", text="Voltage (mV)")
         self.assayBufferGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.assayBufferGraphVLayout = QtWidgets.QVBoxLayout()
         self.assayBufferGraphVLayout.setContentsMargins(0, 10, 0, 0)
@@ -236,13 +252,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.assayBufferGraphBoxGridVLayout.addLayout(self.assayBufferGraphVLayout)
         #################################################################################################
 
-
-
         ######################## {QFormLayout for uBar} AND {uBar Graph} #######################
-        self.uBarGraph = Graph(100,180)
-        self.uBarGraph.setLabel(axis='left', text = 'uBar')
-        self.uBarGraph.setLabel(axis='bottom', text = 'Time (s)')
-        #self.uBarGraph.getViewBox().wheelEvent = self.on_wheel_event
+        self.uBarGraph = Graph(100, 180)
+        self.uBarGraph.setLabel(axis="left", text="uBar")
+        self.uBarGraph.setLabel(axis="bottom", text="Time (s)")
+        # self.uBarGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.uBarGraphVLayout = QtWidgets.QVBoxLayout()
         self.uBarGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.uBarGraphVLayout.addWidget(self.uBarGraph)
@@ -253,10 +267,10 @@ class LabViewModule2(QtWidgets.QMainWindow):
         ################################################################################################
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
-        self.DuBarGraph = Graph(100,180)
-        self.DuBarGraph.setLabel(axis='left', text = 'D[uBar]')
-        self.DuBarGraph.setLabel(axis='bottom', text = 'Time (s)')
-        #self.DuBarGraph.getViewBox().wheelEvent = self.on_wheel_event
+        self.DuBarGraph = Graph(100, 180)
+        self.DuBarGraph.setLabel(axis="left", text="D[uBar]")
+        self.DuBarGraph.setLabel(axis="bottom", text="Time (s)")
+        # self.DuBarGraph.getViewBox().wheelEvent = self.on_wheel_event
         self.DuBarGraphVLayout = QtWidgets.QVBoxLayout()
         self.DuBarGraphVLayout.setContentsMargins(0, 10, 0, 0)
         self.DuBarGraphVLayout.addWidget(self.DuBarGraph)
@@ -265,8 +279,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.DuBarGraphBoxGridVLayout.addLayout(self.DuBarBoxGridLayout)
         self.DuBarGraphBoxGridVLayout.addLayout(self.DuBarGraphVLayout)
         ################################################################################################
-
-
 
         # {{QFormLayout for Assay Buffer} AND {Assay Buffer Graph}} AND {{Concentration Label} AND {Concentration Graph}} AND {{Concentration Label} AND {Concentration Graph}} #
 
@@ -278,12 +290,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.calculatedPlotsFrame.setLayout(self.calculatedPlotsHLayout)
 
     def calculationButtonsUI(self):
-
         """
-            Initializes file menu, calculation button.
-            :param {_ : }
-            :return -> None
-        
+        Initializes file menu, calculation button.
+        :param {_ : }
+        :return -> None
+
         """
 
         ############################## File Selection QDialog ##############################
@@ -292,13 +303,13 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.menu_bar = self.menuBar()
 
         # Create a 'File' menu
-        self.file_menu = self.menu_bar.addMenu('File')
+        self.file_menu = self.menu_bar.addMenu("File")
 
         # Add actions to select a file/folder
-        self.select_folder_action = QAction('Load Acq Folder', self)
-        self.select_ezview_action = QAction('Load EZView Data File', self)
-        self.select_file_action = QAction('Load Cal File', self)
-        self.select_save_calc_action = QAction('Save Calibration to File', self)
+        self.select_folder_action = QAction("Load Acq Folder", self)
+        self.select_ezview_action = QAction("Load EZView Data File", self)
+        self.select_file_action = QAction("Load Cal File", self)
+        self.select_save_calc_action = QAction("Save Calibration to File", self)
 
         self.select_folder_action.triggered.connect(self.select_folder)
         self.select_ezview_action.triggered.connect(self.select_ezview)
@@ -334,7 +345,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.o2CalibrationLineEdit = LineEdit()
         self.o2ZeroLineEdit = LineEdit()
         self.o2AverageLineEdit = LineEdit()
-        
+
         self.co2CalZeroLineEdit = LineEdit()
         self.co2Cal1ulLineEdit = LineEdit()
         self.co2Cal2ulLineEdit = LineEdit()
@@ -342,7 +353,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         self.co2ZeroLineEdit = LineEdit()
         self.co2SampleLineEdit = LineEdit()
-        
+
         self.temperatureLineEdit = LineEdit()
 
         # Make line edits editable
@@ -350,7 +361,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.o2TemperatureLineEdit.setReadOnly(False)
         self.o2CalibrationLineEdit.setReadOnly(False)
         self.o2AverageLineEdit.setReadOnly(False)
-        
+
         self.co2CalZeroLineEdit.setReadOnly(False)
         self.co2Cal1ulLineEdit.setReadOnly(False)
         self.co2Cal2ulLineEdit.setReadOnly(False)
@@ -359,10 +370,15 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.co2ZeroLineEdit.setReadOnly(False)
         self.co2SampleLineEdit.setReadOnly(False)
 
-        
-        
-
-        self.lineEditList.extend([self.o2ZeroLineEdit, self.co2CalZeroLineEdit, self.co2Cal1ulLineEdit, self.co2Cal2ulLineEdit, self.co2Cal3ulLineEdit])
+        self.lineEditList.extend(
+            [
+                self.o2ZeroLineEdit,
+                self.co2CalZeroLineEdit,
+                self.co2Cal1ulLineEdit,
+                self.co2Cal2ulLineEdit,
+                self.co2Cal3ulLineEdit,
+            ]
+        )
 
         # Initializing QLabels
         self.calibrationsBufferLabel = QtWidgets.QLabel("Calibrations")
@@ -373,65 +389,99 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # self.o2ZeroCo2CalGridLayout.addWidget(self.o2ZeroButton, 2, 1, alignment=QtCore.Qt.AlignCenter)
         # self.o2ZeroCo2CalGridLayout.addWidget(self.o2ZeroLineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter)
         # self.o2ZeroCo2CalGridLayout.addWidget(self.assayBufferLabel, 3, 1, 2, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2CalZeroButton, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2CalZeroLineEdit, 1, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal1ulButton, 2, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal1ulLineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal2ulButton, 3, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal2ulLineEdit, 3, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal3ulButton, 4, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2Cal3ulLineEdit, 4, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2ZeroButton, 6, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2ZeroLineEdit, 6, 2, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2SampleButton, 7, 1, alignment=QtCore.Qt.AlignCenter)
-        self.co2ZeroCo2CalGridLayout.addWidget(self.co2SampleLineEdit, 7, 2, alignment=QtCore.Qt.AlignCenter)
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2CalZeroButton, 1, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2CalZeroLineEdit, 1, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal1ulButton, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal1ulLineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal2ulButton, 3, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal2ulLineEdit, 3, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal3ulButton, 4, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2Cal3ulLineEdit, 4, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2ZeroButton, 6, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2ZeroLineEdit, 6, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2SampleButton, 7, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.co2ZeroCo2CalGridLayout.addWidget(
+            self.co2SampleLineEdit, 7, 2, alignment=QtCore.Qt.AlignCenter
+        )
         # self.o2ZeroCo2CalGridLayout.addWidget(self.temperatureLabel, 8, 1, 1, 2, alignment=QtCore.Qt.AlignCenter)
         # self.o2ZeroCo2CalGridLayout.addWidget(self.temperatureLineEdit, 9, 1, 1, 2, alignment=QtCore.Qt.AlignCenter) # Main Layout 1
-        self.co2ZeroCo2CalGridLayout.setRowStretch(1,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(2,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(3,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(4,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(5,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(6,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(7,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(8,1)
-        self.co2ZeroCo2CalGridLayout.setRowStretch(9,1)
-        self.co2ZeroCo2CalGridLayout.setColumnStretch(0,1)
-        self.co2ZeroCo2CalGridLayout.setContentsMargins(2,5,125,0)
-        
+        self.co2ZeroCo2CalGridLayout.setRowStretch(1, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(2, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(3, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(4, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(5, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(6, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(7, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(8, 1)
+        self.co2ZeroCo2CalGridLayout.setRowStretch(9, 1)
+        self.co2ZeroCo2CalGridLayout.setColumnStretch(0, 1)
+        self.co2ZeroCo2CalGridLayout.setContentsMargins(2, 5, 125, 0)
+
         # Creating a Qgrid Layout for o2
         self.o2GridLayout = QtWidgets.QGridLayout()
-        self.o2GridLayout.addWidget(self.o2ZeroButton, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2ZeroLineEdit, 1, 2, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2CalibrateButton, 2, 1, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2CalibrationLineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2CalculateButton, 3, 1, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2AverageLineEdit, 3, 2, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2TemperatureLabel, 4, 1, alignment=QtCore.Qt.AlignCenter)
-        self.o2GridLayout.addWidget(self.o2TemperatureLineEdit, 4, 2, alignment=QtCore.Qt.AlignCenter)
+        self.o2GridLayout.addWidget(
+            self.o2ZeroButton, 1, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2ZeroLineEdit, 1, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2CalibrateButton, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2CalibrationLineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2CalculateButton, 3, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2AverageLineEdit, 3, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2TemperatureLabel, 4, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.o2GridLayout.addWidget(
+            self.o2TemperatureLineEdit, 4, 2, alignment=QtCore.Qt.AlignCenter
+        )
         self.o2GridLayout.setContentsMargins(125, 5, 125, 0)
-        
-        
-        #################################################################################################
 
         #################################################################################################
 
-
-
+        #################################################################################################
 
         ########################{CO2 Zero Blank Extract} AND {CO2 O2 LineEdit Layout} ###################
-        
-        
-        
+
         # unused leftover elements
-        #Velocity and CO2 O2 Concentration Labels
+        # Velocity and CO2 O2 Concentration Labels
         self.percentCO2Label = QtWidgets.QLabel("%CO2")
         self.uBar2Label = QtWidgets.QLabel("µBar CO2")
 
-        #Velocity and CO2 O2 Concentration Text Edit
+        # Velocity and CO2 O2 Concentration Text Edit
         self.percentCO2LineEdit = LineEdit()
         self.uBar2LineEdit = LineEdit()
-        
+
         # O2 concentration
         self.uBarO2Label = QtWidgets.QLabel("µBar O2")
         self.uBarO2LineEdit = LineEdit()
@@ -439,14 +489,24 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.lineEditList.extend([self.percentCO2LineEdit, self.uBar2LineEdit])
 
         self.velocityConcentrationGridLayout = QtWidgets.QGridLayout()
-        self.velocityConcentrationGridLayout.addWidget(self.percentCO2Label, 1, 1, alignment=QtCore.Qt.AlignCenter)
-        self.velocityConcentrationGridLayout.addWidget(self.uBar2Label, 1, 2, alignment=QtCore.Qt.AlignCenter)
-        self.velocityConcentrationGridLayout.addWidget(self.uBarO2Label, 1, 3, alignment=QtCore.Qt.AlignCenter)
-        self.velocityConcentrationGridLayout.addWidget(self.percentCO2LineEdit, 2, 1, alignment=QtCore.Qt.AlignCenter)
-        self.velocityConcentrationGridLayout.addWidget(self.uBar2LineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter)
-        self.velocityConcentrationGridLayout.addWidget(self.uBarO2LineEdit, 2, 3, alignment=QtCore.Qt.AlignCenter)
-
-        
+        self.velocityConcentrationGridLayout.addWidget(
+            self.percentCO2Label, 1, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.velocityConcentrationGridLayout.addWidget(
+            self.uBar2Label, 1, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.velocityConcentrationGridLayout.addWidget(
+            self.uBarO2Label, 1, 3, alignment=QtCore.Qt.AlignCenter
+        )
+        self.velocityConcentrationGridLayout.addWidget(
+            self.percentCO2LineEdit, 2, 1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.velocityConcentrationGridLayout.addWidget(
+            self.uBar2LineEdit, 2, 2, alignment=QtCore.Qt.AlignCenter
+        )
+        self.velocityConcentrationGridLayout.addWidget(
+            self.uBarO2LineEdit, 2, 3, alignment=QtCore.Qt.AlignCenter
+        )
 
         # Add to table and Purge Button
         self.addToTableButton = Button("Add to Table", 120, 26)
@@ -462,34 +522,39 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.addPurgeTableVLayout.addWidget(self.stopButton)
         self.addPurgeTableVLayout.addWidget(self.purgeTableButton)
 
-
         self.table = QtWidgets.QTableWidget()
         # Dummy row count
-        #self.table.setRowCount(4)
+        # self.table.setRowCount(4)
         # set column count
         self.table.setColumnCount(3)
         self.table.setMaximumWidth(330)
-        
 
         self.tableVLayout = QtWidgets.QVBoxLayout()
         self.tableVLayout.addWidget(self.table)
-    
-        
+
         # Table and addTable purgeTable layout
         self.tableVelocityConcentrationVLayout = QtWidgets.QVBoxLayout()
-        self.tableVelocityConcentrationVLayout.addLayout(self.velocityConcentrationGridLayout)
+        self.tableVelocityConcentrationVLayout.addLayout(
+            self.velocityConcentrationGridLayout
+        )
         self.tableVelocityConcentrationVLayout.addLayout(self.tableVLayout)
 
         # Velocity Concentration Table layout
         self.tableVelocityConcentrationAddPurgeHLayout = QtWidgets.QHBoxLayout()
-        self.tableVelocityConcentrationAddPurgeHLayout.addLayout(self.addPurgeTableVLayout)
-        self.tableVelocityConcentrationAddPurgeHLayout.addLayout(self.tableVelocityConcentrationVLayout)        # Main Layout 4
-        self.tableVelocityConcentrationAddPurgeHLayout.setContentsMargins(125,0,50,0)
+        self.tableVelocityConcentrationAddPurgeHLayout.addLayout(
+            self.addPurgeTableVLayout
+        )
+        self.tableVelocityConcentrationAddPurgeHLayout.addLayout(
+            self.tableVelocityConcentrationVLayout
+        )  # Main Layout 4
+        self.tableVelocityConcentrationAddPurgeHLayout.setContentsMargins(125, 0, 50, 0)
 
         self.calculationButtonsFrameHLayout = QtWidgets.QHBoxLayout()
         self.calculationButtonsFrameHLayout.addLayout(self.co2ZeroCo2CalGridLayout)
         self.calculationButtonsFrameHLayout.addLayout(self.o2GridLayout)
-        self.calculationButtonsFrameHLayout.addLayout(self.tableVelocityConcentrationAddPurgeHLayout)
+        self.calculationButtonsFrameHLayout.addLayout(
+            self.tableVelocityConcentrationAddPurgeHLayout
+        )
 
         self.calculationButtonsFrame.setLayout(self.calculationButtonsFrameHLayout)
         #################################################################################################
@@ -520,29 +585,35 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.calculatedPlotsFrame = Frame(self.scrollArea, 0.8)
         self.calculationButtonsFrame = Frame(self.scrollArea, 0.7)
         # self.rawDataPlotFrame = Frame(self.scrollArea, 0.9)
-        self.rawDataPlotFrame = RawPlotFrame(self.scrollArea, 0.9, self.application_state, 2, parent=self)
+        self.rawDataPlotFrame = RawPlotFrame(
+            self.scrollArea, 0.9, self.application_state, 2, parent=self
+        )
         # Adding QFrames to the scroll area widget layout.
         self.scrollAreaWidgetLayout.addWidget(self.calculatedPlotsFrame)
         self.scrollAreaWidgetLayout.addWidget(self.rawDataPlotFrame)
         self.scrollAreaWidgetLayout.addWidget(self.calculationButtonsFrame)
 
     def addCurveAndMeanBar(self):
-        self.curve3 = Curve("uBar", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph)
+        self.curve3 = Curve(
+            "uBar", [], pg.mkPen(color="#FFFFFF", width=4), self.uBarGraph
+        )
         self.curve3.plotCurve()
         self.curve3.unhide()
 
-        self.curve4 = Curve("D[uBar]", [], pg.mkPen(color="#FFFFFF", width=4), self.DuBarGraph)
+        self.curve4 = Curve(
+            "D[uBar]", [], pg.mkPen(color="#FFFFFF", width=4), self.DuBarGraph
+        )
         self.curve4.plotCurve()
         self.curve4.unhide()
 
     def connectUItoMethods(self):
         """
-            Connects all the UI Components to their respective methods.
-            :param {_ : }
-            :return -> None
+        Connects all the UI Components to their respective methods.
+        :param {_ : }
+        :return -> None
 
-            We need to tell the program what to do when a UI component is interacted with (e.g. a button is clicked).
-            So we connect the ui elements to methods that define the behavior of the element.
+        We need to tell the program what to do when a UI component is interacted with (e.g. a button is clicked).
+        So we connect the ui elements to methods that define the behavior of the element.
 
         """
 
@@ -570,16 +641,32 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.temperatureLineEdit.returnPressed.connect(lambda: self.OnEditedTemp())
 
         # CO2 Cal buttons connect method
-        self.co2CalZeroButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2CalZeroLineEdit, 3, 0, 0))
-        self.co2Cal1ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal1ulLineEdit, 3, 0, 1))
-        self.co2Cal2ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal2ulLineEdit, 3, 0, 2))
-        self.co2Cal3ulButton.clicked.connect(lambda: self.GraphMeanButtonPressed(self.co2Cal3ulLineEdit, 3, 0, 3))
+        self.co2CalZeroButton.clicked.connect(
+            lambda: self.GraphMeanButtonPressed(self.co2CalZeroLineEdit, 3, 0, 0)
+        )
+        self.co2Cal1ulButton.clicked.connect(
+            lambda: self.GraphMeanButtonPressed(self.co2Cal1ulLineEdit, 3, 0, 1)
+        )
+        self.co2Cal2ulButton.clicked.connect(
+            lambda: self.GraphMeanButtonPressed(self.co2Cal2ulLineEdit, 3, 0, 2)
+        )
+        self.co2Cal3ulButton.clicked.connect(
+            lambda: self.GraphMeanButtonPressed(self.co2Cal3ulLineEdit, 3, 0, 3)
+        )
 
         # CO2 Cal LineEdits connect text edited connet method
-        self.co2CalZeroLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2CalZeroLineEdit, 3, 0, 0))
-        self.co2Cal1ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal1ulLineEdit, 3, 0, 1))
-        self.co2Cal2ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal2ulLineEdit, 3, 0, 2))
-        self.co2Cal3ulLineEdit.returnPressed.connect(lambda: self.OnEditedCO2Cal(self.co2Cal3ulLineEdit, 3, 0, 3))
+        self.co2CalZeroLineEdit.returnPressed.connect(
+            lambda: self.OnEditedCO2Cal(self.co2CalZeroLineEdit, 3, 0, 0)
+        )
+        self.co2Cal1ulLineEdit.returnPressed.connect(
+            lambda: self.OnEditedCO2Cal(self.co2Cal1ulLineEdit, 3, 0, 1)
+        )
+        self.co2Cal2ulLineEdit.returnPressed.connect(
+            lambda: self.OnEditedCO2Cal(self.co2Cal2ulLineEdit, 3, 0, 2)
+        )
+        self.co2Cal3ulLineEdit.returnPressed.connect(
+            lambda: self.OnEditedCO2Cal(self.co2Cal3ulLineEdit, 3, 0, 3)
+        )
 
         # O2 cal buttons connect method
         self.o2TemperatureLineEdit.returnPressed.connect(self.temperatureTextChanged)
@@ -590,7 +677,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.o2CalibrateButton.clicked.connect(self.o2CalButtonPressed)
         self.o2CalculateButton.clicked.connect(self.o2CalculateButtonPressed)
 
-        #self.o2CalibrationLineEdit.returnPressed.connect(lambda: self.OnEditedO2Cal())
+        # self.o2CalibrationLineEdit.returnPressed.connect(lambda: self.OnEditedO2Cal())
 
         # CO2 Zero button connect method
         self.co2ZeroButton.clicked.connect(self.co2ZeroButtonPressed)
@@ -610,21 +697,23 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # Copy Table Row connect method
         self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
+
     def select_ezview(self):
         logger.info("Selecting EZView file (Module 2)")
         # Open a file dialog to select a folder
         self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
-            None,
-            "Select a file",
-            "",
-            "All Files (*);;Text Files (*.txt)"
+            None, "Select a file", "", "All Files (*);;Text Files (*.txt)"
         )
         if self.rawDataPlotFrame.folder_path == "":
             logger.info("EZView selection cancelled (Module 2)")
             return
 
-        logger.info(f"EZView file selected (Module 2): {self.rawDataPlotFrame.EZViewPath}")
-        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
+        logger.info(
+            f"EZView file selected (Module 2): {self.rawDataPlotFrame.EZViewPath}"
+        )
+        self.setWindowTitle(
+            f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}"
+        )
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
@@ -632,7 +721,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
     def select_folder(self):
         logger.info("Selecting folder (Module 2)")
         # Open a file dialog to select a folder
-        self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(self, 'Select a folder')
+        self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(
+            self, "Select a folder"
+        )
         if self.rawDataPlotFrame.folder_path == "":
             logger.info("Folder selection cancelled (Module 2)")
             return
@@ -640,29 +731,29 @@ class LabViewModule2(QtWidgets.QMainWindow):
         logger.info(f"Folder selected (Module 2): {self.rawDataPlotFrame.folder_path}")
         self.rawDataPlotFrame.EZViewPath = None
 
-        self.setWindowTitle(f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}")
+        self.setWindowTitle(
+            f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}"
+        )
         self.dataObj.setDirectory(self.rawDataPlotFrame.folder_path)
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
-################################################# End - User Interface Creation #################################################
-#################################################################################################################################
 
+    ################################################# End - User Interface Creation #################################################
+    #################################################################################################################################
 
-
-
-#################################################################################################################################
-##################################################### ButtonPressed Methods #####################################################
+    #################################################################################################################################
+    ##################################################### ButtonPressed Methods #####################################################
 
     def meanButtonPressed(self, lineEdit, curve):
         """
-            When a mean button is pressed, sets the lineEdit with
-            the current mean value from the mean bars on a certain curve.
-            curve # 3 = mass 44
-            curve # 0 = mass 32
-            :param { lineEdit : QLineEdit} -> line edit that will display the mean value
-            :param { curve : int} -> int that indicates the curve to take the mean from
-            :return -> mean_value
+        When a mean button is pressed, sets the lineEdit with
+        the current mean value from the mean bars on a certain curve.
+        curve # 3 = mass 44
+        curve # 0 = mass 32
+        :param { lineEdit : QLineEdit} -> line edit that will display the mean value
+        :param { curve : int} -> int that indicates the curve to take the mean from
+        :return -> mean_value
         """
 
         # Get the left and right x points from the mean bars
@@ -679,41 +770,48 @@ class LabViewModule2(QtWidgets.QMainWindow):
         keys_list = sorted(data_snapshot.keys())
 
         # if one or both of the x values is not in the range of the dataset, return undefined
-        if (xright < keys_list[0] or xleft > keys_list[-1] or
-                 xleft < keys_list[0] or xright > keys_list[-1]):
-            
+        if (
+            xright < keys_list[0]
+            or xleft > keys_list[-1]
+            or xleft < keys_list[0]
+            or xright > keys_list[-1]
+        ):
             self.throwUndefined(lineEdit)
             return None
         else:
             # get mean value between points
-            
+
             # Find the closest x values in the data to the x values from the mean bars
-            xleft_closest = min(keys_list, key=lambda x:abs(x-xleft))
-            xright_closest = min(keys_list, key=lambda x:abs(x-xright))
+            xleft_closest = min(keys_list, key=lambda x: abs(x - xleft))
+            xright_closest = min(keys_list, key=lambda x: abs(x - xright))
 
             # Get mean from graph
-            mean_value = Calculations.getMean(data_snapshot, xleft_closest, xright_closest, curve)
-        
+            mean_value = Calculations.getMean(
+                data_snapshot, xleft_closest, xright_closest, curve
+            )
+
             # Set line edit with mean value
             lineEdit.setText(str(mean_value))
 
             return mean_value
 
-    def GraphMeanButtonPressed(self, lineEdit, curve, graph, concentration, manualEntry=False):
+    def GraphMeanButtonPressed(
+        self, lineEdit, curve, graph, concentration, manualEntry=False
+    ):
         """
-            When a mean button is pressed, calls meanButtonPressed to get mean
-            and then graphs concentration vs. mean on the proper graph and gets the slope
-            of the line (calibration value).
-            :param { lineEdit : QLineEdit} -> line edit that will display the mean value
-            :param { curve : int} -> int that indicates the curve to take the mean from
-            :param { graph : int} -> 0 if assay graph
-            :param { concentration : int} -> concentration that will graph against mean
-            :return -> None
+        When a mean button is pressed, calls meanButtonPressed to get mean
+        and then graphs concentration vs. mean on the proper graph and gets the slope
+        of the line (calibration value).
+        :param { lineEdit : QLineEdit} -> line edit that will display the mean value
+        :param { curve : int} -> int that indicates the curve to take the mean from
+        :param { graph : int} -> 0 if assay graph
+        :param { concentration : int} -> concentration that will graph against mean
+        :return -> None
         """
 
         # if mean value was entered manually, set mean_value to lineEdit text
         if manualEntry:
-            if lineEdit.text() == '' or lineEdit.text() == 'undef':
+            if lineEdit.text() == "" or lineEdit.text() == "undef":
                 mean_value = None
             else:
                 mean_value = float(lineEdit.text())
@@ -725,34 +823,40 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.graphConcentrationVsMean(mean_value, graph, concentration)
 
         # get the slope and intercept of the graph (calibration value)
-        if (graph == 0):
+        if graph == 0:
             # find co2 buffer calibration (slope)
-            self.co2BufferCalibration = Calculations.calculateSlope(self.assayBufferData)
+            self.co2BufferCalibration = Calculations.calculateSlope(
+                self.assayBufferData
+            )
 
             if self.co2BufferCalibration == None:
-                #self.throwUndefined(self.biCarbCalLineEdit)
+                # self.throwUndefined(self.biCarbCalLineEdit)
                 self.throwUndefined(self.intercept1LineEdit)
             else:
                 # set slope line edit
-                #self.biCarbCalLineEdit.setText(str(round(self.co2BufferCalibration, 4)))
-    
+                # self.biCarbCalLineEdit.setText(str(round(self.co2BufferCalibration, 4)))
+
                 # find intercept
-                intercept = Calculations.calculateIntercept(self.assayBufferData, self.co2BufferCalibration)
+                intercept = Calculations.calculateIntercept(
+                    self.assayBufferData, self.co2BufferCalibration
+                )
 
                 # set intercept line edit
                 self.intercept1LineEdit.setText(str(round(intercept, 4)))
                 self.co2Cal3ulLineEdit
-        #if lineedit is co2 cal 3, then compute the co2/volt line        
-        if (lineEdit == self.co2Cal3ulLineEdit):
+        # if lineedit is co2 cal 3, then compute the co2/volt line
+        if lineEdit == self.co2Cal3ulLineEdit:
             try:
-                num = Calculations.calculateCo2OverVolt(float(self.co2CalZeroLineEdit.text()),
-                                                        float(self.co2Cal1ulLineEdit.text()),
-                                                        float(self.co2Cal2ulLineEdit.text()),
-                                                        float(self.co2Cal3ulLineEdit.text()))
-                if(num == -99999): #num that is returned if num is undefinable
+                num = Calculations.calculateCo2OverVolt(
+                    float(self.co2CalZeroLineEdit.text()),
+                    float(self.co2Cal1ulLineEdit.text()),
+                    float(self.co2Cal2ulLineEdit.text()),
+                    float(self.co2Cal3ulLineEdit.text()),
+                )
+                if num == -99999:  # num that is returned if num is undefinable
                     self.throwUndefined(self.co2VoltLineEdit)
                 else:
-                  self.co2VoltLineEdit.setText(str(round(num, 10)))
+                    self.co2VoltLineEdit.setText(str(round(num, 10)))
             except:
                 pass
 
@@ -766,7 +870,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # Set mean value from mean bars for Mass 44 graph
         self.co2Zero44Reading = self.meanButtonPressed(self.co2ZeroLineEdit, 3)
-        
+
     def co2SampleButtonPressed(self):
         """
         Sets the CO2 sample line edit to the mean value from the
@@ -775,14 +879,16 @@ class LabViewModule2(QtWidgets.QMainWindow):
         try:
             self.co2SampleReading = self.meanButtonPressed(self.co2SampleLineEdit, 3)
 
-            #assume zero button has been pressed
+            # assume zero button has been pressed
             co2Volt = float(self.co2VoltLineEdit.text())
             co2Sample = float(self.co2SampleLineEdit.text())
             co2Zero = float(self.co2ZeroLineEdit.text())
-            #calculate values
-            self.percentCO2 = Calculations.calculatePercentCO2(co2Volt, co2Sample, co2Zero)
+            # calculate values
+            self.percentCO2 = Calculations.calculatePercentCO2(
+                co2Volt, co2Sample, co2Zero
+            )
             self.uBarCO2 = Calculations.calculateUbarCO2(self.percentCO2)
-            #populate fields
+            # populate fields
             self.percentCO2LineEdit.setText(str(round(self.percentCO2, 4)))
             self.uBar2LineEdit.setText(str(round(self.uBarCO2, 4)))
         except:
@@ -813,7 +919,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
         Set o2 zero value directly from the line edit.
         """
-        
+
         try:
             # set to text value
             self.o2Zero = float(self.o2ZeroLineEdit.text())
@@ -827,7 +933,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         Reads the temperature value from the lineEdit and sets the temperature
         setting to that value.
         """
-        
+
         try:
             # set temperature to text value
             self.o2Temperature = float(self.o2TemperatureLineEdit.text())
@@ -835,17 +941,17 @@ class LabViewModule2(QtWidgets.QMainWindow):
             # set temperature to default
             self.o2TemperatureLineEdit.setText("0")
             self.o2Temperature = 0
-            
-        #print(self.o2Temperature)
+
+        # print(self.o2Temperature)
 
     def o2CalButtonPressed(self):
         """
         Calculates O2 calibration using temperature setting and O2 zero.
         """
-        
+
         # calculate O2 air value given the temperature
         self.o2Air = Calculations.calculateO2Air(self.o2Temperature)
-        
+
         # O2 calibration calculation
         self.o2Calibration = Calculations.calculateO2Cal(self.o2Air, self.o2Zero)
         self.o2CalibrationLineEdit.setText(str(round(self.o2Calibration, 4)))
@@ -854,11 +960,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
         Collects the avrage O2 mv from main plot, then calculates O2 concentrarion .
         """
-        
+
         # obtain avrage of mass 32 to be used in the calculation
         self.meanButtonPressed(self.o2AverageLineEdit, 0)
         self.o2Measured = float(self.o2AverageLineEdit.text())
-        
+
         # calculate uBar O2 concentration
         self.uBarO2 = Calculations.calculateUbarO2(self.o2Calibration, self.o2Measured)
         self.uBarO2LineEdit.setText(str(round(self.uBarO2, 4)))
@@ -867,7 +973,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
         After manual setting of mass 32 average, calculate O2 concentration.
         """
-        
+
         try:
             # set to text value
             self.o2Measured = float(self.o2AverageLineEdit.text())
@@ -875,7 +981,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
             # set to default value
             self.o2AverageLineEdit.setText("0")
             self.o2Measured = 0
-            
+
         # calculate uBar O2 concentration
         self.uBarO2 = Calculations.calculateUbarO2(self.o2Calibration, self.o2Measured)
         self.uBarO2LineEdit.setText(str(round(self.uBarO2, 4)))
@@ -896,9 +1002,17 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.table.insertRow(newRowPosition)
 
         # set values in row (%CO@, uBar CO2, uBar O2)
-        self.table.setItem(newRowPosition, 0, QtWidgets.QTableWidgetItem(str(round(self.percentCO2, 4))))
-        self.table.setItem(newRowPosition, 1, QtWidgets.QTableWidgetItem(str(round(self.uBarCO2, 4))))
-        self.table.setItem(newRowPosition, 2, QtWidgets.QTableWidgetItem(str(round(self.uBarO2, 4))))
+        self.table.setItem(
+            newRowPosition,
+            0,
+            QtWidgets.QTableWidgetItem(str(round(self.percentCO2, 4))),
+        )
+        self.table.setItem(
+            newRowPosition, 1, QtWidgets.QTableWidgetItem(str(round(self.uBarCO2, 4)))
+        )
+        self.table.setItem(
+            newRowPosition, 2, QtWidgets.QTableWidgetItem(str(round(self.uBarO2, 4)))
+        )
 
     def purgeTableButtonPressed(self):
         """
@@ -921,7 +1035,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         columnIndex = self.table.columnCount()
 
         try:
-            row = ''
+            row = ""
             if len(self.table.selectedItems()) == 0:
                 for i in range(self.table.rowCount()):
                     for j in range(self.table.columnCount()):
@@ -957,23 +1071,24 @@ class LabViewModule2(QtWidgets.QMainWindow):
         except Exception as e:
             print(f"copyTableRowButtonPressed error: {e}")
 
+    ################################################## End - ButtonPressed Methods ##################################################
+    #################################################################################################################################
 
-################################################## End - ButtonPressed Methods ##################################################
-#################################################################################################################################
-
-
-#################################################################################################################################
-###################################################### On Edit Line Edits #######################################################
+    #################################################################################################################################
+    ###################################################### On Edit Line Edits #######################################################
 
     def OnEditedTemp(self):
-        
+
         # check for numerical input
-        if (not self.isFloat(self.temperatureLineEdit.text()) and self.temperatureLineEdit.text() != ''):
-            #throw execption
+        if (
+            not self.isFloat(self.temperatureLineEdit.text())
+            and self.temperatureLineEdit.text() != ""
+        ):
+            # throw execption
             self.throwFloatValueWarning()
             return
-        
-        if self.temperatureLineEdit.text() == '':
+
+        if self.temperatureLineEdit.text() == "":
             self.temperature = 0
         else:
             self.temperature = float(self.temperatureLineEdit.text())
@@ -985,8 +1100,11 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
 
         # check for numerical input
-        if (not self.isFloat(self.o2ZeroLineEdit.text()) and self.o2ZeroLineEdit.text() != ''):
-            #throw execption
+        if (
+            not self.isFloat(self.o2ZeroLineEdit.text())
+            and self.o2ZeroLineEdit.text() != ""
+        ):
+            # throw execption
             self.throwFloatValueWarning()
             return
 
@@ -999,120 +1117,121 @@ class LabViewModule2(QtWidgets.QMainWindow):
         with manualEntry set as true.
         """
 
-        if (not self.isFloat(lineEdit.text()) and lineEdit.text() != ''):
-            #throw execption
+        if not self.isFloat(lineEdit.text()) and lineEdit.text() != "":
+            # throw execption
             self.throwFloatValueWarning()
-            lineEdit.setText('undef')
-            
+            lineEdit.setText("undef")
+
         self.GraphMeanButtonPressed(lineEdit, curve, graph, concentration, True)
 
     def OnEditedO2Cal(self):
-        
+
         # check for numerical input
-        if (not self.isFloat(self.o2CalibrationLineEdit.text()) and self.o2CalibrationLineEdit.text() != ''):
-            #throw execption
+        if (
+            not self.isFloat(self.o2CalibrationLineEdit.text())
+            and self.o2CalibrationLineEdit.text() != ""
+        ):
+            # throw execption
             self.throwFloatValueWarning()
             return
 
-        if self.o2CalibrationLineEdit.text() == '':
+        if self.o2CalibrationLineEdit.text() == "":
             self.o2Calibration = 0
         else:
             self.o2Calibration = float(self.o2CalibrationLineEdit.text())
 
-#################################################### End - On Edit Line Edits ###################################################
-#################################################################################################################################
+    #################################################### End - On Edit Line Edits ###################################################
+    #################################################################################################################################
 
-
-#################################################################################################################################
-####################################################### Raw Plot Methods ########################################################
+    #################################################################################################################################
+    ####################################################### Raw Plot Methods ########################################################
 
     def update_main_plot_data(self, dataPoints):
-       # Updates the real time plot after reading each row of data points from the file ONLY IF the pause bit is False.
-       # :param {dataPoints : list(tuple)} -> list of (x, y) data points.
-       # :return -> None
-       y_value = [[], [], [], [], [], [], [], []]
-       ubar_batch = []
-       x_batch = []
+        # Updates the real time plot after reading each row of data points from the file ONLY IF the pause bit is False.
+        # :param {dataPoints : list(tuple)} -> list of (x, y) data points.
+        # :return -> None
+        y_value = [[], [], [], [], [], [], [], []]
+        ubar_batch = []
+        x_batch = []
 
-       # Getting the next data points from the list of all the points emitted by the worker thread.
-       while len(dataPoints) != 0:
+        # Getting the next data points from the list of all the points emitted by the worker thread.
+        while len(dataPoints) != 0:
+            # Popping the first data points
+            dataPoint = dataPoints.pop(0)
 
-           # Popping the first data points
-           dataPoint = dataPoints.pop(0)
+            # Getting the x coordinate and list of y coordinates from the tuple
+            x, y = dataPoint
 
-           # Getting the x coordinate and list of y coordinates from the tuple
-           x, y = dataPoint
+            # Updating the data points in the singleton class.
+            for i in range(len(y_value)):
+                y_value[i].append(y[i])
 
-           # Updating the data points in the singleton class.
-           for i in range(len(y_value)):
-               y_value[i].append(y[i])
+            # Transform to reflect uBar
+            co2Volt = 0
+            co2Zero = 0
 
-           # Transform to reflect uBar
-           co2Volt = 0
-           co2Zero = 0
+            if self.co2VoltLineEdit.text():
+                co2Volt = float(self.co2VoltLineEdit.text())
 
-           if self.co2VoltLineEdit.text():
-               co2Volt = float(self.co2VoltLineEdit.text())
+            if self.co2ZeroLineEdit.text():
+                co2Zero = float(self.co2ZeroLineEdit.text())
 
-           if self.co2ZeroLineEdit.text():
-               co2Zero = float(self.co2ZeroLineEdit.text())
+            percentCo2 = Calculations.calculatePercentCO2(co2Volt, y[3], co2Zero)
+            uBarCO2 = Calculations.calculateUbarCO2(percentCo2)
 
-           percentCo2 = Calculations.calculatePercentCO2(co2Volt, y[3], co2Zero)
-           uBarCO2 = Calculations.calculateUbarCO2(percentCo2)
-           
-           ubar_batch.append(uBarCO2)
-           x_batch.append(x)
+            ubar_batch.append(uBarCO2)
+            x_batch.append(x)
 
-       if not x_batch:
-           return
+        if not x_batch:
+            return
 
-       # Get historical data for smooth gradient calculation
-       # self.curve3.y contains the previous ubar values
-       # self.curve3.x contains the previous x values
-       full_ubar = self.curve3.y + ubar_batch
-       full_x = self.curve3.x + x_batch
+        # Get historical data for smooth gradient calculation
+        # self.curve3.y contains the previous ubar values
+        # self.curve3.x contains the previous x values
+        full_ubar = self.curve3.y + ubar_batch
+        full_x = self.curve3.x + x_batch
 
-       # Ensure full_ubar and full_x have the same length
-       min_len = min(len(full_ubar), len(full_x))
-       full_ubar = full_ubar[:min_len]
-       full_x = full_x[:min_len]
+        # Ensure full_ubar and full_x have the same length
+        min_len = min(len(full_ubar), len(full_x))
+        full_ubar = full_ubar[:min_len]
+        full_x = full_x[:min_len]
 
-       # size we advarage down by for deritive graph
-       window = 5
+        # size we advarage down by for deritive graph
+        window = 5
 
-       if len(full_ubar) > 1:
-           # Adverage down to make plot clearer
-           smoothed_ubar = Calculations.adverageDown(full_ubar, window)
-           smoothed_x = Calculations.adverageDown(full_x, window)
-           
-           # Ensure smoothed arrays have the same length (they should, but being safe)
-           min_smoothed_len = min(len(smoothed_ubar), len(smoothed_x))
-           smoothed_ubar = smoothed_ubar[:min_smoothed_len]
-           smoothed_x = smoothed_x[:min_smoothed_len]
+        if len(full_ubar) > 1:
+            # Adverage down to make plot clearer
+            smoothed_ubar = Calculations.adverageDown(full_ubar, window)
+            smoothed_x = Calculations.adverageDown(full_x, window)
 
-           if len(smoothed_ubar) > 1:
-               # Calculate gradient over the smoothed dataset
-               dubar_smoothed = np.gradient(smoothed_ubar, smoothed_x)
-               # Update curve 4 (DuBarGraph) with smoothed data
-               self.curve4.x = smoothed_x
-               self.curve4.y = dubar_smoothed.tolist()
-               # Trigger re-plot for curve 4
-               if self.curve4.isChecked:
-                   self.curve4.data_line.setData(x=self.curve4.x, y=self.curve4.y)
-               # Update min/max for the smoothed derivative
-               self.checkMinMax(min(self.curve4.y), max(self.curve4.y), 2)
-           else:
-               dubar_batch = [0.0] * len(ubar_batch)
-       else:
-           dubar_batch = [0.0] * len(ubar_batch)
+            # Ensure smoothed arrays have the same length (they should, but being safe)
+            min_smoothed_len = min(len(smoothed_ubar), len(smoothed_x))
+            smoothed_ubar = smoothed_ubar[:min_smoothed_len]
+            smoothed_x = smoothed_x[:min_smoothed_len]
 
-       # Updating other curves
-       self.checkMinMax(min(ubar_batch), max(ubar_batch), 1)
+            if len(smoothed_ubar) > 1:
+                # Calculate gradient over the smoothed dataset
+                dubar_smoothed = np.gradient(smoothed_ubar, smoothed_x)
+                # Update curve 4 (DuBarGraph) with smoothed data
+                self.curve4.x = smoothed_x
+                self.curve4.y = dubar_smoothed.tolist()
+                # Trigger re-plot for curve 4
+                if self.curve4.isChecked:
+                    self.curve4.data_line.setData(x=self.curve4.x, y=self.curve4.y)
+                # Update min/max for the smoothed derivative
+                self.checkMinMax(min(self.curve4.y), max(self.curve4.y), 2)
+            else:
+                dubar_batch = [0.0] * len(ubar_batch)
+        else:
+            dubar_batch = [0.0] * len(ubar_batch)
 
-       self.curve3.updateDataPoints(x_batch, ubar_batch)
-       self.followCurve(self.uBarGraph, ubar_batch)
-       if self.curve4.y:
-           self.followCurve(self.DuBarGraph, self.curve4.y)
+        # Updating other curves
+        self.checkMinMax(min(ubar_batch), max(ubar_batch), 1)
+
+        self.curve3.updateDataPoints(x_batch, ubar_batch)
+        self.followCurve(self.uBarGraph, ubar_batch)
+        if self.curve4.y:
+            self.followCurve(self.DuBarGraph, self.curve4.y)
 
     def followCurve(self, plot, y):
         try:
@@ -1121,7 +1240,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
                     return
                 x = list(self.rawDataPlotFrame.sharedData.dataPoints.keys())[-1]
 
-             # Get the current x-axis range
+            # Get the current x-axis range
             current_range = plot.getXAxisRange()
             width = abs(current_range[1] - current_range[0])
             plot.setXRange(x - width, x, padding=0)
@@ -1147,9 +1266,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.yMaxList[graph] = max
             self.yMinList[graph] = min
             self.isYChanged[graph] = True
-            
-        else:
 
+        else:
             if min < self.yMinList[graph]:
                 self.yMinList[graph] = min
                 self.isYChanged[graph] = True
@@ -1158,19 +1276,18 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 self.yMaxList[graph] = max
                 self.isYChanged[graph] = True
 
-    def on_wheel_event(self,event, axis=1):
+    def on_wheel_event(self, event, axis=1):
         """
-            For disabling the scroll on the axes.
-        
+        For disabling the scroll on the axes.
+
         """
         event.ignore()
 
-##################################################### End - Raw Plot Methods ####################################################
-#################################################################################################################################
+    ##################################################### End - Raw Plot Methods ####################################################
+    #################################################################################################################################
 
-
-#################################################################################################################################
-#################################################### File export and import #####################################################
+    #################################################################################################################################
+    #################################################### File export and import #####################################################
 
     def saveCalibrations(self):
         """
@@ -1185,39 +1302,50 @@ class LabViewModule2(QtWidgets.QMainWindow):
         file_name = now.strftime("%d-%m-%y %H-%M-%S")
 
         # create path if it doesn't exist
-        path = 'C:\\Users\\'+self.user+'\\Documents\\Calibrations'
+        path = "C:\\Users\\" + self.user + "\\Documents\\Calibrations"
         if not os.path.exists(path):
             os.makedirs(path)
 
-
         # Invoke Save File Dialog - returns the path of the file and file type
-        path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path+"\\"+file_name, "CSV Files (*.csv)")
+        path, ok = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", path + "\\" + file_name, "CSV Files (*.csv)"
+        )
 
         # if file type is not null
         if ok:
-
             # open file and write in calibrations
-            with open(path, 'w') as csvfile:
-                writer = csv.writer(csvfile, dialect='excel', lineterminator='\n')
-                
-                writer.writerow(['Temp', 'O2 Calibration', 'O2 Buffer Zero', 'BiCarb/CO2',
-                                 'CO2 Cal 0', 'CO2 Cal 6', 'CO2 Cal 12', 'CO2 Cal 18',
-                                 'BiCarb Cal 0', 'BiCarb Cal 2', 'BiCarb Cal 4', 'BiCarb Cal 6'])
+            with open(path, "w") as csvfile:
+                writer = csv.writer(csvfile, dialect="excel", lineterminator="\n")
 
-                row = (lineEdit.text() for lineEdit in  self.calibrationLineEdits)
+                writer.writerow(
+                    [
+                        "Temp",
+                        "O2 Calibration",
+                        "O2 Buffer Zero",
+                        "BiCarb/CO2",
+                        "CO2 Cal 0",
+                        "CO2 Cal 6",
+                        "CO2 Cal 12",
+                        "CO2 Cal 18",
+                        "BiCarb Cal 0",
+                        "BiCarb Cal 2",
+                        "BiCarb Cal 4",
+                        "BiCarb Cal 6",
+                    ]
+                )
+
+                row = (lineEdit.text() for lineEdit in self.calibrationLineEdits)
                 writer.writerow(row)
 
     def loadCals(self, file_path):
-
         """
         Loads calibration values from a csv file.
         """
 
-        with open(file_path[0], newline='') as cal_file:
+        with open(file_path[0], newline="") as cal_file:
             reader = csv.reader(cal_file)
-            next(reader) # read in header
-            data = next(reader) # read in cal data
-
+            next(reader)  # read in header
+            data = next(reader)  # read in cal data
 
             for i in range(len(self.calibrationLineEdits)):
                 self.calibrationLineEdits[i].setText(data[i])
@@ -1251,24 +1379,28 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
 
         # create directory if it doesn't already exist
-        path = 'C:\\Users\\'+self.user+'\\Documents\\TableData'
+        path = "C:\\Users\\" + self.user + "\\Documents\\TableData"
         if not os.path.exists(path):
             os.makedirs(path)
 
         # Invoke Save File Dialog - returns the path of the file and file type
-        path, ok = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File', path, "CSV Files (*.csv)")
+        path, ok = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save File", path, "CSV Files (*.csv)"
+        )
 
         # if file type is not null
         if ok:
-            columns = range(self.table.columnCount()) # get column count
+            columns = range(self.table.columnCount())  # get column count
 
             # open file and write in table contents
-            with open(path, 'w') as csvfile:
-                writer = csv.writer(csvfile, dialect='excel', lineterminator='\n')
+            with open(path, "w") as csvfile:
+                writer = csv.writer(csvfile, dialect="excel", lineterminator="\n")
 
                 # write each row into the file
                 for row in range(self.table.rowCount()):
-                    writer.writerow(self.table.item(row, column).text() for column in columns)
+                    writer.writerow(
+                        self.table.item(row, column).text() for column in columns
+                    )
 
     def exportRawData(self):
         """
@@ -1276,61 +1408,86 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
 
         # create directory if it doesn't already exist
-        path = 'C:\\Users\\'+self.user+'\\Documents\\RawData'
+        path = "C:\\Users\\" + self.user + "\\Documents\\RawData"
         if not os.path.exists(path):
             os.makedirs(path)
 
         # open file for writing, will create file if it doesn't already exist
-        file = open(path + os.path.basename(self.rawDataPlotFrame.folder_path) + "Data.csv", 'w+')
+        file = open(
+            path + os.path.basename(self.rawDataPlotFrame.folder_path) + "Data.csv",
+            "w+",
+        )
 
-        writer = csv.writer(file)   # create csv writer
+        writer = csv.writer(file)  # create csv writer
 
         # write header to csv file
-        writer.writerow(['Count', 'Time', 'm32', 'm34', 'm36', 'm44', 'm45', 'm46', 'm47', 'm49'])
+        writer.writerow(
+            ["Count", "Time", "m32", "m34", "m36", "m44", "m45", "m46", "m47", "m49"]
+        )
 
         # get snapshot of data with lock to avoid race conditions
         with self.rawDataPlotFrame.sharedData.lock:
             data_snapshot = dict(self.rawDataPlotFrame.sharedData.dataPoints)
-        
+
         # get list of time and voltage values from data
         times = sorted(data_snapshot.keys())
         voltages = [data_snapshot[t] for t in times]
 
         # write lines of data to csv file
         for i in range(len(times)):
-            row = [i, times[i]*1000, voltages[i][0], voltages[i][1], voltages[i][2], voltages[i][3],
-                               voltages[i][4], voltages[i][5], voltages[i][6], voltages[i][7]]
+            row = [
+                i,
+                times[i] * 1000,
+                voltages[i][0],
+                voltages[i][1],
+                voltages[i][2],
+                voltages[i][3],
+                voltages[i][4],
+                voltages[i][5],
+                voltages[i][6],
+                voltages[i][7],
+            ]
 
             writer.writerow(row)
 
         # close file
         file.close()
 
-################################################## End - File epxort and import #################################################
-#################################################################################################################################
+    ################################################## End - File epxort and import #################################################
+    #################################################################################################################################
 
-
-#################################################################################################################################
-############################################# Warning Dialog and Exception Methods ##############################################
+    #################################################################################################################################
+    ############################################# Warning Dialog and Exception Methods ##############################################
 
     # Stop button warning
 
     def throwStopButtonWarning(self):
-        stopWarningDlg = Dialog(title="WARNING!!", buttonCount=2, message="Are you sure you want to STOP?.\nPress Cancel to abort or OK to continue", parent=self)
-        stopWarningDlg.buttonBox.accepted.connect(lambda: self.stopDiaAccepted(stopWarningDlg))
-        stopWarningDlg.buttonBox.rejected.connect(lambda: self.stopDiaRejected(stopWarningDlg))
+        stopWarningDlg = Dialog(
+            title="WARNING!!",
+            buttonCount=2,
+            message="Are you sure you want to STOP?.\nPress Cancel to abort or OK to continue",
+            parent=self,
+        )
+        stopWarningDlg.buttonBox.accepted.connect(
+            lambda: self.stopDiaAccepted(stopWarningDlg)
+        )
+        stopWarningDlg.buttonBox.rejected.connect(
+            lambda: self.stopDiaRejected(stopWarningDlg)
+        )
         stopWarningDlg.exec()
 
     def stopDiaAccepted(self, obj):
         obj.close()
 
         # Get Documents folder path
-        documents_path = QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.DocumentsLocation)
-        
+        documents_path = QtCore.QStandardPaths.writableLocation(
+            QtCore.QStandardPaths.DocumentsLocation
+        )
+
         # Scan for existing RawDataAcquisition{n}Data.csv files to determine next index
         max_n = 0
         pattern = re.compile(r"RawDataAcquisition(\d+)Data\.csv")
-        
+
         if os.path.exists(documents_path):
             for filename in os.listdir(documents_path):
                 match = pattern.match(filename)
@@ -1341,21 +1498,34 @@ class LabViewModule2(QtWidgets.QMainWindow):
                             max_n = n
                     except ValueError:
                         pass
-        
+
         base_name = f"RawDataAcquisition{max_n + 1}Data"
         export_filename = f"{base_name}.csv"
         export_path = os.path.join(documents_path, export_filename)
 
         self.rawDataPlotFrame.exportToCsv(export_path)
 
-        saveCalsDlg = Dialog(title="Save Calibrations?", buttonCount=3, message="Would you like to keep calibrations in the program?\n Press Save to export calibrations", parent=self)
+        saveCalsDlg = Dialog(
+            title="Save Calibrations?",
+            buttonCount=3,
+            message="Would you like to keep calibrations in the program?\n Press Save to export calibrations",
+            parent=self,
+        )
         saveCalsDlg.buttonBox.addButton("Save", QDialogButtonBox.HelpRole)
         saveCalsDlg.buttonBox.helpRequested.connect(lambda: self.saveCals(saveCalsDlg))
-        saveCalsDlg.buttonBox.accepted.connect(lambda: self.keepCalsAccepted(saveCalsDlg))
-        saveCalsDlg.buttonBox.rejected.connect(lambda: self.keepCalsRejected(saveCalsDlg))
+        saveCalsDlg.buttonBox.accepted.connect(
+            lambda: self.keepCalsAccepted(saveCalsDlg)
+        )
+        saveCalsDlg.buttonBox.rejected.connect(
+            lambda: self.keepCalsRejected(saveCalsDlg)
+        )
         saveCalsDlg.exec()
 
-        if self.application_state == "Out_Of_Data" or self.application_state == "Folder_Selected" or self.application_state == "Idle":
+        if (
+            self.application_state == "Out_Of_Data"
+            or self.application_state == "Folder_Selected"
+            or self.application_state == "Idle"
+        ):
             pass
         else:
             try:
@@ -1363,8 +1533,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
             except RuntimeError as exception:
                 print(exception)
 
-        #export all raw data if there is data to load
-        if self.rawDataPlotFrame.folder_path != '':
+        # export all raw data if there is data to load
+        if self.rawDataPlotFrame.folder_path != "":
             self.exportRawData()
 
         self.clearApplication(self.keepCals)
@@ -1375,7 +1545,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
     def saveCals(self, obj):
         obj.close()
         self.saveCalibrations()
-        
+
     def keepCalsAccepted(self, obj):
         self.keepCals = True
         obj.close()
@@ -1385,8 +1555,15 @@ class LabViewModule2(QtWidgets.QMainWindow):
         obj.close()
 
     def throwGraphInActiveException(self):
-        startButtonExceptionDlg = Dialog(title="EXCEPTION!!", buttonCount=1, message="The plot is inactive. Please make sure the graph is actively plotting.\nPress Ok to continue.", parent=self)
-        startButtonExceptionDlg.buttonBox.accepted.connect(lambda: self.buttonDialogAccepted(startButtonExceptionDlg))
+        startButtonExceptionDlg = Dialog(
+            title="EXCEPTION!!",
+            buttonCount=1,
+            message="The plot is inactive. Please make sure the graph is actively plotting.\nPress Ok to continue.",
+            parent=self,
+        )
+        startButtonExceptionDlg.buttonBox.accepted.connect(
+            lambda: self.buttonDialogAccepted(startButtonExceptionDlg)
+        )
         startButtonExceptionDlg.exec()
 
     def buttonDialogAccepted(self, obj):
@@ -1396,28 +1573,42 @@ class LabViewModule2(QtWidgets.QMainWindow):
         dlg.close()
 
     def throwFloatValueWarning(self):
-        floatWarningDlg = Dialog(title="WARNING!", buttonCount=1, message="The entered value is not a numerical value!", parent=self)
-        floatWarningDlg.buttonBox.accepted.connect(lambda: self.floatWarningAccepted(floatWarningDlg))
+        floatWarningDlg = Dialog(
+            title="WARNING!",
+            buttonCount=1,
+            message="The entered value is not a numerical value!",
+            parent=self,
+        )
+        floatWarningDlg.buttonBox.accepted.connect(
+            lambda: self.floatWarningAccepted(floatWarningDlg)
+        )
         floatWarningDlg.exec()
 
     def floatWarningAccepted(self, obj):
         obj.close()
 
     def purgeTablepButtonWarning(self):
-
         """
         Throws the purge table warning.
         :param -> None.
         :return -> None
         """
 
-        purgeWarningDlg = Dialog(title="WARNING!!", buttonCount=2, message="Are you sure you want to Purge Table? The unsaved data will be deleted.\nPress Cancel to abort or OK to continue", parent=self)
-        purgeWarningDlg.buttonBox.accepted.connect(lambda: self.purgeDiaAccepted(purgeWarningDlg))
-        purgeWarningDlg.buttonBox.rejected.connect(lambda: self.purgeDiaRejected(purgeWarningDlg))
+        purgeWarningDlg = Dialog(
+            title="WARNING!!",
+            buttonCount=2,
+            message="Are you sure you want to Purge Table? The unsaved data will be deleted.\nPress Cancel to abort or OK to continue",
+            parent=self,
+        )
+        purgeWarningDlg.buttonBox.accepted.connect(
+            lambda: self.purgeDiaAccepted(purgeWarningDlg)
+        )
+        purgeWarningDlg.buttonBox.rejected.connect(
+            lambda: self.purgeDiaRejected(purgeWarningDlg)
+        )
         purgeWarningDlg.exec()
 
     def purgeDiaAccepted(self, obj):
-        
         """
         Closes the purge warning dialoge. Purges the table and clears O2 and Co2 velocity concentration data.
         Also clears concentration graphs.
@@ -1436,10 +1627,10 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # clear plots
         self.DuBarGraph.clear()
 
-        #autoscale other graphs
+        # autoscale other graphs
         self.assayBufferGraph.plotItem.getViewBox().autoRange()
         self.uBarGraph.plotItem.getViewBox().autoRange()
-    
+
     def purgeDiaRejected(self, obj):
         """
         Closes the purge warning dialoge.
@@ -1450,17 +1641,19 @@ class LabViewModule2(QtWidgets.QMainWindow):
         pass
 
     def throwUndefined(self, lineEdit):
-        lineEdit.setText('undef')
+        lineEdit.setText("undef")
 
-################################################## End - Warning Dialog and ExceptionMethods #####################################
-##################################################################################################################################
+    ################################################## End - Warning Dialog and ExceptionMethods #####################################
+    ##################################################################################################################################
 
     def select_file(self):
         # Open a file dialog to select a file
-        file_path = QFileDialog.getOpenFileName(self, 'Select a file', os.getcwd(), "CSV Files (*.csv)")
+        file_path = QFileDialog.getOpenFileName(
+            self, "Select a file", os.getcwd(), "CSV Files (*.csv)"
+        )
 
         # if file is selected
-        if file_path[0] != '':
+        if file_path[0] != "":
             # load calibration file
             self.loadCals(file_path)
 
@@ -1469,25 +1662,31 @@ class LabViewModule2(QtWidgets.QMainWindow):
         Creates a Save File Dialog for user to decide what to name file and where to save it.
         Saves all the data currently in the table to a file (.csv by default)
         """
-        
-        if (graph == 0):
 
+        if graph == 0:
             # if point already exists, delete point
             for key in dict(self.assayBufferData).keys():
                 if key == concentration:
                     del self.assayBufferData[key]
 
             # if mean value is not undefined, create new point
-            if (mean != None):    
+            if mean != None:
                 self.assayBufferData[concentration] = mean
 
             # clear graph before replot
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(list(self.assayBufferData.values()), list(self.assayBufferData.keys()), pen=None, symbol='o',
-                                       symbolsize=1, symbolPen=pg.mkPen(color="#00fa9a", width=0), symbolBrush=pg.mkBrush("#00fa9a"))
-            
+            assayLine = self.assayBufferGraph.plot(
+                list(self.assayBufferData.values()),
+                list(self.assayBufferData.keys()),
+                pen=None,
+                symbol="o",
+                symbolsize=1,
+                symbolPen=pg.mkPen(color="#00fa9a", width=0),
+                symbolBrush=pg.mkBrush("#00fa9a"),
+            )
+
             self.assayBufferGraph.plotItem.getViewBox().autoRange()
 
         else:
@@ -1508,18 +1707,18 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     def clearApplication(self, keepCals):
         """
-            When the STOP button is pressed, the application resets. This methods reinitializes the initial
-            parameters of the application and clears any saved data unless calibrations are asked to be retained by the user.
-            Post this function execution, the application is ready to plot new data.
-            :param { keepCals : list(QLineEdit)} -> List of calibration line edit that needs to be retained.
-            :return -> None
+        When the STOP button is pressed, the application resets. This methods reinitializes the initial
+        parameters of the application and clears any saved data unless calibrations are asked to be retained by the user.
+        Post this function execution, the application is ready to plot new data.
+        :param { keepCals : list(QLineEdit)} -> List of calibration line edit that needs to be retained.
+        :return -> None
         """
 
         # Reset all application global variables. These varibales are global to different components of the application.
         self.setWindowTitle("LabView")
         self.application_state = "Idle"
         self.firstPoint = False
-        
+
         self.yRealMax = None
         self.yRealMin = None
         self.isRealYChanged = False
@@ -1531,10 +1730,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.yDubarMax = None
         self.yDubarMin = None
         self.isDubarYChanged = False
-        
+
         self.select_folder_action.setEnabled(True)
         self.select_ezview_action.setEnabled(True)
-
 
         # Dictionaries to hold data for graphs
         if not keepCals:
@@ -1557,7 +1755,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.co2Extract = 0
         self.o2Extract = 0
 
-        #Initialize CO2 and O2 net rate of consumption
+        # Initialize CO2 and O2 net rate of consumption
         self.co2ConsumptionRate = 0
         self.o2ConsumptionRate = 0
 
@@ -1571,7 +1769,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         # Data Object for getting the points.
         self.dataObj = GetData()
-        
+
         for lineEdit in self.lineEditList:
             if not keepCals:
                 lineEdit.setText("")

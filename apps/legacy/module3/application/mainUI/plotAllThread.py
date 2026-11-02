@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -14,19 +13,18 @@ from time import time
 import sys
 from math import floor
 
-sys.path.insert(0, '../read-data')
+sys.path.insert(0, "../read-data")
 
 from sharedSingleton import SharedSingleton
 from dataUtility import DataUtility
 
-class PlotAllThread(QObject):
 
+class PlotAllThread(QObject):
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     throwOutOfDataExceptionSignal = pyqtSignal()
     throwFolderNotSelectedExceptionSignal = pyqtSignal()
     filesParsedSignal = pyqtSignal()
-
 
     def __init__(self, globalObject):
         super(PlotAllThread, self).__init__()
@@ -34,18 +32,14 @@ class PlotAllThread(QObject):
         self.globalObject = globalObject
         self.sharedData = SharedSingleton()
 
-
     def run(self):
-
         """Long running task"""
 
         if self.globalObject.application_state == "Idle":
-
             #### Signal to throw exception
             self.throwFolderNotSelectedExceptionSignal.emit()
 
         else:
-
             if not self.sharedData.folderAccessed:
                 self.sharedData.fileList.extend(DataUtility.getDataFileList())
                 self.sharedData.folderAccessed = True
@@ -57,13 +51,11 @@ class PlotAllThread(QObject):
             dataPoint = self.globalObject.dataObj.__next__()
 
             if not dataPoint:
-
                 ##### Singal to throw exception
                 self.throwOutOfDataExceptionSignal.emit()
                 return
-            
+
             else:
-            
                 while dataPoint:
                     if QtCore.QThread.currentThread().isInterruptionRequested():
                         self.finished.emit()

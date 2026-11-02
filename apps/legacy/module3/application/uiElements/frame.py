@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -12,9 +11,8 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QSizePolicy, QFrame
 from PyQt5.QtCore import *
 
+
 class Frame(QtWidgets.QFrame):
-
-
     def __init__(self, scrollArea):
         super(Frame, self).__init__()
 

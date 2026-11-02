@@ -1,16 +1,19 @@
-﻿from PyQt5 import QtCore
+from PyQt5 import QtCore
 import numpy as np
 from sympy import lambdify
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class SamplePlotCalcWorker(QtCore.QObject):
     """
     runs calculation need for sample calc plot and its stored data
     """
+
     # Singles for the main module
     finished = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal(str)
@@ -63,7 +66,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def run(self):
-        logger.debug(f"SamplePlotCalcWorker.run - START (Points: {len(self.data) if self.data else 0})")
+        logger.debug(
+            f"SamplePlotCalcWorker.run - START (Points: {len(self.data) if self.data else 0})"
+        )
         try:
             sampleEquationPlotX = []
             sampleEquationPlotY = []
@@ -100,7 +105,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
                     sampleY.append(self._y_eval(*ymsg))
                     if not warnedOnce:
                         warnedOnce = True
-                        self.userWarning.emit(f"Could not evaluate equation for a row: {ex}")
+                        self.userWarning.emit(
+                            f"Could not evaluate equation for a row: {ex}"
+                        )
                     continue
 
                 sampleX.append(xVal)
@@ -109,11 +116,15 @@ class SamplePlotCalcWorker(QtCore.QObject):
                     sampleEquationPlotX.append(xVal)
                     sampleEquationPlotY.append(yVal)
 
-            logger.debug(f"Processed {len(sampleEquationPlotX)} valid points for plotting")
+            logger.debug(
+                f"Processed {len(sampleEquationPlotX)} valid points for plotting"
+            )
 
             if len(sampleEquationPlotX) >= 2:
                 logger.debug("Calculating line of best fit")
-                lbfX, lbfY = self.lineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+                lbfX, lbfY = self.lineOfBestFit(
+                    sampleEquationPlotX, sampleEquationPlotY
+                )
             else:
                 logger.debug("Not enough points for line of best fit")
                 lbfX, lbfY = [], []
@@ -149,10 +160,12 @@ class SamplePlotCalcWorker(QtCore.QObject):
             m44dif = np.asarray(m44dif, dtype=float)
             times = np.asarray(times, dtype=float)
 
-            slope, intercept = Calculations.getLineOfBestFit(sampleEquationPlotX, sampleEquationPlotY)
+            slope, intercept = Calculations.getLineOfBestFit(
+                sampleEquationPlotX, sampleEquationPlotY
+            )
             slope44, _ = Calculations.getLineOfBestFit(
                 [t[0] for t in (self.data if self.data else [])],
-                [t[1][3] for t in (self.data if self.data else [])]
+                [t[1][3] for t in (self.data if self.data else [])],
             )
 
             logger.debug("Calculating Alpha/Delta/Rubisco metrics")
@@ -172,7 +185,9 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 if alpha_total is not None:
                     delta_total = alpha_total - 1.0
                     try:
-                        delta_rubisco = (1.0 + delta_total) / (1.0 + delta_part_val) - 1.0
+                        delta_rubisco = (1.0 + delta_total) / (
+                            1.0 + delta_part_val
+                        ) - 1.0
                     except Exception:
                         delta_rubisco = None
                 else:
@@ -187,29 +202,30 @@ class SamplePlotCalcWorker(QtCore.QObject):
                 rSquared = "null"
 
             logger.debug("Worker emitting results")
-            self.resultReady.emit({
-                "sampleEquationPlotX": sampleEquationPlotX,
-                "sampleEquationPlotY": sampleEquationPlotY,
-                "sampleX": sampleX,
-                "sampleY": sampleY,
-                "lbfX": lbfX,
-                "lbfY": lbfY,
-                "times_smooth": times_smooth if times_smooth.size > 0 else None,
-                "d2_m44": d2_m44,
-                "d2_Time": d2_Time,
-                "d1_m44": d1,
-                "times": times if times.size > 0 else None,
-                "difference": m44dif,
-                "delta": delta_rubisco,
-                "rSquared": rSquared,
-                "α_total (slope)": alpha_total,
-                "delta_rubisco": delta_rubisco,
-                "slope44": slope44
-            })
+            self.resultReady.emit(
+                {
+                    "sampleEquationPlotX": sampleEquationPlotX,
+                    "sampleEquationPlotY": sampleEquationPlotY,
+                    "sampleX": sampleX,
+                    "sampleY": sampleY,
+                    "lbfX": lbfX,
+                    "lbfY": lbfY,
+                    "times_smooth": times_smooth if times_smooth.size > 0 else None,
+                    "d2_m44": d2_m44,
+                    "d2_Time": d2_Time,
+                    "d1_m44": d1,
+                    "times": times if times.size > 0 else None,
+                    "difference": m44dif,
+                    "delta": delta_rubisco,
+                    "rSquared": rSquared,
+                    "α_total (slope)": alpha_total,
+                    "delta_rubisco": delta_rubisco,
+                    "slope44": slope44,
+                }
+            )
             logger.debug("SamplePlotCalcWorker.run - END")
         except Exception as e:
             logger.error(f"SamplePlotCalcWorker.run - ERROR: {e}")
             self.error.emit(str(e))
         finally:
             self.finished.emit()
-

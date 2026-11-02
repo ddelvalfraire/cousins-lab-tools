@@ -1,29 +1,30 @@
-
 from PyQt5.QtCore import QObject, pyqtSignal
 import PyQt5.QtCore as QtCore
 from time import time
 import sys
 from math import floor
 
-sys.path.insert(0, '../read_data')
+sys.path.insert(0, "../read_data")
 
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class PlotAllThread(QObject):
     """
     Plots the all Asc Data, and contentiously emits new data added to the folder
     name a hold over from old code
     """
+
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     throwOutOfDataExceptionSignal = pyqtSignal()
     throwFolderNotSelectedExceptionSignal = pyqtSignal()
     filesParsedSignal = pyqtSignal()
     secondsAt = QtCore.pyqtSignal(str)
-
 
     def __init__(self, globalObject, parent):
         super(PlotAllThread, self).__init__()
@@ -40,12 +41,10 @@ class PlotAllThread(QObject):
         logger.debug("PlotAllThread.run - BEGIN")
         try:
             if self.globalObject.application_state == "Idle":
-
                 #### Signal to throw exception
                 self.throwFolderNotSelectedExceptionSignal.emit()
 
             else:
-
                 with self.sharedData.lock:
                     if not self.sharedData.folderAccessed:
                         self.sharedData.fileList.extend(DataUtility.getDataFileList())

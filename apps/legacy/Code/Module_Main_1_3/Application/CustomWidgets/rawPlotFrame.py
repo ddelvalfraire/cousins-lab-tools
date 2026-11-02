@@ -1,4 +1,4 @@
-﻿from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QThread
 import pyqtgraph as pg
@@ -9,7 +9,9 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 from Code.Module_Main_1_3.Application.Workers.EzPlotAll import EzPlotAll
-from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import NewFileNotifierThread
+from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import (
+    NewFileNotifierThread,
+)
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
@@ -17,15 +19,24 @@ from Code.Module_Main_1_3.Application.uiElements.curve import Curve
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.Workers.plotAllThread import PlotAllThread
 
+
 class RawPlotFrame(Frame):
     """
     Custom widget that processes the data display it and convert it into a usable format
     """
-    softError = QtCore.pyqtSignal((str,str))
 
-    def __init__(self, scrollArea, heightFactor, stateVar, mode, parent=None, ):
+    softError = QtCore.pyqtSignal((str, str))
+
+    def __init__(
+        self,
+        scrollArea,
+        heightFactor,
+        stateVar,
+        mode,
+        parent=None,
+    ):
         super(RawPlotFrame, self).__init__(scrollArea, heightFactor)
-        self.parent = parent # LabViewModule1 instance
+        self.parent = parent  # LabViewModule1 instance
         self.sharedData = SharedSingleton()
         self.mode = mode
 
@@ -49,7 +60,7 @@ class RawPlotFrame(Frame):
         self.addCurveAndMeanBar()
 
         self.EZViewPath = None
-        self.folder_path = ''
+        self.folder_path = ""
         self.fileCheckThreadStarted = False
 
         self.point_counter = 0
@@ -129,7 +140,9 @@ class RawPlotFrame(Frame):
         self.lofCheckBox.setStyleSheet("color: #800000")
         self.lofCheckBox.setChecked(False)
         self.lineOfBestFitDraw = False
-        self.lofCheckBox.clicked.connect(self.toggleLineOfBestFit, QtCore.Qt.QueuedConnection)
+        self.lofCheckBox.clicked.connect(
+            self.toggleLineOfBestFit, QtCore.Qt.QueuedConnection
+        )
 
         self.processSpinnerLabel = QtWidgets.QLabel()
         self.processSpinnerLabel.setMinimumSize(QtCore.QSize(50, 50))
@@ -142,12 +155,24 @@ class RawPlotFrame(Frame):
 
         # Creating a Horizontal Layout for Start Pause/Resume and Slider
         self.rescaleStartPauseResumeSliderGridLayout = QtWidgets.QHBoxLayout()
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.processSpinnerLabel, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.barsButton, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.plotAllButton, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.rescaleButton, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.pauseResumeButton, 0, Qt.AlignmentFlag.AlignLeft)
-        self.rescaleStartPauseResumeSliderGridLayout.addWidget(self.lofCheckBox, 10, Qt.AlignmentFlag.AlignLeft)
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.processSpinnerLabel, 0, Qt.AlignmentFlag.AlignLeft
+        )
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.barsButton, 0, Qt.AlignmentFlag.AlignLeft
+        )
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.plotAllButton, 0, Qt.AlignmentFlag.AlignLeft
+        )
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.rescaleButton, 0, Qt.AlignmentFlag.AlignLeft
+        )
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.pauseResumeButton, 0, Qt.AlignmentFlag.AlignLeft
+        )
+        self.rescaleStartPauseResumeSliderGridLayout.addWidget(
+            self.lofCheckBox, 10, Qt.AlignmentFlag.AlignLeft
+        )
         self.rescaleStartPauseResumeSliderGridLayout.setSpacing(0)
         #############################################################################################
 
@@ -155,8 +180,8 @@ class RawPlotFrame(Frame):
 
         # Graph
         self.realTimeGraph = Graph(100, 100)
-        self.realTimeGraph.setLabel(axis='left', text='Voltage (mV)')
-        self.realTimeGraph.setLabel(axis='bottom', text='Time (s)')
+        self.realTimeGraph.setLabel(axis="left", text="Voltage (mV)")
+        self.realTimeGraph.setLabel(axis="bottom", text="Time (s)")
 
         self.graphVLayout = QtWidgets.QVBoxLayout()
         self.graphVLayout.setContentsMargins(0, 0, 0, 0)
@@ -164,8 +189,12 @@ class RawPlotFrame(Frame):
 
         # Layout for {Graph} AND {Start Pause/Resume Slider Layout}
         self.graphStartPauseResumeSliderVLayout = QtWidgets.QVBoxLayout()
-        self.graphStartPauseResumeSliderVLayout.addLayout(self.graphVLayout)  # Widget containing graph
-        self.graphStartPauseResumeSliderVLayout.addLayout(self.rescaleStartPauseResumeSliderGridLayout)  # Widget containing start pause/resume and slider
+        self.graphStartPauseResumeSliderVLayout.addLayout(
+            self.graphVLayout
+        )  # Widget containing graph
+        self.graphStartPauseResumeSliderVLayout.addLayout(
+            self.rescaleStartPauseResumeSliderGridLayout
+        )  # Widget containing start pause/resume and slider
 
         ###############################################################################################
 
@@ -217,7 +246,9 @@ class RawPlotFrame(Frame):
                         mask = (x_arr >= region_start) & (x_arr <= region_end)
                         x_region = x_arr[mask]
                         y_region = y_arr[mask]
-                        logging.debug(f"Points in region for {curve.name}: {len(x_region)}")
+                        logging.debug(
+                            f"Points in region for {curve.name}: {len(x_region)}"
+                        )
 
                         if len(x_region) > 1:
                             # Calculate line of best fit (linear)
@@ -230,9 +261,15 @@ class RawPlotFrame(Frame):
                                 lof_y = m * lof_x + c
 
                                 # Create a temporary curve for the LOF line
-                                color = QtGui.QColor(255, 255, 255, curve.pen.color().alpha())
-                                pen = pg.mkPen(color=color, width=1, style=QtCore.Qt.DashLine)
-                                lof_data_line = pg.PlotDataItem(lof_x, lof_y, pen=pen, antialias=True)
+                                color = QtGui.QColor(
+                                    255, 255, 255, curve.pen.color().alpha()
+                                )
+                                pen = pg.mkPen(
+                                    color=color, width=1, style=QtCore.Qt.DashLine
+                                )
+                                lof_data_line = pg.PlotDataItem(
+                                    lof_x, lof_y, pen=pen, antialias=True
+                                )
                                 self.realTimeGraph.addItem(lof_data_line)
                                 self.lofCurves.append(lof_data_line)
 
@@ -245,7 +282,9 @@ class RawPlotFrame(Frame):
 
                                 logging.debug(f"Added LOF curve for {curve.name}")
                             except Exception as e:
-                                logging.error(f"LOF calculation error for {curve.name}: {e}")
+                                logging.error(
+                                    f"LOF calculation error for {curve.name}: {e}"
+                                )
                                 print(f"LOF calculation error for {curve.name}: {e}")
         except Exception as e:
             logging.error(f"Error in drawLinesOfBestFit: {e}")
@@ -254,73 +293,131 @@ class RawPlotFrame(Frame):
 
     def addCurveAndMeanBar(self):
         # Adding the plot curves
-        self.curve1 = Curve("Curve 1", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph)
+        self.curve1 = Curve(
+            "Curve 1", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph
+        )
         self.curve1.plotCurve()
 
-        self.curve2 = Curve("Curve 2", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph)
+        self.curve2 = Curve(
+            "Curve 2", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph
+        )
         self.curve2.plotCurve()
 
-        self.curve3 = Curve("Curve 3", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph)
+        self.curve3 = Curve(
+            "Curve 3", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph
+        )
         self.curve3.plotCurve()
 
-        self.curve4 = Curve("Curve 4", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph)
+        self.curve4 = Curve(
+            "Curve 4", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph
+        )
         self.curve4.plotCurve()
 
-        self.curve5 = Curve("Curve 5", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph)
+        self.curve5 = Curve(
+            "Curve 5", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph
+        )
         self.curve5.plotCurve()
 
-        self.curve6 = Curve("Curve 6", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph)
+        self.curve6 = Curve(
+            "Curve 6", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph
+        )
         self.curve6.plotCurve()
 
-        self.curve7 = Curve("Curve 7", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph)
+        self.curve7 = Curve(
+            "Curve 7", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph
+        )
         self.curve7.plotCurve()
 
-        self.curve8 = Curve("Curve 8", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph)
+        self.curve8 = Curve(
+            "Curve 8", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph
+        )
         self.curve8.plotCurve()
 
-        self.curves = [self.curve1, self.curve2, self.curve3, self.curve4, self.curve5, self.curve6, self.curve7, self.curve8]
+        self.curves = [
+            self.curve1,
+            self.curve2,
+            self.curve3,
+            self.curve4,
+            self.curve5,
+            self.curve6,
+            self.curve7,
+            self.curve8,
+        ]
 
         # Initializing the mean bars.
-        self.meanBar = pg.LinearRegionItem(values=(0, 1), orientation='vertical', brush=None, pen=None,
-                                           hoverBrush=None, hoverPen=None, movable=True, bounds=None,
-                                           span=(0, 1), swapMode='sort', clipItem=None)
+        self.meanBar = pg.LinearRegionItem(
+            values=(0, 1),
+            orientation="vertical",
+            brush=None,
+            pen=None,
+            hoverBrush=None,
+            hoverPen=None,
+            movable=True,
+            bounds=None,
+            span=(0, 1),
+            swapMode="sort",
+            clipItem=None,
+        )
 
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
-        self.meanBar.sigRegionChangeFinished.connect(self.drawLinesOfBestFit, QtCore.Qt.QueuedConnection)
+        self.meanBar.sigRegionChangeFinished.connect(
+            self.drawLinesOfBestFit, QtCore.Qt.QueuedConnection
+        )
 
     def connectSignals(self):
-        self.barsButton.clicked.connect(self.barsButtonPressed, QtCore.Qt.QueuedConnection)
-        self.rescaleButton.clicked.connect(self.rescaleButtonPressed, QtCore.Qt.QueuedConnection)
-        self.pauseResumeButton.clicked.connect(self.pauseResumeAction, QtCore.Qt.QueuedConnection)
-        self.plotAllButton.clicked.connect(self.plotAllButtonPressed, QtCore.Qt.QueuedConnection)
-        self.lofCheckBox.stateChanged.connect(self.lofCheckStateChanged, QtCore.Qt.QueuedConnection)
+        self.barsButton.clicked.connect(
+            self.barsButtonPressed, QtCore.Qt.QueuedConnection
+        )
+        self.rescaleButton.clicked.connect(
+            self.rescaleButtonPressed, QtCore.Qt.QueuedConnection
+        )
+        self.pauseResumeButton.clicked.connect(
+            self.pauseResumeAction, QtCore.Qt.QueuedConnection
+        )
+        self.plotAllButton.clicked.connect(
+            self.plotAllButtonPressed, QtCore.Qt.QueuedConnection
+        )
+        self.lofCheckBox.stateChanged.connect(
+            self.lofCheckStateChanged, QtCore.Qt.QueuedConnection
+        )
 
         if self.mode == 1:
             self.graph1CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
+                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1)
+            )
             self.graph2CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2))
+                lambda: self.graphCheckStateChanged(self.graph2CheckBox, self.curve2)
+            )
             self.graph3CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph3CheckBox, self.curve3))
+                lambda: self.graphCheckStateChanged(self.graph3CheckBox, self.curve3)
+            )
             self.graph4CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
+                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4)
+            )
             self.graph5CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5))
+                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5)
+            )
             self.graph6CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph6CheckBox, self.curve6))
+                lambda: self.graphCheckStateChanged(self.graph6CheckBox, self.curve6)
+            )
             self.graph7CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph7CheckBox, self.curve7))
+                lambda: self.graphCheckStateChanged(self.graph7CheckBox, self.curve7)
+            )
             self.graph8CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph8CheckBox, self.curve8))
+                lambda: self.graphCheckStateChanged(self.graph8CheckBox, self.curve8)
+            )
 
         if self.mode == 2:
             self.graph1CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1))
+                lambda: self.graphCheckStateChanged(self.graph1CheckBox, self.curve1)
+            )
             self.graph4CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4))
+                lambda: self.graphCheckStateChanged(self.graph4CheckBox, self.curve4)
+            )
             self.graph5CheckBox.stateChanged.connect(
-                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5))
+                lambda: self.graphCheckStateChanged(self.graph5CheckBox, self.curve5)
+            )
 
     def barsButtonPressed(self):
         xRange = self.realTimeGraph.getXAxisRange()
@@ -344,14 +441,14 @@ class RawPlotFrame(Frame):
             self.parent.application_state = "Paused"
             self.pauseBit = True
             self.pauseResumeButton.setText("Resume")
-            self.pauseResumeButton.setToolTip('Resume the graph')
+            self.pauseResumeButton.setToolTip("Resume the graph")
 
         # Resume the Plot
         elif self.pauseBit == True:
             self.parent.application_state = "Running"
             self.pauseBit = False
             self.pauseResumeButton.setText("Pause")
-            self.pauseResumeButton.setToolTip('Pause the graph')
+            self.pauseResumeButton.setToolTip("Pause the graph")
 
     def graphCheckStateChanged(self, checkBox, curve):
         if checkBox.isChecked():
@@ -404,24 +501,24 @@ class RawPlotFrame(Frame):
         if self.mode == 2:
             logging.debug("Passing data to parent update_main_plot_data")
             self.parent.update_main_plot_data(cloneData)
-        
+
         logging.debug("update_plot_data - END")
 
     def clearCurves(self):
         logging.debug("clearCurves - BEGIN")
         for curve in self.curves:
             curve.clear()
-        
+
         for lofCurve in self.lofCurves:
             self.realTimeGraph.removeItem(lofCurve)
         self.lofCurves = []
-        
+
         self.yAllMax = None
         self.yAllMin = None
         logging.debug("clearCurves - END")
 
     def plotAllButtonPressed(self):
-        if self.folder_path == '' and self.EZViewPath == None:
+        if self.folder_path == "" and self.EZViewPath == None:
             return
         if self.EZViewPath == None:
             self.LabViewPlotALl()
@@ -443,7 +540,7 @@ class RawPlotFrame(Frame):
         self.parent.application_state = "Running"
         self.pauseBit = False
         self.pauseResumeButton.setText("Pause")
-        self.pauseResumeButton.setToolTip('Pause the graph')
+        self.pauseResumeButton.setToolTip("Pause the graph")
 
         self.plotAllButtonThread = QThread(parent=self)
         # Step 3: Create a worker object
@@ -458,7 +555,9 @@ class RawPlotFrame(Frame):
         self.plotAllButtonThread.start()
 
         title = self.windowTitle()
-        self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
+        self.plotAllThread.secondsAt.connect(
+            lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}")
+        )
 
         self.plotAllThread.newDataPointSignal.connect(
             self.update_plot_data, QtCore.Qt.QueuedConnection
@@ -466,7 +565,7 @@ class RawPlotFrame(Frame):
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
             lambda msg: self.softError.emit("plot all error", msg),
-            QtCore.Qt.QueuedConnection
+            QtCore.Qt.QueuedConnection,
         )
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
@@ -486,7 +585,7 @@ class RawPlotFrame(Frame):
         self.parent.application_state = "Running"
         self.pauseBit = False
         self.pauseResumeButton.setText("Pause")
-        self.pauseResumeButton.setToolTip('Pause the graph')
+        self.pauseResumeButton.setToolTip("Pause the graph")
 
         self.plotAllButtonThread = QThread(parent=self)
         # Step 3: Create a worker object
@@ -501,20 +600,23 @@ class RawPlotFrame(Frame):
         self.plotAllButtonThread.start()
 
         title = self.windowTitle()
-        self.plotAllThread.secondsAt.connect(lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}"))
+        self.plotAllThread.secondsAt.connect(
+            lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}")
+        )
 
         self.plotAllThread.newDataPointSignal.connect(
             self.update_plot_data, QtCore.Qt.QueuedConnection
         )
         self.plotAllThread.filesParsedSignal.connect(self.startNewFileNotifier)
         self.plotAllThread.throwFolderNotSelectedExceptionSignal.connect(
-            lambda msg: self.softError.emit("plot all error", msg))
+            lambda msg: self.softError.emit("plot all error", msg)
+        )
 
         self.plotAllThread.finished.connect(self.endPlotAllThread)
 
     def startNewFileNotifier(self):
 
-        if not self.fileCheckThreadStarted and self.folder_path != '':
+        if not self.fileCheckThreadStarted and self.folder_path != "":
             self.fileNotiferThread = QThread(parent=self.parent)
             # Step 3: Create a worker object
             self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
@@ -541,7 +643,7 @@ class RawPlotFrame(Frame):
             self.startBit = False
             self.pauseBit = True
             self.pauseResumeButton.setText("Resume")
-            self.pauseResumeButton.setToolTip('Resume the graph')
+            self.pauseResumeButton.setToolTip("Resume the graph")
         except Exception as exception:
             logging.error(f"Error in endPlotAllThread: {exception}")
             pass
@@ -591,7 +693,7 @@ class RawPlotFrame(Frame):
 
             # Sort data by x-values (time/index)
             sorted_x = np.array(sorted(data.keys()))
-            
+
             if len(sorted_x) < 2:
                 logging.warning("exportToCsv - Not enough data points to interpolate")
                 # Fallback to exporting the single point if it exists
@@ -600,7 +702,17 @@ class RawPlotFrame(Frame):
 
             # Prepare columns based on mode
             if self.mode == 1:
-                columns = ["Time", "Mass 32", "Mass 34", "Mass 36", "Mass 44", "Mass 45", "Mass 46", "Mass 47", "Mass 49"]
+                columns = [
+                    "Time",
+                    "Mass 32",
+                    "Mass 34",
+                    "Mass 36",
+                    "Mass 44",
+                    "Mass 45",
+                    "Mass 46",
+                    "Mass 47",
+                    "Mass 49",
+                ]
                 y_indices = list(range(8))
             elif self.mode == 2:
                 columns = ["Time", "Mass 32", "Mass 44", "Mass 45"]
@@ -609,22 +721,24 @@ class RawPlotFrame(Frame):
             else:
                 # Fallback if mode is unknown
                 num_y = len(next(iter(data.values())))
-                columns = ["Time"] + [f"Value {i+1}" for i in range(num_y)]
+                columns = ["Time"] + [f"Value {i + 1}" for i in range(num_y)]
                 y_indices = list(range(num_y))
 
-            n = 0.5 # Interpolation step size in seconds
+            n = 0.5  # Interpolation step size in seconds
             # Create target x-values: every n seconds from first to last
             start_x = sorted_x[0]
             end_x = sorted_x[-1]
-            interpolated_x = np.arange(start_x, end_x + 0.1, n) # Using 0.1 buffer to include the end if it's close to a n multiple
-            
+            interpolated_x = np.arange(
+                start_x, end_x + 0.1, n
+            )  # Using 0.1 buffer to include the end if it's close to a n multiple
+
             # If end_x was not reached by arange due to step, ensure we at least try to get as close as possible
             # or strictly follow the "every n seconds" which arange does.
-            
+
             # Prepare data for interpolation
             # Transpose data: from {x: [y1, y2...]} to [[y1_all], [y2_all]...]
             y_data_raw = np.array([data[x] for x in sorted_x])
-            
+
             interpolated_rows = []
             for target_x in interpolated_x:
                 row = [target_x]
@@ -636,7 +750,9 @@ class RawPlotFrame(Frame):
 
             df = pd.DataFrame(interpolated_rows, columns=columns)
             df.to_csv(path, index=False)
-            logging.info(f"exportToCsv - Successfully exported interpolated data to {path}")
+            logging.info(
+                f"exportToCsv - Successfully exported interpolated data to {path}"
+            )
 
         except Exception as e:
             logging.error(f"exportToCsv - Error: {e}")

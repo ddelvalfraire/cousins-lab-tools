@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -18,12 +17,12 @@ from PyQt5.QtCore import QObject
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-sys.path.insert(0, '../read-data')
+sys.path.insert(0, "../read-data")
 
 from sharedSingleton import SharedSingleton
 
-class NewFileNotifierThread(QObject):
 
+class NewFileNotifierThread(QObject):
     def __init__(self, folder_path):
         super(NewFileNotifierThread, self).__init__()
         self.folder_path = folder_path
@@ -59,5 +58,3 @@ class NewFileHandler(FileSystemEventHandler):
         if os.path.isfile(file_path):
             self.sharedData.fileList.append(os.path.basename(file_path))
             # print("New file added:", os.path.basename(file_path))
-
-    
