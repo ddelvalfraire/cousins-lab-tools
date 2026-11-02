@@ -8,8 +8,8 @@
 # bundled in, so either file runs on its own.
 
 MODULES = {
-    "LabView_module_1": "Code/Module_Main_1_3/Application/MainAndBuildFiles/mianMoudle1.py",
-    "LabView_module_2": "Code/Module_Main_1_3/Application/MainAndBuildFiles/mianMoudle2.py",
+    "LabView_module_1": "Code/Module_Main_1_3/Application/MainAndBuildFiles/mainModule1.py",
+    "LabView_module_2": "Code/Module_Main_1_3/Application/MainAndBuildFiles/mainModule2.py",
 }
 
 for name, script in MODULES.items():

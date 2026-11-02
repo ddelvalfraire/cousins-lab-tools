@@ -44,10 +44,10 @@ launch them from `apps/legacy`. From the repository root:
 ```sh
 cd apps/legacy
 pip install -r Code/Module_Main_1_3/Application/requirements.txt
-python -m Code.Module_Main_1_3.Application.MainAndBuildFiles.mianMoudle1
+python -m Code.Module_Main_1_3.Application.MainAndBuildFiles.mainModule1
 ```
 
-For module 2, replace `mianMoudle1` with `mianMoudle2`. To build both Windows
+For module 2, replace `mainModule1` with `mainModule2`. To build both Windows
 executables, run `pip install -r requirements-build.txt`, then `build.bat` from
 `apps/legacy`. The executables go to `apps/legacy/dist`.
 
