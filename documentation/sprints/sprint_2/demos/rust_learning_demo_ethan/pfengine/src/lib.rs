@@ -11,6 +11,11 @@ pub struct DataFrame {
     channels: HashMap<String, Box<dyn Any>>
 }
 
+// Ports currently only contain string names, this may change later
+struct Port {
+    name: String,
+}
+
 impl DataFrame {
     pub fn new() -> DataFrame {
         DataFrame {
