@@ -165,3 +165,25 @@ apps/legacy/module4/application/dist/
 .DS_Store
 
 /target/
+
+### Python (legacy apps) ###
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+### PyInstaller output (keep *.spec files tracked) ###
+build/
+dist/
+
+### Node (desktop app, docs site) ###
+node_modules/
+*.log
+.astro/
+
+### Environment files ###
+.env
+.env.*
+!.env.example
