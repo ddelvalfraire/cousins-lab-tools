@@ -1,95 +1,114 @@
-# Mass Spectrometer Interface
+<p align="center" class="brand-icon">
+  <img src="design/readme-review/assets/icon.png" alt="" width="72" height="72">
+</p>
 
-## Project summary
+<h1 align="center">DVDash</h1>
 
-Each module in this project is a Python program that aids in the use of Mass Spectrometers and other instruments used for analyzing plant respiration in the WSU Cousins Plant Biology Lab.
+<p align="center">A modular workspace for scientific instruments, data, and analysis.</p>
 
-### Additional information about the project
+<p align="center" class="badges">
+  <a href="LICENSE.txt"><img src="design/readme-review/assets/badge-license.svg" alt="License: MIT" height="26"></a>
+  <a href="https://ddelvalfraire.github.io/cousins-lab-tools/"><img src="design/readme-review/assets/badge-manual.svg" alt="Read the user manual" height="26"></a>
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/legacy-v0.2.0-rc.2"><img src="design/readme-review/assets/badge-downloads.svg" alt="Download Windows lab tools v0.2.0-rc.2 — release candidate" height="26"></a>
+  <a href="https://app.circleci.com/pipelines/circleci/MkkpKyoh5KZcRqbZnqUuPM/QiTPgqsziZ6UeBALmEUhw"><img src="design/readme-review/assets/badge-ci.svg" alt="View CircleCI pipelines" height="26"></a>
+</p>
 
-The project is designed to provide a comprehensive platform for managing and interpreting Mass Spectrometer data through various modules. It aims to present data insights through graphical and numerical perspectives while offering flexible data formatting and integration capabilities. The system consists of five primary modules: the first three focus on different ways to visualize and log Mass Spectrometer data, the fourth module reformats data from a secondary Mass Spectrometer, and the upcoming fifth module combines data streams from three distinct instruments. The general design for each of the modules is to accept input from a file or folder, which is selected by the user, process it in some way (reformat, normalize, derive calculations from, etc.), and then output that processed information, either to graphs on the screen, or to new files.
+<p align="center">
+  <a href="#start-here">Start here</a> ·
+  <a href="#a-look-at-the-workspace">Workspace</a> ·
+  <a href="#run-locally">Run locally</a> ·
+  <a href="#project-map">Project map</a>
+</p>
 
-## Repository layout
+DVDash is a scientific desktop application being developed for the **WSU Cousins Plant Biology Lab**. It brings instrument data, visualization, and analysis into a modular workspace designed to grow with the lab's experiments. The existing mass-spectrometer tools support plant respiration research; the new application aims to bring those workflows and additional instruments into one extensible platform.
 
-The existing Python applications and their tests live under `apps/legacy/`:
+## Start here
 
-- `apps/legacy/Code/Module_Main_1_3/` contains Modules 1 and 2 (the spring 2026
-  version). `apps/legacy/Program Layout.md` describes its structure.
-- `apps/legacy/module3/` and `apps/legacy/module4/` contain Modules 3 and 4.
-- `apps/legacy/tests/` contains the cross-module regression checks.
-- `documentation/` and `reference/` keep their existing locations.
+<table width="100%">
+  <thead>
+    <tr><th scope="col" align="left" width="400">I want to…</th><th scope="col" align="left" width="1000">Go to</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Get the existing Windows applications</td><td><a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/legacy-v0.2.0-rc.2">Module 1 and 2 downloads · release candidate</a></td></tr>
+    <tr><td>Learn the lab workflow</td><td><a href="https://ddelvalfraire.github.io/cousins-lab-tools/">Researcher user manual</a></td></tr>
+    <tr><td>Try a sample recording</td><td><a href="reference/instruments/mass-spec/README.md">Example datasets</a></td></tr>
+    <tr><td>Run the Python tools from source</td><td><a href="apps/legacy/README.md">Legacy setup and launch guide</a></td></tr>
+    <tr><td>Develop the native desktop app</td><td><a href="apps/desktop/README.md">Desktop setup</a></td></tr>
+    <tr><td>Read project reports and history</td><td><a href="documentation/">Project archive</a></td></tr>
+  </tbody>
+</table>
 
-Historical documents may show paths such as `module3/application/`. For the
-current checkout, prefix those paths with `apps/legacy/`. The older
-`module1/` and `module2/` sources remain in git history.
+## A look at the workspace
 
-## Installation
+![DVDash experiment workspace with sidebar navigation, centered search, experiment context, recorded readouts, signal charts, and capture controls.](design/readme-review/assets/workspace.png)
 
-### Prerequisites
+*Current experiment-workspace design with illustrative data. Instrument workflows are still under development in DVDash.*
 
-Python 3.1 or greater
+## Run locally
 
+### Run the Python tools
 
-### Installation Steps
+[Python setup and launch commands →](apps/legacy/README.md)
 
-Each module under `apps/legacy/` has a main file that can be run in order to open the respective module, but for the sake of convenience, we have created executables for some of them in their application's 'dist' folder. These executables can be run without any prior installations.
+### Develop DVDash
 
-In order to run a module without using an executable, you must first install the prerequisite modules. To do so, use pip to install the modules listed in the requirements.txt file in the relevant module's application folder. This can be done from the command line with the following command, if you are in that application folder:
-
-> pip install -r requirements.txt
-
-
-Modules 1 and 2 share one code base and import it as the `Code` package, so
-launch them from `apps/legacy`. From the repository root:
-
-```sh
-cd apps/legacy
-pip install -r Code/Module_Main_1_3/Application/requirements.txt
-python -m Code.Module_Main_1_3.Application.MainAndBuildFiles.mainModule1
-```
-
-For module 2, replace `mainModule1` with `mainModule2`. To build both Windows
-executables, run `pip install -r requirements-build.txt`, then `build.bat` from
-`apps/legacy`. The executables go to `apps/legacy/dist`.
-
-For module 3, launch from `apps/legacy/module3/application/mainUI` so relative
-imports and UI resources resolve:
-
-```sh
-cd apps/legacy/module3/application/mainUI
-python main.py
-```
-
-For module 4, run `python main.py` from `apps/legacy/module4/application`.
-For modules 3 and 4, keep running PyInstaller from the module's `application`
-directory with its existing `main.spec` file.
-
-Run the capture-title regression check from the repository root with the Python
-environment containing the legacy dependencies:
+Install the prerequisites in the [desktop setup guide](apps/desktop/README.md), then run from the repository root:
 
 ```sh
-.venv/bin/python apps/legacy/tests/check_capture_titles.py
+cd apps/desktop
+bun install --frozen-lockfile
+bun run tauri dev
 ```
 
-## Functionality
+See the [desktop guide](apps/desktop/README.md) for builds and cleanup.
 
-For modules 1-3, click import to select a file path for aquisition data. Press start to start plotting the data, or plot all to plot the data all at once. Press the mean bars button to bring up two verticle bars that can be used to select data segments. 
+## Project map
 
-Module 4 can simply be run and will automatically create a folder with files containing the incoming data.
-
+```text
+apps/
+  desktop/       Desktop application in development
+  legacy/        Python instrument tools and regression checks
+design/          Visual studies and local design reviews
+documentation/  Project requirements, reports, and history
+reference/      Reference material
+```
 
 ## Contributing
 
+Choose the relevant app guide above before changing code. Use the [desktop development guide](apps/desktop/README.md) for DVDash and the [legacy regression check](apps/legacy/README.md#regression-check) for the Python tools.
 
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request :D
+Keep scientific units explicit, preserve original samples when changing display settings, and identify fixture behavior clearly. Submit changes with a description of the behavior and how it was verified.
 
-## Additional Documentation
+## Credits and license
 
+Developed for the **WSU Cousins Plant Biology Lab** by successive WSU student teams.
 
+<table width="100%">
+  <thead>
+    <tr><th scope="col" align="left" width="100">Year</th><th scope="col" align="left" width="180">Team</th><th scope="col" align="left" width="1000">Members</th></tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row" align="left">2026&#8288;–&#8288;27</th><td>PhotosynthLab</td><td><a href="https://github.com/ddelvalfraire">David Del Val</a> · <a href="https://github.com/Inventor4life">Ethan Goode</a> · <a href="https://github.com/MaxUpton">Max Upton</a></td></tr>
+    <tr><th scope="row" align="left">2025&#8288;–&#8288;26</th><td>WM Codeworks</td><td>Matthew Heseltine · <a href="https://github.com/SkywalkerWesley">Wesley Skywalker</a></td></tr>
+    <tr><th scope="row" align="left">2024&#8288;–&#8288;25</th><td>Linnaea Borealis</td><td><a href="https://github.com/KylerKupp">Kyler Kupp</a> · <a href="https://github.com/MetzgerH">Erik Holtrop</a></td></tr>
+    <tr><th scope="row" align="left">2023&#8288;–&#8288;24</th><td>Dracaena</td><td>Brayden Groshong · Jack Leeper · Tomer Zangi</td></tr>
+    <tr><th scope="row" align="left">2022&#8288;–&#8288;23</th><td>Data Pirates</td><td>Ritik Agarwal · Zoe Parker</td></tr>
+  </tbody>
+</table>
 
-## License
+With thanks to **Dr. Asaph Cousins**, the **Cousins lab research team**, and project mentor **Parteek Kumar** for their guidance and feedback.
 
-MIT License
+<p align="center">
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=ddelvalfraire/cousins-lab-tools" alt="Contributors to Cousins Lab Tools on GitHub"><br>
+    <sub>GitHub contributor history</sub>
+  </a>
+</p>
+
+<p align="center">
+  <a href="LICENSE.txt">MIT License</a> ·
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/graphs/contributors">Contributor history</a> ·
+  <a href="documentation/">Project archive</a>
+  · <a href="https://github.com/ddelvalfraire/cousins-lab-tools/issues/new/choose">Report a problem</a>
+  · <a href="CITATION.cff">Cite this software</a>
+</p>
