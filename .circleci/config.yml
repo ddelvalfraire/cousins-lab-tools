@@ -1,9 +1,3 @@
-# Setup config. It decides which sections of continue_config.yml run, then
-# continues the pipeline with that file.
-#
-# CircleCI starts this pipeline for non-draft pull requests and tag pushes.
-# Pushes to main do not start a pipeline.
-
 version: 2.1
 
 setup: true
@@ -20,8 +14,6 @@ workflows:
     jobs:
       - path-filtering/filter:
           name: filter-paths
-          # Guarded so that tag pipelines, which have no pull request values,
-          # never read them.
           base-revision: << pipeline.event.name == "pull_request" and pipeline.event.github.pull_request.base.ref or "main" >>
           config-path: .circleci/continue_config.yml
           # <regex> <parameter> <value>, one per line. The orb anchors each
