@@ -85,6 +85,7 @@ pub struct PipeFilterEngine {
     tick_buffer: SwapBuffer<HashMap<ComponentID, VecDeque<Packet>>>,
     components: HashMap<ComponentID, Box<dyn Component>>,
     sensitive_comps: HashSet<ComponentID>,
+    ticked_comps: HashSet<ComponentID>,
 }
 
 impl PipeFilterEngine {
@@ -98,6 +99,7 @@ impl PipeFilterEngine {
             },
             components: HashMap::new(),
             sensitive_comps: HashSet::new(),
+            ticked_comps: HashSet::new(),
         }
     }
 
@@ -107,6 +109,13 @@ impl PipeFilterEngine {
             RunMode::Sensitive => {
                 self.sensitive_comps.insert(ComponentID(this_id));
             },
+            RunMode::Ticked => {
+                self.ticked_comps.insert(ComponentID(this_id));
+            },
+            RunMode::TickedSensitive => {
+                self.sensitive_comps.insert(ComponentID(this_id));
+                self.ticked_comps.insert(ComponentID(this_id));
+            }
             _ => {},
         }
 
