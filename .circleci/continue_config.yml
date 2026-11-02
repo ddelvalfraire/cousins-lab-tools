@@ -112,6 +112,164 @@ jobs:
   # --- docs ---
 
   # --- desktop release ---
+  # Release builds are unsigned and start from a clean checkout without
+  # caches. `tauri build` runs beforeBuildCommand (`bun run build`) first, so
+  # the installers embed the current front end.
+  desktop-release-check-tag:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Check the tag against the app version
+          command: |
+            version=$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)
+            if [[ ! $CIRCLE_TAG =~ ^desktop-v([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?$ ]]; then
+              echo "Use a tag like desktop-v${version} or desktop-v${version}-rc.1, not ${CIRCLE_TAG}."
+              exit 1
+            fi
+            if [[ ${BASH_REMATCH[1]} != "$version" ]]; then
+              echo "${CIRCLE_TAG} does not match version ${version} in tauri.conf.json."
+              exit 1
+            fi
+
+  desktop-release-windows:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    shell: bash.exe -eo pipefail
+    steps:
+      - checkout
+      # Same Rust version as the Linux checks (cimg/rust:1.99.1). The image's
+      # Node.js runs Vite and the Tauri CLI.
+      - run:
+          name: Install Rust and Bun
+          command: |
+            curl -sSfLo rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+            ./rustup-init.exe -y --no-modify-path --profile minimal --default-toolchain 1.99.1
+            rm rustup-init.exe
+            npm install --global "$(node -p 'require("./apps/desktop/package.json").packageManager')"
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - run:
+          name: Build the installers
+          working_directory: apps/desktop
+          command: |
+            export PATH="$HOME/.cargo/bin:$PATH"
+            bun run tauri build --bundles nsis,msi
+      # Nobody on the team has Windows, so install the NSIS installer here and
+      # start the app. The default install mode is per user, into
+      # %LOCALAPPDATA%\<productName>.
+      - run:
+          name: Install and launch the app
+          shell: powershell.exe -ExecutionPolicy Bypass
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $setup = Get-Item target\release\bundle\nsis\*-setup.exe
+            $install = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+            if ($install.ExitCode -ne 0) { throw "The installer exited with code $($install.ExitCode)." }
+            $dir = Join-Path $env:LOCALAPPDATA 'DV-Dash'
+            Get-ChildItem $dir | Format-Table Name, Length
+            $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notlike 'uninstall*' } | Select-Object -First 1
+            if (-not $exe) { throw "No app executable in $dir." }
+            $app = Start-Process -FilePath $exe.FullName -PassThru
+            Start-Sleep -Seconds 15
+            if ($app.HasExited) { throw "$($exe.Name) exited with code $($app.ExitCode) within 15 seconds." }
+            Write-Host "$($exe.Name) is running (process $($app.Id), $($app.MainWindowTitle))."
+            Stop-Process -Id $app.Id
+      - run:
+          name: Collect the installers
+          command: |
+            mkdir -p installers/windows
+            cp target/release/bundle/nsis/*-setup.exe target/release/bundle/msi/*.msi installers/windows/
+            ls -l installers/windows
+      - persist_to_workspace:
+          root: installers
+          paths:
+            - windows
+
+  desktop-release-macos:
+    macos:
+      xcode: 27.1.0
+    resource_class: m4pro.medium
+    environment:
+      # Ad-hoc signature, not a developer identity. Apple Silicon Macs refuse
+      # to open downloaded apps without any signature.
+      APPLE_SIGNING_IDENTITY: "-"
+    steps:
+      - checkout
+      # One universal build runs on both Apple Silicon and Intel Macs.
+      - run:
+          name: Install Rust and Bun
+          command: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path \
+              --profile minimal --default-toolchain 1.99.1 \
+              --target aarch64-apple-darwin --target x86_64-apple-darwin
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$BASH_ENV"
+            npm install --global "$(node -p 'require("./apps/desktop/package.json").packageManager')"
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - run:
+          name: Build the installer
+          working_directory: apps/desktop
+          command: bun run tauri build --target universal-apple-darwin --bundles dmg
+      - run:
+          name: Collect the installer
+          command: |
+            mkdir -p installers/macos
+            cp target/universal-apple-darwin/release/bundle/dmg/*.dmg installers/macos/
+            ls -l installers/macos
+      - persist_to_workspace:
+          root: installers
+          paths:
+            - macos
+
+  desktop-release-publish:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: installers
+      - run:
+          name: Install the GitHub CLI
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends gh
+      # GITHUB_TOKEN comes from the github-releases context, and gh reads it
+      # from the environment. If the release exists (a re-run), update it and
+      # replace its files instead of failing.
+      - run:
+          name: Publish the GitHub release
+          command: |
+            : "${GITHUB_TOKEN:?Add the github-releases context to this job.}"
+            export GH_REPO=ddelvalfraire/cousins-lab-tools
+            prerelease=false
+            if [[ $CIRCLE_TAG =~ -rc\.[0-9]+$ ]]; then
+              prerelease=true
+            fi
+            files=(installers/*/*)
+            if gh release view "$CIRCLE_TAG" > /dev/null 2>&1; then
+              gh release edit "$CIRCLE_TAG" --prerelease="$prerelease"
+              gh release upload "$CIRCLE_TAG" "${files[@]}" --clobber
+            else
+              gh release create "$CIRCLE_TAG" "${files[@]}" --verify-tag \
+                --prerelease="$prerelease" \
+                --title "Desktop app ${CIRCLE_TAG#desktop-v}" \
+                --notes "Installers for the DV-Dash desktop app, built from ${CIRCLE_SHA1}.
+
+            - Windows: \`*-setup.exe\` (per-user install) or \`*.msi\`.
+            - macOS: \`*.dmg\`, for Apple Silicon and Intel Macs.
+
+            The installers are not code signed, so Windows SmartScreen and macOS Gatekeeper warn before the first launch."
+            fi
+            gh release view "$CIRCLE_TAG" --json url,isPrerelease,assets \
+              --jq '"\(.url) prerelease=\(.isPrerelease)", (.assets[] | "  \(.name)")'
 
   # --- legacy release ---
 
@@ -152,14 +310,26 @@ workflows:
   desktop-release:
     when: << pipeline.parameters.run-desktop-release >>
     jobs:
-      - placeholder:
-          name: desktop-release-placeholder
-          section: desktop release
-          filters:
+      - desktop-release-check-tag:
+          filters: &desktop-release-tags
             branches:
               ignore: /.*/
             tags:
               only: /^desktop-v.*/
+      - desktop-release-windows:
+          requires:
+            - desktop-release-check-tag
+          filters: *desktop-release-tags
+      - desktop-release-macos:
+          requires:
+            - desktop-release-check-tag
+          filters: *desktop-release-tags
+      - desktop-release-publish:
+          context: github-releases
+          requires:
+            - desktop-release-windows
+            - desktop-release-macos
+          filters: *desktop-release-tags
 
   # --- legacy release ---
   legacy-release:
