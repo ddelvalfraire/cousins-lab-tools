@@ -8,26 +8,31 @@ __status__ = "Completed"
 """
 
 # from PyQt5.uic import loadUi
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
-from PyQt5.QtWidgets import QSizePolicy
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QMovie
+from PyQt5.QtWidgets import QAction, QApplication, QFileDialog, QSizePolicy
 
+# Keep PyQt5 imported first: pyqtgraph uses whichever Qt binding is already loaded.
+# isort: split
+
+import csv
 import math
-import pyqtgraph as pg
-import sys, os, csv
+import os
+import sys
 import threading
+from datetime import datetime
+from math import floor
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5.QtCore import Qt, QThread
+from stopwatch import Stopwatch
 from worker import Worker
+
 from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import (
     NewFileNotifierThread,
 )
-from PyQt5.QtCore import Qt, QThread
-import numpy as np
-from stopwatch import Stopwatch
-from datetime import datetime
-from math import floor
 from Code.Module_Main_1_3.Application.Workers.plotAllThread import PlotAllThread
-
 
 #####################################################################
 
@@ -48,16 +53,15 @@ sys.path.append("../uiElements")
 # adding read_data to the system path
 sys.path.append("../calculations")
 
-from getData import GetData
-from sharedSingleton import SharedSingleton
-from curveModule3 import CurveModule3
-from graph import Graph
-from frame import Frame
-from Calculations import Calculations
 from button import Button
+from Calculations import Calculations
+from curveModule3 import CurveModule3
 from dialog import Dialog
+from frame import Frame
+from getData import GetData
+from graph import Graph
 from LineEdit import LineEdit
-from dataUtility import DataUtility
+from sharedSingleton import SharedSingleton
 
 
 class LabViewModule3(QtWidgets.QMainWindow):
@@ -66,7 +70,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
         This method initializes the LabView class.
         This is where we initialize values and call the methods that create the User Interface
         """
-        super(LabViewModule3, self).__init__()
+        super().__init__()
 
         self.delayTimer = None
 
@@ -616,12 +620,6 @@ class LabViewModule3(QtWidgets.QMainWindow):
         # Copy Table connect method
         self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
 
-    def select_folder(self):
-        # Open a file dialog to select a folder
-        self.folder_path = QFileDialog.getExistingDirectory(self, "Select a folder")
-        self.setWindowTitle(f"LabView {os.path.basename(self.folder_path)}")
-        self.dataObj.setDirectory(self.folder_path)
-        self.application_state = "Folder_Selected"
         # self.select_folder_action.setEnabled(False)
 
     ################################################# End - User Interface Creation #################################################
@@ -746,26 +744,6 @@ class LabViewModule3(QtWidgets.QMainWindow):
         else:
             self.throwFolderNotSelectedException()
 
-    # change-file-reading
-    # Start the thread as soon all files are read.
-    def startNewFileNotifier(self):
-
-        if not self.fileCheckThreadStarted:
-            self.fileNotiferThread = QThread(parent=self)
-            # Step 3: Create a worker object
-            self.newFileNotifierThread = NewFileNotifierThread(self.folder_path)
-            # Step 4: Move worker to the thread
-            self.newFileNotifierThread.moveToThread(self.fileNotiferThread)
-
-            # Step 5: Connect signals and slots and start the stop watch
-            self.fileNotiferThread.started.connect(self.newFileNotifierThread.run)
-
-            self.fileNotiferThread.start()
-            self.fileCheckThreadStarted = True
-
-        else:
-            pass
-
     def getMeanButtonPressed(self, lineEdit, curve):
         """
         When a mean button is pressed, sets the lineEdit with
@@ -816,21 +794,6 @@ class LabViewModule3(QtWidgets.QMainWindow):
             lineEdit.setText(str(mean_value))
 
             return mean_value
-
-    def throwUndefined(self, lineEdit):
-        lineEdit.setText("undef")
-
-    def isFloat(self, string):
-        """
-        Checks if a string can be coverted to a float value
-        :param {string : string}
-        :return -> True or False
-        """
-        try:
-            float(string)
-            return True
-        except ValueError:
-            return False
 
     def addToTableButtonPressed(self):
         """
@@ -1077,30 +1040,27 @@ class LabViewModule3(QtWidgets.QMainWindow):
 
         # Changing Y Axes Scale:
 
-        if self.isYChanged[0]:
-            if not self.realTimeGraph.graphInteraction:
-                offsetMin = (20 * self.yMinList[0]) / 100
-                offsetMax = (20 * self.yMaxList[0]) / 100
-                self.realTimeGraph.setNewYRange(
-                    self.yMinList[0] - offsetMin, self.yMaxList[0] + offsetMax
-                )
-                self.isYChanged[0] = False
-        if self.isYChanged[1]:
-            if not self.uBarGraph.graphInteraction:
-                offsetMin = (20 * self.yMinList[1]) / 100
-                offsetMax = (20 * self.yMaxList[1]) / 100
-                self.realTimeGraph.setNewYRange(
-                    self.yMinList[1] - offsetMin, self.yMaxList[1] + offsetMax
-                )
-                self.isYChanged[1] = False
-        if self.isYChanged[2]:
-            if not self.DuBarGraph.graphInteraction:
-                offsetMin = (20 * self.yMinList[2]) / 100
-                offsetMax = (20 * self.yMaxList[2]) / 100
-                self.realTimeGraph.setNewYRange(
-                    self.yMinList[2] - offsetMin, self.yMaxList[2] + offsetMax
-                )
-                self.isYChanged[2] = False
+        if self.isYChanged[0] and not self.realTimeGraph.graphInteraction:
+            offsetMin = (20 * self.yMinList[0]) / 100
+            offsetMax = (20 * self.yMaxList[0]) / 100
+            self.realTimeGraph.setNewYRange(
+                self.yMinList[0] - offsetMin, self.yMaxList[0] + offsetMax
+            )
+            self.isYChanged[0] = False
+        if self.isYChanged[1] and not self.uBarGraph.graphInteraction:
+            offsetMin = (20 * self.yMinList[1]) / 100
+            offsetMax = (20 * self.yMaxList[1]) / 100
+            self.realTimeGraph.setNewYRange(
+                self.yMinList[1] - offsetMin, self.yMaxList[1] + offsetMax
+            )
+            self.isYChanged[1] = False
+        if self.isYChanged[2] and not self.DuBarGraph.graphInteraction:
+            offsetMin = (20 * self.yMinList[2]) / 100
+            offsetMax = (20 * self.yMaxList[2]) / 100
+            self.realTimeGraph.setNewYRange(
+                self.yMinList[2] - offsetMin, self.yMaxList[2] + offsetMax
+            )
+            self.isYChanged[2] = False
 
     def on_wheel_event(self, event, axis=1):
         """
@@ -1304,7 +1264,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
             writer.writerow(row)
 
         # close file
-        file.close
+        file.close  # noqa: B018 - close is never called; calling it changes behavior
 
     ################################################## End - File epxort and import #################################################
     #################################################################################################################################
@@ -1411,7 +1371,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
         deltas = []
         for i in range(len(times) - 1):
             if (times[i + 1] - times[i]) > 0:
-                deltas.append((times[i + 1] - times[i]))  # Find the difference
+                deltas.append(times[i + 1] - times[i])  # Find the difference
         deltas.sort()
 
         max_speed = (
@@ -1501,7 +1461,6 @@ class LabViewModule3(QtWidgets.QMainWindow):
         :return -> None
         """
         obj.close()
-        pass
 
     def throwUndefined(self, lineEdit):
         lineEdit.setText("undef")
@@ -1539,7 +1498,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
 
         if graph == 0:
             # if point already exists, delete point
-            for key in dict(self.assayBufferData).keys():
+            for key in dict(self.assayBufferData):
                 if key == concentration:
                     del self.assayBufferData[key]
 
@@ -1551,7 +1510,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(
+            self.assayBufferGraph.plot(
                 list(self.assayBufferData.values()),
                 list(self.assayBufferData.keys()),
                 pen=None,
@@ -1565,7 +1524,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
 
         else:
             # if point already exists, delete point
-            for key in dict(self.hclData).keys():
+            for key in dict(self.hclData):
                 if key == concentration:
                     del self.hclData[key]
 
@@ -1576,7 +1535,7 @@ class LabViewModule3(QtWidgets.QMainWindow):
             self.uBarGraph.clear()
 
             # plot point on the hcl graph
-            hclLine = self.uBarGraph.plot(
+            self.uBarGraph.plot(
                 list(self.hclData.values()),
                 list(self.hclData.keys()),
                 pen=None,

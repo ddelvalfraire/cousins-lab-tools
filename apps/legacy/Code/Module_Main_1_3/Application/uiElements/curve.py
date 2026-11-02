@@ -8,12 +8,8 @@ __status__ = "Completed"
 """
 
 import sys
-import PyQt5.QtWidgets as qtw
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as qtg
+
 import pyqtgraph as pg
-import time
-import numpy as np
 
 # adding UI to the system path
 sys.path.insert(0, "../read_data")

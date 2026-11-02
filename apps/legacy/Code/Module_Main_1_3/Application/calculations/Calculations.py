@@ -1,6 +1,7 @@
-from statistics import mean
-import numpy as np
 import logging
+from statistics import mean
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

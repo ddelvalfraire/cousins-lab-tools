@@ -1,10 +1,10 @@
-from PyQt5 import QtCore
+import logging
+
 import numpy as np
+from PyQt5 import QtCore
 from sympy import lambdify
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +31,8 @@ class SamplePlotCalcWorker(QtCore.QObject):
         self.temp = temp
         self.deltaPart = deltaPart
 
-        self.xsymbols = sorted(list(xexp.free_symbols), key=lambda s: s.name)
-        self.ysymbols = sorted(list(yexp.free_symbols), key=lambda s: s.name)
+        self.xsymbols = sorted(xexp.free_symbols, key=lambda s: s.name)
+        self.ysymbols = sorted(yexp.free_symbols, key=lambda s: s.name)
 
         self._x_eval = lambdify(self.xsymbols, xexp, "numpy")
         self._y_eval = lambdify(self.ysymbols, yexp, "numpy")
@@ -160,7 +160,7 @@ class SamplePlotCalcWorker(QtCore.QObject):
             m44dif = np.asarray(m44dif, dtype=float)
             times = np.asarray(times, dtype=float)
 
-            slope, intercept = Calculations.getLineOfBestFit(
+            slope, _intercept = Calculations.getLineOfBestFit(
                 sampleEquationPlotX, sampleEquationPlotY
             )
             slope44, _ = Calculations.getLineOfBestFit(

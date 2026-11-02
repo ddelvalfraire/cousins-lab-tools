@@ -8,7 +8,6 @@ __status__ = "Completed"
 """
 
 import pandas as pd
-import time as time
 from sharedSingleton import SharedSingleton
 
 

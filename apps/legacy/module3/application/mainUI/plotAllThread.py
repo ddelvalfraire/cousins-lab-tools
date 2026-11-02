@@ -7,16 +7,16 @@ __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
 
-from PyQt5.QtCore import QObject, pyqtSignal
-import PyQt5.QtCore as QtCore
-from time import time
 import sys
 from math import floor
 
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
+
 sys.path.insert(0, "../read-data")
 
-from sharedSingleton import SharedSingleton
 from dataUtility import DataUtility
+from sharedSingleton import SharedSingleton
 
 
 class PlotAllThread(QObject):
@@ -27,7 +27,7 @@ class PlotAllThread(QObject):
     filesParsedSignal = pyqtSignal()
 
     def __init__(self, globalObject):
-        super(PlotAllThread, self).__init__()
+        super().__init__()
 
         self.globalObject = globalObject
         self.sharedData = SharedSingleton()
@@ -68,7 +68,7 @@ class PlotAllThread(QObject):
                 #### Send singal to update the data point.
                 self.newDataPointSignal.emit(dataPoints)
 
-                self.globalObject.application_state == "Out_Of_Data"
+                self.globalObject.application_state == "Out_Of_Data"  # noqa: B015 - no-op, probably meant "="; fixing it changes behavior
 
                 #### Send signal to throw exception.
                 self.throwOutOfDataExceptionSignal.emit()

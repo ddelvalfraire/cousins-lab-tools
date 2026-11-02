@@ -1,14 +1,14 @@
-from PyQt5.QtCore import QObject, pyqtSignal
-import PyQt5.QtCore as QtCore
-from time import time
 import sys
 from math import floor
 
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
+
 sys.path.insert(0, "../read_data")
 
-from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
-
 import logging
+
+from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class PlotAllThread(QObject):
     secondsAt = QtCore.pyqtSignal(str)
 
     def __init__(self, globalObject, parent):
-        super(PlotAllThread, self).__init__()
+        super().__init__()
 
         self.globalObject = globalObject
         self.sharedData = parent.sharedData
@@ -55,7 +55,6 @@ class PlotAllThread(QObject):
                 # send per batch
                 batchSize = 100  # tune to your rendering cost
                 acc = []
-                any_points_sent = False
                 while self._is_running:
                     if self.globalObject.application_state == "Paused":
                         QtCore.QThread.msleep(100)
@@ -71,11 +70,10 @@ class PlotAllThread(QObject):
                     if len(acc) >= batchSize:
                         try:
                             self.secondsAt.emit(str(floor(acc[-1][0])))
-                        except Exception as e:
+                        except Exception:
                             pass
                         self.newDataPointSignal.emit(acc)
                         acc = []
-                        any_points_sent = True
 
         finally:
             logger.debug("PlotAllThread.run - END")

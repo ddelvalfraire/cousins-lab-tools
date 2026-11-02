@@ -7,14 +7,12 @@ __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
 
-import unittest
 import sys
+import unittest
 
 sys.path.append("../calculations")
 
 from Calculations import Calculations
-
-import unittest
 
 
 class TestCalculate02Calibration(unittest.TestCase):

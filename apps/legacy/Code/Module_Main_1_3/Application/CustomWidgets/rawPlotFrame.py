@@ -1,22 +1,26 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtGui import QMovie
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread
-import pyqtgraph as pg
-import numpy as np
+from PyQt5.QtGui import QMovie
+
+# Keep PyQt5 imported first: pyqtgraph uses whichever Qt binding is already loaded.
+# isort: split
 import logging
+
+import numpy as np
 import pandas as pd
+import pyqtgraph as pg
 
 logger = logging.getLogger(__name__)
 
+from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+from Code.Module_Main_1_3.Application.uiElements.button import Button
+from Code.Module_Main_1_3.Application.uiElements.curve import Curve
+from Code.Module_Main_1_3.Application.uiElements.frame import Frame
+from Code.Module_Main_1_3.Application.uiElements.graph import Graph
 from Code.Module_Main_1_3.Application.Workers.EzPlotAll import EzPlotAll
 from Code.Module_Main_1_3.Application.Workers.newFileNotifierThread import (
     NewFileNotifierThread,
 )
-from Code.Module_Main_1_3.Application.uiElements.frame import Frame
-from Code.Module_Main_1_3.Application.uiElements.button import Button
-from Code.Module_Main_1_3.Application.uiElements.graph import Graph
-from Code.Module_Main_1_3.Application.uiElements.curve import Curve
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.Workers.plotAllThread import PlotAllThread
 
 
@@ -35,7 +39,7 @@ class RawPlotFrame(Frame):
         mode,
         parent=None,
     ):
-        super(RawPlotFrame, self).__init__(scrollArea, heightFactor)
+        super().__init__(scrollArea, heightFactor)
         self.parent = parent  # LabViewModule1 instance
         self.sharedData = SharedSingleton()
         self.mode = mode
@@ -433,7 +437,6 @@ class RawPlotFrame(Frame):
             self.realTimeGraph.setNewYRange(0, 500)
         except:
             print("No data")
-            pass
 
     def pauseResumeAction(self):
         # Pause the Plot
@@ -646,7 +649,6 @@ class RawPlotFrame(Frame):
             self.pauseResumeButton.setToolTip("Resume the graph")
         except Exception as exception:
             logging.error(f"Error in endPlotAllThread: {exception}")
-            pass
         logging.debug("endPlotAllThread - END")
 
     def clear(self):

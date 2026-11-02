@@ -1,14 +1,14 @@
 # Main function
-import PyQt5
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QApplication, QSplashScreen
-from PyQt5.QtGui import QPixmap
-
-from Code.Module_Main_1_3.Application.mainUI.module1 import LabViewModule1
-
+import logging
 import sys
 import traceback
-import logging
+
+import PyQt5
+from PyQt5 import QtCore
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QSplashScreen
+
+from Code.Module_Main_1_3.Application.mainUI.module1 import LabViewModule1
 
 # Configure logging
 # Detect if running as a frozen PyInstaller bundle

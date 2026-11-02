@@ -1,17 +1,25 @@
 # from PyQt5.uic import loadUi
-from PyQt5 import QtWidgets, QtCore
 import logging
 
-logger = logging.getLogger(__name__)
-from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
-from PyQt5.QtWidgets import QDialogButtonBox
-from PyQt5.QtWidgets import QSizePolicy
+from PyQt5 import QtCore, QtWidgets
 
-import pyqtgraph as pg
-import sys, os, csv, re
-from PyQt5.QtCore import Qt
-import numpy as np
+logger = logging.getLogger(__name__)
+import csv
+import os
+import re
+import sys
 from datetime import datetime
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialogButtonBox,
+    QFileDialog,
+    QSizePolicy,
+)
 
 #####################################################################
 
@@ -32,15 +40,15 @@ sys.path.append("../uiElements")
 # adding read_data to the system path
 sys.path.append("../calculations")
 
-from Code.Module_Main_1_3.Application.read_data.getData import GetData
-from Code.Module_Main_1_3.Application.uiElements.curve import Curve
-from Code.Module_Main_1_3.Application.uiElements.graph import Graph
-from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-from Code.Module_Main_1_3.Application.uiElements.button import Button
-from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
-from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
+from Code.Module_Main_1_3.Application.read_data.getData import GetData
+from Code.Module_Main_1_3.Application.uiElements.button import Button
+from Code.Module_Main_1_3.Application.uiElements.curve import Curve
+from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
+from Code.Module_Main_1_3.Application.uiElements.frame import Frame
+from Code.Module_Main_1_3.Application.uiElements.graph import Graph
+from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 
 
 class LabViewModule2(QtWidgets.QMainWindow):
@@ -49,7 +57,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         This method initializes the LabView class.
         This is where we initialize values and call the methods that create the User Interface
         """
-        super(LabViewModule2, self).__init__()
+        super().__init__()
 
         self.app = app
         self.screen_width = width
@@ -843,7 +851,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
                 # set intercept line edit
                 self.intercept1LineEdit.setText(str(round(intercept, 4)))
-                self.co2Cal3ulLineEdit
         # if lineedit is co2 cal 3, then compute the co2/volt line
         if lineEdit == self.co2Cal3ulLineEdit:
             try:
@@ -1031,8 +1038,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         :param {_ : }
         :return -> None
         """
-        rowIndex = self.table.columnCount()
-        columnIndex = self.table.columnCount()
 
         try:
             row = ""
@@ -1048,14 +1053,10 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 columnMin = 0
                 columnMax = 0
                 for items in self.table.selectedItems():
-                    if items.row() < rowMin:
-                        rowMin = items.row()
-                    if items.row() > rowMax:
-                        rowMax = items.row()
-                    if items.column() < columnMin:
-                        columnMin = items.column()
-                    if items.column() > columnMax:
-                        columnMax = items.column()
+                    rowMin = min(rowMin, items.row())
+                    rowMax = max(rowMax, items.row())
+                    columnMin = min(columnMin, items.column())
+                    columnMax = max(columnMax, items.column())
 
                 for i in range(rowMin - 1, rowMax):
                     for j in range(columnMin - 1, columnMax):
@@ -1220,10 +1221,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
                     self.curve4.data_line.setData(x=self.curve4.x, y=self.curve4.y)
                 # Update min/max for the smoothed derivative
                 self.checkMinMax(min(self.curve4.y), max(self.curve4.y), 2)
-            else:
-                dubar_batch = [0.0] * len(ubar_batch)
-        else:
-            dubar_batch = [0.0] * len(ubar_batch)
 
         # Updating other curves
         self.checkMinMax(min(ubar_batch), max(ubar_batch), 1)
@@ -1494,8 +1491,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
                 if match:
                     try:
                         n = int(match.group(1))
-                        if n > max_n:
-                            max_n = n
+                        max_n = max(max_n, n)
                     except ValueError:
                         pass
 
@@ -1638,7 +1634,6 @@ class LabViewModule2(QtWidgets.QMainWindow):
         :return -> None
         """
         obj.close()
-        pass
 
     def throwUndefined(self, lineEdit):
         lineEdit.setText("undef")
@@ -1665,7 +1660,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         if graph == 0:
             # if point already exists, delete point
-            for key in dict(self.assayBufferData).keys():
+            for key in dict(self.assayBufferData):
                 if key == concentration:
                     del self.assayBufferData[key]
 
@@ -1677,7 +1672,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(
+            self.assayBufferGraph.plot(
                 list(self.assayBufferData.values()),
                 list(self.assayBufferData.keys()),
                 pen=None,
@@ -1691,7 +1686,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         else:
             # if point already exists, delete point
-            for key in dict(self.hclData).keys():
+            for key in dict(self.hclData):
                 if key == concentration:
                     del self.hclData[key]
 

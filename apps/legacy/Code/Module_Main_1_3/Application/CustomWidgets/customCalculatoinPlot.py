@@ -1,20 +1,22 @@
-from PyQt5 import QtWidgets, QtCore
-import pyqtgraph as pg
+from PyQt5 import QtCore, QtWidgets
+
+# Keep PyQt5 imported first: pyqtgraph uses whichever Qt binding is already loaded.
+# isort: split
+import logging
 import os
 
+import pyqtgraph as pg
 from sympy import sympify
 
+from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
+from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.uiElements.graph import Graph
-from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 from Code.Module_Main_1_3.Application.Workers.ExportWorker import ExportWorker
 from Code.Module_Main_1_3.Application.Workers.SamplePlotCalcWorker import (
     SamplePlotCalcWorker,
 )
-from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ class customCalculationPlot(Frame):
         dataToAdd=None,
         user=None,
     ):
-        super(customCalculationPlot, self).__init__(scrollArea, heightFactor)
+        super().__init__(scrollArea, heightFactor)
         self.getVars = getVars
         self.DefaultXAxisEquiation = DefaultXAxisEquiation
         self.DefaultYAxisEquiation = DefaultYAxisEquiation
@@ -475,7 +477,7 @@ class customCalculationPlot(Frame):
             except Exception as e:
                 logger.error(f"Error in applyCustomCalcResults: {e}")
                 self.softError.emit("Plot Update Error", str(e))
-        except Exception as e:
+        except Exception:
             pass
 
     def autoRangeToData(self, xs, ys, plot, padding):
@@ -554,7 +556,7 @@ class customCalculationPlot(Frame):
         # checks that sample name is valid
         if not sampleName:
             sampleName = "null sample"
-        sampleData = list()
+        sampleData = []
         sampleData.append(sampleName)
 
         #################### equations plot ####################
@@ -580,8 +582,8 @@ class customCalculationPlot(Frame):
             for v in allVars:
                 rawData[v].append(Calculations.roundIfFloat(vars[str(v)], 5))
 
-        for k in rawData.keys():
-            sampleData.append((k, rawData[k]))
+        for k, values in rawData.items():
+            sampleData.append((k, values))
         #################### Adds extra data elements ####################
         for x, y in self.dataToAdd:
             if type(y) == LineEdit:
@@ -658,7 +660,7 @@ class customCalculationPlot(Frame):
         for i in range(table.columnCount()):
             lastData = table.item(last, i)
             try:
-                if not lastData.text().strip() == "":
+                if lastData.text().strip() != "":
                     lastHasData = True
             except:
                 continue

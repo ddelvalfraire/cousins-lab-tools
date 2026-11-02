@@ -1,14 +1,13 @@
-import pandas as pd
-import struct
-import numpy as np
-from numpy import blackman
-import datetime
 import os
+import struct
 import sys
-import tkinter as tk
-from tkinter import filedialog
-from datetime import datetime
 import time
+import tkinter as tk
+from datetime import datetime
+from tkinter import filedialog
+
+import numpy as np
+import pandas as pd
 
 
 def set_capture_title(folder_path):

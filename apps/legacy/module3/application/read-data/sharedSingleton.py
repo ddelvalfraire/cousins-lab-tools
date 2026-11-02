@@ -8,8 +8,8 @@ __status__ = "Completed"
 """
 
 
-class SharedSingleton(object):
+class SharedSingleton:
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(SharedSingleton, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance
