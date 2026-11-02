@@ -183,7 +183,7 @@ class RawPlotFrame(Frame):
         ############################## {Graph} AND {Start Pause/Resume Slider Layout} ###############
 
         # Graph
-        self.realTimeGraph = Graph(100, 100)
+        self.realTimeGraph = Graph(100, 100, f"module{self.mode}", "raw-masses")
         self.realTimeGraph.setAccessibleName("Raw masses")
         self.realTimeGraph.setLabel(axis="left", text="Voltage (mV)")
         self.realTimeGraph.setLabel(axis="bottom", text="Time (s)")
