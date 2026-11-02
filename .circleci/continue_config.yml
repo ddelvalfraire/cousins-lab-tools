@@ -160,9 +160,6 @@ jobs:
           command: |
             export PATH="$HOME/.cargo/bin:$PATH"
             bun run tauri build --bundles nsis,msi
-      # Nobody on the team has Windows, so install the NSIS installer here and
-      # start the app. The default install mode is per user, into
-      # %LOCALAPPDATA%\<productName>.
       - run:
           name: Install and launch the app
           shell: powershell.exe -ExecutionPolicy Bypass
