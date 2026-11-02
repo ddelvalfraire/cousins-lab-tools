@@ -17,6 +17,8 @@ struct Port {
     name: String,
 }
 
+struct ComponentID(u32);
+
 // This struct will contain whatever we end up using to let a Component access the DataFrames at its ports.
 struct Context {
 
@@ -77,16 +79,21 @@ pub struct Packet {
 }
 
 pub struct PipeFilterEngine {
+    tick_buffer: SwapBuffer<HashMap<ComponentID, VecDeque<Packet>>>,
+    components: HashMap<ComponentID, Box<dyn Component>>,
+    sensitive_comps: HashSet<ComponentID>,
 }
 
 impl PipeFilterEngine {
 
     pub fn new() -> PipeFilterEngine {
         PipeFilterEngine {
-            swap: SwapBuffer {
-                current: String::new(),
-                next: String::new(),
-            }
+            tick_buffer: SwapBuffer {
+                current: HashMap::new(),
+                next: HashMap::new(),
+            },
+            components: HashMap::new(),
+            sensitive_comps: HashSet::new(),
         }
     }
 }
