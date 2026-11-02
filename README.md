@@ -48,7 +48,8 @@ python -m Code.Module_Main_1_3.Application.MainAndBuildFiles.mianMoudle1
 ```
 
 For module 2, replace `mianMoudle1` with `mianMoudle2`. To build both Windows
-executables, run `build.bat` from `apps/legacy`.
+executables, run `pip install -r requirements-build.txt`, then `build.bat` from
+`apps/legacy`. The executables go to `apps/legacy/dist`.
 
 For module 3, launch from `apps/legacy/module3/application/mainUI` so relative
 imports and UI resources resolve:

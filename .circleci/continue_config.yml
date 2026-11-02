@@ -106,6 +106,90 @@ jobs:
   # --- desktop release ---
 
   # --- legacy release ---
+  # Release builds start from a clean checkout without caches, on the same
+  # Python version as the legacy checks (cimg/python:3.12).
+  legacy-release-windows:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    shell: bash.exe -eo pipefail
+    steps:
+      - run:
+          name: Check the tag
+          command: |
+            if [[ ! $CIRCLE_TAG =~ ^legacy-v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+              echo "Use a tag like legacy-v0.2.0 or legacy-v0.2.0-rc.1, not ${CIRCLE_TAG}."
+              exit 1
+            fi
+      - checkout
+      - run:
+          name: Install Python and the build tools
+          working_directory: apps/legacy
+          command: |
+            powershell.exe -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/0.13.6/install.ps1 | iex"
+            export PATH="$HOME/.local/bin:$PATH"
+            uv venv --python 3.12 .venv
+            uv pip install -r Code/Module_Main_1_3/Application/requirements.txt -r requirements-build.txt
+      - run:
+          name: Build the executables
+          working_directory: apps/legacy
+          command: |
+            export PATH="$PWD/.venv/Scripts:$PATH"
+            ./build.bat
+      # Nobody on the team has Windows, so start each executable here. A
+      # one-file executable unpacks itself and starts a second process with
+      # the same name, which opens the window. Wait for the app's window
+      # (title LabView): if the app crashes, PyInstaller shows an error dialog
+      # instead, and the process keeps running.
+      - run:
+          name: Start each executable
+          working_directory: apps/legacy/dist
+          shell: powershell.exe -ExecutionPolicy Bypass
+          command: |
+            $ErrorActionPreference = 'Stop'
+            foreach ($name in 'LabView_module_1', 'LabView_module_2') {
+              $app = Start-Process -FilePath "$name.exe" -PassThru
+              $deadline = (Get-Date).AddSeconds(90)
+              do {
+                Start-Sleep -Seconds 2
+                if ($app.HasExited) { throw "$name.exe exited with code $($app.ExitCode)." }
+                $window = Get-Process -Name $name | Where-Object MainWindowTitle -eq 'LabView'
+              } until ($window -or (Get-Date) -gt $deadline)
+              if (-not $window) {
+                $titles = (Get-Process -Name $name).MainWindowTitle -join "', '"
+                throw "$name.exe opened no LabView window within 90 seconds. Window titles: '$titles'."
+              }
+              Start-Sleep -Seconds 10
+              if ($app.HasExited) { throw "$name.exe exited with code $($app.ExitCode) after opening its window." }
+              Write-Host "$name.exe is running with its LabView window open (process $($window.Id))."
+              Get-Process -Name $name | Stop-Process -Force
+            }
+            Get-ChildItem *.exe | Format-Table Name, Length
+      - persist_to_workspace:
+          root: apps/legacy/dist
+          paths:
+            - LabView_module_1.exe
+            - LabView_module_2.exe
+
+  legacy-release-publish:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: executables
+      - run:
+          name: Install the GitHub CLI
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends gh
+      # GITHUB_TOKEN comes from the github-releases context. The script
+      # publishes the release from a draft, because published releases are
+      # immutable, and stops if the tag is already released.
+      - run:
+          name: Publish the GitHub release
+          command: bash .circleci/scripts/publish-legacy-release.sh executables
 
   # --- docs release ---
 
@@ -157,14 +241,17 @@ workflows:
   legacy-release:
     when: << pipeline.parameters.run-legacy-release >>
     jobs:
-      - placeholder:
-          name: legacy-release-placeholder
-          section: legacy release
-          filters:
+      - legacy-release-windows:
+          filters: &legacy-release-tags
             branches:
               ignore: /.*/
             tags:
               only: /^legacy-v.*/
+      - legacy-release-publish:
+          context: github-releases
+          requires:
+            - legacy-release-windows
+          filters: *legacy-release-tags
 
   # --- docs release ---
   docs-release:
