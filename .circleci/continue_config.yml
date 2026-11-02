@@ -1,0 +1,143 @@
+# Continuation config. config.yml sets the parameters below and continues the
+# pipeline with this file.
+#
+# Each section owns one block under parameters, jobs, and workflows, in this
+# order. Change only your own section's blocks, so that pull requests for
+# different sections do not conflict. The placeholder job stands in until a
+# section has its own jobs. When no parameter is true, no workflow runs.
+
+version: 2.1
+
+parameters:
+  # --- legacy (apps/legacy) ---
+  run-legacy:
+    type: boolean
+    default: false
+
+  # --- desktop front end (apps/desktop, except src-tauri) ---
+  run-desktop-frontend:
+    type: boolean
+    default: false
+
+  # --- desktop Rust (apps/desktop/src-tauri, crates, Cargo.toml, Cargo.lock) ---
+  run-desktop-rust:
+    type: boolean
+    default: false
+
+  # --- docs (apps/docs) ---
+  run-docs:
+    type: boolean
+    default: false
+
+  # --- desktop release (desktop-v* tags) ---
+  run-desktop-release:
+    type: boolean
+    default: false
+
+  # --- legacy release (legacy-v* tags) ---
+  run-legacy-release:
+    type: boolean
+    default: false
+
+  # --- docs release (docs-v* tags) ---
+  run-docs-release:
+    type: boolean
+    default: false
+
+jobs:
+  # --- shared ---
+  placeholder:
+    parameters:
+      section:
+        type: string
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run: echo "No << parameters.section >> checks yet."
+
+  # --- legacy ---
+
+  # --- desktop front end ---
+
+  # --- desktop Rust ---
+
+  # --- docs ---
+
+  # --- desktop release ---
+
+  # --- legacy release ---
+
+  # --- docs release ---
+
+workflows:
+  # --- legacy ---
+  legacy:
+    when: << pipeline.parameters.run-legacy >>
+    jobs:
+      - placeholder:
+          name: legacy-placeholder
+          section: legacy
+
+  # --- desktop front end ---
+  desktop-frontend:
+    when: << pipeline.parameters.run-desktop-frontend >>
+    jobs:
+      - placeholder:
+          name: desktop-frontend-placeholder
+          section: desktop front-end
+
+  # --- desktop Rust ---
+  desktop-rust:
+    when: << pipeline.parameters.run-desktop-rust >>
+    jobs:
+      - placeholder:
+          name: desktop-rust-placeholder
+          section: desktop Rust
+
+  # --- docs ---
+  docs:
+    when: << pipeline.parameters.run-docs >>
+    jobs:
+      - placeholder:
+          name: docs-placeholder
+          section: docs
+
+  # --- desktop release ---
+  desktop-release:
+    when: << pipeline.parameters.run-desktop-release >>
+    jobs:
+      - placeholder:
+          name: desktop-release-placeholder
+          section: desktop release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^desktop-v.*/
+
+  # --- legacy release ---
+  legacy-release:
+    when: << pipeline.parameters.run-legacy-release >>
+    jobs:
+      - placeholder:
+          name: legacy-release-placeholder
+          section: legacy release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^legacy-v.*/
+
+  # --- docs release ---
+  docs-release:
+    when: << pipeline.parameters.run-docs-release >>
+    jobs:
+      - placeholder:
+          name: docs-release-placeholder
+          section: docs release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^docs-v.*/

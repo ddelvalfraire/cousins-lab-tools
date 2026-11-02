@@ -1,0 +1,59 @@
+version: 2.1
+
+setup: true
+
+orbs:
+  continuation: circleci/continuation@2.0.1
+  path-filtering: circleci/path-filtering@3.0.0
+
+workflows:
+  # Compare the pull request with its target branch (not always main, because
+  # pull requests can be stacked) and start only the affected sections.
+  pull-request:
+    when: pipeline.event.name == "pull_request" and pipeline.event.github.pull_request.draft == false
+    jobs:
+      - path-filtering/filter:
+          name: filter-paths
+          base-revision: << pipeline.event.name == "pull_request" and pipeline.event.github.pull_request.base.ref or "main" >>
+          config-path: .circleci/continue_config.yml
+          # <regex> <parameter> <value>, one per line. The orb anchors each
+          # regex (^...$) and matches it against every changed path with
+          # grep -P. Changes under .circleci/ start every section.
+          mapping: |
+            (apps/legacy|\.circleci)/.* run-legacy true
+            (apps/desktop/(?!src-tauri/)|\.circleci/).* run-desktop-frontend true
+            ((apps/desktop/src-tauri|crates|\.circleci)/.*|Cargo\.(toml|lock)) run-desktop-rust true
+            (apps/docs|\.circleci)/.* run-docs true
+
+  # A version tag starts its release section. CircleCI runs a job on a tag
+  # only when the job has a tag filter.
+  release:
+    when: pipeline.git.tag != ""
+    jobs:
+      - continuation/continue:
+          name: start-desktop-release
+          configuration_path: .circleci/continue_config.yml
+          parameters: '{"run-desktop-release": true}'
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^desktop-v.*/
+      - continuation/continue:
+          name: start-legacy-release
+          configuration_path: .circleci/continue_config.yml
+          parameters: '{"run-legacy-release": true}'
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^legacy-v.*/
+      - continuation/continue:
+          name: start-docs-release
+          configuration_path: .circleci/continue_config.yml
+          parameters: '{"run-docs-release": true}'
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^docs-v.*/
