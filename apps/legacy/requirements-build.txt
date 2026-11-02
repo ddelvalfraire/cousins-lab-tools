@@ -1,0 +1,2 @@
+# Builds the Module 1 and 2 executables (build.bat, LabView_modules.spec).
+pyinstaller==6.22.3
