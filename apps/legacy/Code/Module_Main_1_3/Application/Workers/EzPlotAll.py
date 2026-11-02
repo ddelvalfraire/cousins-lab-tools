@@ -1,10 +1,10 @@
-from datetime import datetime
-
-from PyQt5.QtCore import QObject, pyqtSignal
-import PyQt5.QtCore as QtCore
-import sys
-from math import floor
 import struct
+import sys
+from datetime import datetime
+from math import floor
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
 
 sys.path.insert(0, "../read_data")
 
@@ -26,7 +26,7 @@ class EzPlotAll(QObject):
     secondsAt = QtCore.pyqtSignal(str)
 
     def __init__(self, globalObject, rawPlotFrame):
-        super(EzPlotAll, self).__init__()
+        super().__init__()
         self.globalObject = globalObject
         self.rawPlotFrame = rawPlotFrame
         self._is_running = True

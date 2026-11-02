@@ -10,14 +10,14 @@ __status__ = "Completed"
 import threading
 
 
-class SharedSingleton(object):
+class SharedSingleton:
     _lock = threading.Lock()
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
             with cls._lock:
                 if not hasattr(cls, "instance"):
-                    cls.instance = super(SharedSingleton, cls).__new__(cls)
+                    cls.instance = super().__new__(cls)
                     cls.instance._init_once()
         return cls.instance
 

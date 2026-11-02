@@ -8,13 +8,12 @@ __status__ = "Completed"
 """
 
 import pyqtgraph as pg
-from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import Qt
 
 
 class Graph(pg.PlotWidget):
     def __init__(self, xRange, yRange):
-        super(Graph, self).__init__()
+        super().__init__()
 
         self.showGrid(x=True, y=True)
         self.setBackground("black")

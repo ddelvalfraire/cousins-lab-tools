@@ -1,20 +1,31 @@
 # from PyQt5.uic import loadUi
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QApplication, QFileDialog, QAction
-from PyQt5.QtWidgets import QDialogButtonBox
-from PyQt5.QtWidgets import QSizePolicy
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QDialogButtonBox,
+    QFileDialog,
+    QSizePolicy,
+)
+
+# Keep PyQt5 imported first: pyqtgraph uses whichever Qt binding is already loaded.
+# isort: split
+
+import csv
+import json
+import logging
+import os
+import sys
 
 import pyqtgraph as pg
-import sys, os, csv, json
-import logging
 
 logger = logging.getLogger(__name__)
 
-from sympy import sympify
-from PyQt5.QtCore import Qt
-import numpy as np
 from datetime import datetime
 
+import numpy as np
+from PyQt5.QtCore import Qt
+from sympy import sympify
 
 #####################################################################
 
@@ -35,18 +46,18 @@ sys.path.append("../uiElements")
 # adding read_data to the system path
 sys.path.append("../calculations")
 
-from Code.Module_Main_1_3.Application.read_data.getData import GetData
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
-from Code.Module_Main_1_3.Application.uiElements.graph import Graph
-from Code.Module_Main_1_3.Application.uiElements.frame import Frame
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-from Code.Module_Main_1_3.Application.uiElements.button import Button
-from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
-from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
-from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
 from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import (
     customCalculationPlot,
 )
+from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
+from Code.Module_Main_1_3.Application.read_data.getData import GetData
+from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
+from Code.Module_Main_1_3.Application.uiElements.button import Button
+from Code.Module_Main_1_3.Application.uiElements.dialog import Dialog
+from Code.Module_Main_1_3.Application.uiElements.frame import Frame
+from Code.Module_Main_1_3.Application.uiElements.graph import Graph
+from Code.Module_Main_1_3.Application.uiElements.LineEdit import LineEdit
 
 
 class LabViewModule1(QtWidgets.QMainWindow):
@@ -55,7 +66,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         This method initializes the LabView class.
         This is where we initialize values and call the methods that create the User Interface
         """
-        super(LabViewModule1, self).__init__()
+        super().__init__()
 
         self.delayTimer = None
 
@@ -889,7 +900,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.customCalculationPlots.softError.connect(
             lambda m, s: self.throwTellUserDilog(m, s)
         )
-        pass
 
     def initializeQFrames(self):
         # create invisable resizable widget
@@ -1200,7 +1210,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         for i in range(table.columnCount()):
             lastData = table.item(last, i)
             try:
-                if not lastData.text().strip() == "":
+                if lastData.text().strip() != "":
                     lastHasData = True
             except:
                 continue
@@ -1259,7 +1269,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             # return as list of (k, v) as expected by caller
             keyValues = [(k, data_snapshot[k]) for k in sorted(filtered_keys)]
             return keyValues
-        except Exception as e:
+        except Exception:
             # self.throwTellUserDilog("Error", "mean bar error")
             return []
 
@@ -1403,7 +1413,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 lineEdit.setText(str(mean_value))
 
                 return mean_value
-        except Exception as e:
+        except Exception:
             # print(f"meanButtonPressed error: {e}")
             self.throwUndefined(lineEdit)
             return None
@@ -1735,7 +1745,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             # meanButtonPressed already snapshots data
             co2Reading = self.meanButtonPressed(self.co2LineEdit4, 3)
             o2Reading = self.meanButtonPressed(self.o2LineEdit4, 0)
-        except Exception as e:
+        except Exception:
             # print(f"extractButtonPressed error: {e}")
             self.throwUndefined(self.co2LineEdit2)
             self.throwUndefined(self.o2LineEdit2)
@@ -1849,8 +1859,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :return -> None
         """
         # rowIndex = self.table.currentRow()
-        rowIndex = self.table.columnCount()
-        columnIndex = self.table.columnCount()
 
         try:
             row = ""
@@ -1866,14 +1874,10 @@ class LabViewModule1(QtWidgets.QMainWindow):
                 columnMin = 0
                 columnMax = 0
                 for items in self.table.selectedItems():
-                    if items.row() < rowMin:
-                        rowMin = items.row()
-                    if items.row() > rowMax:
-                        rowMax = items.row()
-                    if items.column() < columnMin:
-                        columnMin = items.column()
-                    if items.column() > columnMax:
-                        columnMax = items.column()
+                    rowMin = min(rowMin, items.row())
+                    rowMax = max(rowMax, items.row())
+                    columnMin = min(columnMin, items.column())
+                    columnMax = max(columnMax, items.column())
 
                 for i in range(rowMin - 1, rowMax):
                     for j in range(columnMin - 1, columnMax):
@@ -2158,7 +2162,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             writer.writerow(row)
 
         # close file
-        file.close
+        file.close  # noqa: B018 - close is never called; calling it changes behavior
 
     def saveAllData(self, autosave_path=None, properly_closed=False):
         """
@@ -2563,7 +2567,6 @@ class LabViewModule1(QtWidgets.QMainWindow):
         :return -> None
         """
         obj.close()
-        pass
 
     def throwTellUserDilog(self, title, str):
         """
@@ -2598,7 +2601,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         if graph == 0:
             # if point already exists, delete point
-            for key in dict(self.assayBufferData).keys():
+            for key in dict(self.assayBufferData):
                 if key == concentration:
                     del self.assayBufferData[key]
 
@@ -2610,7 +2613,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.assayBufferGraph.clear()
 
             # plot all points on the assay buffer graph
-            assayLine = self.assayBufferGraph.plot(
+            self.assayBufferGraph.plot(
                 list(self.assayBufferData.values()),
                 list(self.assayBufferData.keys()),
                 pen=None,
@@ -2624,7 +2627,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         else:
             # if point already exists, delete point
-            for key in dict(self.hclData).keys():
+            for key in dict(self.hclData):
                 if key == concentration:
                     del self.hclData[key]
 
@@ -2635,7 +2638,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.hclGraph.clear()
 
             # plot point on the hcl graph
-            hclLine = self.hclGraph.plot(
+            self.hclGraph.plot(
                 list(self.hclData.values()),
                 list(self.hclData.keys()),
                 pen=None,

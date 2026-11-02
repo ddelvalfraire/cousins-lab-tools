@@ -1,6 +1,8 @@
-import pandas as pd
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 import logging
+
+import pandas as pd
+
+from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 
 logger = logging.getLogger(__name__)
 

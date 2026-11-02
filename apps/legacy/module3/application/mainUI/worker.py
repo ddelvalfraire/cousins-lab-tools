@@ -7,15 +7,15 @@ __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
 
-from PyQt5.QtCore import QObject, pyqtSignal
-import PyQt5.QtCore as QtCore
-from time import time
 import sys
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, pyqtSignal
 
 sys.path.insert(0, "../read-data")
 
-from sharedSingleton import SharedSingleton
 from dataUtility import DataUtility
+from sharedSingleton import SharedSingleton
 
 
 class Worker(QObject):
@@ -25,10 +25,10 @@ class Worker(QObject):
     filesParsedSignal = pyqtSignal()
 
     def __init__(self, globalObject):
-        super(Worker, self).__init__()
+        super().__init__()
 
         self.globalObject = globalObject
-        self.lastDataPoint = tuple()
+        self.lastDataPoint = ()
         self.anchorTime = None
         self.firstFlag = False
 

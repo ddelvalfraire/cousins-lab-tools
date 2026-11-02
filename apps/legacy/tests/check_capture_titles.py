@@ -8,13 +8,12 @@ Only dialogs and the continuous acquisition loop are replaced during checks.
 import contextlib
 import io
 import os
-from pathlib import Path
 import runpy
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
-
 
 REPO = Path(__file__).resolve().parents[1]
 ENTRIES = ["module3/application/mainUI/main.py"]
@@ -108,8 +107,9 @@ def check_qt(entry):
 
 
 def check_console(entry):
-    import pandas as pd
     from tkinter import filedialog
+
+    import pandas as pd
 
     with tempfile.TemporaryDirectory(prefix="capture café ") as temp:
         os.chdir(temp)

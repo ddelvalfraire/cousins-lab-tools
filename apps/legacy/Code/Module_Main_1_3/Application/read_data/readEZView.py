@@ -1,12 +1,9 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import struct
-import numpy as np
-from numpy import blackman
-import datetime
-import os
-from datetime import datetime
 import time
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
 
 
 def read_from_ezview(folderPath, spool_path):

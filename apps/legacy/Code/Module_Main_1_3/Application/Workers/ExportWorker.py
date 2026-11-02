@@ -1,6 +1,7 @@
-from PyQt5 import QtCore
-import openpyxl
 from itertools import zip_longest
+
+import openpyxl
+from PyQt5 import QtCore
 
 
 class ExportWorker(QtCore.QObject):
@@ -55,8 +56,7 @@ class ExportWorker(QtCore.QObject):
                     maxlength = len(header)
                     for v in dataLists[colIdx - 1]:
                         vStr = str(v)
-                        if len(vStr) > maxlength:
-                            maxlength = len(vStr)
+                        maxlength = max(maxlength, len(vStr))
                     ws.column_dimensions[colLetter].width = min(maxlength + 2, 50)
 
             wb.save(self.path)
