@@ -46,8 +46,10 @@ The Pipe and Filter engine passes DataFrames between connected Ports. When a Com
 
 If a Component modifies types or channel names of an existing DataFrame before outputting it, it is highly recommended to clone the received DataFrame's Schema and modifying the new Schema concurrently with the DataFrame, such that the Schema matches the DataFrame at the end of any modification steps. This is because the DataFrame may contain channels other than the ones the Component operates on, and discarding the existing Schema will result in data loss.
 
-## Data Extraction
-TODO: Engine implements its own ports, so that we can interact with data outside the engine? E.g. engine.ports["inPort1"].push(*somedata*), engine.ports["outPort1"].pop()
+The `Schema` struct may change or be removed, since I've been informed that Box<dyn Any> actually does contain its own type information and can be re-cast directly. I'll run some tests and make a decision.
+
+## Data input and Extraction
+The Engine can implements its own ports so that data can be pushed into/pulled from the pipeline. The exact interface for this is not yet known, but it will be roguhly engine.ports["inPort1"].push(*somedata*), engine.ports["outPort1"].pop().
 
 ## Execution Control and Routing
 This portion is still in the very early stages of planning - the exact mechanism of transferring execution to a Component has not been decided, as Components can run arbitrary code and hence have arbitrary execution requirements. Here are a couple of factors still in consideration:
@@ -81,16 +83,16 @@ TODO: Explain how the engine can use arbitrary components - how are ports stored
 TODO: Configure components + connections in code or load an existing configuration using serde.
 
 ## Static Component Configuration
-TODO: Component factories - create configured components and transfer to engine, or use serde.
+Components can provide some sort of static-config object that can be serialized and stored. When the engine is loaded from a file, rather than config being passed to an engine, it is passed to a module that instantiates any components with the static config before passing them to the engine. It then makes the necessary calls to configure the engine, rather than the engine configuring itself.
 
 ## Live Component Configuration
 TODO: Dedicated configuration ports, still using DataFrames? Potentially using componentIDs as channel names, so different instances of the same component can be configured separately.
 
 ## Component Statuses and Stopping the Engine
-TODO: Hard engine stop (drop all DataFrames, exit immediately), soft engine stop (send stop command to Components, continue to tick until every Component has a "stopped" status, how do passive components decide their status?). How to make nested component statuses for asynchronous components?
+TODO: Hard engine stop (drop all DataFrames, exit immediately), soft engine stop (send stop command to Components, continue to tick until every Component has a "stopped" status, how do passive components decide their status?). How to make nested component statuses for asynchronous components? Do we need some sort of event system?
 
 ## Asynchronous Components
-TODO: Because components can run arbitrary code, we can create a "wrapper" component that runs its own pipe-and-filter engine in a separate thread. Because we can configure the engine from code or from serialized data, we can create a configuration of components called an "assembly", instantiate our asynchronous wrapper, pass the configuration to the wrapper (which instantiates our Components in the sub-engine on their own thread), and then buffer data going into and out of the subengine using thread-safe queues (Tokio library?). Every component may assume and behave as if it were single-threaded within the engine. How to pass statuses of components from sub engine to main engine?
+Since components can run any code, they can spawn their own threads. A sample component will probably be given that handles thread spawning and data transfer from the engine's thread to the component thread.
 
 ## Component Error Handling and Logging
-TODO
+This will probably be done using the same method that components statuses will use, but that method has not yet been decided.
