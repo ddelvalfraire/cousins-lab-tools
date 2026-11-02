@@ -122,3 +122,10 @@ When you press **STOP**, the **Save Calibrations?** dialog asks whether to keep
 your calibrations in the program. Select **Yes** to keep the calibration boxes
 filled for the next run, or **No** to clear them. See
 [Stop a run](../getting-started/#stop-a-run).
+
+:::caution
+**Yes** keeps only the numbers shown in the calibration boxes. At **STOP**, both
+modules reset the calibration values they use in calculations, so results show
+`undef` until you calibrate again. Repeat the calibration steps on this page
+before you measure the next run.
+:::

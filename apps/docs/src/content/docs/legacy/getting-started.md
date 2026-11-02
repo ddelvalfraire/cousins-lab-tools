@@ -75,7 +75,9 @@ Press **STOP** when you finish a run, or before you load different data.
 1. In the **WARNING!!** dialog, select **OK** to continue or **Cancel** to go back.
 2. The **Save Calibrations?** dialog asks whether to keep your calibrations in
    the program:
-   - **Yes** keeps the calibration values that you entered or measured.
+   - **Yes** keeps the numbers in the calibration boxes. You still need to
+     calibrate again before the next run. See
+     [Keep calibrations between runs](../calibration/#keep-calibrations-between-runs).
    - **No** clears them.
    - **Save** opens a dialog to save the calibrations to a file first. See
      [Save calibrations to a file](../calibration/#save-and-load-calibration-files).
