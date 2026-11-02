@@ -2,6 +2,7 @@ mod swap_buffer;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::any::Any;
+use std::io::{Error, ErrorKind};
 use crate::swap_buffer::SwapBuffer;
 
 pub fn test() {
@@ -13,6 +14,7 @@ pub struct DataFrame {
 }
 
 // Ports currently only contain string names, this may change later
+#[derive(Eq, Hash, PartialEq)]
 pub struct Port {
     name: String,
 }
@@ -73,6 +75,18 @@ impl DataFrame {
     }
 }
 
+#[derive(Eq, Hash, PartialEq)]
+pub struct InPipe {
+    comp: ComponentID,
+    port: Port
+}
+
+#[derive(Eq, Hash, PartialEq)]
+pub struct OutPipe {
+    comp: ComponentID,
+    port: Port
+}
+
 pub struct Packet {
     dest_comp: ComponentID,
     dest_port: Port,
@@ -86,6 +100,7 @@ pub struct PipeFilterEngine {
     components: HashMap<ComponentID, Box<dyn Component>>,
     sensitive_comps: HashSet<ComponentID>,
     ticked_comps: HashSet<ComponentID>,
+    connections: HashMap<OutPipe, InPipe>,
 }
 
 impl PipeFilterEngine {
@@ -100,6 +115,7 @@ impl PipeFilterEngine {
             components: HashMap::new(),
             sensitive_comps: HashSet::new(),
             ticked_comps: HashSet::new(),
+            connections: HashMap::new(),
         }
     }
 
@@ -125,5 +141,40 @@ impl PipeFilterEngine {
 
         self.last_id = this_id;
         ComponentID(this_id)
+    }
+
+    pub fn connect_component(&mut self, out_component: ComponentID, out_port: Port, in_component: ComponentID, in_port: Port) -> Result<(), Error> {
+        // Verify out components and ports exist
+        let out_comp = self.components.get(&out_component);
+        if (out_comp.is_none()) {
+            return Err(Error::new(ErrorKind::NotFound, "Out Component does not exist"));
+        } // else
+        let out_comp = out_comp.unwrap();
+        if(!out_comp.out_ports().contains(&out_port)) {
+            return Err(Error::new(ErrorKind::NotFound, "Out port does not exist"));
+        }
+
+        // Verify in components and ports exist
+        let in_comp = self.components.get(&in_component);
+        if (in_comp.is_none()) {
+            return Err(Error::new(ErrorKind::NotFound, "In Component does not exist"));
+        } // else
+        let in_comp = in_comp.unwrap();
+        if(!in_comp.in_ports().contains(&in_port)) {
+            return Err(Error::new(ErrorKind::NotFound, "In Port does not exist"));
+        }
+
+        let out_pipe = OutPipe {
+            comp: out_component,
+            port: out_port,
+        };
+
+        let in_pipe = InPipe {
+            comp: in_component,
+            port: in_port,
+        };
+        self.connections.insert(out_pipe, in_pipe);
+
+        Ok(())
     }
 }
