@@ -231,6 +231,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
         """
         Handles the application close event.
         """
+        self.rawDataPlotFrame.stopBackgroundTasks()
         self.autosaveData(properly_closed=True)
         event.accept()
 

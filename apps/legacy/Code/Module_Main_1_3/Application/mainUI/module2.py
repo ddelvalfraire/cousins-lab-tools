@@ -190,6 +190,13 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
     """
 
+    def closeEvent(self, event):
+        """
+        Handles the application close event.
+        """
+        self.rawDataPlotFrame.stopBackgroundTasks()
+        event.accept()
+
     def calculatedPlotsUI(self):
 
         ###################################### QFormLayout for Assay Buffer #####################################
