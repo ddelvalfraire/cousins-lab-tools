@@ -1,0 +1,62 @@
+name: Bug
+description: Something that works wrong, with a reproduction and evidence.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence. What goes wrong, and who it affects.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Where and how you reproduced it. Use in-repo paths for data.
+      value: |
+        **Version:** commit or tag where this was reproduced
+        **Environment:** OS, Python/app version, how the app was launched
+        **Data:** which sample file or folder
+        1.
+        2.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: Expected vs. actual
+      value: |
+        **Expected:**
+        **Actual:**
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Log output, traceback, screenshot, or a failing test that shows the actual behavior. Paste it, don't summarize it.
+    validations:
+      required: true
+  - type: textarea
+    id: where-in-the-code
+    attributes:
+      label: Where in the code
+      description: The file and line, and why that line causes it. Mark it as a suspicion if it isn't confirmed.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: How often it happens and what the lab loses (wrong results, lost data, crash, cosmetic).
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] A test or scripted reproduction fails on the version above
+        - [ ] The same test passes after the fix
+        - [ ] Checks pass
+    validations:
+      required: true
