@@ -1,0 +1,30 @@
+# Sprint 3 Report 12/7/2025
+## YouTube link of final presentation: https://youtu.be/jkv4DM-Y9Pc
+
+## What's New (User Facing)
+* Custom calculations smoothing for second Dx of mass 44.
+* More inputs for export calculations.
+
+## Work Summary (Developer Facing)
+More performance increases, data now load faster than before.
+
+## Unfinished Work
+Need to smooth/tweak some calculations so they are more in line with what client expects.
+
+## Completed Issues/User Stories
+Here are links to the issues that we completed in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/14
+https://github.com/SkywalkerWesley/python-desktop-app/issues/16
+https://github.com/SkywalkerWesley/python-desktop-app/issues/18
+
+## Incomplete Issues/User Stories
+Here are links to issues we worked on but did not complete in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/17
+Previous solution did not meet client expectations. More tweaking required.
+
+## Retrospective Summary
+Here's what went well:
+Nearly all features for the current experiment have been completed.
+
+Here's what we'd like to improve:
+Still have a few calculations which are displayed in a manner that feels inconsistent to the client.
