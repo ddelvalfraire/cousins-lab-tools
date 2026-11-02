@@ -247,7 +247,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(180, 3)
+        self.assayBufferGraph = Graph(180, 3, "module2", "assay-buffer")
         self.assayBufferGraph.setAccessibleName("Assay buffer calibration")
         self.assayBufferGraph.setLabel(axis="left", text="CO2 (µL)")
         self.assayBufferGraph.setLabel(axis="bottom", text="Voltage (mV)")
@@ -262,7 +262,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         #################################################################################################
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} #######################
-        self.uBarGraph = Graph(100, 180)
+        self.uBarGraph = Graph(100, 180, "module2", "ubar")
         self.uBarGraph.setAccessibleName("uBar")
         self.uBarGraph.setLabel(axis="left", text="uBar")
         self.uBarGraph.setLabel(axis="bottom", text="Time (s)")
@@ -277,7 +277,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         ################################################################################################
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
-        self.DuBarGraph = Graph(100, 180)
+        self.DuBarGraph = Graph(100, 180, "module2", "d-ubar")
         self.DuBarGraph.setAccessibleName("D[uBar]")
         self.DuBarGraph.setLabel(axis="left", text="D[uBar]")
         self.DuBarGraph.setLabel(axis="bottom", text="Time (s)")

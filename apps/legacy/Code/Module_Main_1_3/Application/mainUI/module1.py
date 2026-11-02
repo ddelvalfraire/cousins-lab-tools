@@ -333,7 +333,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(100, 180)
+        self.assayBufferGraph = Graph(100, 180, "module1", "assay-buffer")
         self.assayBufferGraph.setAccessibleName("Assay buffer calibration")
         self.assayBufferGraph.setLabel(axis="left", text="CO2 (nmol/ml)")
         self.assayBufferGraph.setLabel(axis="bottom", text="Voltage (mV)")
@@ -348,7 +348,7 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for HCL} AND {HCL Graph} #######################
 
-        self.hclGraph = Graph(100, 180)
+        self.hclGraph = Graph(100, 180, "module1", "hcl")
         self.hclGraph.setAccessibleName("HCl calibration")
         self.hclGraph.setLabel(axis="left", text="BiCarb (nmol/ml)")
         self.hclGraph.setLabel(axis="bottom", text="Voltage (mV)")
@@ -363,12 +363,12 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {Concentration Label} AND {Concentration Graph} #######################
 
-        self.concentrationGraph = Graph(100, 180)
+        self.concentrationGraph = Graph(100, 180, "module1", "o2-concentration")
         self.concentrationGraph.setAccessibleName("O2 velocity and concentration")
         self.concentrationGraph.setLabel(axis="left", text="Velocity")
         self.concentrationGraph.setLabel(axis="bottom", text="[O2]")
 
-        self.concentrationGraph2 = Graph(100, 180)
+        self.concentrationGraph2 = Graph(100, 180, "module1", "co2-concentration")
         self.concentrationGraph2.setAccessibleName("CO2 velocity and concentration")
         self.concentrationGraph2.setLabel(axis="bottom", text="[CO2]")
 

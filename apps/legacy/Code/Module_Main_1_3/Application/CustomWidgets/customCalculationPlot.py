@@ -73,7 +73,7 @@ class customCalculationPlot(Frame):
     def setupUI(self):
         ################################################# Graphs ##############################################
 
-        self.calculationPlotGraph = Graph(100, 100)
+        self.calculationPlotGraph = Graph(100, 100, "module1", "custom-calculation")
         self.calculationPlotGraph.setAccessibleName("Custom calculation")
         self.calculationPlotGraph.setLabel(
             axis="bottom", text=str(self.DefaultYAxisEquiation)
@@ -86,7 +86,7 @@ class customCalculationPlot(Frame):
         self.customPlotGraphLayout.addWidget(self.calculationPlotGraph)
         self.setContentsMargins(0, 10, 0, 0)
 
-        self.calculationPlotGraph2 = Graph(100, 100)
+        self.calculationPlotGraph2 = Graph(100, 100, "module1", "d-mass44")
         self.calculationPlotGraph2.setAccessibleName("d/dt Mass44")
         self.calculationPlotGraph2.setLabel(axis="bottom", text="Time")
         # self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')

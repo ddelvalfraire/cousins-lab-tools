@@ -18,13 +18,58 @@ class SeriesStyle:
     color_changed: object = None
 
 
-class AppearanceRegistry:
-    """Tracks the series on one graph and the pen the user chose for each."""
+MAX_WIDTH = 20
 
-    def __init__(self, graph):
+
+def load_pen(settings, key, default_pen):
+    """Return the saved pen for a series, or None if none is saved or it is invalid."""
+    color_name = settings.value(key + "/color")
+    if not isinstance(color_name, str):
+        return None
+    color = QtGui.QColor(color_name)
+    try:
+        width = float(settings.value(key + "/width"))
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not color.isValid() or not 0 <= width <= MAX_WIDTH:
+        return None
+    pen = QtGui.QPen(default_pen)
+    pen.setColor(color)
+    pen.setWidthF(width)
+    return pen
+
+
+def save_pen(settings, key, pen, default_pen):
+    """Save a series pen. Saving the default pen removes the saved values."""
+    if pen == default_pen:
+        settings.remove(key)
+    else:
+        settings.setValue(key + "/color", pen.color().name(QtGui.QColor.HexArgb))
+        settings.setValue(key + "/width", pen.widthF())
+    settings.sync()
+
+
+class AppearanceRegistry:
+    """Tracks the series on one graph and the pen the user chose for each.
+
+    With a module name, the chosen pens are saved in that module's own
+    settings file, so Module 1 and Module 2 keep separate preferences.
+    """
+
+    def __init__(self, graph, module=None, chart_key=None):
         self.graph = graph
         self.series = {}
         self.dialog = None
+        self.settings = None
+        if module is not None:
+            self.settings = QtCore.QSettings(
+                QtCore.QSettings.IniFormat,
+                QtCore.QSettings.UserScope,
+                "CousinsLab",
+                module,
+            )
+            self.settings.setFallbacksEnabled(False)
+            self.settings.beginGroup("chart-appearance/" + chart_key)
 
     def register(self, key, item, name, kind="line", color_changed=None):
         if key not in self.series:
@@ -42,6 +87,10 @@ class AppearanceRegistry:
                 brush,
                 color_changed=color_changed,
             )
+            if self.settings is not None:
+                self.series[key].pen = load_pen(
+                    self.settings, key, self.series[key].default_pen
+                )
         entry = self.series[key]
         if color_changed is not None:
             entry.color_changed = color_changed
@@ -50,13 +99,13 @@ class AppearanceRegistry:
         if kind == "line":
             item.curve.setClickable(True, width=12)
         if entry.pen is not None:
-            self.apply(key, entry.pen)
+            self.apply(key, entry.pen, persist=False)
 
     def clear_items(self):
         for entry in self.series.values():
             entry.items.clear()
 
-    def apply(self, key, pen):
+    def apply(self, key, pen, persist=True):
         entry = self.series[key]
         entry.pen = QtGui.QPen(pen)
         for item in entry.items:
@@ -71,6 +120,8 @@ class AppearanceRegistry:
                 item.setPen(pen)
         if entry.color_changed:
             entry.color_changed(pen.color())
+        if persist and self.settings is not None:
+            save_pen(self.settings, key, pen, entry.default_pen)
 
     def hits(self, scene_pos):
         """Return the keys of the series drawn under scene_pos."""
@@ -142,7 +193,7 @@ class AppearanceDialog(QtWidgets.QDialog):
         self.color_button = QtWidgets.QPushButton("Choose color")
         layout.addWidget(self.color_button)
         self.width = QtWidgets.QDoubleSpinBox()
-        self.width.setRange(0, 20)
+        self.width.setRange(0, MAX_WIDTH)
         self.width.setSingleStep(0.5)
         self.width.setSuffix(" px")
         self.width_label = QtWidgets.QLabel()

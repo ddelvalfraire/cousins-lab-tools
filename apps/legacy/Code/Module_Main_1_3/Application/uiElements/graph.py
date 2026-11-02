@@ -14,7 +14,7 @@ from Code.Module_Main_1_3.Application.uiElements.appearance import AppearanceReg
 
 
 class Graph(pg.PlotWidget):
-    def __init__(self, xRange, yRange):
+    def __init__(self, xRange, yRange, module=None, chart_key=None):
         super().__init__()
 
         self.showGrid(x=True, y=True)
@@ -26,7 +26,7 @@ class Graph(pg.PlotWidget):
         self.plotItem.hideButtons()
         self.graphInteraction = False
         self.setMinimumSize(0, 0)
-        self.appearance = AppearanceRegistry(self)
+        self.appearance = AppearanceRegistry(self, module, chart_key)
         # PlotWidget copies plotItem.clear onto the instance, so replace it here.
         self.clear = self._clear_series
         # self.plotItem.ctrlMenu = None
