@@ -29,6 +29,21 @@ parameters:
     type: boolean
     default: false
 
+  # --- desktop release (desktop-v* tags) ---
+  run-desktop-release:
+    type: boolean
+    default: false
+
+  # --- legacy release (legacy-v* tags) ---
+  run-legacy-release:
+    type: boolean
+    default: false
+
+  # --- docs release (docs-v* tags) ---
+  run-docs-release:
+    type: boolean
+    default: false
+
 jobs:
   # --- shared ---
   placeholder:
@@ -48,6 +63,12 @@ jobs:
   # --- desktop Rust ---
 
   # --- docs ---
+
+  # --- desktop release ---
+
+  # --- legacy release ---
+
+  # --- docs release ---
 
 workflows:
   # --- legacy ---
@@ -81,3 +102,42 @@ workflows:
       - placeholder:
           name: docs-placeholder
           section: docs
+
+  # --- desktop release ---
+  desktop-release:
+    when: << pipeline.parameters.run-desktop-release >>
+    jobs:
+      - placeholder:
+          name: desktop-release-placeholder
+          section: desktop release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^desktop-v.*/
+
+  # --- legacy release ---
+  legacy-release:
+    when: << pipeline.parameters.run-legacy-release >>
+    jobs:
+      - placeholder:
+          name: legacy-release-placeholder
+          section: legacy release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^legacy-v.*/
+
+  # --- docs release ---
+  docs-release:
+    when: << pipeline.parameters.run-docs-release >>
+    jobs:
+      - placeholder:
+          name: docs-release-placeholder
+          section: docs release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^docs-v.*/
