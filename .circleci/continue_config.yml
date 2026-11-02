@@ -63,12 +63,99 @@ jobs:
   # --- desktop Rust ---
 
   # --- docs ---
+  docs-build:
+    docker:
+      # Matches apps/docs/.nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/docs
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+            - docs-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/docs
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Build the site
+          working_directory: apps/docs
+          command: bun run build
 
   # --- desktop release ---
 
   # --- legacy release ---
 
   # --- docs release ---
+  docs-publish:
+    docker:
+      # Matches apps/docs/.nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/docs
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+            - docs-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/docs
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Build the site
+          working_directory: apps/docs
+          command: bun run build
+      - run:
+          # Replace the contents of gh-pages with the new build and add one
+          # commit, so that the branch keeps a history of each release.
+          # GITHUB_TOKEN comes from the github-releases context. The
+          # credential helper passes it to git, so it never appears in a URL
+          # or in the log. A separate git config file keeps the checkout
+          # step's SSH settings from redirecting this HTTPS push.
+          name: Publish to gh-pages
+          working_directory: apps/docs
+          command: |
+            : "${GITHUB_TOKEN:?Add the github-releases context to this job.}"
+            export GIT_CONFIG_GLOBAL="$HOME/.gitconfig-gh-pages"
+            git config --global user.name "CircleCI"
+            git config --global user.email "noreply@circleci.com"
+            git config --global credential.helper \
+              '!f() { echo username=x-access-token; echo "password=${GITHUB_TOKEN}"; }; f'
+            repo="https://github.com/ddelvalfraire/cousins-lab-tools.git"
+            git clone --quiet --depth 1 --branch gh-pages "$repo" /tmp/gh-pages
+            find /tmp/gh-pages -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            cp -R dist/. /tmp/gh-pages/
+            cd /tmp/gh-pages
+            git add --all
+            if git diff --cached --quiet; then
+              echo "gh-pages already matches this build."
+              exit 0
+            fi
+            git commit --quiet -m "Publish the user manual from ${CIRCLE_TAG}" \
+              -m "Built from ${CIRCLE_SHA1}."
+            git push --quiet origin gh-pages
 
 workflows:
   # --- legacy ---
@@ -99,9 +186,7 @@ workflows:
   docs:
     when: << pipeline.parameters.run-docs >>
     jobs:
-      - placeholder:
-          name: docs-placeholder
-          section: docs
+      - docs-build
 
   # --- desktop release ---
   desktop-release:
@@ -133,9 +218,8 @@ workflows:
   docs-release:
     when: << pipeline.parameters.run-docs-release >>
     jobs:
-      - placeholder:
-          name: docs-release-placeholder
-          section: docs release
+      - docs-publish:
+          context: github-releases
           filters:
             branches:
               ignore: /.*/
