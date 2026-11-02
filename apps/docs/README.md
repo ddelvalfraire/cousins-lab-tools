@@ -17,7 +17,7 @@ bun run build
 bun run preview
 ```
 
-Pages live in `src/content/docs/` as Markdown. Add each new page to the `sidebar` in `astro.config.mjs`. Start each user guide page with an **Applies to** line that names the application versions it covers.
+Pages live in `src/content/docs/` as Markdown. Pages in `src/content/docs/legacy/` appear in the sidebar automatically, ordered by `sidebar.order`; add other folders to the `sidebar` in `astro.config.mjs`. Start each user guide page with an **Applies to** line that names the application versions it covers.
 
 The site is served from the `/cousins-lab-tools/` sub-path, set by `base` in `astro.config.mjs`. Write links between pages as relative links, such as `[Calibration](../calibration/)`, so that they keep working under that path.
 

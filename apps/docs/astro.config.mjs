@@ -18,7 +18,13 @@ export default defineConfig({
 					href: 'https://github.com/ddelvalfraire/cousins-lab-tools',
 				},
 			],
-			sidebar: [{ label: 'Home', slug: 'index' }],
+			sidebar: [
+				{ label: 'Home', slug: 'index' },
+				{
+					label: 'Modules 1 and 2 (legacy)',
+					items: [{ autogenerate: { directory: 'legacy' } }],
+				},
+			],
 		}),
 	],
 });
