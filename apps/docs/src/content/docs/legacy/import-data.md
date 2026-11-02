@@ -25,7 +25,7 @@ to the folder about every second.
 2. In the **Select a folder** dialog, select the acquisition folder.
    Select the folder itself, not a file inside it.
 
-The window title changes to **LabView** followed by the folder name.
+The window title changes to **LabView** followed by the full folder path.
 
 You can load a folder while the run is still writing to it. When you plot it,
 the module reads the files that already exist and then adds new files as they
