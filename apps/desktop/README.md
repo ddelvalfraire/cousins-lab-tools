@@ -17,6 +17,14 @@ bun run check
 bun run tauri build
 ```
 
+Run the front-end tests:
+
+```sh
+bun run test
+```
+
+The tests render the UI in jsdom with Tauri's command API mocked, so they need no native window or Rust build.
+
 Commit `bun.lock` when dependencies change. Bun uses the existing `package.json` and TypeScript configuration, so no `bunfig.toml` is required.
 
 ## Remove project dependencies and builds
