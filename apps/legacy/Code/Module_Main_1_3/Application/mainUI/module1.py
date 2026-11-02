@@ -1124,41 +1124,32 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
     def select_ezview(self):
         logger.info("Selecting EZView file")
-        # Open a file dialog to select a folder
-        self.rawDataPlotFrame.EZViewPath, _ = QFileDialog.getOpenFileName(
+        ezview_path, _ = QFileDialog.getOpenFileName(
             None, "Select a file", "", "All Files (*);;Text Files (*.txt)"
         )
-        if (
-            self.rawDataPlotFrame.EZViewPath == ""
-            or self.rawDataPlotFrame.EZViewPath is None
-        ):
+        if not ezview_path:
             logger.info("EZView selection cancelled")
             return
 
+        self.rawDataPlotFrame.EZViewPath = os.path.abspath(ezview_path)
         logger.info(f"EZView file selected: {self.rawDataPlotFrame.EZViewPath}")
-        self.setWindowTitle(
-            f"LabView {os.path.basename(self.rawDataPlotFrame.EZViewPath)}"
-        )
+        self.setWindowTitle(f"LabView - {self.rawDataPlotFrame.EZViewPath}")
         self.application_state = "Folder_Selected"
         self.select_ezview_action.setEnabled(False)
         self.select_folder_action.setEnabled(False)
 
     def select_folder(self):
         logger.info("Selecting folder")
-        # Open a file dialog to select a folder
-        self.rawDataPlotFrame.folder_path = QFileDialog.getExistingDirectory(
-            self, "Select a folder"
-        )
-        if self.rawDataPlotFrame.folder_path == "":
+        folder_path = QFileDialog.getExistingDirectory(self, "Select a folder")
+        if not folder_path:
             logger.info("Folder selection cancelled")
             return
 
+        self.rawDataPlotFrame.folder_path = os.path.abspath(folder_path)
         logger.info(f"Folder selected: {self.rawDataPlotFrame.folder_path}")
         self.rawDataPlotFrame.EZViewPath = None
 
-        self.setWindowTitle(
-            f"LabView {os.path.basename(self.rawDataPlotFrame.folder_path)}"
-        )
+        self.setWindowTitle(f"LabView - {self.rawDataPlotFrame.folder_path}")
         self.dataObj.setDirectory(self.rawDataPlotFrame.folder_path)
         self.application_state = "Folder_Selected"
         self.select_folder_action.setEnabled(False)
@@ -2661,6 +2652,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         logger.info(f"Clearing application (keepCals={keepCals})")
 
         # Reset all application global variables. These varibales are global to different components of the application.
+        self.rawDataPlotFrame.folder_path = ""
+        self.rawDataPlotFrame.EZViewPath = None
         self.setWindowTitle("LabView")
         self.application_state = "Idle"
         self.delay = 200
