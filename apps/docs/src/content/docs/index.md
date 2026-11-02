@@ -6,6 +6,12 @@ description: How to use the Cousins Lab mass spectrometer applications.
 This manual explains how to use the applications that the WSU Cousins Plant
 Biology Lab uses to view and analyze mass spectrometer data.
 
+## Guides
+
+- [Modules 1 and 2 (legacy)](legacy/getting-started/): plot mass spectrometer
+  data, calibrate, and record results with the spring 2026 version of the
+  Python modules.
+
 ## How this manual is versioned
 
 Each page states which application versions it covers, in a line such as:
