@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -13,18 +12,17 @@ import PyQt5.QtCore as QtCore
 from time import time
 import sys
 
-sys.path.insert(0, '../read_data')
+sys.path.insert(0, "../read_data")
 
-from Code.Module_Main_1_3.Application.read_data.sharedSingleton import  SharedSingleton
+from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
 
-class Worker(QObject):
 
+class Worker(QObject):
     finished = pyqtSignal()
     newDataPointSignal = pyqtSignal(list)
     plotEndBitSignal = pyqtSignal()
     filesParsedSignal = pyqtSignal()
-
 
     def __init__(self, globalObject):
         super(Worker, self).__init__()
@@ -33,9 +31,7 @@ class Worker(QObject):
         self.anchorTime = None
         self.firstFlag = False
 
-
     def run(self):
-
         """Long running task"""
 
         # change-file-reading
@@ -62,14 +58,11 @@ class Worker(QObject):
         if not self.timer.isActive():
             self.finished.emit()
 
-
-
     def getNextPoint(self):
-
         """
-            Gets the next data point from the row of the file.
-            :param {_ : }
-            :return -> None
+        Gets the next data point from the row of the file.
+        :param {_ : }
+        :return -> None
         """
         try:
             # Generator for getting the next data point
@@ -93,8 +86,7 @@ class Worker(QObject):
             # stopwatch doesent work so disabled it.
             # and (self.lastDataPoint[0][0] * 1000 + self.globalObject.delay) <= (stopwatch_time + self.anchorTime)
             # Emit when synthetic time reached first timestamp in batch
-            while (len(self.lastDataPoint) > 0):
-
+            while len(self.lastDataPoint) > 0:
                 # Push to UI
                 dataPoints = self.lastDataPoint
                 # Try to load next
@@ -107,10 +99,8 @@ class Worker(QObject):
 
                 break
         finally:
-            if 'dataPoints' in locals() and len(dataPoints) > 0:
+            if "dataPoints" in locals() and len(dataPoints) > 0:
                 self.newDataPointSignal.emit(dataPoints)
-            
-
 
     def isDataPointValid(self, dataPoint):
         #  if dataPoint is tuple

@@ -21,17 +21,18 @@ class AppearanceRegistry:
         self.series = {}
         self.dialog = None
         self.settings = QtCore.QSettings(
-            QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, 'CousinsLab', module)
+            QtCore.QSettings.IniFormat, QtCore.QSettings.UserScope, "CousinsLab", module
+        )
         self.settings.setFallbacksEnabled(False)
-        self.settings.beginGroup('chart-appearance/' + chart_key)
+        self.settings.beginGroup("chart-appearance/" + chart_key)
 
     def _load_pen(self, key, default_pen):
-        color_name = self.settings.value(key + '/color')
+        color_name = self.settings.value(key + "/color")
         if not isinstance(color_name, str):
             return None
         color = QtGui.QColor(color_name)
         try:
-            width = float(self.settings.value(key + '/width'))
+            width = float(self.settings.value(key + "/width"))
         except (TypeError, ValueError, OverflowError):
             return None
         if not color.isValid() or not 0 <= width <= 20:
@@ -41,24 +42,29 @@ class AppearanceRegistry:
         pen.setWidthF(width)
         return pen
 
-    def register(self, key, item, name, kind='line', color_changed=None):
+    def register(self, key, item, name, kind="line", color_changed=None):
         if key not in self.series:
-            if kind == 'scatter':
-                pen = item.opts['symbolPen']
-                brush = pg.mkBrush(item.opts['symbolBrush'])
-            elif kind == 'boundary':
+            if kind == "scatter":
+                pen = item.opts["symbolPen"]
+                brush = pg.mkBrush(item.opts["symbolBrush"])
+            elif kind == "boundary":
                 pen, brush = item.pen, None
             else:
-                pen, brush = item.opts['pen'], None
-            self.series[key] = SeriesStyle(name, kind, QtGui.QPen(pg.mkPen(pen)), brush,
-                                           color_changed=color_changed)
+                pen, brush = item.opts["pen"], None
+            self.series[key] = SeriesStyle(
+                name,
+                kind,
+                QtGui.QPen(pg.mkPen(pen)),
+                brush,
+                color_changed=color_changed,
+            )
             self.series[key].pen = self._load_pen(key, self.series[key].default_pen)
         entry = self.series[key]
         if color_changed is not None:
             entry.color_changed = color_changed
         if item not in entry.items:
             entry.items.append(item)
-        if kind == 'line':
+        if kind == "line":
             item.curve.setClickable(True, width=12)
         if entry.pen is not None:
             self.apply(key, entry.pen, persist=False)
@@ -71,9 +77,13 @@ class AppearanceRegistry:
         entry = self.series[key]
         entry.pen = QtGui.QPen(pen)
         for item in entry.items:
-            if entry.kind == 'scatter':
+            if entry.kind == "scatter":
                 item.setSymbolPen(pen)
-                brush = entry.default_brush if pen == entry.default_pen else pg.mkBrush(pen.color())
+                brush = (
+                    entry.default_brush
+                    if pen == entry.default_pen
+                    else pg.mkBrush(pen.color())
+                )
                 item.setSymbolBrush(brush)
             else:
                 item.setPen(pen)
@@ -83,8 +93,10 @@ class AppearanceRegistry:
             if pen == entry.default_pen:
                 self.settings.remove(key)
             else:
-                self.settings.setValue(key + '/color', pen.color().name(QtGui.QColor.HexArgb))
-                self.settings.setValue(key + '/width', pen.widthF())
+                self.settings.setValue(
+                    key + "/color", pen.color().name(QtGui.QColor.HexArgb)
+                )
+                self.settings.setValue(key + "/width", pen.widthF())
             self.settings.sync()
 
     def hits(self, scene_pos):
@@ -98,17 +110,19 @@ class AppearanceRegistry:
             for item in entry.items:
                 if not item.isVisible() or item.scene() is None:
                     continue
-                if entry.kind == 'scatter':
-                    hit = bool(len(item.scatter.pointsAt(item.scatter.mapFromScene(scene_pos))))
+                if entry.kind == "scatter":
+                    hit = bool(
+                        len(item.scatter.pointsAt(item.scatter.mapFromScene(scene_pos)))
+                    )
                 else:
-                    source = item.curve if entry.kind == 'line' else item
-                    path = source.getPath() if entry.kind == 'line' else source.shape()
+                    source = item.curve if entry.kind == "line" else item
+                    path = source.getPath() if entry.kind == "line" else source.shape()
                     path = source.deviceTransform(transform).map(path)
                     stroker = QtGui.QPainterPathStroker()
                     current = entry.pen or entry.default_pen
                     stroker.setWidth(max(12, current.widthF() + 6))
                     hit = stroker.createStroke(path).contains(point)
-                    if entry.kind == 'boundary':
+                    if entry.kind == "boundary":
                         hit = hit or path.contains(point)
                 if hit:
                     hits.append(key)
@@ -134,36 +148,44 @@ class AppearanceDialog(QtWidgets.QDialog):
         super().__init__(registry.graph.window())
         self.registry = registry
         self.keys = keys
-        self.setWindowTitle('Series appearance')
+        self.setWindowTitle("Series appearance")
         self.setWindowModality(QtCore.Qt.NonModal)
         self.color_dialog = None
         layout = QtWidgets.QVBoxLayout(self)
-        title = registry.graph.accessibleName() or registry.graph.plotItem.titleLabel.text or 'Chart'
+        title = (
+            registry.graph.accessibleName()
+            or registry.graph.plotItem.titleLabel.text
+            or "Chart"
+        )
         layout.addWidget(QtWidgets.QLabel(title))
         if len(keys) > 1:
-            layout.addWidget(QtWidgets.QLabel('Several series overlap. Choose the intended series.'))
+            layout.addWidget(
+                QtWidgets.QLabel("Several series overlap. Choose the intended series.")
+            )
         self.target = QtWidgets.QComboBox()
         for key in keys:
             self.target.addItem(registry.series[key].name, key)
         layout.addWidget(self.target)
-        self.color_button = QtWidgets.QPushButton('Choose color')
+        self.color_button = QtWidgets.QPushButton("Choose color")
         layout.addWidget(self.color_button)
         self.width = QtWidgets.QDoubleSpinBox()
         self.width.setRange(0, 20)
         self.width.setSingleStep(0.5)
-        self.width.setSuffix(' px')
+        self.width.setSuffix(" px")
         self.width_label = QtWidgets.QLabel()
         layout.addWidget(self.width_label)
         layout.addWidget(self.width)
         self.preview = pg.PlotWidget()
         self.preview.setFixedHeight(90)
-        self.preview.hideAxis('left')
-        self.preview.hideAxis('bottom')
+        self.preview.hideAxis("left")
+        self.preview.hideAxis("bottom")
         self.preview.setMouseEnabled(False, False)
         layout.addWidget(self.preview)
-        defaults = QtWidgets.QPushButton('Restore default')
+        defaults = QtWidgets.QPushButton("Restore default")
         layout.addWidget(defaults)
-        buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
         layout.addWidget(buttons)
         self.target.currentIndexChanged.connect(self.load_target)
         self.color_button.clicked.connect(self.choose_color)
@@ -180,18 +202,31 @@ class AppearanceDialog(QtWidgets.QDialog):
     def load_target(self):
         entry = self.registry.series[self.key]
         self.pending = QtGui.QPen(entry.pen or entry.default_pen)
-        self.width_label.setText('Marker outline width' if entry.kind == 'scatter' else 'Line width')
+        self.width_label.setText(
+            "Marker outline width" if entry.kind == "scatter" else "Line width"
+        )
         self.width.setValue(self.pending.widthF())
         self.update_preview()
 
     def update_preview(self):
         self.pending.setWidthF(self.width.value())
-        foreground = 'black' if self.pending.color().lightnessF() > 0.5 else 'white'
-        self.color_button.setStyleSheet('background-color: ' + self.pending.color().name() + '; color: ' + foreground)
+        foreground = "black" if self.pending.color().lightnessF() > 0.5 else "white"
+        self.color_button.setStyleSheet(
+            "background-color: "
+            + self.pending.color().name()
+            + "; color: "
+            + foreground
+        )
         self.preview.clear()
-        if self.registry.series[self.key].kind == 'scatter':
-            self.preview.plot([0, 1, 2], [0, 1, 0], pen=None, symbol='o',
-                              symbolPen=self.pending, symbolBrush=self.pending.color())
+        if self.registry.series[self.key].kind == "scatter":
+            self.preview.plot(
+                [0, 1, 2],
+                [0, 1, 0],
+                pen=None,
+                symbol="o",
+                symbolPen=self.pending,
+                symbolBrush=self.pending.color(),
+            )
         else:
             self.preview.plot([0, 1, 2], [0, 1, 0], pen=self.pending)
 

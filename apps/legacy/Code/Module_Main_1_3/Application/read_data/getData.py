@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 class GetData:
-
     def __init__(self):
         self.currentFileIndex = -1
         self.numberOfFiles = None
@@ -23,14 +22,14 @@ class GetData:
         return self
 
     def __next__(self):
-        
+
         # change-file-reading
         # instead of reading the file list again and again, get it from the shared list.
         fileList = self.sharedData.fileList
         self.numberOfFiles = len(fileList)
 
         # Reading the first ever file from the folder.
-        if self.currentFileIndex ==-1:
+        if self.currentFileIndex == -1:
             self.currentFileIndex += 1
             logger.debug("First file access in GetData")
 
@@ -38,18 +37,20 @@ class GetData:
         if self.currentFileIndex >= self.numberOfFiles:
             logger.debug("GetData out of files")
             return False
-        
+
         else:
-            logger.debug(f"GetData reading file index {self.currentFileIndex}: {fileList[self.currentFileIndex]}")
+            logger.debug(
+                f"GetData reading file index {self.currentFileIndex}: {fileList[self.currentFileIndex]}"
+            )
             self.fileObj = File(fileList[self.currentFileIndex])
             # print(self.fileObj.data)
             # print(self.fileObj.all_vectors())
             # print(self.fileObj.__next__())
             # Once the file is opened:
             self.currentFileIndex += 1
-            x,y = self.fileObj.__next__()
+            x, y = self.fileObj.__next__()
             # print(x,y)
-            return (x,y)
+            return (x, y)
 
     def all(self):
         try:

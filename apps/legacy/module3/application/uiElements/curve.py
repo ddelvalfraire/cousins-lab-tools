@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -17,12 +16,12 @@ import time
 import numpy as np
 
 # adding UI to the system path
-sys.path.insert(0, '../read-data')
+sys.path.insert(0, "../read-data")
 
 from sharedSingleton import SharedSingleton
 
-class Curve:
 
+class Curve:
     def __init__(self, name, y, pen, graph):
         self.name = name
         if type(y) != list:
@@ -36,13 +35,16 @@ class Curve:
         self.firstPoint = False
 
     def plotCurve(self, color_changed=None):
-        
-        self.data_line = pg.PlotDataItem(skipFiniteCheck=True, clipToView=True, useOpenGL=True)
+
+        self.data_line = pg.PlotDataItem(
+            skipFiniteCheck=True, clipToView=True, useOpenGL=True
+        )
         self.data_line.setPen(self.pen)
         self.graph.setClipToView(True)
         self.graph.addItem(self.data_line)
-        self.graph.registerSeries(self.name, self.data_line, self.name, color_changed=color_changed)
-
+        self.graph.registerSeries(
+            self.name, self.data_line, self.name, color_changed=color_changed
+        )
 
     def updateDataPoints(self, x, y):
 
@@ -50,7 +52,6 @@ class Curve:
         self.x = list(self.points.da49data.keys())
 
         if self.isChecked == True:
-
             self.data_line.setData(x=self.x, y=self.y)
 
             if self.firstPoint == False:
@@ -60,7 +61,6 @@ class Curve:
                 self.xMax = x
                 self.yMax = y
                 self.firstPoint = True
-
 
     def hide(self):
 
@@ -78,10 +78,6 @@ class Curve:
         self.x = []
         self.isChecked = False
         self.firstPoint = False
-        if hasattr(self, 'data_line'):
+        if hasattr(self, "data_line"):
             self.data_line.clear()
             self.data_line.setData(x=[], y=[])
-        
-
-
-        

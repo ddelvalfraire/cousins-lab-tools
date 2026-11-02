@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -7,10 +6,11 @@ __maintainer__ = ""
 __email__ = ["agarwal.ritik1101@gmail.com", "zoeparker@comcast.net"]
 __status__ = "Completed"
 """
+
 from PyQt5.QtWidgets import QLineEdit
 
-class LineEdit(QLineEdit):
 
+class LineEdit(QLineEdit):
     def __init__(self, parent=None):
 
         super().__init__(parent)

@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -11,35 +10,47 @@ __status__ = "Completed"
 import unittest
 import sys
 
-sys.path.append('../calculations')
+sys.path.append("../calculations")
 
 from Calculations import Calculations
 
 import unittest
 
-class TestCalculate02Calibration(unittest.TestCase):
 
+class TestCalculate02Calibration(unittest.TestCase):
     def test_calculate02Calibration(self):
         # Test case 1: Check output for normal input
         mean_value = 5.5
         temp = 25
 
-        expected_output = ((-0.0018 * (temp ** 3)) + (0.2229 * (temp ** 2)) - (12.387 * temp) + 456.49) / mean_value
-        self.assertAlmostEqual(Calculations.calculate02Calibration(mean_value, temp), expected_output)
+        expected_output = (
+            (-0.0018 * (temp**3)) + (0.2229 * (temp**2)) - (12.387 * temp) + 456.49
+        ) / mean_value
+        self.assertAlmostEqual(
+            Calculations.calculate02Calibration(mean_value, temp), expected_output
+        )
 
         # Test case 2: Check output for low temperature
         mean_value = 6.2
         temp = -10
 
-        expected_output = ((-0.0018 * (temp ** 3)) + (0.2229 * (temp ** 2)) - (12.387 * temp) + 456.49) / mean_value
-        self.assertAlmostEqual(Calculations.calculate02Calibration(mean_value, temp), expected_output)
+        expected_output = (
+            (-0.0018 * (temp**3)) + (0.2229 * (temp**2)) - (12.387 * temp) + 456.49
+        ) / mean_value
+        self.assertAlmostEqual(
+            Calculations.calculate02Calibration(mean_value, temp), expected_output
+        )
 
         # Test case 3: Check output for high temperature
         mean_value = 6.8
         temp = 50
 
-        expected_output = ((-0.0018 * (temp ** 3)) + (0.2229 * (temp ** 2)) - (12.387 * temp) + 456.49) / mean_value
-        self.assertAlmostEqual(Calculations.calculate02Calibration(mean_value, temp), expected_output)
+        expected_output = (
+            (-0.0018 * (temp**3)) + (0.2229 * (temp**2)) - (12.387 * temp) + 456.49
+        ) / mean_value
+        self.assertAlmostEqual(
+            Calculations.calculate02Calibration(mean_value, temp), expected_output
+        )
 
     def test_calculateSlope(self):
 
@@ -74,6 +85,7 @@ class TestCalculate02Calibration(unittest.TestCase):
         self.assertEqual(Calculations.calculateSlope(dataPoints), expected_output)
 
         # Test case 1: Test with valid data points and slope
+
     def test_calculateIntercept_valid(self):
         dataPoints = {1: 2, 3: 4}
         slope = 1
@@ -91,5 +103,6 @@ class TestCalculate02Calibration(unittest.TestCase):
         slope = 1
         assert Calculations.calculateIntercept(dataPoints, slope) == 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

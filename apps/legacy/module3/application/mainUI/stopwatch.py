@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -10,8 +9,8 @@ __status__ = "Completed"
 
 import time
 
-class Stopwatch:
 
+class Stopwatch:
     def __init__(self):
         self.start_time = None
         self.pause_time = None
@@ -60,19 +59,22 @@ class Stopwatch:
             return self.elapsed_time * 1000
 
         if self.paused:
-            return (self.elapsed_time + self.pause_time - self.start_time) * 1000 * self.speed_factor
+            return (
+                (self.elapsed_time + self.pause_time - self.start_time)
+                * 1000
+                * self.speed_factor
+            )
 
         current_time = time.time()
         elapsed = (current_time - self.start_time) * 1000 * self.speed_factor
         self.elapsed_time += elapsed
         self.start_time = current_time
         return self.elapsed_time
-    
+
     def set_speed(self, factor):
-        
+
         self.last_time = time.time()
         self.speed_factor = factor
-    
+
     def set_elapsed_time(self, seconds):
-        self.elapsed_time = seconds*1000
-        
+        self.elapsed_time = seconds * 1000

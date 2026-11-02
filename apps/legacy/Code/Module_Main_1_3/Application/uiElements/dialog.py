@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -13,10 +12,10 @@ import sys
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QLabel
 from PyQt5 import QtCore
 
-class Dialog(QDialog):
 
+class Dialog(QDialog):
     def __init__(self, title, buttonCount, message, parent=None):
-        
+
         super().__init__(parent)
 
         # Disabling the close, maximize and minimize window options
@@ -27,12 +26,12 @@ class Dialog(QDialog):
         # disable (but not hide) close button
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowCloseButtonHint)
 
-        #Setting the window title
+        # Setting the window title
         self.setWindowTitle(title)
 
         if buttonCount == 1:
             QBtn = QDialogButtonBox.Ok
-        
+
         elif buttonCount == 2:
             QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 

@@ -1,11 +1,13 @@
-﻿from PyQt5 import QtCore
+from PyQt5 import QtCore
 import openpyxl
 from itertools import zip_longest
+
 
 class ExportWorker(QtCore.QObject):
     """
     an object that export the sample plot table to and excle file
     """
+
     finished = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal(str)
 
@@ -36,7 +38,9 @@ class ExportWorker(QtCore.QObject):
                     cell = ws.cell(row=1, column=col, value=header)
                     cell.font = bold_font
 
-                for rowIdx, rowValues in enumerate(zip_longest(*dataLists, fillvalue=''), start=2):
+                for rowIdx, rowValues in enumerate(
+                    zip_longest(*dataLists, fillvalue=""), start=2
+                ):
                     for colIdx, value in enumerate(rowValues, start=1):
                         if value is None:
                             value = ""
