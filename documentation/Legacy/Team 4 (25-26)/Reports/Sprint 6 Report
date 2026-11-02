@@ -1,0 +1,27 @@
+# Sprint 6 Report 4/24/2026
+## Sprint report video: https://youtu.be/adSnOIkF7sM
+
+## What's New (User Facing)
+* Crash report system.
+* Calibration auto save feature.
+* Fixed some crashes during live experiments.
+
+## Work Summary (Developer Facing)
+System stability increased
+
+## Unfinished Work
+No feedback for new changes.
+
+## Completed Issues/User Stories
+Here are links to the issues that we completed in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/20
+
+## Incomplete Issues/User Stories
+No incomplete user stories.
+
+## Retrospective Summary
+Here's what went well:
+New crash report systems has been useful for debugging.
+
+Here's what we'd like to improve:
+Some crashes stuck around longer than expected. Creating a crash report system earlier would have been a better move.

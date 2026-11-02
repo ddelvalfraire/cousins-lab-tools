@@ -1,0 +1,33 @@
+# Sprint 4 Report 2/2026
+## YouTube link of final presentation: https://youtu.be/OQmAKqywsZQ
+
+## What's New (User Facing)
+* Added 1st derivative graph for indicating reaction steadiness
+* Work has begun on atrifical data generator for testing
+* Live testing has begun on first module
+* Team starting to explore other modules
+
+## Work Summary (Developer Facing)
+Performance increases for plotting all and exporting snapshots
+
+## Unfinished Work
+Need to try different smoothing functions for second derivative graph
+
+## Completed Issues/User Stories
+Here are links to the issues that we completed in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/20
+
+
+## Incomplete Issues/User Stories
+Here are links to issues we worked on but did not complete in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/17
+Graph still not up to client expectations, must explore different smoothing functions
+https://github.com/mattboombox/Newt/issues/1
+Work has just begun on generator since more information was gathered on the manner in which data is created from the mass spec
+
+## Retrospective Summary
+Here's what went well:
+Entered the live testing phase for the work completed last semester, code is used for experiments today
+
+Here's what we'd like to improve:
+Moving onto new module will be a little sluggish, we'd like to quickly make a game plan on what to do the rest of the semester other than testing
