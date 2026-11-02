@@ -557,7 +557,7 @@ class RawPlotFrame(Frame):
 
         self.plotAllButtonThread.start()
 
-        title = self.windowTitle()
+        title = self.parent.windowTitle()
         self.plotAllThread.secondsAt.connect(
             lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}")
         )
@@ -602,7 +602,7 @@ class RawPlotFrame(Frame):
 
         self.plotAllButtonThread.start()
 
-        title = self.windowTitle()
+        title = self.parent.windowTitle()
         self.plotAllThread.secondsAt.connect(
             lambda sec: self.parent.setWindowTitle(f"{title}: processing {sec}")
         )

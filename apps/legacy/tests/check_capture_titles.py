@@ -1,11 +1,13 @@
 """Run from the repository root with:
     .venv/bin/python apps/legacy/tests/check_capture_titles.py.
 
+Module 4 opens a Tk window, so run under xvfb-run on a host without a display.
 Each entry point runs in a separate process because the apps share import names.
 Only dialogs and the continuous acquisition loop are replaced during checks.
 """
 
 import contextlib
+import importlib
 import io
 import os
 import runpy
@@ -16,8 +18,115 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 REPO = Path(__file__).resolve().parents[1]
-ENTRIES = ["module3/application/mainUI/main.py"]
+# Modules 1 and 2 share one code base and are checked through their window classes.
+SHARED = {
+    "Code/Module_Main_1_3/Application/mainUI/module1.py": "LabViewModule1",
+    "Code/Module_Main_1_3/Application/mainUI/module2.py": "LabViewModule2",
+}
+ENTRIES = [*SHARED, "module3/application/mainUI/main.py"]
 ENTRIES += ["module4/application/main.py"]
+
+
+def check_shared(entry, class_name):
+    from PyQt5.QtCore import QThread
+    from PyQt5.QtWidgets import QApplication, QFileDialog
+
+    sys.path.insert(0, str(REPO))
+    module = importlib.import_module(
+        ".".join(entry.relative_to(REPO).with_suffix("").parts)
+    )
+    with tempfile.TemporaryDirectory(prefix="capture title ") as temp:
+        # The window writes its settings under the working directory.
+        os.chdir(temp)
+        app = QApplication([])
+        window = getattr(module, class_name)(1280, 800, app)
+        frame = window.rawDataPlotFrame
+        try:
+            assert window.windowTitle() == "LabView", window.windowTitle()
+            assert frame.folder_path == ""
+            assert frame.EZViewPath is None
+
+            for parent in ("first experiment", "second experiment"):
+                folder = Path(temp) / parent / "Capture café"
+                folder.mkdir(parents=True)
+                spool = Path(temp) / parent / "spool café.txt"
+                spool.touch()
+                selections = [
+                    (
+                        window.select_folder_action,
+                        folder,
+                        "getExistingDirectory",
+                        str(folder),
+                    ),
+                    (
+                        window.select_ezview_action,
+                        spool,
+                        "getOpenFileName",
+                        (str(spool), ""),
+                    ),
+                ]
+                for action, path, dialog, picked in selections:
+                    with patch.object(QFileDialog, dialog, return_value=picked):
+                        action.trigger()
+                    expected = f"LabView - {path}"
+                    assert window.windowTitle() == expected, (
+                        window.windowTitle(),
+                        expected,
+                    )
+                    if action is window.select_folder_action:
+                        assert frame.folder_path == str(folder)
+                        assert frame.EZViewPath is None
+                        assert Path.cwd() == folder.resolve()
+                    else:
+                        assert frame.EZViewPath == str(spool)
+                    assert window.application_state == "Folder_Selected"
+                    assert not window.select_folder_action.isEnabled()
+                    assert not window.select_ezview_action.isEnabled()
+
+                    with (
+                        patch.object(
+                            QFileDialog, "getExistingDirectory", return_value=""
+                        ),
+                        patch.object(
+                            QFileDialog, "getOpenFileName", return_value=("", "")
+                        ),
+                    ):
+                        window.select_folder()
+                        window.select_ezview()
+                    assert window.windowTitle() == expected
+                    selected = (frame.folder_path, frame.EZViewPath)
+                    assert str(path) in selected, selected
+
+                    # Plot All keeps the path while it reports progress.
+                    with patch.object(QThread, "start"):
+                        frame.plotAllButtonPressed()
+                    frame.plotAllThread.secondsAt.emit("5")
+                    assert window.windowTitle() == f"{expected}: processing 5", (
+                        window.windowTitle()
+                    )
+                    frame.endPlotAllThread()
+
+                    window.clearApplication(False)
+                    assert window.windowTitle() == "LabView"
+                    assert frame.folder_path == ""
+                    assert frame.EZViewPath is None
+                    assert window.application_state == "Idle"
+                    assert window.select_folder_action.isEnabled()
+                    assert window.select_ezview_action.isEnabled()
+
+            with (
+                patch.object(QFileDialog, "getExistingDirectory", return_value=""),
+                patch.object(QFileDialog, "getOpenFileName", return_value=("", "")),
+            ):
+                window.select_folder_action.trigger()
+                window.select_ezview_action.trigger()
+            assert window.application_state == "Idle"
+            assert window.windowTitle() == "LabView"
+            assert frame.folder_path == ""
+            assert frame.EZViewPath is None
+        finally:
+            window.close()
+            app.processEvents()
 
 
 def check_qt(entry):
@@ -183,7 +292,9 @@ def check_console(entry):
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         entry = REPO / sys.argv[1]
-        if entry == REPO / ENTRIES[-1]:
+        if sys.argv[1] in SHARED:
+            check_shared(entry, SHARED[sys.argv[1]])
+        elif entry == REPO / ENTRIES[-1]:
             check_console(entry)
         else:
             check_qt(entry)
