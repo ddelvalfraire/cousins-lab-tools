@@ -115,6 +115,26 @@ def test_module_1_style_does_not_change_module_2(settings_dir):
     assert pen_of(module2_line) == ("#4363d8", 4.0)
 
 
+def test_redrawn_line_keeps_its_style_and_drops_the_old_line(settings_dir):
+    # Lines of best fit are rebuilt whenever the mean bars move.
+    graph = Graph(100, 100, "module1", "raw-masses")
+    first = pg.PlotDataItem(pen=DEFAULT)
+    graph.addItem(first)
+    graph.registerSeries("fit-Mass 44", first, "Mass 44 best fit")
+    pen = QtGui.QPen(DEFAULT)
+    pen.setColor(QtGui.QColor("#00ff00"))
+    graph.appearance.apply("fit-Mass 44", pen)
+
+    graph.unregisterSeries(first)
+    graph.removeItem(first)
+    redrawn = pg.PlotDataItem(pen=DEFAULT)
+    graph.addItem(redrawn)
+    graph.registerSeries("fit-Mass 44", redrawn, "Mass 44 best fit")
+
+    assert pen_of(redrawn) == ("#00ff00", 4.0)
+    assert graph.appearance.series["fit-Mass 44"].items == [redrawn]
+
+
 def test_graph_without_a_module_saves_nothing(settings_dir):
     graph = Graph(100, 100)
     line = pg.PlotDataItem(pen=DEFAULT)

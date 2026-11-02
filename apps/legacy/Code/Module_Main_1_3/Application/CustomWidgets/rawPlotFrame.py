@@ -228,6 +228,7 @@ class RawPlotFrame(Frame):
                 # Remove old LOF lines
                 logging.debug(f"Removing {len(self.lofCurves)} old LOF curves")
                 for lofCurve in self.lofCurves:
+                    self.realTimeGraph.unregisterSeries(lofCurve)
                     self.realTimeGraph.removeItem(lofCurve)
 
                 for lofCurveRs in self.lofCurvesRs:
@@ -276,6 +277,11 @@ class RawPlotFrame(Frame):
                                     lof_x, lof_y, pen=pen, antialias=True
                                 )
                                 self.realTimeGraph.addItem(lof_data_line)
+                                self.realTimeGraph.registerSeries(
+                                    "fit-" + curve.name,
+                                    lof_data_line,
+                                    curve.name + " best fit",
+                                )
                                 self.lofCurves.append(lof_data_line)
 
                                 # rSqItem = pg.TextItem(f"r^2: {Calculations.rSquared(y_region, x_region):.4f}",

@@ -105,6 +105,12 @@ class AppearanceRegistry:
         for entry in self.series.values():
             entry.items.clear()
 
+    def unregister_item(self, item):
+        """Stop styling an item that was removed from the chart."""
+        for entry in self.series.values():
+            if item in entry.items:
+                entry.items.remove(item)
+
     def apply(self, key, pen, persist=True):
         entry = self.series[key]
         entry.pen = QtGui.QPen(pen)
