@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it using this metadata."
+type: software
+title: "Cousins Lab Tools (DVDash)"
+authors:
+  - given-names: David
+    family-names: Del Val Fraire
+  - given-names: Ethan
+    family-names: Goode
+  - given-names: Maximus
+    family-names: Upton
+  - given-names: Matthew
+    family-names: Heseltine
+  - given-names: Wesley
+    family-names: Skywalker
+  - given-names: Kyler
+    family-names: Kupp
+  - given-names: Erik
+    family-names: Holtrop
+  - given-names: Brayden
+    family-names: Groshong
+  - given-names: Jack
+    family-names: Leeper
+  - given-names: Tomer
+    family-names: Zangi
+  - given-names: Ritik
+    family-names: Agarwal
+  - given-names: Zoe
+    family-names: Parker
+repository-code: "https://github.com/ddelvalfraire/cousins-lab-tools"
+url: "https://github.com/ddelvalfraire/cousins-lab-tools"
+license: MIT
+abstract: >-
+  Scientific instrument data acquisition, visualization, and analysis software
+  developed by Washington State University student teams for the Cousins Plant
+  Biology Lab, including the existing Python mass-spectrometer tools and the
+  DVDash desktop application in development.
+keywords:
+  - data acquisition
+  - scientific software
+  - instrumentation
+  - data visualization
