@@ -61,6 +61,53 @@ jobs:
   # --- desktop front end ---
 
   # --- desktop Rust ---
+  desktop-rust-checks:
+    docker:
+      - image: cimg/rust:1.99.1
+    resource_class: medium
+    steps:
+      - checkout
+      # Linux system libraries for Tauri 2, from
+      # https://v2.tauri.app/start/prerequisites/. Later jobs on a cimg image
+      # can reuse this step with `- *install-tauri-linux-deps`.
+      - &install-tauri-linux-deps
+        run:
+          name: Install Tauri system libraries
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              build-essential \
+              file \
+              libayatana-appindicator3-dev \
+              librsvg2-dev \
+              libssl-dev \
+              libwebkit2gtk-4.1-dev \
+              libxdo-dev
+      - run:
+          name: Install rustfmt and Clippy
+          command: rustup component add rustfmt clippy
+      - restore_cache:
+          keys:
+            - cargo-v1-{{ arch }}-{{ checksum "Cargo.lock" }}
+            - cargo-v1-{{ arch }}-
+      # Debug builds of the Tauri app do not embed the front end (tauri.conf.json
+      # sets devUrl), so these checks do not need apps/desktop/dist.
+      - run:
+          name: rustfmt
+          command: cargo fmt --all --check
+      - run:
+          name: Clippy
+          command: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run:
+          name: Tests
+          command: cargo test --workspace --locked
+      - save_cache:
+          key: cargo-v1-{{ arch }}-{{ checksum "Cargo.lock" }}
+          paths:
+            - ~/.cargo/registry/index
+            - ~/.cargo/registry/cache
+            - ~/.cargo/git/db
+            - target
 
   # --- docs ---
 
@@ -91,9 +138,7 @@ workflows:
   desktop-rust:
     when: << pipeline.parameters.run-desktop-rust >>
     jobs:
-      - placeholder:
-          name: desktop-rust-placeholder
-          section: desktop Rust
+      - desktop-rust-checks
 
   # --- docs ---
   docs:
