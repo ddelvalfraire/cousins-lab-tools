@@ -9,6 +9,9 @@ const outputs = [
 ];
 
 for (const output of outputs) {
-  rmSync(new URL(`../${output}`, import.meta.url), { recursive: true, force: true });
+  rmSync(new URL(`../${output}`, import.meta.url), {
+    recursive: true,
+    force: true,
+  });
   console.log(`Cleaned ${output}`);
 }
