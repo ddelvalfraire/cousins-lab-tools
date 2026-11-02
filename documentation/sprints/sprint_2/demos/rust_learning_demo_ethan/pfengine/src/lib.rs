@@ -19,10 +19,19 @@ impl DataFrame {
     pub fn add_channel(&mut self, channel_name: String, data: Box<dyn Any>) {
         self.channels.insert(channel_name, data);
     }
+
+    pub fn channel(&self, channel_name: &str) -> Option<&Box<dyn Any>> {
+        self.channels.get(channel_name)
+    }
+}
+
+pub struct Packet {
+    dest_comp: ComponentID,
+    dest_port: Port,
+    frame: DataFrame,
 }
 
 pub struct PipeFilterEngine {
-    swap: SwapBuffer<String>
 }
 
 impl PipeFilterEngine {
@@ -34,15 +43,6 @@ impl PipeFilterEngine {
                 next: String::new(),
             }
         }
-    }
-    pub fn test(&mut self) {
-        println!("Pipe filter engine!");
-        self.swap.current = "current!".to_string();
-        self.swap.next = "next!".to_string();
-        println!("swap.current is {}, swap.next is {}", self.swap.current, self.swap.next);
-        println!("swapping!");
-        self.swap.swap();
-        println!("swap.current is {}, swap.next is {}", self.swap.current, self.swap.next);
     }
 }
 
