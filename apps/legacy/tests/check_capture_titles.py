@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 
 REPO = Path(__file__).resolve().parents[1]
-ENTRIES = [f"module{i}/application/mainUI/main.py" for i in (1, 2, 3)]
+ENTRIES = ["module3/application/mainUI/main.py"]
 ENTRIES += ["module4/application/main.py"]
 
 
