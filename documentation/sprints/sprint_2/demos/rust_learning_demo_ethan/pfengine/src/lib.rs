@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+mod swap_buffer;
 use std::any::Any;
+use crate::swap_buffer::SwapBuffer;
 
 pub fn test() {
     println!("Hello from the library!");
@@ -43,16 +45,5 @@ impl PipeFilterEngine {
                 next: String::new(),
             }
         }
-    }
-}
-
-struct SwapBuffer<T> {
-    current: T,
-    next: T
-}
-
-impl<T> SwapBuffer<T> {
-    fn swap(&mut self) {
-        std::mem::swap(&mut self.current, &mut self.next)
     }
 }
