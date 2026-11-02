@@ -333,7 +333,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
-        self.assayBufferGraph = Graph(100, 180)
+        self.assayBufferGraph = Graph(100, 180, "module1", "assay-buffer")
+        self.assayBufferGraph.setAccessibleName("Assay buffer calibration")
         self.assayBufferGraph.setLabel(axis="left", text="CO2 (nmol/ml)")
         self.assayBufferGraph.setLabel(axis="bottom", text="Voltage (mV)")
         self.assayBufferGraphVLayout = QtWidgets.QVBoxLayout()
@@ -347,7 +348,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for HCL} AND {HCL Graph} #######################
 
-        self.hclGraph = Graph(100, 180)
+        self.hclGraph = Graph(100, 180, "module1", "hcl")
+        self.hclGraph.setAccessibleName("HCl calibration")
         self.hclGraph.setLabel(axis="left", text="BiCarb (nmol/ml)")
         self.hclGraph.setLabel(axis="bottom", text="Voltage (mV)")
         self.hclGraphVLayout = QtWidgets.QVBoxLayout()
@@ -361,11 +363,13 @@ class LabViewModule1(QtWidgets.QMainWindow):
 
         ######################## {Concentration Label} AND {Concentration Graph} #######################
 
-        self.concentrationGraph = Graph(100, 180)
+        self.concentrationGraph = Graph(100, 180, "module1", "o2-concentration")
+        self.concentrationGraph.setAccessibleName("O2 velocity and concentration")
         self.concentrationGraph.setLabel(axis="left", text="Velocity")
         self.concentrationGraph.setLabel(axis="bottom", text="[O2]")
 
-        self.concentrationGraph2 = Graph(100, 180)
+        self.concentrationGraph2 = Graph(100, 180, "module1", "co2-concentration")
+        self.concentrationGraph2.setAccessibleName("CO2 velocity and concentration")
         self.concentrationGraph2.setLabel(axis="bottom", text="[CO2]")
 
         self.concentrationGraphVLayout = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
@@ -1821,6 +1825,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.concentrationGraph.plot(
             list(self.o2VelocityConcentrationData.keys()),
             list(self.o2VelocityConcentrationData.values()),
+            style_key="o2-concentration",
+            series_name="O2 concentration",
             pen=None,
             symbol="o",
             symbolsize=1,
@@ -1831,6 +1837,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
         self.concentrationGraph2.plot(
             list(self.co2VelocityConcentrationData.keys()),
             list(self.co2VelocityConcentrationData.values()),
+            style_key="co2-concentration",
+            series_name="CO2 concentration",
             pen=None,
             symbol="o",
             symbolsize=1,
@@ -2315,6 +2323,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
                     self.concentrationGraph.plot(
                         list(self.o2VelocityConcentrationData.keys()),
                         list(self.o2VelocityConcentrationData.values()),
+                        style_key="o2-concentration",
+                        series_name="O2 concentration",
                         pen=None,
                         symbol="o",
                         symbolsize=1,
@@ -2326,6 +2336,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
                     self.concentrationGraph2.plot(
                         list(self.co2VelocityConcentrationData.keys()),
                         list(self.co2VelocityConcentrationData.values()),
+                        style_key="co2-concentration",
+                        series_name="CO2 concentration",
                         pen=None,
                         symbol="o",
                         symbolsize=1,
@@ -2616,6 +2628,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.assayBufferGraph.plot(
                 list(self.assayBufferData.values()),
                 list(self.assayBufferData.keys()),
+                style_key="assay-buffer",
+                series_name="Assay buffer",
                 pen=None,
                 symbol="o",
                 symbolsize=1,
@@ -2641,6 +2655,8 @@ class LabViewModule1(QtWidgets.QMainWindow):
             self.hclGraph.plot(
                 list(self.hclData.values()),
                 list(self.hclData.keys()),
+                style_key="hcl",
+                series_name="HCl calibration",
                 pen=None,
                 symbol="o",
                 symbolsize=1,

@@ -33,7 +33,7 @@ class Curve:
         self.isChecked = False
         self.firstPoint = False
 
-    def plotCurve(self):
+    def plotCurve(self, color_changed=None):
 
         self.data_line = pg.PlotDataItem(
             skipFiniteCheck=True, clipToView=True, useOpenGL=True
@@ -41,6 +41,9 @@ class Curve:
         self.data_line.setPen(self.pen)
         self.graph.setClipToView(True)
         self.graph.addItem(self.data_line)
+        self.graph.registerSeries(
+            self.name, self.data_line, self.name, color_changed=color_changed
+        )
 
     def updateDataPoints(self, x, y):
         self.x += x
