@@ -1,4 +1,8 @@
-<h1 align="center" class="brand-title"><img src="design/readme-review/assets/icon.png" alt="" width="72" height="72" align="middle"> DVDash</h1>
+<p align="center" class="brand-icon">
+  <img src="design/readme-review/assets/icon.png" alt="" width="72" height="72">
+</p>
+
+<h1 align="center">DVDash</h1>
 
 <p align="center">A modular workspace for scientific instruments, data, and analysis.</p>
 
