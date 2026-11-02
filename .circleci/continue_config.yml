@@ -176,6 +176,7 @@ jobs:
       - image: cimg/base:current
     resource_class: small
     steps:
+      - checkout
       - attach_workspace:
           at: executables
       - run:
@@ -183,35 +184,12 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y --no-install-recommends gh
-      # GITHUB_TOKEN comes from the github-releases context, and gh reads it
-      # from the environment. If the release exists (a re-run), update it and
-      # replace its files instead of failing.
+      # GITHUB_TOKEN comes from the github-releases context. The script
+      # publishes the release from a draft, because published releases are
+      # immutable, and stops if the tag is already released.
       - run:
           name: Publish the GitHub release
-          command: |
-            : "${GITHUB_TOKEN:?Add the github-releases context to this job.}"
-            export GH_REPO=ddelvalfraire/cousins-lab-tools
-            prerelease=false
-            if [[ $CIRCLE_TAG =~ -rc\.[0-9]+$ ]]; then
-              prerelease=true
-            fi
-            files=(executables/LabView_module_1.exe executables/LabView_module_2.exe)
-            if gh release view "$CIRCLE_TAG" > /dev/null 2>&1; then
-              gh release edit "$CIRCLE_TAG" --prerelease="$prerelease"
-              gh release upload "$CIRCLE_TAG" "${files[@]}" --clobber
-            else
-              gh release create "$CIRCLE_TAG" "${files[@]}" --verify-tag \
-                --prerelease="$prerelease" \
-                --title "Modules 1 and 2 ${CIRCLE_TAG#legacy-v}" \
-                --notes "Windows executables for Modules 1 and 2, built from ${CIRCLE_SHA1}.
-
-            - Module 1: \`LabView_module_1.exe\`
-            - Module 2: \`LabView_module_2.exe\`
-
-            Download the file and run it. There is nothing to install. The executables are not code signed, so Windows SmartScreen warns before the first launch."
-            fi
-            gh release view "$CIRCLE_TAG" --json url,isPrerelease,assets \
-              --jq '"\(.url) prerelease=\(.isPrerelease)", (.assets[] | "  \(.name)")'
+          command: bash .circleci/scripts/publish-legacy-release.sh executables
 
   # --- docs release ---
 
