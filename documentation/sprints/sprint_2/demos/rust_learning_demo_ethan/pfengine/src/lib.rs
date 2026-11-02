@@ -13,25 +13,26 @@ pub struct DataFrame {
 }
 
 // Ports currently only contain string names, this may change later
-struct Port {
+pub struct Port {
     name: String,
 }
 
-struct ComponentID(u32);
+#[derive(Eq, Hash, PartialEq)]
+pub struct ComponentID(u32);
 
 // This struct will contain whatever we end up using to let a Component access the DataFrames at its ports.
-struct Context {
+pub struct Context {
 
 }
 
-enum RunMode {
+pub enum RunMode {
     Ticked, // Component::process() called every tick
     Sensitive, // Component::process() called every time data is available, bypassing tick buffer.
     TickedSensitive, // Component::process() called every tick and when data is available
     Passive,
 }
 
-trait Component {
+pub trait Component {
     fn in_ports(&self) -> Vec<Port>;
     fn out_ports(&self) -> Vec<Port>;
     fn config_port(&self) -> Option<Port>;
@@ -42,7 +43,7 @@ trait Component {
 }
 
 // A factory for producing components.
-trait CompFactory {
+pub trait CompFactory {
     /* Returns an identifying type name of the component - used during deserialization to determine which factory to use. */
     fn name() -> String;
 
@@ -51,7 +52,7 @@ trait CompFactory {
 }
 
 // A factory that accepts a configuration struct and produces a component
-trait ConfigCompFactory: CompFactory {
+pub trait ConfigCompFactory: CompFactory {
     type Config: Any + Default + 'static;
     fn new_config_component(config: Self::Config) -> Option<Box<dyn Component>>;
 }
