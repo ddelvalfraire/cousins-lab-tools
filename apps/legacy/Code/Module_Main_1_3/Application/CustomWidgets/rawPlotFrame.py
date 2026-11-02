@@ -184,6 +184,7 @@ class RawPlotFrame(Frame):
 
         # Graph
         self.realTimeGraph = Graph(100, 100)
+        self.realTimeGraph.setAccessibleName("Raw masses")
         self.realTimeGraph.setLabel(axis="left", text="Voltage (mV)")
         self.realTimeGraph.setLabel(axis="bottom", text="Time (s)")
 
@@ -298,44 +299,44 @@ class RawPlotFrame(Frame):
     def addCurveAndMeanBar(self):
         # Adding the plot curves
         self.curve1 = Curve(
-            "Curve 1", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph
+            "Mass 32", [], pg.mkPen(color="#800000", width=4), self.realTimeGraph
         )
-        self.curve1.plotCurve()
+        self.curve1.plotCurve(self.checkBoxColorSetter(1))
 
         self.curve2 = Curve(
-            "Curve 2", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph
+            "Mass 34", [], pg.mkPen(color="#9A6324", width=4), self.realTimeGraph
         )
-        self.curve2.plotCurve()
+        self.curve2.plotCurve(self.checkBoxColorSetter(2))
 
         self.curve3 = Curve(
-            "Curve 3", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph
+            "Mass 36", [], pg.mkPen(color="#808000", width=4), self.realTimeGraph
         )
-        self.curve3.plotCurve()
+        self.curve3.plotCurve(self.checkBoxColorSetter(3))
 
         self.curve4 = Curve(
-            "Curve 4", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph
+            "Mass 44", [], pg.mkPen(color="#4363d8", width=4), self.realTimeGraph
         )
-        self.curve4.plotCurve()
+        self.curve4.plotCurve(self.checkBoxColorSetter(4))
 
         self.curve5 = Curve(
-            "Curve 5", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph
+            "Mass 45", [], pg.mkPen(color="#e6194B", width=4), self.realTimeGraph
         )
-        self.curve5.plotCurve()
+        self.curve5.plotCurve(self.checkBoxColorSetter(5))
 
         self.curve6 = Curve(
-            "Curve 6", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph
+            "Mass 46", [], pg.mkPen(color="#911eb4", width=4), self.realTimeGraph
         )
-        self.curve6.plotCurve()
+        self.curve6.plotCurve(self.checkBoxColorSetter(6))
 
         self.curve7 = Curve(
-            "Curve 7", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph
+            "Mass 47", [], pg.mkPen(color="#42d4f4", width=4), self.realTimeGraph
         )
-        self.curve7.plotCurve()
+        self.curve7.plotCurve(self.checkBoxColorSetter(7))
 
         self.curve8 = Curve(
-            "Curve 8", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph
+            "Mass 49", [], pg.mkPen(color="#f58231", width=4), self.realTimeGraph
         )
-        self.curve8.plotCurve()
+        self.curve8.plotCurve(self.checkBoxColorSetter(8))
 
         self.curves = [
             self.curve1,
@@ -365,9 +366,23 @@ class RawPlotFrame(Frame):
 
         # Adding the Mean bars when the plotting is paused
         self.realTimeGraph.addItem(self.meanBar)
+        for index, line in enumerate(self.meanBar.lines):
+            self.realTimeGraph.registerSeries(
+                "mean-" + str(index),
+                line,
+                "Mean boundary " + str(index + 1),
+                "boundary",
+            )
         self.meanBar.sigRegionChangeFinished.connect(
             self.drawLinesOfBestFit, QtCore.Qt.QueuedConnection
         )
+
+    def checkBoxColorSetter(self, number):
+        """Keep a mass check box the same color as its curve."""
+        checkBox = getattr(self, f"graph{number}CheckBox", None)
+        if checkBox is None:
+            return None
+        return lambda color: checkBox.setStyleSheet("color: " + color.name())
 
     def connectSignals(self):
         self.barsButton.clicked.connect(

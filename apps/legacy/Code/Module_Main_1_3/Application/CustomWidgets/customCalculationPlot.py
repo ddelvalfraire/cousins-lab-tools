@@ -74,6 +74,7 @@ class customCalculationPlot(Frame):
         ################################################# Graphs ##############################################
 
         self.calculationPlotGraph = Graph(100, 100)
+        self.calculationPlotGraph.setAccessibleName("Custom calculation")
         self.calculationPlotGraph.setLabel(
             axis="bottom", text=str(self.DefaultYAxisEquiation)
         )
@@ -86,6 +87,7 @@ class customCalculationPlot(Frame):
         self.setContentsMargins(0, 10, 0, 0)
 
         self.calculationPlotGraph2 = Graph(100, 100)
+        self.calculationPlotGraph2.setAccessibleName("d/dt Mass44")
         self.calculationPlotGraph2.setLabel(axis="bottom", text="Time")
         # self.calculationPlotGraph2.setLabel(axis='left', text='d²/dt² Mass44')
         self.calculationPlotGraph2.setLabel(axis="left", text="d/dt Mass44")
@@ -96,18 +98,27 @@ class customCalculationPlot(Frame):
         self.calculationPlotGraph2Curve.setPen(color="#4363d8", width=4)
         self.calculationPlotGraph2.setClipToView(True)
         self.calculationPlotGraph2.addItem(self.calculationPlotGraph2Curve)
+        self.calculationPlotGraph2.registerSeries(
+            "d-mass44", self.calculationPlotGraph2Curve, "d/dt Mass44"
+        )
 
         self.calculationPlotLbfCurve = pg.PlotDataItem()
         self.calculationPlotLbfCurve.setPen(
             color=(255, 0, 0), width=2, style=QtCore.Qt.DashLine
         )
         self.calculationPlotGraph.addItem(self.calculationPlotLbfCurve)
+        self.calculationPlotGraph.registerSeries(
+            "line-of-best-fit", self.calculationPlotLbfCurve, "Line of best fit"
+        )
 
         self.calculationPlotDataPoints = pg.PlotDataItem()
         self.calculationPlotDataPoints.setPen(None)
         self.calculationPlotDataPoints.setSymbol("o")
         self.calculationPlotDataPoints.setSymbolBrush("r")
         self.calculationPlotGraph.addItem(self.calculationPlotDataPoints)
+        self.calculationPlotGraph.registerSeries(
+            "samples", self.calculationPlotDataPoints, "Samples", "scatter"
+        )
 
         self.calculationPlotTextItem = pg.TextItem(color=(100, 255, 100), anchor=(1, 0))
         self.calculationPlotGraph.addItem(self.calculationPlotTextItem)

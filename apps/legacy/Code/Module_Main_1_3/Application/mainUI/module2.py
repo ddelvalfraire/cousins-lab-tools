@@ -248,6 +248,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         ######################## {QFormLayout for Assay Buffer} AND {Assay Buffer Graph} #######################
 
         self.assayBufferGraph = Graph(180, 3)
+        self.assayBufferGraph.setAccessibleName("Assay buffer calibration")
         self.assayBufferGraph.setLabel(axis="left", text="CO2 (µL)")
         self.assayBufferGraph.setLabel(axis="bottom", text="Voltage (mV)")
         self.assayBufferGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -262,6 +263,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for uBar} AND {uBar Graph} #######################
         self.uBarGraph = Graph(100, 180)
+        self.uBarGraph.setAccessibleName("uBar")
         self.uBarGraph.setLabel(axis="left", text="uBar")
         self.uBarGraph.setLabel(axis="bottom", text="Time (s)")
         # self.uBarGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -276,6 +278,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
 
         ######################## {QFormLayout for DuBar} AND {DuBar Graph} #######################
         self.DuBarGraph = Graph(100, 180)
+        self.DuBarGraph.setAccessibleName("D[uBar]")
         self.DuBarGraph.setLabel(axis="left", text="D[uBar]")
         self.DuBarGraph.setLabel(axis="bottom", text="Time (s)")
         # self.DuBarGraph.getViewBox().wheelEvent = self.on_wheel_event
@@ -1675,6 +1678,8 @@ class LabViewModule2(QtWidgets.QMainWindow):
             self.assayBufferGraph.plot(
                 list(self.assayBufferData.values()),
                 list(self.assayBufferData.keys()),
+                style_key="assay-buffer",
+                series_name="Assay buffer",
                 pen=None,
                 symbol="o",
                 symbolsize=1,
