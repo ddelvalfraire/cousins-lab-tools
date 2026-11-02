@@ -1,6 +1,7 @@
 ﻿[workspace]
 members = [
     "src-tauri",
-    "pfengine"
+    "pfengine",
+    "pfengine-test"
 ]
 resolver = "3"
