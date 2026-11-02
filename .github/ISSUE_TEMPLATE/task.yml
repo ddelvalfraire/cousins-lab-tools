@@ -1,0 +1,41 @@
+name: Task
+description: A single piece of work that fits in one pull request.
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What changes and why, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What this task includes and what it leaves out.
+      value: |
+        **In:**
+        -
+        **Out:**
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Outcomes a reviewer can check. Include an edge or failure case.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: How a reviewer confirms each criterion. State anything that can't be tested.
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Relevant files, related issues and pull requests, and dependencies.
