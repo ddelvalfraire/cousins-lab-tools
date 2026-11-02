@@ -234,6 +234,7 @@ jobs:
       - image: cimg/base:current
     resource_class: small
     steps:
+      - checkout
       - attach_workspace:
           at: installers
       - run:
@@ -241,35 +242,12 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y --no-install-recommends gh
-      # GITHUB_TOKEN comes from the github-releases context, and gh reads it
-      # from the environment. If the release exists (a re-run), update it and
-      # replace its files instead of failing.
+      # GITHUB_TOKEN comes from the github-releases context. The script
+      # creates a draft, uploads the files, and then publishes it. It stops
+      # with an error if the release is already published.
       - run:
           name: Publish the GitHub release
-          command: |
-            : "${GITHUB_TOKEN:?Add the github-releases context to this job.}"
-            export GH_REPO=ddelvalfraire/cousins-lab-tools
-            prerelease=false
-            if [[ $CIRCLE_TAG =~ -rc\.[0-9]+$ ]]; then
-              prerelease=true
-            fi
-            files=(installers/*/*)
-            if gh release view "$CIRCLE_TAG" > /dev/null 2>&1; then
-              gh release edit "$CIRCLE_TAG" --prerelease="$prerelease"
-              gh release upload "$CIRCLE_TAG" "${files[@]}" --clobber
-            else
-              gh release create "$CIRCLE_TAG" "${files[@]}" --verify-tag \
-                --prerelease="$prerelease" \
-                --title "Desktop app ${CIRCLE_TAG#desktop-v}" \
-                --notes "Installers for the DV-Dash desktop app, built from ${CIRCLE_SHA1}.
-
-            - Windows: \`*-setup.exe\` (per-user install) or \`*.msi\`.
-            - macOS: \`*.dmg\`, for Apple Silicon and Intel Macs.
-
-            The installers are not code signed, so Windows SmartScreen and macOS Gatekeeper warn before the first launch."
-            fi
-            gh release view "$CIRCLE_TAG" --json url,isPrerelease,assets \
-              --jq '"\(.url) prerelease=\(.isPrerelease)", (.assets[] | "  \(.name)")'
+          command: .circleci/scripts/desktop-release-publish.sh
 
   # --- legacy release ---
 
