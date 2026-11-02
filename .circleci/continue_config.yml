@@ -59,6 +59,47 @@ jobs:
   # --- legacy ---
 
   # --- desktop front end ---
+  desktop-frontend:
+    docker:
+      # Matches .nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/desktop
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - desktop-frontend-bun-v1-{{ arch }}-{{ checksum "apps/desktop/bun.lock" }}
+            - desktop-frontend-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: desktop-frontend-bun-v1-{{ arch }}-{{ checksum "apps/desktop/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Lint and format (Biome)
+          working_directory: apps/desktop
+          command: bun x biome ci .
+      - run:
+          name: Check types
+          working_directory: apps/desktop
+          command: bun run check
+      - run:
+          name: Test (Vitest)
+          working_directory: apps/desktop
+          command: bun run test
+      - run:
+          name: Build
+          working_directory: apps/desktop
+          command: bun run build
 
   # --- desktop Rust ---
 
@@ -83,9 +124,7 @@ workflows:
   desktop-frontend:
     when: << pipeline.parameters.run-desktop-frontend >>
     jobs:
-      - placeholder:
-          name: desktop-frontend-placeholder
-          section: desktop front-end
+      - desktop-frontend
 
   # --- desktop Rust ---
   desktop-rust:
