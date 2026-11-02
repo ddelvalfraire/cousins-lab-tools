@@ -143,7 +143,7 @@ impl PipeFilterEngine {
         ComponentID(this_id)
     }
 
-    pub fn connect_component(&mut self, out_component: ComponentID, out_port: Port, in_component: ComponentID, in_port: Port) -> Result<(), Error> {
+    pub fn connect_ports(&mut self, out_component: ComponentID, out_port: Port, in_component: ComponentID, in_port: Port) -> Result<(), Error> {
         // Verify out components and ports exist
         let out_comp = self.components.get(&out_component);
         if (out_comp.is_none()) {
