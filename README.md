@@ -24,14 +24,19 @@ DVDash is a scientific desktop application being developed for the **WSU Cousins
 
 ## Start here
 
-| I want to… | Go to |
-| --- | --- |
-| Get the existing Windows applications | [Module 1 and 2 downloads · release candidate](https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/legacy-v0.2.0-rc.2) |
-| Learn the lab workflow | [Researcher user manual](https://ddelvalfraire.github.io/cousins-lab-tools/) |
-| Try a sample recording | [Example datasets](reference/instruments/mass-spec/README.md) |
-| Run the Python tools from source | [Legacy setup and launch guide](apps/legacy/README.md) |
-| Develop the native desktop app | [Desktop setup](apps/desktop/README.md) |
-| Read project reports and history | [Project archive](documentation/) |
+<table width="100%">
+  <thead>
+    <tr><th scope="col" align="left" width="400">I want to…</th><th scope="col" align="left" width="1000">Go to</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Get the existing Windows applications</td><td><a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/legacy-v0.2.0-rc.2">Module 1 and 2 downloads · release candidate</a></td></tr>
+    <tr><td>Learn the lab workflow</td><td><a href="https://ddelvalfraire.github.io/cousins-lab-tools/">Researcher user manual</a></td></tr>
+    <tr><td>Try a sample recording</td><td><a href="reference/instruments/mass-spec/README.md">Example datasets</a></td></tr>
+    <tr><td>Run the Python tools from source</td><td><a href="apps/legacy/README.md">Legacy setup and launch guide</a></td></tr>
+    <tr><td>Develop the native desktop app</td><td><a href="apps/desktop/README.md">Desktop setup</a></td></tr>
+    <tr><td>Read project reports and history</td><td><a href="documentation/">Project archive</a></td></tr>
+  </tbody>
+</table>
 
 ## A look at the workspace
 
@@ -78,19 +83,27 @@ Keep scientific units explicit, preserve original samples when changing display 
 
 Developed for the **WSU Cousins Plant Biology Lab** by successive WSU student teams.
 
-<p align="center">
-  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=ddelvalfraire/cousins-lab-tools" alt="Contributors to Cousins Lab Tools on GitHub">
-  </a>
-</p>
-
-**Additional contributors**
-
-- **2025–26:** Matthew Heseltine and [Wesley Skywalker](https://github.com/SkywalkerWesley)
-- **2023–24:** Brayden Groshong, Jack Leeper, and Tomer Zangi
-- **2022–23:** Ritik Agarwal and Zoe Parker
+<table width="100%">
+  <thead>
+    <tr><th scope="col" align="left" width="100">Year</th><th scope="col" align="left" width="180">Team</th><th scope="col" align="left" width="1000">Members</th></tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row" align="left">2026&#8288;–&#8288;27</th><td>PhotosynthLab</td><td><a href="https://github.com/ddelvalfraire">David Del Val</a> · <a href="https://github.com/Inventor4life">Ethan Goode</a> · <a href="https://github.com/MaxUpton">Max Upton</a></td></tr>
+    <tr><th scope="row" align="left">2025&#8288;–&#8288;26</th><td>WM Codeworks</td><td>Matthew Heseltine · <a href="https://github.com/SkywalkerWesley">Wesley Skywalker</a></td></tr>
+    <tr><th scope="row" align="left">2024&#8288;–&#8288;25</th><td>Linnaea Borealis</td><td><a href="https://github.com/KylerKupp">Kyler Kupp</a> · <a href="https://github.com/MetzgerH">Erik Holtrop</a></td></tr>
+    <tr><th scope="row" align="left">2023&#8288;–&#8288;24</th><td>Dracaena</td><td>Brayden Groshong · Jack Leeper · Tomer Zangi</td></tr>
+    <tr><th scope="row" align="left">2022&#8288;–&#8288;23</th><td>Data Pirates</td><td>Ritik Agarwal · Zoe Parker</td></tr>
+  </tbody>
+</table>
 
 With thanks to **Dr. Asaph Cousins**, the **Cousins lab research team**, and project mentor **Parteek Kumar** for their guidance and feedback.
+
+<p align="center">
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=ddelvalfraire/cousins-lab-tools" alt="Contributors to Cousins Lab Tools on GitHub"><br>
+    <sub>GitHub contributor history</sub>
+  </a>
+</p>
 
 <p align="center">
   <a href="LICENSE.txt">MIT License</a> ·
