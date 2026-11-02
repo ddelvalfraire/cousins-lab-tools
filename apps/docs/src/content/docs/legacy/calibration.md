@@ -126,6 +126,9 @@ filled for the next run, or **No** to clear them. See
 :::caution
 **Yes** keeps only the numbers shown in the calibration boxes. At **STOP**, both
 modules reset the calibration values they use in calculations, so results show
-`undef` until you calibrate again. Repeat the calibration steps on this page
-before you measure the next run.
+`undef` until the calibration is applied again. Before you measure the next run,
+[load your calibration file](#load-calibrations) again or repeat the
+calibration steps on this page. To have a file to load, save your calibrations
+before you press **STOP** (see
+[Save calibrations to a file](#save-and-load-calibration-files)).
 :::
