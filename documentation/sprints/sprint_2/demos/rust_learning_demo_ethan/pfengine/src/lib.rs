@@ -80,15 +80,18 @@ pub struct Packet {
 }
 
 pub struct PipeFilterEngine {
+    last_id: u32,
+
     tick_buffer: SwapBuffer<HashMap<ComponentID, VecDeque<Packet>>>,
     components: HashMap<ComponentID, Box<dyn Component>>,
     sensitive_comps: HashSet<ComponentID>,
 }
 
 impl PipeFilterEngine {
-
     pub fn new() -> PipeFilterEngine {
         PipeFilterEngine {
+            last_id: 0,
+
             tick_buffer: SwapBuffer {
                 current: HashMap::new(),
                 next: HashMap::new(),
@@ -96,5 +99,22 @@ impl PipeFilterEngine {
             components: HashMap::new(),
             sensitive_comps: HashSet::new(),
         }
+    }
+
+    pub fn add_component(&mut self, component: Box<dyn Component +'static>) -> ComponentID {
+        let this_id = self.last_id + 1;
+        match component.run_mode() {
+            RunMode::Sensitive => {
+                self.sensitive_comps.insert(ComponentID(this_id));
+            },
+            _ => {},
+        }
+
+        // Some additional processing involving ports might need to happen here.
+
+        self.components.insert(ComponentID(this_id), component);
+
+        self.last_id = this_id;
+        ComponentID(this_id)
     }
 }
