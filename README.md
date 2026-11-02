@@ -12,12 +12,15 @@ The project is designed to provide a comprehensive platform for managing and int
 
 The existing Python applications and their tests live under `apps/legacy/`:
 
-- `apps/legacy/module1/` through `apps/legacy/module4/` contain the applications.
+- `apps/legacy/Code/Module_Main_1_3/` contains Modules 1 and 2 (the spring 2026
+  version). `apps/legacy/Program Layout.md` describes its structure.
+- `apps/legacy/module3/` and `apps/legacy/module4/` contain Modules 3 and 4.
 - `apps/legacy/tests/` contains the cross-module regression checks.
 - `documentation/` and `reference/` keep their existing locations.
 
-Historical documents may show paths such as `module1/application/`. For the
-current checkout, prefix those paths with `apps/legacy/`.
+Historical documents may show paths such as `module3/application/`. For the
+current checkout, prefix those paths with `apps/legacy/`. The older
+`module1/` and `module2/` sources remain in git history.
 
 ## Installation
 
@@ -28,24 +31,36 @@ Python 3.1 or greater
 
 ### Installation Steps
 
-Each module under `apps/legacy/` has a main.py file that can be run in order to open the respective module, but for the sake of convenience, we have created executables for some of them in their application's 'dist' folder. These executables can be run without any prior installations.
+Each module under `apps/legacy/` has a main file that can be run in order to open the respective module, but for the sake of convenience, we have created executables for some of them in their application's 'dist' folder. These executables can be run without any prior installations.
 
 In order to run a module without using an executable, you must first install the prerequisite modules. To do so, use pip to install the modules listed in the requirements.txt file in the relevant module's application folder. This can be done from the command line with the following command, if you are in that application folder:
 
 > pip install -r requirements.txt
 
 
-For modules 1–3, launch from the module's `application/mainUI` directory so
-relative imports and UI resources resolve. For example, from the repository root:
+Modules 1 and 2 share one code base and import it as the `Code` package, so
+launch them from `apps/legacy`. From the repository root:
 
 ```sh
-cd apps/legacy/module1/application/mainUI
+cd apps/legacy
+pip install -r Code/Module_Main_1_3/Application/requirements.txt
+python -m Code.Module_Main_1_3.Application.MainAndBuildFiles.mianMoudle1
+```
+
+For module 2, replace `mianMoudle1` with `mianMoudle2`. To build both Windows
+executables, run `build.bat` from `apps/legacy`.
+
+For module 3, launch from `apps/legacy/module3/application/mainUI` so relative
+imports and UI resources resolve:
+
+```sh
+cd apps/legacy/module3/application/mainUI
 python main.py
 ```
 
 For module 4, run `python main.py` from `apps/legacy/module4/application`.
-Keep running PyInstaller from each module's `application` directory with its
-existing `main.spec` file.
+For modules 3 and 4, keep running PyInstaller from the module's `application`
+directory with its existing `main.spec` file.
 
 Run the capture-title regression check from the repository root with the Python
 environment containing the legacy dependencies:
