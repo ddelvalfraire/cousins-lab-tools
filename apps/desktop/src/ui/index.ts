@@ -13,6 +13,7 @@ export * from './components/RightSidebar';
 export * from './components/ExperimentTools';
 export * from './components/Catalog';
 export * from './components/RoutineEditor';
+export * from './components/ExperimentsList';
 export * from './components/DerivedValues';
 export * from './components/CalibrationCurve';
 export * from './components/ProblemsPanel';

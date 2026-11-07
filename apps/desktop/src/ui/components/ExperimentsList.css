@@ -1,0 +1,65 @@
+/* Experiments list. Source: design/dvdash-field-review/experiments-home-review.html. */
+.dv-exp { container-type: inline-size; position: relative; color: var(--dv-ink); background: var(--dv-bg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dv-exp :where(h1, h2, p) { margin: 0; }
+.dv-exp :where(button, select) { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+.dv-exp :where(button:disabled) { cursor: default; }
+.dv-exp :focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+.dv-exp svg { flex: none; pointer-events: none; }
+.dv-exp-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* Header and action bar: the shared PageHeader. */
+
+/* Body, filter line and toolbar */
+.dv-exp-body { padding: var(--dv-page-top) var(--dv-page-gutter) var(--dv-page-bottom); min-height: 250px; }
+.dv-exp-filter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-exp-filter-query { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dv-exp-filter-query span { overflow-wrap: anywhere; }
+.dv-exp-filter-query svg { width: 13px; height: 13px; }
+.dv-exp .dv-exp-text-button { font-size: 11px; padding: 3px 0; border: 0; background: none; color: var(--dv-accent); white-space: nowrap; }
+/* The count row matches the catalog pages (CatalogTable.css .dv-cat-toolbar). */
+.dv-exp-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 32px; margin-bottom: var(--dv-gap); }
+.dv-exp-count { font-size: 12px; color: var(--dv-ink-muted); }
+
+/* Table */
+.dv-exp-frame { position: relative; border: 1px solid var(--dv-line); border-radius: 8px; overflow: auto; background: var(--dv-paper); }
+.dv-exp .dv-exp-frame:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-exp-table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 640px; font-size: 12px; }
+.dv-exp-table col:nth-child(2) { width: 96px; }
+.dv-exp-table col:nth-child(3) { width: 128px; }
+.dv-exp-table col:nth-child(4) { width: 96px; }
+.dv-exp-table col:nth-child(5) { width: 150px; }
+.dv-exp-table th { text-align: left; padding: 11px 12px; font-size: 10px; font-weight: 500; color: var(--dv-ink-muted); background: var(--dv-bg); border-bottom: 1px solid var(--dv-line); }
+.dv-exp-table th button { display: flex; align-items: center; gap: 5px; font: inherit; padding: 0; border: 0; background: none; color: inherit; }
+.dv-exp-table td { padding: 11px 12px; border-bottom: 1px solid var(--dv-line); vertical-align: middle; }
+.dv-exp-table tr:last-child td { border-bottom: 0; }
+.dv-exp-table tbody tr:hover { background: var(--dv-bg); }
+.dv-exp-identity { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.dv-exp-identity > div { min-width: 0; }
+.dv-exp-mark { width: 38px; height: 38px; border: 1px solid var(--dv-line); border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--dv-bg); color: var(--dv-blue); }
+.dv-exp-mark svg { width: 22px; height: 22px; }
+.dv-exp .dv-exp-name { display: block; text-align: left; font-size: 13px; line-height: 1.45; font-weight: 600; padding: 0; border: 0; background: none; overflow-wrap: anywhere; color: var(--dv-ink); }
+.dv-exp .dv-exp-name:hover { color: var(--dv-accent); text-decoration: underline; text-underline-offset: 3px; }
+.dv-exp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.dv-exp-date { font-size: 11px; display: block; }
+.dv-exp-date small { font-size: 10px; color: var(--dv-ink-muted); display: block; margin-top: 4px; }
+.dv-exp .dv-exp-open { display: inline-flex; align-items: center; gap: 5px; padding: 6px 0; min-height: 28px; border: 0; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 500; white-space: nowrap; color: var(--dv-accent); }
+.dv-exp-open:hover { text-decoration: underline; text-underline-offset: 3px; }
+.dv-exp .dv-exp-open:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 4px; }
+.dv-exp-open svg { width: 12px; height: 12px; }
+
+/* Pagination footer */
+.dv-exp-pagination { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: 10px; color: var(--dv-ink-muted); flex-wrap: wrap; }
+.dv-exp-pagination-controls { display: flex; gap: 4px; align-items: center; }
+.dv-exp-pagination-controls button { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
+.dv-exp .dv-exp-pagination-controls button { color: var(--dv-ink); }
+.dv-exp-pagination-controls button:disabled { opacity: .4; }
+.dv-exp-pagination select { border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; padding: 5px; margin-inline: 5px; }
+
+/* Empty states */
+.dv-exp-empty { padding: 26px 20px 27px; display: grid; justify-items: start; gap: 9px; }
+.dv-exp .dv-exp-empty h2 { font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.dv-exp-empty p { font-size: 11px; color: var(--dv-ink-muted); line-height: 1.6; max-width: 330px; }
+.dv-exp .dv-exp-plain-button { border: 1px solid var(--dv-line); background: var(--dv-paper); color: var(--dv-ink); border-radius: 5px; padding: 7px 10px; font-size: 11px; }
+.dv-exp-plain-button:hover { background: var(--dv-soft); }
+.dv-exp-empty-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
