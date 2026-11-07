@@ -150,6 +150,20 @@ test('recording playback changes displayed samples and keyboard scrubbing works'
   await expect(page.locator('[data-pb-value=mass44]')).toHaveText('2.373');
 });
 
+test('the recorded playback bar keeps the page spacing at rest and sticks 8 px under the header', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await story(page, 'screens-experiment--recorded');
+  const gaps = () => page.evaluate(() => {
+    const main = document.querySelector('.dv-workspace-main')!;
+    const bar = document.querySelector('.dv-xw-transport')!.getBoundingClientRect();
+    const next = document.querySelector('.dv-xw-transport')!.nextElementSibling!.getBoundingClientRect();
+    return { top: Math.round(bar.top - main.getBoundingClientRect().top), below: Math.round(next.top - bar.bottom) };
+  });
+  expect(await gaps(), 'at rest: --dv-page-top above, --dv-gap below').toEqual({ top: 16, below: 16 });
+  await page.locator('.dv-workspace-main').evaluate(el => { el.scrollTop = 400; });
+  expect((await gaps()).top, 'scrolled: stuck 8 px under the header').toBe(8);
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();

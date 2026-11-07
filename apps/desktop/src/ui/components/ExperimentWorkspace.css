@@ -47,8 +47,9 @@
 .dv-xw-derived-missing svg { width: 13px; height: 13px; }
 .dv-xw-caption { margin-top: 0; font-size: 10px; line-height: 1.6; color: var(--dv-ink-muted); }
 
-/* Compact sticky transport */
-.dv-xw-transport { position: sticky; top: 8px; z-index: 5; margin: 0; padding: 8px 11px; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-paper); box-shadow: 0 5px 13px #10271b14; }
+/* Compact sticky transport. Sticky offsets count from the scroller's padding edge, so the page-top padding is taken back:
+   the bar sits --dv-page-top under the header at rest and 8 px under it once stuck (sticky-playback-review.html). */
+.dv-xw-transport { position: sticky; top: calc(8px - var(--dv-page-top)); z-index: 5; margin: 0; padding: 8px 11px; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-paper); box-shadow: 0 5px 13px #10271b14; }
 .dv-xw-transport-bar { display: grid; grid-template-columns: auto auto minmax(80px, 1fr) auto auto; grid-template-areas: 'controls time seek total speed'; align-items: center; gap: 11px; }
 .dv-xw-transport-controls { grid-area: controls; display: flex; align-items: center; gap: 6px; }
 .dv-xw-step { display: grid; place-items: center; width: 25px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; }
