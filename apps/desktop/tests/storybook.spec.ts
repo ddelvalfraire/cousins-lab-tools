@@ -292,6 +292,15 @@ test('table sort headers are 24 px targets in an unchanged header row', async ({
   }
 });
 
+test('calibration interval fields keep their approved width on a wide page', async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1200 });
+  await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:experiment');
+  await expect(page.locator('.dv-cal-field').first()).toBeVisible();
+  const widths = await page.locator('.dv-cal-form >> visible=true').evaluate(form => ({ form: form.getBoundingClientRect().width, fields: [...form.querySelectorAll('.dv-cal-field')].map(f => f.getBoundingClientRect().width) }));
+  expect(widths.form, 'the form is the card content width at its 850 px cap').toBeLessThanOrEqual(802);
+  for (const width of widths.fields) expect(Math.abs(width - 362), 'field width near the 362 px in the calibration mockup').toBeLessThanOrEqual(4);
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
