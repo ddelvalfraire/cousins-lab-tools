@@ -13,34 +13,45 @@ NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", NS)
 SIZES = [16, 24, 32, 48, 64, 128, 256, 512, 1024]
 
-def svg(width, height, body):
-    return f'<svg xmlns="{NS}" width="{width}" height="{height}" viewBox="0 0 {width} {height}">{body}</svg>'
+def svg(width, height, body, label):
+    return (f'<svg xmlns="{NS}" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img">'
+            f'<title>{label}</title>{body}</svg>')
+
+def parse(path):
+    root = ET.parse(path).getroot()
+    for node in root.iter():
+        # Without the namespace, ElementTree would repeat xmlns on every copied child.
+        node.tag = node.tag.removeprefix(f"{{{NS}}}")
+    return root
+
+def serialize(root):
+    return "".join(ET.tostring(child, encoding="unicode") for child in root if child.tag != "title")
 
 def contents(path, color=None):
-    root = ET.parse(path).getroot()
+    root = parse(path)
     if color:
         for node in root.iter():
             if "fill" in node.attrib:
                 node.set("fill", color)
-    return "".join(ET.tostring(child, encoding="unicode") for child in root)
+    return serialize(root)
 
 def variants():
     icon = contents(HERE / "icon.svg")
     for variant, color in [("light", "#063d30"), ("dark", "#f7f8f2")]:
         letters = contents(HERE / "lettering.svg", color)
         body = f'<g transform="scale(0.753)">{icon}</g><g transform="translate(156 12)">{letters}</g>'
-        (HERE / f"lockup-{variant}.svg").write_text(svg(660, 128, body))
-    original = ET.parse(HERE / "icon.svg").getroot()
+        (HERE / f"lockup-{variant}.svg").write_text(svg(660, 128, body, "DVDash"))
+    original = parse(HERE / "icon.svg")
     for node in original.iter():
         value = node.get("fill", "")
         if value.startswith("#") and len(value) == 7:
             red, green, blue = [int(value[i:i+2], 16) for i in [1, 3, 5]]
             node.set("fill", "white" if .2126*red + .7152*green + .0722*blue > 130 else "black")
-    mask = "".join(ET.tostring(child, encoding="unicode") for child in original)
+    mask = serialize(original)
     for name, color in [("mono", "#063d30"), ("inverse", "#ffffff")]:
         (HERE / f"mark-{name}.svg").write_text(svg(170, 170,
             f'<defs><mask id="mark" maskUnits="userSpaceOnUse" x="0" y="0" width="170" height="170">{mask}</mask></defs>'
-            f'<rect width="170" height="170" fill="{color}" mask="url(#mark)"/>'))
+            f'<rect width="170" height="170" fill="{color}" mask="url(#mark)"/>', "DVDash mark"))
 
 def normalize_icns(path):
     # Tauri emits equivalent ICNS layers in varying order.
