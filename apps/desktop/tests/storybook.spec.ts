@@ -212,6 +212,14 @@ test('a scrolling import dialog body can take keyboard focus to scroll', async (
   expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) }))).toEqual([]);
 });
 
+test('the skip link is inside the window bar landmark and still comes first', async ({ page }) => {
+  await story(page, 'screens-experiments--home');
+  const result = await new AxeBuilder({ page }).withRules(['region']).analyze();
+  expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) }))).toEqual([]);
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Skip to content', exact: true })).toBeFocused();
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();

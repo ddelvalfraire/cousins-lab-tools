@@ -145,7 +145,8 @@
 .dv-playback { display:flex; align-items:center; flex-wrap:wrap; gap:14px; background:var(--dv-panel); border:1px solid var(--dv-border); border-radius:12px; padding:14px 18px; box-shadow:0 4px 18px #063d3009; }
 .dv-playback-slider { flex:1; min-width:140px; }
 .dv-playback-time { font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.dv-skip-link { position:absolute; top:0; left:12px; transform:translateY(-120%); z-index:300; background:var(--dv-panel); padding:12px; color:var(--dv-text); }
+/* First child of the window bar landmark; the type is pinned so it does not take the bar's 13 px. */
+.dv-skip-link { position:absolute; top:0; left:12px; transform:translateY(-120%); z-index:300; background:var(--dv-panel); padding:12px; color:var(--dv-text); font-size:14px; line-height:21px; }
 .dv-skip-link:focus { transform:none; }
 
 @media(max-width:1100px) { .dv-screen-heading { padding:22px; } }

@@ -112,8 +112,8 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const active = parentOf(page), detail = active !== page;
   const openExperiment = (id:string) => navigate('experiment', id);
   return <div className="dv-shell" data-navigation-collapsed={collapsed}>
-    <a href="#dvdash-screen-main" className="dv-skip-link">Skip to content</a>
     <header className="dv-shell-topbar">
+      <a href="#dvdash-screen-main" className="dv-skip-link">Skip to content</a>
       <button type="button" className="dv-shell-icon-button dv-shell-menu" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={drawer} onClick={()=>setDrawer(true)}><MenuGlyph/></button>
       <button type="button" className="dv-shell-wordmark" aria-label="DVDash experiments home" onClick={()=>navigate('experiments')}>
         <span className="dv-brand-concept" aria-hidden="true"><img src={identityBoard} alt=""/></span><span>DVDash</span>
