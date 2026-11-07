@@ -1,0 +1,18 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ParameterField } from './Inputs';
+const meta = { title: 'Components/ParameterField', component: ParameterField, tags: ['autodocs'], parameters: { layout: 'centered', previewWidth: 360 }, args: { kind: 'quantity', invalid: false, warning: false, disabled: false }, argTypes: { kind: { control: 'select', options: ['quantity', 'count', 'timing', 'text', 'choice', 'multiple', 'boolean', 'file', 'note'] } } } satisfies Meta<typeof ParameterField>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+export const Quantity: Story = {};
+export const Count: Story = { args: { kind: 'count' } };
+export const Timing: Story = { args: { kind: 'timing' } };
+export const Text: Story = { args: { kind: 'text' } };
+export const SingleSelection: Story = { args: { kind: 'choice' } };
+export const MultipleSelection: Story = { args: { kind: 'multiple' } };
+export const Boolean: Story = { args: { kind: 'boolean' } };
+export const File: Story = { args: { kind: 'file' } };
+export const Notes: Story = { args: { kind: 'note' } };
+export const Invalid: Story = { args: { invalid: true } };
+export const Warning: Story = { args: { warning: true } };
+export const Disabled: Story = { args: { disabled: true } };
+export const LongLabel: Story = { args: { label: 'Décalage du signal de référence du spectromètre de masse (mV)' } };
