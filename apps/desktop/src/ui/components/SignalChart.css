@@ -1,0 +1,25 @@
+/* Signal chart gap handling (approved design/dvdash-field-review/signal-edge-cases-review.html). */
+.dv-signal-summary { margin-top: 2px; font-size: 12px; line-height: 1.6; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; }
+.dv-signal-toolbar { min-height: 22px; display: flex; align-items: center; }
+.dv-signal-plot { position: relative; width: 100%; }
+/* A break in the line: shaded where there is no data, labelled with its duration above the plot area. */
+.dv-gap-band { position: absolute; background: color-mix(in srgb, var(--dv-soft) 82%, transparent); pointer-events: none; }
+.dv-gap-band > span { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 5px; font-size: 11px; line-height: 1.2; color: var(--dv-ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dv-legend i.dv-legend-gap { width: 16px; height: 12px; border: 1px solid var(--dv-line); background: var(--dv-soft); }
+.dv-legend i.dv-legend-sample { width: 5px; height: 5px; border: 0; border-radius: 50%; margin: 0 5px; }
+.dv-gap-settings { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 18px; }
+.dv-threshold { min-height: 36px; }
+.dv-table-frame th.dv-signal-note, .dv-table-frame td.dv-signal-note { text-align: left; white-space: normal; min-width: 160px; }
+.dv-table-frame td.dv-signal-note[data-noted] { color: var(--dv-warn); }
+
+/* Compact traces for workspace cards: right-sidebar-review.html (.live-plot) and sticky-playback-review.html (.playback-plot). */
+.dv-trace { display: block; width: 100%; color: var(--dv-blue); }
+.dv-trace[data-variant='live'] { height: 100px; }
+.dv-trace[data-variant='playback'] { height: 145px; }
+.dv-trace text { fill: var(--dv-ink-muted); font-size: 9px; font-family: inherit; }
+.dv-trace .dv-trace-grid { fill: none; stroke: var(--dv-line); stroke-width: 1; }
+.dv-trace[data-variant='playback'] .dv-trace-grid { stroke-width: .6; }
+.dv-trace .dv-trace-line { fill: none; stroke: currentColor; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.dv-trace[data-variant='playback'] .dv-trace-line { stroke-width: 1.5; stroke-linejoin: round; vector-effect: none; }
+.dv-trace .dv-trace-playhead { stroke: var(--dv-ink); stroke-width: 1; opacity: .65; }
+.dv-trace .dv-trace-dot { fill: currentColor; stroke: var(--dv-paper); stroke-width: 1.5; }
