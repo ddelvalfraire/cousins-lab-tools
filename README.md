@@ -1,5 +1,5 @@
 <p align="center" class="brand-icon">
-  <img src="design/readme-review/assets/icon.png" alt="" width="72" height="72">
+  <img src="assets/branding/dvdash/png/256x256.png" alt="" width="72" height="72">
 </p>
 
 <h1 align="center">DVDash</h1>
@@ -10,7 +10,7 @@
   <a href="LICENSE.txt"><img src="https://img.shields.io/github/license/ddelvalfraire/cousins-lab-tools?labelColor=244c3e&amp;color=063d30" alt="License"></a>
   <a href="https://ddelvalfraire.github.io/cousins-lab-tools/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fddelvalfraire.github.io%2Fcousins-lab-tools%2F&amp;label=docs&amp;up_message=user%20manual&amp;down_message=offline&amp;up_color=063d30&amp;down_color=b42318&amp;labelColor=244c3e" alt="User manual status"></a>
   <a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases"><img src="https://img.shields.io/github/v/release/ddelvalfraire/cousins-lab-tools?include_prereleases&amp;filter=legacy-v*&amp;label=Windows&amp;labelColor=244c3e&amp;color=063d30" alt="Latest Windows lab tools release"></a>
-  <a href="https://app.circleci.com/pipelines/circleci/MkkpKyoh5KZcRqbZnqUuPM/QiTPgqsziZ6UeBALmEUhw"><img src="design/readme-review/assets/badge-ci.svg" alt="View CircleCI pipelines" height="20"></a>
+  <a href="https://app.circleci.com/pipelines/circleci/MkkpKyoh5KZcRqbZnqUuPM/QiTPgqsziZ6UeBALmEUhw"><img src="assets/readme/badge-ci.svg" alt="View CircleCI pipelines" height="20"></a>
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@ DVDash is a scientific desktop application being developed for the **WSU Cousins
 
 ## A look at the workspace
 
-![DVDash experiment workspace with sidebar navigation, centered search, experiment context, recorded readouts, signal charts, and capture controls.](design/readme-review/assets/workspace.png)
+![DVDash experiment workspace with sidebar navigation, centered search, experiment context, recorded readouts, signal charts, and capture controls.](assets/readme/workspace.png)
 
 *Current experiment-workspace design with illustrative data. Instrument workflows are still under development in DVDash.*
 

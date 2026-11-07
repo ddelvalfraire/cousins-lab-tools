@@ -95,7 +95,6 @@ def main():
         for size in SIZES:
             name = f"{size}x{size}.png"
             shutil.copyfile(Path(temporary) / name, png / name)
-    shutil.copyfile(png / "128x128.png", ROOT / "design/readme-review/assets/icon.png")
     print("Generated SVG variants, PNG size exports, and native app icons.")
 
 if __name__ == "__main__":
