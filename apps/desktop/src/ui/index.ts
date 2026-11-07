@@ -11,4 +11,5 @@ export * from './components/PageHeader';
 export * from './components/RightSidebar';
 export * from './components/ExperimentTools';
 export * from './components/CalibrationCurve';
+export * from './components/UnsavedChangesDialog';
 export * from './components/InspectorParts';
