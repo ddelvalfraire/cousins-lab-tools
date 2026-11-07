@@ -1,0 +1,64 @@
+/*
+ * Approved review palette and shared pieces.
+ * Values come from design/dvdash-field-review (light and "Matcha dark").
+ * New components use these tokens; older components keep their own until replaced.
+ */
+.dvdash {
+  --dv-bg: #f8faf8; --dv-paper: #fff; --dv-ink: #24322c; --dv-ink-muted: #617168;
+  --dv-line: #dce3dd; --dv-control: #acbab0; --dv-soft: #edf1ed;
+  --dv-accent: #07543e; --dv-accent-soft: #e5f2e9; --dv-on-accent: #fff;
+  --dv-blue: #326db1; --dv-purple: #7850a1;
+  --dv-info: #224f72; --dv-info-bg: #eff6fb; --dv-info-line: #c9ddea;
+  --dv-warn: #79520c; --dv-warn-bg: #fff7e5; --dv-warn-line: #ead49e;
+  --dv-error: #96362f; --dv-error-bg: #fff0ee; --dv-error-line: #e9bbb7;
+  --dv-success: #175a3b; --dv-success-bg: #edf8ef; --dv-success-line: #c2dfc8;
+  --dv-focus: #4c86c8;
+  --dv-s1: var(--dv-blue); --dv-s2: var(--dv-purple); --dv-s3: #1a8f74; --dv-s4: #b0652a; --dv-s5: #5a6b8c; --dv-s6: #a14a6b;
+}
+[data-mantine-color-scheme='dark'] .dvdash {
+  --dv-bg: #1c2620; --dv-paper: #27332b; --dv-ink: #e7eee5; --dv-ink-muted: #b5c4b5;
+  --dv-line: #45584a; --dv-control: #708574; --dv-soft: #303f34;
+  --dv-accent: #b2d2b4; --dv-accent-soft: #344c39; --dv-on-accent: #1c2620;
+  --dv-blue: #91b8eb; --dv-purple: #c69bdf;
+  --dv-info: #b6d9f4; --dv-info-bg: #142f42; --dv-info-line: #3f6077;
+  --dv-warn: #efd39c; --dv-warn-bg: #3c3019; --dv-warn-line: #796235;
+  --dv-error: #f4bdb6; --dv-error-bg: #402522; --dv-error-line: #805049;
+  --dv-success: #b9e4c8; --dv-success-bg: #173c2a; --dv-success-line: #3e7154;
+  --dv-s3: #6fd1b3; --dv-s4: #e6a46a; --dv-s5: #b3c0dc; --dv-s6: #e59bb8;
+}
+
+/*
+ * Page layout: one width and spacing rule for every page (header, action bar and body).
+ * Content fills the page up to --dv-content-max; past that the side margins grow equally so it stays centred.
+ * --dv-page-gutter is used as a padding inside a full-width page block, where 100% is the page width.
+ * The frame (screens.css) narrows --dv-page-pad and --dv-page-gutter together on small pages.
+ */
+.dvdash {
+  /* Page widths. Standard suits most pages; wide is for the few dense pages that need it (ScreenShell picks per route). */
+  --dv-content-standard: 772px;
+  --dv-content-wide: 1760px;
+  --dv-content-max: var(--dv-content-wide);
+  --dv-page-pad: 24px;
+  --dv-page-gutter: max(var(--dv-page-pad), calc((100% - var(--dv-content-max)) / 2));
+  --dv-page-top: 16px;     /* header to content */
+  --dv-page-bottom: 24px;
+  --dv-gap: 16px;          /* between components, and between cards in a grid */
+  /* Right sidebar: open width, the rail it collapses to, and its slide. */
+  --dv-side-open: 332px; --dv-side-rail: 52px;
+  --dv-side-duration: 240ms; --dv-side-motion: var(--dv-side-duration) cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Chip: small labelled state with an icon (approved catalog "side-chip"). */
+.dv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: 10px; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dv-chip > span { overflow: hidden; text-overflow: ellipsis; }
+.dv-chip > svg { width: 12px; height: 12px; flex: none; }
+.dv-chip[data-tone='accent'] { border-color: color-mix(in srgb, var(--dv-accent), transparent 55%); background: var(--dv-accent-soft); color: var(--dv-accent); }
+.dv-chip[data-tone='warning'] { border-color: var(--dv-warn-line); background: var(--dv-warn-bg); color: var(--dv-warn); }
+
+/* Status word: icon plus word, coloured by state, never colour alone. */
+.dv-status-word { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--dv-ink-muted); white-space: nowrap; }
+.dv-status-word > svg { width: 13px; height: 13px; flex: none; }
+.dv-status-word[data-tone='accent'] { color: var(--dv-accent); }
+.dv-status-word[data-tone='warning'] { color: var(--dv-warn); }
+.dv-status-word[data-tone='error'] { color: var(--dv-error); }
+.dv-status-word[data-tone='info'] { color: var(--dv-info); }
