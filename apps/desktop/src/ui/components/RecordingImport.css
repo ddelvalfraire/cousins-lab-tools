@@ -1,0 +1,29 @@
+/* Recording import content. Values from design/dvdash-field-review/recording-import-review.html. */
+.dv-recording-import-feedback { margin-bottom: 18px; }
+.dv-recording-import-problems { margin: 6px 0 0; padding-inline-start: 16px; font-size: 11px; line-height: 1.65; }
+.dv-recording-import-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 0 0 16px; }
+
+.dv-recording-import-files { margin: 0; padding: 0; list-style: none; }
+.dv-recording-import-file { display: grid; grid-template-columns: 28px minmax(0, 1fr) 25px; gap: 10px; align-items: start; padding: 15px 0; border-bottom: 1px solid var(--dv-line); }
+.dv-recording-import-file:first-child { padding-top: 2px; }
+.dv-recording-import-file-icon { display: grid; place-items: center; width: 27px; height: 31px; color: var(--dv-ink-muted); }
+.dv-recording-import-file-icon svg { width: 22px; height: 22px; }
+.dv-recording-import-file-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dv-recording-import-file-name { margin: 0; font-size: 12px; font-weight: 550; line-height: 1.5; overflow-wrap: anywhere; }
+.dv-recording-import-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 7px; font-size: 10px; color: var(--dv-ink-muted); }
+.dv-recording-import-meta .dv-chip { min-height: 21px; padding: 2px 6px; font-size: 10px; }
+/* The mockup's row note renders at the dialog's 13 px with no margin. */
+.dv-recording-import-note { margin: 0; font-size: 13px; color: var(--dv-ink); }
+
+.dv-recording-import-name { display: block; margin-top: 12px; font-size: 11px; font-weight: 500; }
+.dv-recording-import-name input { display: block; width: 100%; height: 32px; margin-top: 6px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; }
+.dv-recording-import-channels { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+
+.dv-recording-import-preset { display: block; margin-top: 20px; font-size: 12px; font-weight: 550; }
+.dv-recording-import-preset select { display: block; width: 100%; height: 35px; margin-top: 7px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-recording-import-preset small { display: block; margin-top: 6px; font-size: 11px; font-weight: 400; line-height: 1.6; color: var(--dv-ink-muted); }
+
+@media (max-width: 600px) {
+  .dv-recording-import-file { grid-template-columns: 23px minmax(0, 1fr) 24px; gap: 8px; }
+  .dv-recording-import-file-top { flex-wrap: wrap; }
+}
