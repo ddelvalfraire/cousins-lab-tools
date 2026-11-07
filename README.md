@@ -7,10 +7,10 @@
 <p align="center">A modular workspace for scientific instruments, data, and analysis.</p>
 
 <p align="center" class="badges">
-  <a href="LICENSE.txt"><img src="design/readme-review/assets/badge-license.svg" alt="License: MIT" height="26"></a>
-  <a href="https://ddelvalfraire.github.io/cousins-lab-tools/"><img src="design/readme-review/assets/badge-manual.svg" alt="Read the user manual" height="26"></a>
-  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/legacy-v0.2.0-rc.2"><img src="design/readme-review/assets/badge-downloads.svg" alt="Download Windows lab tools v0.2.0-rc.2 — release candidate" height="26"></a>
-  <a href="https://app.circleci.com/pipelines/circleci/MkkpKyoh5KZcRqbZnqUuPM/QiTPgqsziZ6UeBALmEUhw"><img src="design/readme-review/assets/badge-ci.svg" alt="View CircleCI pipelines" height="26"></a>
+  <a href="LICENSE.txt"><img src="https://img.shields.io/github/license/ddelvalfraire/cousins-lab-tools?labelColor=244c3e&amp;color=063d30" alt="License"></a>
+  <a href="https://ddelvalfraire.github.io/cousins-lab-tools/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fddelvalfraire.github.io%2Fcousins-lab-tools%2F&amp;label=docs&amp;up_message=user%20manual&amp;down_message=offline&amp;up_color=063d30&amp;down_color=b42318&amp;labelColor=244c3e" alt="User manual status"></a>
+  <a href="https://github.com/ddelvalfraire/cousins-lab-tools/releases"><img src="https://img.shields.io/github/v/release/ddelvalfraire/cousins-lab-tools?include_prereleases&amp;filter=legacy-v*&amp;label=Windows&amp;labelColor=244c3e&amp;color=063d30" alt="Latest Windows lab tools release"></a>
+  <a href="https://app.circleci.com/pipelines/circleci/MkkpKyoh5KZcRqbZnqUuPM/QiTPgqsziZ6UeBALmEUhw"><img src="design/readme-review/assets/badge-ci.svg" alt="View CircleCI pipelines" height="20"></a>
 </p>
 
 <p align="center">
