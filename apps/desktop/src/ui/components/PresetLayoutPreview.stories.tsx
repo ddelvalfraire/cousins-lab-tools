@@ -1,0 +1,10 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { PresetLayoutPreview } from './PresetLayoutPreview';
+import { presets } from '../screens/screen-fixtures';
+const meta = {title:'Components/PresetLayoutPreview',component:PresetLayoutPreview,tags:['autodocs'],parameters:{previewWidth:360},args:{tiles:presets[0].tiles,label:presets[0].name}} satisfies Meta<typeof PresetLayoutPreview>;
+export default meta;
+type Story=StoryObj<typeof meta>;
+export const GasAnalysis:Story={};
+export const Kinetics:Story={args:{tiles:presets[1].tiles,label:presets[1].name}};
+export const Isotope:Story={args:{tiles:presets[2].tiles,label:presets[2].name}};
+export const Detailed:Story={parameters:{previewWidth:720},args:{detailed:true}};
