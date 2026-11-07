@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate proposed DVDash assets from the editable SVG masters."""
+"""Regenerate the DVDash exports from the SVG masters."""
 import os
 import shutil
 import subprocess
