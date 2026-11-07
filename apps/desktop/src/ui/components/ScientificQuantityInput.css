@@ -1,0 +1,21 @@
+/* Scientific quantity input. Source: design/dvdash-field-review/quantity-input-review.html. */
+.dv-qty-root { color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dv-qty-root :where(h2, p) { margin: 0; }
+.dv-qty-title { font-size: 19px; font-weight: 650; letter-spacing: -.03em; line-height: normal; }
+.dv-qty-lede { font-size: 12px; line-height: 1.6; color: var(--dv-ink-muted); margin-top: 6px; }
+.dv-qty-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 550; }
+.dv-qty-field[data-spaced] { margin-top: 20px; }
+.dv-qty { display: flex; align-items: stretch; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); }
+.dv-qty:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-qty:has([aria-invalid='true']) { border-color: var(--dv-error); }
+.dv-qty :where(input, select) { font: inherit; }
+.dv-qty input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--dv-ink); padding: 9px 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.dv-qty select { border: 0; border-left: 1px solid var(--dv-line); background: var(--dv-bg); color: var(--dv-ink); padding: 0 10px; font-size: 13px; border-radius: 0 5px 5px 0; outline: none; cursor: pointer; touch-action: manipulation; }
+.dv-qty select:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: -2px; }
+.dv-qty :disabled { cursor: default; opacity: .5; }
+.dv-qty-hint { font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); font-weight: 400; }
+.dv-qty-messages { margin-top: 12px; }
+.dv-qty-stored { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--dv-line); font-size: 12px; line-height: 1.5; }
+.dv-qty-stored dt { color: var(--dv-ink-muted); }
+.dv-qty-stored dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dv-qty-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
