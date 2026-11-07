@@ -40,3 +40,4 @@ export * from './components/RevisionHistory';
 export * from './components/SavedVersions';
 export * from './components/ExperimentWorkspace';
 export * from './components/CommandCenter';
+export * from './components/KeyboardShortcuts';
