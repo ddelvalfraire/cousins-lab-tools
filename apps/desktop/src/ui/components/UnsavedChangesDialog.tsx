@@ -9,19 +9,25 @@ export function GuardDialog({ opened, title, busy, onKeep, keepLabel, keepRef, a
   opened: boolean; title: string; busy: boolean; onKeep: () => void; keepLabel: string;
   keepRef?: RefObject<HTMLButtonElement | null>; actions: ReactNode; children: ReactNode;
 }) {
-  return <Modal
-    opened={opened} onClose={() => { if (!busy) onKeep(); }} title={title} centered size={460} padding={0} xOffset={16}
-    withCloseButton={false} closeOnClickOutside={false} closeOnEscape={!busy}
-    overlayProps={{ color: '#0e1a14', backgroundOpacity: 0.4 }} transitionProps={{ duration: 120 }}
+  // Compound parts so the header is not a second page banner beside the window bar's <header> (as KeyboardShortcuts).
+  return <Modal.Root
+    opened={opened} onClose={() => { if (!busy) onKeep(); }} centered size={460} padding={0} xOffset={16}
+    closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
     classNames={{ root: 'dvdash', inner: 'dv-guard-inner', content: 'dv-guard', header: 'dv-guard-header', title: 'dv-guard-title', body: 'dv-guard-body' }}
   >
-    <div className="dv-guard-main">{children}</div>
-    <div className="dv-guard-actions">
-      <UnstyledButton ref={keepRef} className="dv-guard-button" data-autofocus disabled={busy} onClick={onKeep}>{keepLabel}</UnstyledButton>
-      <span className="dv-guard-spacer" />
-      {actions}
-    </div>
-  </Modal>;
+    <Modal.Overlay color="#0e1a14" backgroundOpacity={0.4} />
+    <Modal.Content>
+      <Modal.Header role="none"><Modal.Title>{title}</Modal.Title></Modal.Header>
+      <Modal.Body>
+        <div className="dv-guard-main">{children}</div>
+        <div className="dv-guard-actions">
+          <UnstyledButton ref={keepRef} className="dv-guard-button" data-autofocus disabled={busy} onClick={onKeep}>{keepLabel}</UnstyledButton>
+          <span className="dv-guard-spacer" />
+          {actions}
+        </div>
+      </Modal.Body>
+    </Modal.Content>
+  </Modal.Root>;
 }
 
 /** Focuses `ref` when `when` turns true, e.g. the Retry button after an attempt fails. */

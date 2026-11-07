@@ -188,6 +188,17 @@ test('charts fill narrow cards instead of scrolling past them', async ({ page })
   }
 });
 
+test('confirmation dialogs add no second page banner', async ({ page }) => {
+  for (const id of ['screens-experiment--stop-confirmation', 'components-unsavedchangesdialog--one-change']) {
+    await page.goto(`/iframe.html?id=${id}&viewMode=story`);
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('heading')).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('banner'), id).toHaveCount(0);
+    const result = await new AxeBuilder({ page }).withRules(['landmark-no-duplicate-banner', 'landmark-unique']).analyze();
+    expect(result.violations.map(v => v.id), id).toEqual([]);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
