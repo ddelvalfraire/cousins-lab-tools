@@ -13,3 +13,4 @@ export * from './components/ExperimentTools';
 export * from './components/CalibrationCurve';
 export * from './components/UnsavedChangesDialog';
 export * from './components/InspectorParts';
+export * from './components/ImportDialog';

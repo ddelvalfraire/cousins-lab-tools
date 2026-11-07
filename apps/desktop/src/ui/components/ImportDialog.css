@@ -1,0 +1,93 @@
+/*
+ * Shared import and export dialog shell.
+ * Values from design/dvdash-field-review/recording-import-review.html (.recording-dialog and .import-*).
+ */
+/* Mantine's fixed layer sets no left offset, so a flex-centred body would shift it. */
+.dv-import-inner { left: 0; }
+.dvdash .dv-import-dialog {
+  /* Mockup --p-red: file errors and failures. */
+  --dv-import-red: #ad3737;
+  border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-paper); color: var(--dv-ink);
+  box-shadow: 0 12px 32px #0b211518; font-size: 13px; line-height: normal;
+  /* In a window shorter than the dialog, the body shrinks and scrolls; the title and actions stay in view. */
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.dv-import-dialog > * { flex: none; }
+.dv-import-dialog > .dv-import-body { flex: 0 1 auto; min-height: 0; }
+[data-mantine-color-scheme='dark'] .dvdash .dv-import-dialog { --dv-import-red: #ecb0a9; }
+.dv-import-dialog :where(h2, h3, h4, p) { margin: 0; }
+.dv-import-dialog button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+.dv-import-dialog button:disabled { cursor: default; }
+.dv-import-dialog :is(button, input, select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 3px; }
+
+.dv-import-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; padding: 24px 24px 17px; }
+.dvdash .dv-import-title { margin: 0; font-size: 21px; font-weight: 650; line-height: 1.4; letter-spacing: -.35px; overflow-wrap: anywhere; }
+.dv-import-title:focus { outline: none; }
+.dvdash .dv-import-description { padding: 0; margin-top: 6px; font-size: 12px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-import-close { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 5px; background: none; color: var(--dv-ink-muted); }
+.dv-import-close svg { width: 17px; height: 17px; }
+.dv-import-close:hover:not(:disabled) { background: var(--dv-soft); }
+
+.dv-import-steps, .dv-import-step { display: flex; align-items: center; gap: 10px; }
+.dv-import-steps { padding: 0 24px 18px; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-import-steps [aria-current='step'] { color: var(--dv-ink); font-weight: 600; }
+.dv-import-steps svg { width: 12px; height: 12px; }
+
+.dv-import-body { padding: 0 24px; overflow: auto; overscroll-behavior: contain; }
+
+.dv-import-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 24px; }
+.dv-import-actions { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+.dv-import-footer-note { font-size: 11px; color: var(--dv-ink-muted); }
+
+.dv-import-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; padding: 9px 13px; border: 0; border-radius: 5px; background: var(--dv-accent); color: var(--dv-on-accent); font-size: 12px; font-weight: 550; white-space: nowrap; }
+.dv-import-dialog .dv-import-button { font-size: 12px; font-weight: 550; color: var(--dv-on-accent); }
+.dv-import-button:disabled { opacity: .5; }
+.dv-import-dialog .dv-import-button[data-variant='quiet'] { gap: 6px; min-height: 0; padding: 8px 3px; border-radius: 3px; background: none; color: var(--dv-ink-muted); font-weight: 400; }
+.dv-import-button[data-variant='quiet']:hover:not(:disabled) { color: var(--dv-ink); }
+.dv-import-button[data-variant='quiet']:disabled { opacity: 1; }
+.dv-import-dialog .dv-import-button[data-variant='link'] { gap: 6px; min-height: 0; margin-top: 14px; padding: 3px 0; border-radius: 0; background: none; color: var(--dv-accent); font-size: 11px; font-weight: 400; }
+.dv-import-button[data-variant='link'] svg { width: 13px; height: 13px; }
+
+.dv-import-dropzone { padding: 30px 16px; border: 1px dashed var(--dv-line); border-radius: 7px; background: var(--dv-bg); text-align: center; outline-offset: 3px; }
+.dv-import-dropzone > svg { display: block; width: 24px; height: 24px; margin: 0 auto 13px; color: var(--dv-ink-muted); }
+.dv-import-dropzone strong { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 550; }
+.dv-import-dropzone p { margin-bottom: 12px; font-size: 11px; color: var(--dv-ink-muted); }
+
+.dv-import-status { display: flex; flex: none; align-items: center; gap: 4px; font-size: 10px; color: var(--dv-accent); white-space: nowrap; }
+.dv-import-status > svg { width: 12px; height: 12px; }
+.dv-import-status[data-tone='error'] { color: var(--dv-import-red); }
+.dv-import-status[data-tone='busy'] { color: var(--dv-ink-muted); }
+.dv-import-status-loader.mantine-Loader-root { --loader-size: 10px; --loader-color: currentColor; }
+
+.dv-import-working { display: flex; align-items: center; gap: 11px; min-height: 52px; }
+.dv-import-working strong { font-size: 12px; font-weight: 550; line-height: 1.5; }
+.dv-import-working p { margin-top: 4px; font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-import-working-export { min-height: 0; padding: 20px 0 12px; }
+.dv-import-working-export strong { display: block; font-size: 13px; }
+.dv-import-working-export p { margin-top: 5px; }
+.dv-import-loader { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 18px; }
+.dv-import-working-export .dv-import-loader { width: 20px; }
+.dv-import-loader-ring.mantine-Loader-root { --loader-size: 12px; --loader-color: var(--dv-accent); }
+
+.dv-import-progress { margin-bottom: 16px; }
+.dv-import-progress-label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-size: 12px; }
+.dv-import-progress-label strong { font-weight: 700; }
+.dv-import-progress-track { height: 5px; overflow: hidden; border-radius: 3px; background: var(--dv-soft); }
+.dv-import-progress-fill { height: 5px; border-radius: 3px; background: var(--dv-accent); transition: width 180ms; }
+
+/* Shared metadata chip size inside dialogs (.side-chip without a fill). */
+.dv-import-dialog .dv-chip { background: transparent; }
+
+@media (max-width: 600px) {
+  .dv-import-head { padding: 20px 18px 15px; }
+  .dvdash .dv-import-title { font-size: 20px; }
+  .dv-import-steps { padding-inline: 18px; }
+  .dv-import-body { padding-inline: 18px; }
+  .dv-import-footer { flex-wrap: wrap; padding: 20px 18px; }
+  .dv-import-actions { gap: 13px; }
+  .dv-import-footer-note { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dv-import-progress-fill { transition: none; }
+  .dv-import-dialog .mantine-Loader-root::after { animation: none; }
+}
