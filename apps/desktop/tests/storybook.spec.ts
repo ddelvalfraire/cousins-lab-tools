@@ -312,6 +312,19 @@ test('experiment cards share one title size, and the calibration card keeps its 
   }
 });
 
+test('the routine step connector runs through the step number centres', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:routine-edit');
+  await expect(page.locator('.dv-re-step-number').first()).toBeVisible();
+  const offsets = await page.locator('.dv-re-step + .dv-re-step').evaluateAll(steps => steps.map(step => {
+    const box = step.getBoundingClientRect(), line = getComputedStyle(step, '::before'), badge = step.querySelector('.dv-re-step-number')!.getBoundingClientRect();
+    const x = box.left + parseFloat(getComputedStyle(step).borderLeftWidth) + parseFloat(line.left) + parseFloat(line.borderLeftWidth) / 2;
+    return x - (badge.left + badge.width / 2);
+  }));
+  expect(offsets.length).toBeGreaterThan(0);
+  for (const offset of offsets) expect(Math.abs(offset), 'connector to number centre').toBeLessThanOrEqual(0.5);
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
