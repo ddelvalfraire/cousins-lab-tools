@@ -214,7 +214,7 @@ export function PanelCard({ panel, index, total, signals, span, selected = false
     {resizing && <span className="pe-size-badge" data-limit={resizing.limited || undefined}>{resizing.limited ? `Minimum width for ${MIN_WORD[panel.kind]}` : `${WIDTH_NAMES[span]} · ${span} of 12 columns`}</span>}
     <div className="pe-panel-head">
       <button type="button" className="pe-tool pe-grip" data-grip={ghost ? undefined : panel.id} aria-label={`Move ${name}`} aria-describedby={ghost ? undefined : helpId} aria-pressed={lifted} data-hover={hover === 'grip' || undefined} tabIndex={tab} onPointerDown={onGripPointerDown} onKeyDown={onGripKeyDown}><IconGripVertical aria-hidden /></button>
-      <h3>{name}</h3>
+      <h3 title={name}>{name}</h3>
       <div className="pe-tools">
         <button type="button" className="pe-tool" data-shift={ghost ? undefined : panel.id} data-dir="-1" aria-label={`Move ${name} earlier`} disabled={index === 0} tabIndex={tab} onClick={() => onShift?.(-1)}><IconChevronLeft aria-hidden /></button>
         <button type="button" className="pe-tool" data-shift={ghost ? undefined : panel.id} data-dir="1" aria-label={`Move ${name} later`} disabled={index === total - 1} tabIndex={tab} onClick={() => onShift?.(1)}><IconChevronRight aria-hidden /></button>

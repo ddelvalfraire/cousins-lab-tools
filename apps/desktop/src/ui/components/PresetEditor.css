@@ -65,7 +65,9 @@
 
 .pe-panel-head { display: flex; align-items: center; gap: 8px; min-height: 28px; }
 .pe-panel-head h3 { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pe-tools { display: flex; gap: 2px; opacity: 0; transition: opacity 120ms ease; }
+/* The tools show only on hover, focus or selection, so they sit over the end of the head instead of keeping
+   88 px from the title at rest. The panel's padding places them on the head. */
+.pe-tools { position: absolute; top: 12px; right: 14px; display: flex; gap: 2px; border-radius: 5px; background: var(--dv-paper); opacity: 0; transition: opacity 120ms ease; }
 .pe-panel:hover .pe-tools, .pe-panel:focus-within .pe-tools, .pe-panel[data-selected='true'] .pe-tools { opacity: 1; }
 .dv-preset-editor .pe-tool { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--dv-ink-muted); }
 .dv-preset-editor .pe-tool:hover:not(:disabled), .dv-preset-editor .pe-tool[data-hover='true'] { background: var(--dv-soft); color: var(--dv-ink); }
@@ -142,7 +144,8 @@
   .pe-canvas { grid-template-columns: minmax(0, 1fr); }
   .pe-canvas > .pe-panel, .pe-canvas > .pe-placeholder { grid-column: 1 / -1 !important; }
   .pe-resize, .pe-guides { display: none; }
-  .pe-tools { opacity: 1; }
+  /* Always shown here, so they take their place in the head again. */
+  .pe-tools { position: static; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .dv-preset-editor * { animation: none !important; transition: none !important; } }
 

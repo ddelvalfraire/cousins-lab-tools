@@ -257,6 +257,26 @@ test('routine steps in a narrow editor keep their titles, chips and tools inside
   }
 });
 
+test('preset editor panel titles use the whole head while the panel tools are hidden', async ({ page }) => {
+  for (const [width, height] of [[1440, 900], [1280, 720]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:preset-edit');
+    await expect(page.locator('.pe-panel h3').first()).toBeVisible();
+    await page.mouse.move(0, height - 1);
+    const titles = await page.locator('.pe-panel:not(.pe-ghost):not([data-selected=true]) .pe-panel-head h3 >> visible=true').evaluateAll(els => els.map(h => ({ name: h.textContent, shown: h.clientWidth, full: h.scrollWidth, title: h.getAttribute('title') })));
+    expect(titles.length, `${width}`).toBeGreaterThan(4);
+    for (const t of titles) {
+      expect(t.shown, `${width} ${t.name} shown in full`).toBeGreaterThanOrEqual(t.full);
+      expect(t.title, `${width} ${t.name} tooltip`).toBe(t.name);
+    }
+    const panel = page.locator('.pe-panel:not(.pe-ghost)').first();
+    await panel.hover();
+    const [tools, head] = await panel.evaluate(p => [p.querySelector('.pe-tools')!.getBoundingClientRect(), p.querySelector('.pe-panel-head')!.getBoundingClientRect()].map(r => ({ top: r.top, bottom: r.bottom, right: r.right })));
+    expect(Math.abs(tools.right - head.right), `${width} tools at the head's right edge`).toBeLessThanOrEqual(1);
+    expect(tools.top >= head.top - 1 && tools.bottom <= head.bottom + 1, `${width} tools inside the head`).toBe(true);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
