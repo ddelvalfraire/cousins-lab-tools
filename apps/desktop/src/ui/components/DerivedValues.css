@@ -1,0 +1,23 @@
+/* Derived values: plain list of preset outputs, written as equations. */
+.dv-derived { background: var(--dv-paper); color: var(--dv-ink); border: 1px solid var(--dv-line); border-radius: 12px; padding: 20px 24px 24px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; min-width: 0; }
+.dv-derived-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.dv-derived-head h2 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -.02em; line-height: normal; }
+.dv-derived-head span { font-size: 11px; color: var(--dv-ink-muted); }
+.dv-derived-lede { margin: 0 0 6px; font-size: 12px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-derived-list { list-style: none; margin: 0; padding: 0; }
+.dv-derived-row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 6px 24px; padding: 16px 0; border-top: 1px solid var(--dv-line); }
+.dv-derived-row:first-child { border-top: 0; }
+.dv-derived-row h3 { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.dv-derived-unit { display: block; margin-top: 3px; font-size: 11px; font-weight: 400; color: var(--dv-ink-muted); }
+.dv-derived-equation { margin: 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.dv-derived-equation .dv-derived-eq { margin-right: 4px; color: var(--dv-ink-muted); }
+.dv-derived-where { margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: var(--dv-ink-muted); overflow-wrap: anywhere; }
+.dv-derived-where b { font-weight: 600; color: var(--dv-ink); }
+.dv-derived-problem { display: flex; align-items: flex-start; gap: 6px; margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--dv-warn); }
+.dv-derived-problem svg { width: 14px; height: 14px; margin-top: 2px; flex: none; }
+.dv-derived-row[data-unavailable='true'] .dv-derived-equation { color: var(--dv-ink-muted); }
+.dv-derived-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@media (max-width: 600px) {
+  .dv-derived { padding: 18px 16px; }
+  .dv-derived-row { grid-template-columns: minmax(0, 1fr); }
+}

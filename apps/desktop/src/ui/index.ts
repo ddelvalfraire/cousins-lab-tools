@@ -10,6 +10,7 @@ export * from './components/SideNavigation';
 export * from './components/PageHeader';
 export * from './components/RightSidebar';
 export * from './components/ExperimentTools';
+export * from './components/DerivedValues';
 export * from './components/CalibrationCurve';
 export * from './components/ProblemsPanel';
 export * from './components/UnsavedChangesDialog';
