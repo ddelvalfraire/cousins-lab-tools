@@ -34,6 +34,7 @@
 .dv-import-steps svg { width: 12px; height: 12px; }
 
 .dv-import-body { padding: 0 24px; overflow: auto; overscroll-behavior: contain; }
+.dv-import-body:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: -2px; }
 
 .dv-import-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 24px; }
 .dv-import-actions { display: flex; align-items: center; gap: 16px; margin-left: auto; }

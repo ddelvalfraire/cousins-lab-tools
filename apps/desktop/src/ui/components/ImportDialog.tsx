@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent, type DragEvent, type ReactNode } from 'react';
+import { useId, useRef, type ChangeEvent, type DragEvent, type ReactNode } from 'react';
 import { Loader, Modal } from '@mantine/core';
 import './Approved.css';
 import './ImportDialog.css';
@@ -59,7 +59,8 @@ export interface ImportDialogProps {
  */
 export function ImportDialog({ opened, onClose, title, description, steps, step = 0, busy = false, closeLabel = 'Close dialog', footerStart, actions, bodyMaxHeight = 540, className, children }: ImportDialogProps) {
   const close = () => { if (!busy) onClose(); };
-  return <Modal.Root opened={opened} onClose={close} centered size={580} xOffset={10} closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
+  const id = useId();
+  return <Modal.Root id={id} opened={opened} onClose={close} centered size={580} xOffset={10} closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
     classNames={{ root: 'dvdash', inner: 'dv-import-inner', content: className ? `dv-import-dialog ${className}` : 'dv-import-dialog' }}>
     <Modal.Overlay color="#0e1a14" backgroundOpacity={0.4} />
     <Modal.Content>
@@ -76,7 +77,8 @@ export function ImportDialog({ opened, onClose, title, description, steps, step 
           <span aria-current={i === step ? 'step' : undefined}>{label}</span>
         </span>)}
       </nav>}
-      <div className="dv-import-body" style={{ maxHeight: bodyMaxHeight }}>{children}</div>
+      {/* Focusable so the body scrolls from the keyboard while its own controls are disabled (importing). */}
+      <div className="dv-import-body" role="region" aria-labelledby={`${id}-title`} tabIndex={0} style={{ maxHeight: bodyMaxHeight }}>{children}</div>
       {(footerStart || actions) && <footer className="dv-import-footer">
         {footerStart ?? <span />}
         {actions && <div className="dv-import-actions">{actions}</div>}
