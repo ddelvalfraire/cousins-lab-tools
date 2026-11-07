@@ -17,3 +17,5 @@ export * from './components/ImportDialog';
 export * from './components/RecordingImport';
 export * from './components/PresetImport';
 export * from './components/RecordingExport';
+export * from './components/RevisionHistory';
+export * from './components/SavedVersions';
