@@ -20,3 +20,4 @@ export * from './components/PresetImport';
 export * from './components/RecordingExport';
 export * from './components/RevisionHistory';
 export * from './components/SavedVersions';
+export * from './components/ExperimentWorkspace';
