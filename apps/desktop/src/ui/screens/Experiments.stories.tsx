@@ -1,0 +1,10 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
+import { DVDashWorkspace } from './Workspace';
+import { renderScreen } from './screen-story';
+const meta={title:'Screens/Experiments',component:DVDashWorkspace,render:renderScreen,parameters:{layout:'fullscreen',previewWidth:'viewport'},args:{initialPage:'experiments',empty:false}} satisfies Meta<typeof DVDashWorkspace>;
+export default meta;
+type Story=StoryObj<typeof meta>;
+export const Home:Story={};
+export const FirstUse:Story={args:{empty:true}};
+export const NewExperimentFlow:Story={play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'New experiment'}));await expect(canvas.getByRole('heading',{name:'New experiment',level:1})).toBeVisible();await userEvent.clear(canvas.getByLabelText('Experiment name',{exact:true}));await userEvent.type(canvas.getByLabelText('Experiment name',{exact:true}),'Review specimen');await userEvent.click(canvas.getByRole('button',{name:'Open experiment'}));await expect(canvas.getByRole('heading',{name:'Review specimen',level:1})).toBeVisible();}};
