@@ -16,6 +16,8 @@ export * from './components/ProblemsPanel';
 export * from './components/UnsavedChangesDialog';
 export * from './components/AcquisitionControls';
 export * from './components/CatalogTable';
+export * from './components/PresetCatalog';
+export * from './components/InstrumentCatalog';
 export * from './components/InspectorParts';
 export * from './components/CalibrationChecklist';
 export * from './components/RecordingAlignment';
