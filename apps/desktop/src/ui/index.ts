@@ -16,3 +16,4 @@ export * from './components/InspectorParts';
 export * from './components/ImportDialog';
 export * from './components/RecordingImport';
 export * from './components/PresetImport';
+export * from './components/RecordingExport';

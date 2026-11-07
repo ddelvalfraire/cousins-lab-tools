@@ -1,0 +1,65 @@
+/* Recording export content. Values from design/dvdash-field-review/recording-export-review.html. */
+.dv-export-identity { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+.dv-export-identity > svg { flex: none; width: 17px; height: 17px; color: var(--dv-ink-muted); }
+.dv-export-identity strong { font-size: 12px; font-weight: 550; line-height: 1.5; }
+.dv-export-identity .dv-chip { margin-left: auto; }
+.dv-export-feedback { margin-bottom: 16px; }
+
+.dv-export-result { display: flex; align-items: flex-start; gap: 12px; padding: 7px 0 12px; }
+.dv-export-result > svg { flex: none; width: 25px; height: 25px; color: var(--dv-accent); }
+.dv-export-result strong { font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.dv-export-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+
+.dv-export-section { min-width: 0; margin: 0 0 20px; padding: 0; border: 0; }
+.dv-export-section legend { margin: 0 0 11px; padding: 0; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.dv-export-scope { display: flex; align-items: center; gap: 10px; padding: 11px 9px; border-radius: 5px; cursor: pointer; }
+.dv-export-scope:has(input:checked) { background: var(--dv-soft); }
+.dv-export-scope input, .dv-export-signal input, .dv-export-context input { flex: none; width: 15px; height: 15px; margin: 0; accent-color: var(--dv-accent); }
+.dv-export-scope-copy { flex: 1; min-width: 0; }
+.dv-export-scope-copy strong { display: block; font-size: 12px; font-weight: 500; line-height: 1.5; }
+.dv-export-scope-copy small { display: block; margin-top: 3px; font-size: 10px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-export-scope .dv-chip { flex: none; margin-left: auto; }
+
+.dv-export-interval { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 9px 0; }
+.dv-export-time-field { display: block; min-width: 0; font-size: 11px; font-weight: 500; }
+.dv-export-time-input { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 0 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); }
+.dv-export-time-input input { width: 100%; min-width: 0; height: 31px; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; font-variant-numeric: tabular-nums; }
+.dv-export-time-input span { flex: none; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-export-time-input:focus-within, .dv-export-filename:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-export-dialog .dv-export-time-input input:focus-visible, .dv-export-dialog .dv-export-filename input:focus-visible { outline: none; }
+.dv-export-time-input:has(input:disabled) { background: var(--dv-soft); }
+.dv-export-time-input input:disabled { color: var(--dv-ink-muted); }
+.dv-export-time-input:has(input[aria-invalid='true']) { border-color: var(--dv-import-red); }
+.dv-export-interval-hint { margin: 7px 9px 0; font-size: 10px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-export-interval-feedback { margin: 10px 9px 0; }
+
+.dv-export-divider { margin: 18px 0; border-top: 1px solid var(--dv-line); }
+.dv-export-group-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.dv-export-group-heading h3 { margin: 0; font-size: 12px; font-weight: 600; }
+.dv-export-group-heading span { font-size: 10px; color: var(--dv-ink-muted); }
+.dv-export-signal-groups { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; }
+.dv-export-signal-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.dv-export-signal-group legend { margin-bottom: 6px; padding: 0; font-size: 11px; font-weight: 400; color: var(--dv-ink-muted); }
+.dv-export-signal { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 8px 0; font-size: 12px; cursor: pointer; }
+.dv-export-signal-name { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-width: 0; }
+.dv-export-unit { margin-left: auto; font-size: 11px; color: var(--dv-ink-muted); white-space: nowrap; }
+.dv-export-source { padding: 2px 4px; border-radius: 3px; background: var(--dv-soft); color: var(--dv-ink-muted); font-size: 9px; }
+
+.dv-export-field-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 14px; align-items: start; }
+.dv-export-field { display: block; min-width: 0; font-size: 12px; font-weight: 550; }
+.dv-export-field select { width: 100%; height: 34px; margin-top: 7px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-export-filename { display: flex; align-items: center; gap: 5px; min-width: 0; margin-top: 7px; padding: 0 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); }
+.dv-export-filename[data-invalid='true'] { border-color: var(--dv-import-red); }
+.dv-export-filename input { width: 100%; min-width: 0; height: 32px; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-export-extension { flex: none; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-export-name-feedback { margin-top: 10px; }
+.dv-export-context { display: flex; align-items: center; gap: 9px; margin-top: 14px; font-size: 11px; color: var(--dv-ink); }
+.dv-export-context[data-disabled='true'] { color: var(--dv-ink-muted); }
+.dv-export-context-note { margin: 6px 0 0 24px; font-size: 10px; line-height: 1.6; color: var(--dv-ink-muted); }
+
+@media (max-width: 600px) {
+  .dv-export-field-row { grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; }
+  .dv-export-scope { padding-inline: 7px; }
+  .dv-export-scope .dv-chip { padding-inline: 5px; font-size: 9px; }
+  .dv-export-signal-groups { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
