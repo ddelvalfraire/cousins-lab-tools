@@ -22,7 +22,10 @@
 .dv-shell-searchbox input { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: 12px; appearance: none; }
 .dv-shell-searchbox input::-webkit-search-cancel-button { display: none; }
 .dvdash .dv-shell-searchbox input::placeholder { color: var(--dv-ink-muted); }
-.dv-shell-shortcut { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 0; color: var(--dv-ink-muted); }
+.dv-shell-shortcut { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--dv-ink-muted); }
+.dv-shell-clear { display: inline-grid; flex: none; place-items: center; width: 20px; height: 24px; padding: 0; border: 0; background: none; color: var(--dv-ink-muted); }
+.dv-shell-clear .dv-shell-ico { width: 12px; height: 12px; }
+.dv-shell-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .dv-shell-tools { display: flex; gap: 3px; margin-left: auto; }
 .dv-shell-icon-button { display: inline-grid; flex: none; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--dv-nav-text); }
 .dv-shell-icon-button:hover { background: var(--dv-nav-hover); color: var(--dv-nav-strong); }

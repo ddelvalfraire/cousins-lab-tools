@@ -233,6 +233,22 @@ test('import and export dialogs keep their actions in view in a short window and
   }
 });
 
+test('the command center tabs scroll sideways under a mouse wheel in a narrow window', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await story(page, 'screens-experiments--home');
+  await page.keyboard.press('Control+k');
+  const tabs = page.getByRole('group', { name: 'Search result type' });
+  const last = tabs.getByRole('button', { name: 'Instruments', exact: true });
+  const lastShown = async () => {
+    const [row, tab] = [await tabs.boundingBox(), await last.boundingBox()];
+    return tab!.x >= row!.x - 0.5 && tab!.x + tab!.width <= row!.x + row!.width + 0.5;
+  };
+  expect(await lastShown(), 'the last tab starts past the edge').toBe(false);
+  await tabs.hover(); await page.mouse.wheel(0, 300);
+  await expect.poll(lastShown, { message: 'a vertical wheel brings the last tab into view' }).toBe(true);
+  await expect(page.getByRole('combobox', { name: 'Search all DVDash' })).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);
