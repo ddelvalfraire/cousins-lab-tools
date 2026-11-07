@@ -1,0 +1,45 @@
+/* Preset import content. Values from design/dvdash-field-review/preset-import-review.html. */
+.dv-preset-thumb { display: block; flex: none; box-sizing: border-box; width: 78px; height: 49px; padding: 4px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-bg); }
+.dv-preset-thumb svg { display: block; width: 100%; height: 100%; }
+.dv-preset-thumb-tile { fill: var(--dv-paper); stroke: var(--dv-line); stroke-width: .6; }
+.dv-preset-thumb-trace { fill: none; stroke: var(--dv-blue); stroke-width: 1.1; }
+.dv-preset-thumb-trace-alt { fill: none; stroke: var(--dv-purple); stroke-width: 1.1; }
+
+.dv-preset-import-file { display: flex; align-items: center; gap: 9px; min-width: 0; margin-bottom: 18px; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-preset-import-file > svg { flex: none; width: 17px; height: 17px; }
+.dv-preset-import-file > span { overflow-wrap: anywhere; }
+.dv-preset-import-ready { display: flex; align-items: center; min-height: 52px; }
+.dv-preset-import-feedback { margin-bottom: 16px; }
+.dv-preset-import-problems { margin: 6px 0 0; padding-inline-start: 16px; font-size: 11px; line-height: 1.65; }
+
+.dv-preset-import-overview { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 17px; align-items: center; margin-bottom: 20px; }
+.dv-preset-import-overview .dv-preset-thumb { width: 150px; height: 100px; padding: 6px; }
+.dv-preset-import-identity { min-width: 0; }
+.dv-preset-import-identity h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; letter-spacing: -.15px; overflow-wrap: anywhere; }
+.dv-preset-import-identity p { margin: 6px 0 11px; font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-preset-import-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.dv-preset-import-name { display: block; font-size: 12px; font-weight: 550; }
+.dv-preset-import-name input { display: block; width: 100%; height: 34px; margin-top: 7px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-preset-import-name input:disabled { background: var(--dv-soft); color: var(--dv-ink-muted); }
+
+.dv-preset-import-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--dv-line); }
+.dv-preset-import-section h4 { margin: 0 0 12px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.dv-preset-import-routine { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dv-preset-import-routine + .dv-preset-import-routine { margin-top: 14px; }
+.dv-preset-import-routine strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.5; }
+.dv-preset-import-routine .dv-preset-import-chips { margin-top: 7px; }
+.dv-preset-import-included { display: inline-flex; flex: none; align-items: center; gap: 4px; padding-top: 2px; font-size: 10px; color: var(--dv-accent); }
+.dv-preset-import-included svg { width: 12px; height: 12px; }
+.dv-preset-import-role-group + .dv-preset-import-role-group { margin-top: 14px; }
+.dv-preset-import-role { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
+.dv-preset-import-role strong { font-weight: 550; }
+.dv-preset-import-role-signals { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 9px; }
+.dv-preset-import-info { margin-top: 16px; }
+
+@media (max-width: 600px) {
+  .dv-preset-import-overview { grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }
+  .dv-preset-import-overview .dv-preset-thumb { width: 112px; height: 85px; }
+  .dv-preset-import-identity h3 { font-size: 14px; }
+  .dv-preset-import-routine { flex-wrap: wrap; }
+}

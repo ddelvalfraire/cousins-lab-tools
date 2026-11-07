@@ -15,3 +15,4 @@ export * from './components/UnsavedChangesDialog';
 export * from './components/InspectorParts';
 export * from './components/ImportDialog';
 export * from './components/RecordingImport';
+export * from './components/PresetImport';
