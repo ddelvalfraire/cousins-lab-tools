@@ -32,7 +32,7 @@ const clockText = (seconds: number) => {
 /** Approved.css tokens used on the canvas: --dv-line, --dv-ink-muted and --dv-soft. */
 const frameColors = { light: { line: '#dce3dd', muted: '#617168', soft: '#edf1ed' }, dark: { line: '#45584a', muted: '#b5c4b5', soft: '#303f34' } } as const;
 
-export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLabel = 'Signal (mV)', range, limits, logarithmic = false, selection, onSelection, points = false, height = 280, minimumWidth = 540, sparse, unit, marker, clock, band = 'lime' }: {
+export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLabel = 'Signal (mV)', range, limits, logarithmic = false, selection, onSelection, points = false, height = 280, minimumWidth = 240, sparse, unit, marker, clock, band = 'lime' }: {
   data: uPlot.AlignedData; series: PlotSeries[]; xLabel?: string; yLabel?: string;
   range?: [number, number]; limits?: [number, number]; logarithmic?: boolean;
   selection?: [number, number]; onSelection?: (interval: [number, number]) => void; points?: boolean; height?: number; minimumWidth?: number;

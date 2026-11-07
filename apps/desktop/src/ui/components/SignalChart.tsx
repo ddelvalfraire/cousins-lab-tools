@@ -112,7 +112,7 @@ const isolated: uPlot.Series.Points.Filter = (u, si, show) => {
 };
 
 interface BandBox { left: number; top: number; width: number; height: number; label: string }
-function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, points, height = 280, minimumWidth = 540, xLabel = 'Elapsed time (s)', yLabel = 'Signal (mV)' }: {
+function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, points, height = 280, minimumWidth = 240, xLabel = 'Elapsed time (s)', yLabel = 'Signal (mV)' }: {
   data: uPlot.AlignedData; labels: string[]; bands: { from: number; to: number }[]; limits?: [number, number];
   logarithmic: boolean; logDecades: boolean; points: boolean; height?: number; minimumWidth?: number; xLabel?: string; yLabel?: string;
 }) {

@@ -177,6 +177,17 @@ test('the narrow page header wraps its status chips instead of cutting them', as
   }
 });
 
+test('charts fill narrow cards instead of scrolling past them', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const id of ['components-signalchart--recorded', 'components-scientificplot--time-series', 'components-gassignals--selected-interval']) {
+    await story(page, id);
+    await expect(page.locator('.uplot').first()).toBeVisible();
+    const [plot, card] = await page.locator('.uplot').first().evaluate(u => [u.getBoundingClientRect().width, u.parentElement!.clientWidth]);
+    expect(card, id).toBeLessThan(390);
+    expect(plot, `${id} plot width within its card`).toBeLessThanOrEqual(card);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
