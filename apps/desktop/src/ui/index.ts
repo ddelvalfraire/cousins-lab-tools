@@ -14,6 +14,7 @@ export * from './components/ExperimentTools';
 export * from './components/Catalog';
 export * from './components/RoutineEditor';
 export * from './components/ExperimentsList';
+export * from './components/SettingsPage';
 export * from './components/DerivedValues';
 export * from './components/ExperimentSetupForm';
 export * from './components/CalibrationCurve';

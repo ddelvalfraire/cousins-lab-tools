@@ -1,0 +1,73 @@
+/* Settings page: approved settings-review.html, mapped onto the Approved.css tokens. */
+.dv-settings { container-type: inline-size; max-width: 760px; margin-inline: auto; overflow: hidden; border: 1px solid var(--dv-line); border-radius: 12px; background: var(--dv-paper); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dv-settings :where(h2, h3, p) { margin: 0; }
+.dv-settings button, .dv-settings input, .dv-settings select { font: inherit; }
+.dv-settings button { color: inherit; cursor: pointer; touch-action: manipulation; }
+.dv-settings button:disabled { cursor: default; opacity: .5; }
+.dv-settings svg { flex: none; pointer-events: none; }
+.dv-settings :is(button, input, select, a):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+
+.dv-settings-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 22px 24px 18px; }
+.dv-settings-title h2 { font-size: 21px; font-weight: 650; letter-spacing: -.03em; line-height: normal; }
+.dv-settings-title p { font-size: 12px; color: var(--dv-ink-muted); margin-top: 5px; line-height: 1.6; }
+.dv-settings-saved { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; font-size: 11px; color: var(--dv-ink-muted); white-space: nowrap; }
+.dv-settings-saved svg { width: 13px; height: 13px; }
+
+.dv-settings-content { padding: 0 24px 24px; }
+.dv-settings-section { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px 28px; padding: 22px 0; border-top: 1px solid var(--dv-line); }
+.dv-settings-section h3 { font-size: 14px; font-weight: 600; line-height: normal; }
+.dv-settings-lead { font-size: 12px; color: var(--dv-ink-muted); line-height: 1.6; margin-top: 5px; }
+.dv-settings-fields { display: grid; gap: 18px; min-width: 0; }
+.dv-settings-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 550; }
+.dv-settings-field select { width: 100%; padding: 9px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 13px; font-weight: 400; }
+.dv-settings-field select[aria-invalid='true'] { border-color: var(--dv-error); }
+.dv-settings-hint { font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); font-weight: 400; }
+
+.dv-settings fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.dv-settings legend { margin-bottom: 7px; padding: 0; font-size: 12px; font-weight: 550; }
+.dv-settings-segmented { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-bg); }
+.dv-settings-segmented label { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 34px; border-radius: 5px; font-size: 12px; font-weight: 550; cursor: pointer; }
+.dv-settings-segmented label:has(:checked) { background: var(--dv-paper); box-shadow: 0 1px 4px #10271b12; }
+.dv-settings-segmented label:has(:focus-visible) { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-settings-segmented input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; }
+.dv-settings-segmented input:focus-visible { outline: none; }
+
+.dv-settings-preview { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 6px; background: var(--dv-bg); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dv-settings-preview span { color: var(--dv-ink-muted); }
+
+.dv-settings-folder { display: flex; gap: 8px; align-items: stretch; }
+.dv-settings-path { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-bg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.dv-settings-path svg { width: 15px; height: 15px; color: var(--dv-ink-muted); }
+.dv-settings-button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 34px; padding: 8px 12px; border: 1px solid var(--dv-line); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 550; white-space: nowrap; text-decoration: none; }
+.dv-settings-button:hover:not(:disabled) { background: var(--dv-soft); }
+.dv-settings-button svg { width: 14px; height: 14px; }
+/* The settings mockup sets its banner fixes at 12px (other mockups use 11px). */
+.dv-settings .dv-banner-approved > div > .dv-settings-fix { font-size: 12px; }
+
+.dv-settings-about { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 8px 16px; margin: 0; font-size: 12px; }
+.dv-settings-about dt { color: var(--dv-ink-muted); }
+.dv-settings-about dd { margin: 0; overflow-wrap: anywhere; }
+.dv-settings-about a { color: var(--dv-accent); font-weight: 550; text-underline-offset: 3px; }
+.dv-settings-about code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+.dv-settings-muted { color: var(--dv-ink-muted); }
+.dv-settings-warn { color: var(--dv-warn); }
+.dv-settings-icon-button { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: 4px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--dv-ink-muted); vertical-align: middle; }
+.dv-settings-icon-button:hover { background: var(--dv-soft); color: var(--dv-ink); }
+.dv-settings-icon-button svg { width: 14px; height: 14px; }
+.dv-settings-copied { margin-left: 4px; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-settings-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.dv-settings-announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+@container (max-width: 620px) {
+  .dv-settings-title { padding: 20px 16px 16px; }
+  .dv-settings-content { padding: 0 16px 20px; }
+  .dv-settings-section { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .dv-settings-folder { flex-direction: column; }
+}
+
+/* Inside a page with the shared header: no card title; the Saved mark sits in the card's corner. */
+.dv-settings[data-header='hidden'] { position: relative; }
+.dv-settings-saved-corner { position: absolute; top: 14px; right: 24px; }
+.dv-settings[data-header='hidden'] .dv-settings-section:first-child { border-top: 0; }
+.dv-settings-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
