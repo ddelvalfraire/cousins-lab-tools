@@ -4,6 +4,7 @@ import '@mantine/core/styles.css';
 import 'uplot/dist/uPlot.min.css';
 import { dvdashTheme } from '../src/ui/theme';
 import '../src/ui/dvdash.css';
+import '../src/ui/screens/screens.css';
 import { StoryFrame } from './StoryFrame';
 import './preview.css';
 const preview: Preview = {
