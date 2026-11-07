@@ -22,6 +22,7 @@ export * from './components/ProblemsPanel';
 export * from './components/UnsavedChangesDialog';
 export * from './components/AcquisitionControls';
 export * from './components/PresetEditor';
+export * from './Screens';
 export * from './components/CatalogTable';
 export * from './components/PresetCatalog';
 export * from './components/InstrumentCatalog';
