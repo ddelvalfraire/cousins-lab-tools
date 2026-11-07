@@ -17,6 +17,7 @@ export * from './components/CalibrationCurve';
 export * from './components/ProblemsPanel';
 export * from './components/UnsavedChangesDialog';
 export * from './components/AcquisitionControls';
+export * from './components/PresetEditor';
 export * from './components/CatalogTable';
 export * from './components/PresetCatalog';
 export * from './components/InstrumentCatalog';
