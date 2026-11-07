@@ -94,3 +94,20 @@ export const Narrow: Story = {
   ...UnsavedChanges,
   parameters: { previewWidth: 390 },
 };
+
+/** Settings in a narrow window: the description stays in the action bar, so the bar is never empty. */
+export const NarrowDescription: Story = {
+  args: {
+    title: 'Settings', count: undefined,
+    breadcrumbs: [{ label: 'Workspace', onClick: fn() }, { label: 'Settings' }],
+    description: 'Applies to everyone using DVDash on this computer.',
+  },
+  parameters: { previewWidth: 390 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const description = canvas.getByText('Applies to everyone using DVDash on this computer.');
+    await expect(description).toBeVisible();
+    await expect(description.scrollWidth).toBeLessThanOrEqual(description.clientWidth);
+    await expect(header(canvasElement).querySelector('.dv-page-actionbar')!.getBoundingClientRect().height).toBe(48);
+  },
+};
