@@ -2,4 +2,6 @@ export { brand, dvdashTheme, seriesColors } from './theme';
 export * from './components/Primitives';
 export * from './components/Chip';
 export * from './components/Inputs';
+export * from './components/ExperimentPanels';
 export * from './components/ScientificQuantityInput';
+export * from './components/ExperimentTools';
