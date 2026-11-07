@@ -22,6 +22,8 @@
 
 /* Stream cards */
 .dv-xw-streams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--dv-gap); }
+/* Cards fill the grid row through their panel and problem-flag wrappers, so a shorter capture line does not leave one card short. */
+.dv-xw-streams .dv-prob-flagged, .dv-xw-stream { height: 100%; }
 .dv-xw-stream { min-width: 0; padding: 13px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
 .dv-xw-stream-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
 .dv-xw-stream-heading h2 { font-size: 13px; font-weight: 600; line-height: 1.4; }

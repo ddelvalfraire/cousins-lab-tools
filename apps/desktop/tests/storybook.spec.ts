@@ -220,6 +220,19 @@ test('the skip link is inside the window bar landmark and still comes first', as
   await expect(page.getByRole('banner').getByRole('link', { name: 'Skip to content', exact: true })).toBeFocused();
 });
 
+test('live stream cards in one row share a height and a capture line', async ({ page }) => {
+  for (const width of [1440, 960]) {
+    await page.setViewportSize({ width, height: 900 });
+    await story(page, 'screens-experiment--live');
+    const cards = await page.locator('.dv-xw-stream >> visible=true').evaluateAll(els => els.map(e => ({
+      height: Math.round(e.getBoundingClientRect().height), capture: Math.round(e.querySelector('.dv-xw-stream-capture')!.getBoundingClientRect().top),
+    })));
+    expect(cards.length, `${width}`).toBe(3);
+    expect(new Set(cards.map(c => c.height)).size, `${width} heights ${JSON.stringify(cards)}`).toBe(1);
+    expect(new Set(cards.map(c => c.capture)).size, `${width} capture lines ${JSON.stringify(cards)}`).toBe(1);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
