@@ -41,8 +41,9 @@
 .dv-cat-table[data-catalog='instruments'] col:nth-child(2) { width: 88px; }
 .dv-cat-table[data-catalog='instruments'] col:nth-child(3) { width: 150px; }
 .dv-cat-table[data-catalog='instruments'] col:nth-child(4) { width: 122px; }
-.dv-cat-table th { text-align: left; padding: 11px 12px; font-size: 10px; font-weight: 500; color: var(--dv-ink-muted); background: var(--dv-bg); border-bottom: 1px solid var(--dv-line); }
-.dv-cat .dv-cat-table th button { display: flex; align-items: center; gap: 5px; }
+/* Sort buttons are 24 px targets; the header cell gives back the extra height, so the row stays 34 px. */
+.dv-cat-table th { text-align: left; padding: 5px 12px; font-size: 10px; font-weight: 500; color: var(--dv-ink-muted); background: var(--dv-bg); border-bottom: 1px solid var(--dv-line); }
+.dv-cat .dv-cat-table th button { display: flex; align-items: center; gap: 5px; min-height: 24px; }
 .dv-cat-table th button:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 3px; }
 .dv-cat-table td { padding: 11px 12px; border-bottom: 1px solid var(--dv-line); vertical-align: middle; }
 .dv-cat-table tr:last-child td { border-bottom: 0; }

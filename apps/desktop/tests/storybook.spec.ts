@@ -277,6 +277,21 @@ test('preset editor panel titles use the whole head while the panel tools are hi
   }
 });
 
+test('table sort headers are 24 px targets in an unchanged header row', async ({ page }) => {
+  for (const route of ['experiments', 'presets', 'instruments']) {
+    await page.goto(`/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:${route}`);
+    await expect(page.locator('thead th button').first()).toBeVisible();
+    const heads = await page.locator('thead th >> visible=true').evaluateAll(ths => ths.map(th => {
+      const button = th.querySelector('button');
+      return { name: th.textContent!.trim(), row: th.getBoundingClientRect().height, target: button ? button.getBoundingClientRect().height : null };
+    }));
+    for (const head of heads) {
+      expect(head.row, `${route} ${head.name} row height`).toBeCloseTo(34.5, 1);
+      if (head.target !== null) expect(head.target, `${route} ${head.name} target height`).toBeGreaterThanOrEqual(24);
+    }
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
