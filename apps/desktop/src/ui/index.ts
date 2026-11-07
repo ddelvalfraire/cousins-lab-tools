@@ -4,5 +4,6 @@ export * from './components/Chip';
 export * from './components/SignalChart';
 export * from './components/Inputs';
 export * from './components/ExperimentPanels';
+export * from './components/GasSignals';
 export * from './components/ScientificQuantityInput';
 export * from './components/ExperimentTools';
