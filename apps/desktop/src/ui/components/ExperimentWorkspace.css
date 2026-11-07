@@ -86,7 +86,9 @@
 .dv-xw-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--dv-gap); }
 .dv-xw-chart { min-width: 0; padding: 15px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); }
 .dv-xw-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.dv-xw-chart h2 { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.5; }
+/* Recorded cards use the page's card title (the live stream cards, live-experiment-states-review.html .stream-heading h2).
+   The 18 px line box is the sticky-playback mockup's, so the cards keep its 228 px height. */
+.dv-xw-chart h2 { margin: 0; font-size: 13px; font-weight: 600; line-height: 18px; }
 .dv-xw-chart-reading { display: flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
 .dv-xw-chart-reading strong { font-size: 20px; font-weight: 650; }
 .dv-xw-chart-reading small { font-size: 10px; color: var(--dv-ink-muted); }
@@ -96,7 +98,7 @@
 /* Recorded samples */
 .dv-xw-samples { min-width: 0; }
 .dv-xw-samples header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.dv-xw-samples h2 { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.dv-xw-samples h2 { margin: 0; font-size: 13px; font-weight: 600; line-height: 18px; }
 .dv-xw-link { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 6px 0; border: 0; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 500; white-space: nowrap; }
 .dv-xw-recorded .dv-xw-link { color: var(--dv-accent); }
 .dv-xw-link:hover { text-decoration: underline; text-underline-offset: 3px; }

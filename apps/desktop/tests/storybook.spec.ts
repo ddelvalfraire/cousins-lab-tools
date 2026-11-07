@@ -301,6 +301,17 @@ test('calibration interval fields keep their approved width on a wide page', asy
   for (const width of widths.fields) expect(Math.abs(width - 362), 'field width near the 362 px in the calibration mockup').toBeLessThanOrEqual(4);
 });
 
+test('experiment cards share one title size, and the calibration card keeps its own', async ({ page }) => {
+  for (const id of ['screens-experiment--recorded', 'screens-experiment--live']) {
+    await story(page, id);
+    const titles = await page.locator('main h2 >> visible=true').evaluateAll(els => els
+      .filter(h => h.closest('.dv-xw-chart, .dv-xw-samples, .dv-xw-stream, .dv-cal'))
+      .map(h => ({ name: h.textContent!.trim(), calibration: !!h.closest('.dv-cal'), size: getComputedStyle(h).fontSize, weight: getComputedStyle(h).fontWeight })));
+    expect(titles.length, id).toBeGreaterThanOrEqual(3);
+    for (const t of titles) expect(`${t.size} ${t.weight}`, `${id} ${t.name}`).toBe(t.calibration ? '19px 650' : '13px 600');
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
