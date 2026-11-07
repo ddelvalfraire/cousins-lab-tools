@@ -17,6 +17,7 @@ export * from './components/UnsavedChangesDialog';
 export * from './components/AcquisitionControls';
 export * from './components/InspectorParts';
 export * from './components/CalibrationChecklist';
+export * from './components/RecordingAlignment';
 export * from './components/ImportDialog';
 export * from './components/RecordingImport';
 export * from './components/PresetImport';
