@@ -354,7 +354,7 @@ function RoutineEditorDraft({
       <span className="dv-re-step-number" aria-hidden>{index + 1}</span>
       <span className="dv-re-step-mark" data-kind={step.kind}><Kind {...ICON} /></span>
       <div className="dv-re-step-copy">
-        <button type="button" className="dv-re-step-title" tabIndex={skip} aria-label={`Edit step ${index + 1}, ${title}`}
+        <button type="button" className="dv-re-step-title" tabIndex={skip} aria-label={`Edit step ${index + 1}, ${title}`} title={title}
           onClick={() => { select(step.id); setNotice(null); }}>{title}</button>
         <small data-state={issues.length ? 'invalid' : undefined}>
           {issues.length ? <><IconAlertTriangle {...ICON} />{issues[0]}</> : `${KIND[step.kind]}${step.duration ? '' : ' · no duration'}`}
@@ -497,7 +497,7 @@ function RoutineEditorDraft({
               if (!s.duration) return <span key={s.id} className="dv-re-seg-mark" data-kind="annotate" title={stepTitle(s)} />;
               const v = secondsOf(draft, s);
               if (!(v > 0)) return null;
-              return <span key={s.id} className="dv-re-seg" data-kind={s.kind} data-selected={selected === s.id} style={{ flex: `${v} 1 0` }} title={`${stepTitle(s)} · ${fmt(v)}`}>{v / totalSeconds > .12 ? stepTitle(s) : ''}</span>;
+              return <span key={s.id} className="dv-re-seg" data-kind={s.kind} data-selected={selected === s.id} style={{ flex: `${v} 1 0` }} title={`${stepTitle(s)} · ${fmt(v)}`}>{v / totalSeconds > .12 && <span>{stepTitle(s)}</span>}</span>;
             })}
           </div>
           <div className="dv-re-axis" aria-hidden><span>0 s</span><span>{fmt(totalSeconds)}</span></div>

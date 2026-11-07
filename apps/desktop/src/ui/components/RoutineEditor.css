@@ -26,6 +26,7 @@
 .dv-re-timeline-head span { font-size: 11px; font-weight: 400; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; }
 .dv-re-timeline { display: flex; height: 30px; margin-top: 10px; border-radius: 5px; overflow: hidden; background: var(--dv-soft); }
 .dv-re-seg { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; font-size: 10px; font-weight: 550; white-space: nowrap; overflow: hidden; border-right: 2px solid var(--dv-paper); color: var(--dv-ink); }
+.dv-re-seg > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .dv-re-seg:last-child { border-right: 0; }
 .dv-re-seg[data-kind='capture'] { background: color-mix(in srgb, var(--dv-accent), transparent 78%); }
 .dv-re-seg[data-kind='wait'] { background-color: var(--dv-soft); background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--dv-control), transparent 70%) 5px 6px); }
@@ -115,6 +116,13 @@
   .dv-re-tools { opacity: 1; }
   .dv-re-step-number { display: none; }
   .dv-re-step + .dv-re-step::before { left: 30px; }
+  /* With the tools always shown there is no room for the title beside them, so a step takes two lines: the title
+     fills the first after the grip and mark (28 + 30 px and two 10 px gaps), and the duration chip, under the
+     title, and the tools take the second, or a third line of their own when both do not fit. */
+  .dv-re-step { flex-wrap: wrap; row-gap: 6px; }
+  .dv-re-step-copy { flex: 1 0 calc(100% - 78px); }
+  .dv-re-step > .dv-chip { max-width: calc(100% - 78px); margin-left: 78px; }
+  .dv-re-tools { margin-left: auto; }
 }
 
 /* This mockup's banner lists have no gap between items. */

@@ -233,6 +233,30 @@ test('live stream cards in one row share a height and a capture line', async ({ 
   }
 });
 
+test('routine steps in a narrow editor keep their titles, chips and tools inside the card', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const url of ['/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:routine-edit', '/iframe.html?id=components-routineeditor--saved&viewMode=story']) {
+    await page.goto(url);
+    await expect(page.locator('.dv-re-step').first()).toBeVisible();
+    const steps = await page.locator('.dv-re-step >> visible=true').evaluateAll(els => els.map(step => {
+      const box = step.getBoundingClientRect(), title = step.querySelector('.dv-re-step-title')!, t = title.getBoundingClientRect();
+      const chipEl = step.querySelector(':scope > .dv-chip'), chip = chipEl?.getBoundingClientRect(), tools = step.querySelector('.dv-re-tools')!.getBoundingClientRect();
+      const chipText = chipEl?.querySelector(':scope > span');
+      return { name: title.textContent, width: Math.round(t.width), full: title.scrollWidth, chipCut: !!chipText && chipText.scrollWidth > chipText.clientWidth + 1, chipOverTitle: !!chip && chip.top < t.bottom && chip.left < t.right, toolsPast: Math.round(tools.right - box.right), titled: title.getAttribute('title') === title.textContent };
+    }));
+    for (const step of steps) {
+      expect(step.width, `${url} ${step.name} title width`).toBeGreaterThanOrEqual(Math.min(step.full, 60));
+      expect(step.chipOverTitle, `${url} ${step.name} chip over title`).toBe(false);
+      expect(step.chipCut, `${url} ${step.name} chip text cut`).toBe(false);
+      expect(step.toolsPast, `${url} ${step.name} tools past the card`).toBeLessThanOrEqual(0);
+      expect(step.titled, `${url} ${step.name} full title on hover`).toBe(true);
+    }
+    const cut = await page.locator('.dv-re-seg > span').evaluateAll(els => els.filter(e => e.scrollWidth > e.clientWidth).map(e => getComputedStyle(e).textOverflow));
+    expect(cut.every(v => v === 'ellipsis'), `${url} cut segment labels end in an ellipsis`).toBe(true);
+    expect(await page.locator('.dv-re-seg').evaluateAll(els => els.filter(e => e.textContent && !e.querySelector('span')).length), `${url} segment labels`).toBe(0);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
