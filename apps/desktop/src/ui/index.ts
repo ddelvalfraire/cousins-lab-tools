@@ -13,6 +13,7 @@ export * from './components/ExperimentTools';
 export * from './components/CalibrationCurve';
 export * from './components/ProblemsPanel';
 export * from './components/UnsavedChangesDialog';
+export * from './components/AcquisitionControls';
 export * from './components/InspectorParts';
 export * from './components/ImportDialog';
 export * from './components/RecordingImport';
