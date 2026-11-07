@@ -1,11 +1,12 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { useOs } from '@mantine/hooks';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 export { PageHeader as ScreenHeading } from '../components/PageHeader';
 import { MenuGlyph, NavigationDrawer, SideNavigation, type CurrentAcquisition, type NavigationDestination, type RecentExperiment } from '../components/SideNavigation';
 import { CommandGlyph, type CommandItem } from '../components/CommandCenter';
-import { ShellSearch, type ShellCommand } from './ShellSearch';
+import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
+import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellSearch';
 import './screens.css';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
@@ -39,17 +40,16 @@ export interface ScreenShellProps {
   /** The page's filter text from the search box. Pages without onPageQueryChange can't be filtered. */
   pageQuery?:string;
   onPageQueryChange?:(query:string)=>void;
-  /** "New experiment…" and "Import recordings…" commands. Hidden without a handler. */
+  /** "New experiment…" and "Import recordings…" commands, also N and I. Hidden without a handler. */
   onNewExperiment?:()=>void;
   onImportRecordings?:()=>void;
-  /** Open the keyboard shortcuts list. */
-  onShortcuts?:()=>void;
   children:ReactNode;
 }
 
 /** A catalog record in the command center and the page it opens. */
 export type SearchRecord = CommandItem & { page:ScreenRoute; pageId?:string };
 
+const goShortcuts = { e:'experiments', p:'presets', r:'routines', i:'instruments' } as const;
 const goGlyph = { experiments:'experiment', presets:'preset', routines:'routine', instruments:'instrument' } as const;
 
 /**
@@ -57,14 +57,14 @@ const goGlyph = { experiments:'experiment', presets:'preset', routines:'routine'
  * colour, the main sidebar and the page as a bordered, rounded card.
  * Values from design/dvdash-field-review/main-sidebar-review.html and right-sidebar-review.html (top bar).
  */
-export function ScreenShell({ page, navigate, recents, acquisition, defaultCollapsed=false, onAppearanceChange, searchRecords=[], pageQuery, onPageQueryChange, onNewExperiment, onImportRecordings, onShortcuts, children }:ScreenShellProps) {
+export function ScreenShell({ page, navigate, recents, acquisition, defaultCollapsed=false, onAppearanceChange, searchRecords=[], pageQuery, onPageQueryChange, onNewExperiment, onImportRecordings, children }:ScreenShellProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed), [drawer, setDrawer] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
+  const [shortcuts, setShortcuts] = useState(false), [announcement, setAnnouncement] = useState('');
   const dark = useComputedColorScheme('light')==='dark', { toggleColorScheme } = useMantineColorScheme();
   const os = useOs(), mac = os==='macos' || os==='ios';
-  const main = useRef<HTMLElement>(null);
+  const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLElement>(null), goPrefix = useRef(0);
   const toggleAppearance = onAppearanceChange ?? toggleColorScheme;
-  /** Navigate from search, then move focus to the new page. */
+  /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
   const goTo = (to:keyof typeof goGlyph, key:string):ShellCommand => ({ id:`go-${to}`, kind:'actions', title:`Go to ${to}`, icon:<CommandGlyph name={goGlyph[to]}/>, keys:['G',key], sequence:true, keywords:'go navigation', run:()=>go(to) });
   /* Commands and settings from command-center-review.html. Stop acquisition stays on the experiment page. */
@@ -76,9 +76,38 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
     goTo('experiments','E'), goTo('presets','P'), goTo('routines','R'), goTo('instruments','I'),
     { id:'appearance', kind:'settings', title:'Appearance', icon:<CommandGlyph name="sun"/>, end:dark?'Dark':'Light', keywords:'settings preferences display light dark mode theme', run:()=>go('settings') },
     { id:'storage', kind:'settings', title:'Data & storage', icon:<CommandGlyph name="storage"/>, end:'This device', keywords:'settings recordings results storage files folder local device', run:()=>go('settings') },
-    { id:'shortcuts', kind:'settings', title:'Keyboard shortcuts', icon:<CommandGlyph name="keyboard"/>, keys:['?'], keywords:'settings help keyboard shortcuts hotkeys commands', run:()=>onShortcuts?.() },
+    { id:'shortcuts', kind:'settings', title:'Keyboard shortcuts', icon:<CommandGlyph name="keyboard"/>, keys:['?'], keywords:'settings help keyboard shortcuts hotkeys commands', run:()=>setShortcuts(true) },
     ...searchRecords.map(record => ({ ...record, run:()=>go(record.page, record.pageId) })),
   ];
+
+  /* Window-wide shortcuts (command-center-review.html). Single keys and "G then" run outside text fields. */
+  const onKey = (event:KeyboardEvent) => {
+    if (event.defaultPrevented || event.isComposing || shortcuts) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('[role="dialog"]')) return;
+    const mod = (event.metaKey || event.ctrlKey) && !event.altKey;
+    if (mod && event.key.toLowerCase()==='k') { event.preventDefault(); search.current?.openCommandCenter(); return; }
+    if (mod && event.key===',') { event.preventDefault(); go('settings'); return; }
+    if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') || event.altKey || event.metaKey || event.ctrlKey || event.getModifierState('AltGraph')) { goPrefix.current = 0; return; }
+    const key = event.key.toLowerCase(), now = performance.now();
+    if (goPrefix.current && now-goPrefix.current < 1200) {
+      goPrefix.current = 0;
+      const to = goShortcuts[key as keyof typeof goShortcuts];
+      if (to) { event.preventDefault(); go(to); return; }
+    }
+    if (key==='g') { goPrefix.current = now; setAnnouncement('Go to: E experiments, P presets, R routines, I instruments.'); }
+    else if (key==='n' && onNewExperiment) { event.preventDefault(); onNewExperiment(); }
+    else if (key==='i' && onImportRecordings) { event.preventDefault(); onImportRecordings(); }
+    else if (event.key==='?') { event.preventDefault(); setShortcuts(true); }
+    else if (event.key==='/') { event.preventDefault(); search.current?.focusPageSearch(); }
+  };
+  const keyHandler = useRef(onKey);
+  useEffect(() => { keyHandler.current = onKey; });
+  useEffect(() => {
+    const listener = (event:KeyboardEvent) => keyHandler.current(event);
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  }, []);
 
   const active = parentOf(page), detail = active !== page;
   const openExperiment = (id:string) => navigate('experiment', id);
@@ -89,11 +118,11 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
       <button type="button" className="dv-shell-wordmark" aria-label="DVDash experiments home" onClick={()=>navigate('experiments')}>
         <span className="dv-brand-concept" aria-hidden="true"><img src={identityBoard} alt=""/></span><span>DVDash</span>
       </button>
-      <ShellSearch key={page} pageLabel={pageScope[page]} pagePlaceholder={pageScope[page]==='This experiment' ? 'Find a panel, signal or setting…' : 'Search…'}
-        pageQuery={pageQuery} onPageQueryChange={onPageQueryChange} commands={commands} mac={mac} onShortcuts={()=>onShortcuts?.()} onAnnounce={setAnnouncement}/>
+      <ShellSearch key={page} ref={search} pageLabel={pageScope[page]} pagePlaceholder={pageScope[page]==='This experiment' ? 'Find a panel, signal or setting…' : 'Search…'}
+        pageQuery={pageQuery} onPageQueryChange={onPageQueryChange} commands={commands} mac={mac} onShortcuts={()=>setShortcuts(true)} onAnnounce={setAnnouncement}/>
       <div className="dv-shell-tools">
         <button type="button" className="dv-shell-icon-button" aria-label={`Use ${dark?'light':'dark'} appearance`} title={`Use ${dark?'light':'dark'} appearance`} onClick={onAppearanceChange??toggleColorScheme}>{dark?icons.sun:icons.moon}</button>
-        <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?" onClick={onShortcuts}>{icons.keyboard}</button>
+        <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?" onClick={()=>setShortcuts(true)}>{icons.keyboard}</button>
       </div>
     </header>
     <div className="dv-shell-workspace">
@@ -101,6 +130,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
       <div className="dv-shell-page-frame"><main ref={main} id="dvdash-screen-main" className="dv-shell-page" data-width={widePages.has(page)?'wide':'standard'} tabIndex={-1}>{children}</main></div>
     </div>
     <NavigationDrawer withBar={false} opened={drawer} onOpenedChange={setDrawer} active={active} detail={detail} onNavigate={navigate} recents={recents} acquisition={acquisition} onOpenExperiment={openExperiment}/>
+    <KeyboardShortcuts opened={shortcuts} onClose={()=>setShortcuts(false)} mac={mac}/>
     <span className="dv-shell-sr" role="status" aria-atomic="true">{announcement}</span>
   </div>;
 }

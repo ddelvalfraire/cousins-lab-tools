@@ -34,7 +34,7 @@ function FrameExample(args:ScreenShellProps){
 const meta={
   title:'Screens/Frame', component:ScreenShell,
   parameters:{layout:'fullscreen',previewWidth:'viewport'},
-  args:{page:'experiments',navigate:fn(),recents,acquisition,onAppearanceChange:fn(),onShortcuts:fn(),onNewExperiment:fn(),onImportRecordings:fn(),searchRecords,children:null},
+  args:{page:'experiments',navigate:fn(),recents,acquisition,onAppearanceChange:fn(),onNewExperiment:fn(),onImportRecordings:fn(),searchRecords,children:null},
   render:args=><FrameExample {...args}/>,
 } satisfies Meta<typeof ScreenShell>;
 export default meta;
@@ -143,6 +143,23 @@ const searchInput=(canvasElement:HTMLElement)=>within(canvasElement).getByRole('
 const commandCenter=(canvasElement:HTMLElement)=>within(canvasElement).getByRole('combobox',{name:'Search all DVDash'});
 const selected=(canvasElement:HTMLElement)=>canvasElement.querySelector('[role=option][aria-selected=true]');
 
+/** Ctrl+K (⌘K on macOS) opens the command center from anywhere; Escape closes it and returns focus. */
+export const CommandCenterShortcut:Story={
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement), presets=canvas.getByRole('button',{name:'Presets'});
+    presets.focus();
+    await userEvent.keyboard('{Control>}k{/Control}');
+    await waitFor(()=>expect(commandCenter(canvasElement)).toHaveFocus());
+    await expect(commandCenter(canvasElement)).toHaveAttribute('aria-expanded','true');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveDisplayValue('All DVDash');
+    await expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible();
+    await expect(canvas.getByRole('group',{name:'Recent · Experiments'})).toBeVisible();
+    await userEvent.keyboard('{Escape}');
+    await expect(canvas.queryByRole('listbox')).toBeNull();
+    await expect(presets).toHaveFocus();
+  },
+};
+
 /** Arrow keys move the highlight, wrapping at both ends; Enter runs it. */
 export const ArrowKeysAndEnter:Story={
   play:async({canvasElement,args})=>{
@@ -162,10 +179,31 @@ export const ArrowKeysAndEnter:Story={
     await expect(args.navigate).toHaveBeenLastCalledWith('presets',undefined);
     await waitFor(()=>expect(canvasElement.querySelector('main')).toHaveFocus());
     // A record opens its page with its id.
-    await userEvent.click(canvas.getByRole('button',{name:/Open command center/}));
+    await userEvent.keyboard('{Control>}k{/Control}');
     await userEvent.type(commandCenter(canvasElement),'leaf');
     await userEvent.click(canvas.getByRole('option',{name:/^CO₂ & O₂ analysis/}));
     await expect(args.navigate).toHaveBeenLastCalledWith('preset','gas');
+  },
+};
+
+/** "?" opens the shortcuts outside text fields only; the keyboard button opens them too and gets focus back. */
+export const ShortcutsPanel:Story={
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement), body=within(canvasElement.ownerDocument.body);
+    await userEvent.type(searchInput(canvasElement),'a?b');
+    await expect(searchInput(canvasElement)).toHaveValue('a?b');
+    await expect(body.queryByRole('dialog',{name:'Keyboard shortcuts'})).toBeNull();
+    await expect(canvas.getByText('Page content filtered by “a?b”')).toBeVisible();
+    canvasElement.querySelector<HTMLElement>('main')!.focus();
+    await userEvent.keyboard('?');
+    await waitFor(()=>expect(body.getByRole('dialog',{name:'Keyboard shortcuts'})).toBeVisible());
+    await userEvent.keyboard('{Escape}');
+    await waitFor(()=>expect(body.queryByRole('dialog',{name:'Keyboard shortcuts'})).toBeNull());
+    const button=canvas.getByRole('button',{name:'Keyboard shortcuts'});
+    await userEvent.click(button);
+    await waitFor(()=>expect(body.getByRole('dialog',{name:'Keyboard shortcuts'})).toBeVisible());
+    await userEvent.keyboard('{Escape}');
+    await waitFor(()=>expect(button).toHaveFocus());
   },
 };
 
@@ -191,7 +229,7 @@ export const ScopeChange:Story={
 export const EmptyAndNoResults:Story={
   play:async({canvasElement})=>{
     const canvas=within(canvasElement);
-    await userEvent.click(canvas.getByRole('button',{name:/Open command center/}));
+    await userEvent.keyboard('{Control>}k{/Control}');
     const types=within(canvas.getByRole('group',{name:'Search result type'}));
     await userEvent.click(types.getByRole('button',{name:'Routines'}));
     await expect(canvas.getByText('No recent routines')).toBeVisible();
@@ -206,3 +244,21 @@ export const EmptyAndNoResults:Story={
   },
 };
 
+/** Single keys and "G then" sequences, outside text fields. */
+export const PageShortcuts:Story={
+  play:async({canvasElement,args})=>{
+    const canvas=within(canvasElement);
+    canvasElement.querySelector<HTMLElement>('main')!.focus();
+    await userEvent.keyboard('gr');
+    await expect(canvas.getByRole('heading',{level:1,name:'Routines'})).toBeVisible();
+    await userEvent.keyboard('n');
+    await expect(args.onNewExperiment).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard('/');
+    await expect(searchInput(canvasElement)).toHaveFocus();
+    await expect(canvas.queryByRole('listbox')).toBeNull();
+    await userEvent.keyboard('n');
+    await expect(args.onNewExperiment).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard('{Control>},{/Control}');
+    await expect(canvas.getByRole('heading',{level:1,name:'Settings'})).toBeVisible();
+  },
+};
