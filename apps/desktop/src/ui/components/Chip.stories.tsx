@@ -21,6 +21,8 @@ export const LongText: Story = {
   play: async ({ canvasElement }) => {
     const chip = canvasElement.querySelector('.dv-chip') as HTMLElement;
     await expect(chip.getBoundingClientRect().width).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().width + 1);
+    // Cut text keeps the full label as a tooltip.
+    await expect(chip).toHaveAttribute('title', 'leaf-respiration-sample-025-with-a-very-long-recording-file-name.csv');
   },
 };
 export const Status: Story = {
