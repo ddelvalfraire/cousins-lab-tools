@@ -1,0 +1,94 @@
+/* Right sidebar shell. Values from design/dvdash-field-review/right-sidebar-review.html (.right-sidebar, .side-tabs, .sidebar-*). */
+/* Docked to the page's right edge: full height below the header, a rule on its left side only, its own scroll.
+   Width eases between the open pane and the rail; the pane slides out from under the rail's left edge. */
+.dv-right-sidebar { position: relative; flex: none; display: flex; flex-direction: row; justify-content: flex-end; box-sizing: border-box; width: var(--dv-side-open); min-width: 0; min-height: 0; overflow: hidden; border-inline-start: 1px solid var(--dv-line); background: var(--dv-paper); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; transition: width var(--dv-side-motion); }
+.dv-right-sidebar[data-collapsed='true'] { width: var(--dv-side-rail); }
+.dv-right-sidebar :where(h2, h3, p) { margin: 0; }
+.dv-right-sidebar :where(button, input, select) { font: inherit; }
+.dv-right-sidebar button { color: inherit; cursor: pointer; touch-action: manipulation; }
+.dv-right-sidebar svg { flex: none; pointer-events: none; }
+.dv-right-sidebar-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+/* Pane */
+.dv-right-sidebar-pane { flex: none; box-sizing: border-box; width: calc(var(--dv-side-open) - var(--dv-side-rail)); min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--dv-paper); }
+/* Hidden once the slide has finished, so a collapsed pane leaves the tab order and the accessibility tree. */
+.dv-right-sidebar[data-collapsed='true'] .dv-right-sidebar-pane { visibility: hidden; transition: visibility 0s linear var(--dv-side-duration); }
+.dv-right-sidebar-pane:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: -2px; }
+.dv-right-sidebar-title { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 12px; }
+.dv-right-sidebar-title h2 { margin: 0; color: var(--dv-ink); font-size: 15px; font-weight: 650; line-height: 1.4; letter-spacing: -.2px; }
+.dv-right-sidebar-title small { display: block; margin-top: 4px; color: var(--dv-ink-muted); font-size: 10px; font-weight: 400; line-height: 1.5; }
+.dv-right-sidebar-collapse { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 4px; border: 0; border-radius: 4px; background: none; color: var(--dv-ink-muted); }
+.dv-right-sidebar .dv-right-sidebar-collapse { color: var(--dv-ink-muted); }
+.dv-right-sidebar-collapse:hover { background: var(--dv-soft); }
+.dv-right-sidebar-collapse:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
+.dv-right-sidebar-collapse svg { width: 17px; height: 17px; }
+.dv-right-sidebar-content { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0 16px 16px; }
+
+/* Vertical tab rail: icon above label */
+.dv-right-sidebar-tabs { position: relative; z-index: 1; flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; box-sizing: border-box; width: calc(var(--dv-side-rail) - 1px); min-height: 0; padding: 8px 4px; overflow-y: auto; border-inline-start: 1px solid var(--dv-line); background: var(--dv-bg); }
+.dv-right-sidebar[data-collapsed='true'] .dv-right-sidebar-tabs { border-inline-start-color: transparent; }
+.dv-right-sidebar-tabs [role='tab'] { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; box-sizing: border-box; width: 40px; min-height: 56px; padding: 6px 1px; border: 0; border-radius: 5px; background: transparent; color: var(--dv-ink-muted); font-size: 9px; line-height: 1.3; }
+.dv-right-sidebar .dv-right-sidebar-tabs [role='tab'] { color: var(--dv-ink-muted); }
+.dv-right-sidebar-tabs [role='tab'] svg { width: 18px; height: 18px; }
+.dv-right-sidebar .dv-right-sidebar-tabs [role='tab']:hover:not(:disabled) { background: var(--dv-soft); color: var(--dv-ink); }
+.dv-right-sidebar .dv-right-sidebar-tabs [role='tab'][aria-selected='true'] { background: var(--dv-accent-soft); color: var(--dv-accent); font-weight: 600; }
+.dv-right-sidebar-tabs [role='tab']:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
+.dv-right-sidebar-tabs [role='tab']:disabled { opacity: .5; cursor: default; }
+.dv-right-sidebar-badge { position: absolute; top: 3px; right: 2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; background: var(--dv-warn-bg); color: var(--dv-warn); font-size: 9px; font-weight: 650; line-height: 15px; font-variant-numeric: tabular-nums; text-align: center; }
+
+/* Pane content: sections, fields, facts (.sidebar-section, .sidebar-field, .side-facts) */
+.dv-sidebar-section { padding: 16px 0; border-top: 1px solid var(--dv-line); }
+.dv-sidebar-section h3 { margin: 0 0 12px; font-size: 11px; font-weight: 650; }
+.dv-sidebar-field { display: block; margin-bottom: 13px; font-size: 11px; font-weight: 500; line-height: 1.5; }
+.dv-sidebar-field :is(input, select) { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 33px; margin-top: 6px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-sidebar-field :is(input, select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
+.dv-sidebar-field :is(input, select):disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
+.dv-sidebar-field small { display: block; margin-top: 5px; color: var(--dv-ink-muted); font-size: 10px; font-weight: 400; }
+.dv-sidebar-facts { display: grid; gap: 11px; margin: 0; }
+.dv-sidebar-facts > div { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.dv-sidebar-facts dt { color: var(--dv-ink-muted); font-size: 11px; }
+.dv-sidebar-facts dd { margin: 0; font-size: 11px; font-weight: 500; text-align: right; }
+
+/* WorkspaceBody: the main column and the docked sidebar fill the page below the header (screens.css makes the
+   page a column of that height). The main column keeps the shared page gutters; on the right the sidebar takes
+   only what the gutter can't hold, so content lines up with the header on wide pages. */
+.dv-workspace-body { container: dv-workspace / inline-size; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.dv-workspace-grid { --dv-side-width: var(--dv-side-open);
+  position: relative; flex: 1 1 auto; min-height: 0; display: flex; align-items: stretch; overflow: hidden; }
+.dv-workspace-grid:has(> .dv-right-sidebar:is([data-collapsed='true'], [data-mode='sheet'])) { --dv-side-width: var(--dv-side-rail); }
+.dv-workspace-main { flex: 1 1 0; min-width: 0; min-height: 0; overflow: auto; box-sizing: border-box;
+  padding: var(--dv-page-top) max(var(--dv-page-pad), calc(var(--dv-page-gutter) - var(--dv-side-width))) var(--dv-page-bottom) var(--dv-page-gutter);
+  transition: padding var(--dv-side-motion); }
+.dv-workspace-main:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: -2px; }
+
+@container dv-workspace (max-width: 1050px) {
+  .dv-workspace-grid { --dv-side-open: 292px; }
+}
+
+/* Inside the application frame the sidebar docks to the page card instead, at the card's full height, and the
+   card makes room for it (screens.css). The main column then keeps equal gutters on both sides. */
+.dv-shell-page .dv-workspace-grid { position: static; --dv-side-open: inherit; }
+.dv-shell-page .dv-right-sidebar { position: absolute; inset-block: 0; right: 0; }
+.dv-shell-page .dv-workspace-main { padding-right: var(--dv-page-gutter); transition: none; }
+
+/* Narrow pages: the rail stays docked and the pane slides in over the content as a sheet. */
+.dv-right-sidebar[data-mode='sheet'] { width: var(--dv-side-rail); overflow: visible; z-index: 20; transition: none; }
+.dv-right-sidebar[data-mode='sheet'] .dv-right-sidebar-pane { position: absolute; inset-block: 0; right: 100%; width: min(calc(var(--dv-side-open) - var(--dv-side-rail)), calc(100cqw - var(--dv-side-rail) - 16px));
+  border-inline-start: 1px solid var(--dv-line); box-shadow: -10px 0 28px #10271b24; transform: translateX(0); transition: transform var(--dv-side-motion), visibility 0s; }
+.dv-right-sidebar[data-mode='sheet'][data-collapsed='true'] .dv-right-sidebar-pane { transform: translateX(calc(100% + var(--dv-side-rail))); box-shadow: none; transition: transform var(--dv-side-motion), box-shadow 0s linear var(--dv-side-duration), visibility 0s linear var(--dv-side-duration); }
+.dv-right-sidebar[data-mode='sheet'] :is(.dv-right-sidebar-title, .dv-right-sidebar-content) { padding-inline: 20px; }
+.dv-right-sidebar[data-mode='sheet'] .dv-right-sidebar-tabs [role='tab'] { font-size: 10px; }
+/* In the frame the body already stops at the rail, so the sheet only keeps a 16 px strip of the page visible. */
+.dv-shell-page .dv-right-sidebar[data-mode='sheet'] .dv-right-sidebar-pane { width: min(calc(var(--dv-side-open) - var(--dv-side-rail)), calc(100cqw - 16px)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dv-right-sidebar, .dv-workspace-main, .dv-right-sidebar .dv-right-sidebar-pane,
+  .dv-right-sidebar[data-collapsed='true'] .dv-right-sidebar-pane, .dv-right-sidebar[data-mode='sheet'][data-collapsed='true'] .dv-right-sidebar-pane { transition: none; }
+}
+.dv-sidebar-item { display: flex; align-items: center; gap: 10px; padding: 0 0 12px; }
+.dv-sidebar-item-mark { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 6px; background: var(--dv-accent-soft); color: var(--dv-accent); }
+.dv-sidebar-item-mark svg { width: 18px; height: 18px; }
+.dv-sidebar-item strong { display: block; font-size: 12px; font-weight: 550; line-height: 1.4; }
+.dv-sidebar-item small { display: block; margin-top: 3px; color: var(--dv-ink-muted); font-size: 10px; }
+.dv-sidebar-save { display: inline-flex; align-items: center; gap: 4px; min-height: 16px; margin-top: 7px; color: var(--dv-ink-muted); font-size: 10px; }
+.dv-sidebar-save svg { width: 12px; height: 12px; }
