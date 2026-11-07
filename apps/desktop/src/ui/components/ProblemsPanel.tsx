@@ -264,7 +264,7 @@ export function AffectedPanelFlag({ severity, label, children }: {
 }) {
   const tone = severity === 'error' ? 'error' : severity ? 'warning' : undefined;
   return <div className="dv-prob-flagged" data-flag={tone}>
-    {severity && label && <span className="dv-prob-flag" data-severity={tone}>{SEVERITY_ICON[severity]}<span>{label}</span></span>}
+    {severity && label && <span className="dv-prob-flag" data-severity={tone} title={label}>{SEVERITY_ICON[severity]}<span>{label}</span></span>}
     {children}
   </div>;
 }

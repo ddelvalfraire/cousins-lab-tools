@@ -230,6 +230,8 @@ export const HighlightedPanel: Story = {
     await expect(flagged).toHaveLength(2);
     await expect(flagged[0]).toHaveAttribute('data-flag', 'error');
     await expect(within(flagged[0] as HTMLElement).getByText('MS-01 stopped sending data')).toBeVisible();
+    // A small tile cuts the flag, so the flag keeps the full problem as a tooltip.
+    await expect(flagged[0].querySelector('.dv-prob-flag')).toHaveAttribute('title', 'MS-01 stopped sending data');
     await expect(within(flagged[0] as HTMLElement).getByText('Current readings')).toBeVisible();
     await expect(canvasElement.querySelector('[aria-label="CO₂ pressure"]')!.parentElement).not.toHaveAttribute('data-flag');
   },
