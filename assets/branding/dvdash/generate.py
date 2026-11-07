@@ -37,10 +37,15 @@ def contents(path, color=None):
 
 def variants():
     icon = contents(HERE / "icon.svg")
+    lettering = parse(HERE / "lettering.svg")
+    letters_width, letters_height = float(lettering.attrib["width"]), float(lettering.attrib["height"])
+    height, gap = 128, 37
+    width = f"{height + gap + letters_width:g}"
     for variant, color in [("light", "#063d30"), ("dark", "#f7f8f2")]:
         letters = contents(HERE / "lettering.svg", color)
-        body = f'<g transform="scale(0.753)">{icon}</g><g transform="translate(156 12)">{letters}</g>'
-        (HERE / f"lockup-{variant}.svg").write_text(svg(660, 128, body, "DVDash"))
+        body = (f'<g transform="scale({height / 170:g})">{icon}</g>'
+                f'<g transform="translate({height + gap} {(height - letters_height) / 2:g})">{letters}</g>')
+        (HERE / f"lockup-{variant}.svg").write_text(svg(width, height, body, "DVDash"))
     original = parse(HERE / "icon.svg")
     for node in original.iter():
         value = node.get("fill", "")
