@@ -6,5 +6,6 @@ export * from './components/Inputs';
 export * from './components/ExperimentPanels';
 export * from './components/GasSignals';
 export * from './components/ScientificQuantityInput';
+export * from './components/PageHeader';
 export * from './components/ExperimentTools';
 export * from './components/CalibrationCurve';
