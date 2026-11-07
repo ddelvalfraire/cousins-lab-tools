@@ -59,6 +59,8 @@ button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-eve
   .dv-page-actionbar { height: auto; max-height: none; }
   .dv-page-actionbar-inner { height: auto; min-height: 48px; padding-block: 8px; flex-wrap: wrap; }
   .dv-page-actions { flex-wrap: wrap; max-width: 100%; }
+  /* Status chips wrap the same way, so no status word is cut. */
+  .dv-page-meta { flex-wrap: wrap; row-gap: 6px; overflow: visible; }
 }
 @container dv-page-header (max-width: 380px) {
   .dv-page-header-title, .dv-page-actionbar, .dv-page-navigation { padding-inline: 12px; }

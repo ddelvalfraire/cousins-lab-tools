@@ -164,6 +164,19 @@ test('the recorded playback bar keeps the page spacing at rest and sticks 8 px u
   expect((await gaps()).top, 'scrolled: stuck 8 px under the header').toBe(8);
 });
 
+test('the narrow page header wraps its status chips instead of cutting them', async ({ page }) => {
+  for (const id of ['screens-experiment--problems-present-narrow', 'screens-experiment--live-narrow', 'screens-review--playback-paused-narrow', 'screens-review--recorded-problems-narrow']) {
+    await story(page, id);
+    const fit = await page.evaluate(() => {
+      const trigger = [...document.querySelectorAll('.dv-prob-trigger')].find(e => e.checkVisibility())!;
+      const meta = trigger.closest('.dv-page-meta')!;
+      return { overflow: meta.scrollWidth - meta.clientWidth, past: Math.round(trigger.getBoundingClientRect().right - meta.getBoundingClientRect().right) };
+    });
+    expect(fit.overflow, `${id} meta overflow`).toBeLessThanOrEqual(0);
+    expect(fit.past, `${id} chip past the meta edge`).toBeLessThanOrEqual(0);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
