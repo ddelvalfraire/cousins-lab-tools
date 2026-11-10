@@ -54,11 +54,7 @@ Here are links to the issues that we completed in this sprint:
 - [Issue 120 — Upload the Sprint 2 slideshow](https://github.com/ddelvalfraire/cousins-lab-tools/issues/120)
 
 ## Code Files for Review
-- `apps/desktop/src/App.tsx` and `apps/desktop/src-tauri/src/lib.rs` — React/Tauri desktop starter and native command.
-- `crates/test-crate/src/lib.rs` — Rust demo command implementation.
-- `apps/legacy/module1/application/mainUI/main.py` and `apps/legacy/module2/application/mainUI/main.py` — acquisition path window titles and chart setup.
-- `apps/legacy/module1/application/uiElements/appearance.py` and `apps/legacy/module2/application/uiElements/appearance.py` — persistent chart appearance settings.
-- `.circleci/config.yml` and `.gitignore` — CI path filtering and repository build-output ignores.
+
  
 ## Retrospective Summary
 Here's what went well:
