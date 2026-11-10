@@ -1,6 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
 function App() {
@@ -12,7 +12,9 @@ function App() {
     try {
       setGreetMsg(await invoke<string>("greet", { name }));
     } catch {
-      setGreetMsg("The Rust command is unavailable. Use bun run tauri dev to check the native connection.");
+      setGreetMsg(
+        "The Rust command is unavailable. Use bun run tauri dev to check the native connection.",
+      );
     }
   }
 
@@ -22,13 +24,13 @@ function App() {
       <p>Desktop starter. Instrument workflows have not been migrated yet.</p>
 
       <div className="row">
-        <a href="https://vite.dev" target="_blank">
+        <a href="https://vite.dev" target="_blank" rel="noopener">
           <img src="/vite.svg" className="logo vite" alt="Vite logo" />
         </a>
-        <a href="https://tauri.app" target="_blank">
+        <a href="https://tauri.app" target="_blank" rel="noopener">
           <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
         </a>
-        <a href="https://react.dev" target="_blank">
+        <a href="https://react.dev" target="_blank" rel="noopener">
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>

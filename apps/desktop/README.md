@@ -17,6 +17,12 @@ bun run check
 bun run tauri build
 ```
 
+Run the front-end tests:
+
+```sh
+bun run test
+```
+
 Commit `bun.lock` when dependencies change. Bun uses the existing `package.json` and TypeScript configuration, so no `bunfig.toml` is required.
 
 ## Remove project dependencies and builds
