@@ -16,7 +16,6 @@ The team also demonstrated improvements to the existing Modules 1 and 2, includi
 
 ## Unfinished Work
 - The redesigned application is still an early desktop starter; the legacy instrument workflows have not yet been migrated.
-- Ethan's Rust/Tauri learning demo and the Sprint 2 slideshow upload remain open.
 - Legacy application consolidation, documentation/data migration, additional CI checks, and release automation are carryover work. Some legacy UI changes are present in the code, but their issues remain open pending completion/verification.
 
 ## Completed Issues/User Stories
