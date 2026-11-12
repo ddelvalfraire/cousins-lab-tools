@@ -756,6 +756,46 @@ test('the open search popup dims and blurs the page behind it like the dialogs, 
   }
 });
 
+test('the search box focus ring uses the app focus colour and stays at 3:1 contrast, also over the popup backdrop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const dark of [false, true]) {
+    await story(page, 'screens-experiments--home', dark);
+    const box = page.locator('.dv-shell-searchbox');
+    const ringContrast = async (state: string, focus: string) => {
+      const { x, y, width } = (await box.boundingBox())!, column = { x: Math.round(x + width / 2), y: Math.round(y) - 12, width: 1, height: 13 };
+      const png = (await page.screenshot({ clip: column })).toString('base64');
+      // Pixels from the top of the column down to the box's top border; the ring is the run of the focus colour.
+      return page.evaluate(async ([png, focus]) => {
+        const image = new Image(); image.src = `data:image/png;base64,${png}`; await image.decode();
+        const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+        const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0);
+        const data = context.getImageData(0, 0, 1, image.height).data, pixels = [...Array(image.height)].map((_, i) => [...data.slice(i * 4, i * 4 + 3)]);
+        const target = focus.match(/\d+/g)!.map(Number);
+        const near = (p: number[]) => p.every((v, i) => Math.abs(v - target[i]) <= 8);
+        const ring = pixels.flatMap((p, i) => near(p) ? [i] : []);
+        if (ring.length < 2) return { ring: ring.length, outside: 0, inside: 0 };
+        const lum = (p: number[]) => p.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+        const ratio = (a: number[], b: number[]) => { const [hi, lo] = [lum(a), lum(b)].sort((m, n) => n - m); return (hi + 0.05) / (lo + 0.05); };
+        const mid = pixels[ring[0] + 1];
+        return { ring: ring.length, outside: +ratio(mid, pixels[ring[0] - 1]).toFixed(2), inside: +ratio(mid, pixels[ring[ring.length - 1] + 1]).toFixed(2) };
+      }, [png, focus] as const).then(result => ({ state, ...result }));
+    };
+    const scheme = dark ? 'dark' : 'light';
+    await page.getByRole('searchbox', { name: 'Search experiments' }).click();
+    const style = await box.evaluate(el => { const s = getComputedStyle(el), probe = document.createElement('i'); probe.style.color = 'var(--dv-focus)'; el.append(probe); const focus = getComputedStyle(probe).color; probe.remove(); return { color: s.outlineColor, width: s.outlineWidth, style: s.outlineStyle, focus }; });
+    expect(style, `${scheme}: the ring is the app's --dv-focus colour`).toEqual({ color: style.focus, width: '2px', style: 'solid', focus: style.focus });
+    const closed = await ringContrast(`${scheme} clicked`, style.focus);
+    expect(closed.ring, `${scheme} clicked: ring drawn`).toBeGreaterThanOrEqual(2);
+    expect(Math.min(closed.outside, closed.inside), JSON.stringify(closed)).toBeGreaterThanOrEqual(3);
+    await page.locator('main').focus();
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('.dv-shell-search-backdrop')).toHaveCount(1);
+    const open = await ringContrast(`${scheme} open`, style.focus);
+    expect(open.ring, `${scheme} open: ring drawn`).toBeGreaterThanOrEqual(2);
+    expect(Math.min(open.outside, open.inside), JSON.stringify(open)).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);
