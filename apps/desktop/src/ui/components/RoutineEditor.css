@@ -116,7 +116,8 @@
 @container dv-re (max-width: 620px) {
   .dv-re-tools { opacity: 1; }
   .dv-re-step-number { display: none; }
-  .dv-re-step + .dv-re-step::before { left: 30px; }
+  /* With the number hidden, the connector runs through the 30 px mark centres instead. */
+  .dv-re-step + .dv-re-step::before { left: calc(12px + 28px + 10px + 15px - .5px); }
   /* With the tools always shown there is no room for the title beside them, so a step takes two lines: the title
      fills the first after the grip and mark (28 + 30 px and two 10 px gaps), and the duration chip, under the
      title, and the tools take the second, or a third line of their own when both do not fit. */
