@@ -586,6 +586,37 @@ test('the main sidebar keeps its content laid out while it collapses and expands
   expect(await sidebarLayout(page), 'first frame of the expand').toEqual(expanded);
 });
 
+/** The sidebar's pinned bottom group and the scroll container (if any) that holds the destinations. */
+const sidebarScroll = (page: Page) => page.locator('.dv-side-navigation').evaluate(nav => {
+  const bottom = nav.querySelector('.dv-navigation-bottom')!, destinations = nav.querySelector('nav')!;
+  let scroller: HTMLElement | null = destinations.parentElement;
+  while (scroller && scroller !== nav.parentElement && !/auto|scroll/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
+  const box = (el: Element) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
+  return {
+    nav: box(nav), bottom: box(bottom), collapse: box([...bottom.querySelectorAll('button')].pop()!),
+    scrolls: scroller ? scroller.scrollHeight > scroller.clientHeight : false, scrollerHoldsBottom: scroller ? scroller.contains(bottom) : false,
+  };
+});
+
+test('the sidebar pins the acquisition card, Settings and Collapse and scrolls only the destinations and recents above them', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await story(page, 'screens-experiments--home');
+  const short = await sidebarScroll(page);
+  expect(short.scrolls, 'the destinations and recents scroll in a short window').toBe(true);
+  expect(short.scrollerHoldsBottom, 'the bottom group is outside the scrolling region').toBe(false);
+  expect(short.collapse.bottom, 'Collapse is fully inside the sidebar').toBeLessThanOrEqual(short.nav.bottom);
+  const lastRecent = page.locator('.dv-navigation-recents .dv-navigation-recent').last();
+  await lastRecent.scrollIntoViewIfNeeded();
+  await expect(lastRecent).toBeInViewport({ ratio: 1 });
+  expect((await sidebarScroll(page)).bottom, 'scrolling leaves the bottom group where it was').toEqual(short.bottom);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await story(page, 'screens-experiments--home');
+  const tall = await sidebarScroll(page);
+  expect(tall.scrolls, 'nothing scrolls when everything fits').toBe(false);
+  expect(tall.nav.bottom - tall.bottom.bottom, 'the bottom group sits on the sidebar padding').toBe(10);
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);

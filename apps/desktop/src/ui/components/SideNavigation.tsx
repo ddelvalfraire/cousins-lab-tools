@@ -167,19 +167,21 @@ function Sidebar({ active = 'experiments', collapsed = false, detail = false, co
   };
 
   return <aside id={id} className="dv-side-navigation" data-collapsed={collapsed} data-detail={detail || undefined} aria-label="Sidebar">
-    <nav className="dv-navigation-section" aria-label="Main navigation">
-      <div className="dv-navigation-eyebrow" aria-hidden="true">{L.workspace}</div>
-      {destinations.map(({ id: destination, icon }) => navItem(destination, icon))}
-    </nav>
-    {recents.length > 0 && <section className="dv-navigation-recents" aria-label={L.recent}>
-      <div className="dv-navigation-eyebrow" aria-hidden="true">{L.recent}</div>
-      {!inDrawer && <button ref={triggerRef} type="button" className="dv-navigation-item dv-navigation-recents-trigger" data-tip={L.recent} aria-label={L.recent}
-        aria-haspopup="dialog" aria-expanded={showFlyout}
-        onClick={() => { setFlyoutTop(triggerRef.current?.offsetTop ?? 0); setFlyoutOpen(open => !open); }}>
-        <Glyph name="history" />
-      </button>}
-      {recents.map(recent => <RecentItem key={recent.id} recent={recent} onOpen={openExperiment} />)}
-    </section>}
+    <div className="dv-navigation-scroll">
+      <nav className="dv-navigation-section" aria-label="Main navigation">
+        <div className="dv-navigation-eyebrow" aria-hidden="true">{L.workspace}</div>
+        {destinations.map(({ id: destination, icon }) => navItem(destination, icon))}
+      </nav>
+      {recents.length > 0 && <section className="dv-navigation-recents" aria-label={L.recent}>
+        <div className="dv-navigation-eyebrow" aria-hidden="true">{L.recent}</div>
+        {!inDrawer && <button ref={triggerRef} type="button" className="dv-navigation-item dv-navigation-recents-trigger" data-tip={L.recent} aria-label={L.recent}
+          aria-haspopup="dialog" aria-expanded={showFlyout}
+          onClick={() => { setFlyoutTop(triggerRef.current?.offsetTop ?? 0); setFlyoutOpen(open => !open); }}>
+          <Glyph name="history" />
+        </button>}
+        {recents.map(recent => <RecentItem key={recent.id} recent={recent} onOpen={openExperiment} />)}
+      </section>}
+    </div>
     <div className="dv-navigation-bottom">
       {acquisition && <>
         <AcquisitionCard acquisition={acquisition} onOpen={openExperiment} />
