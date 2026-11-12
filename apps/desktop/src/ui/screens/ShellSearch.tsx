@@ -1,5 +1,6 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { flushSync } from 'react-dom';
+import { Overlay, useMantineTheme, type OverlayProps } from '@mantine/core';
 import { CommandCenter, KeyCaps, commandOptionId, findCommands, type CommandCategory, type CommandItem } from '../components/CommandCenter';
 
 /** A command center row and what choosing it does. */
@@ -40,6 +41,7 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
   const anchorRef = useRef<HTMLDivElement>(null), inputRef = useRef<HTMLInputElement>(null), returnFocus = useRef<HTMLElement | null>(null);
   const quietFocus = useRef(false);
   const listId = useId();
+  const dialogDim = useMantineTheme().components.ModalOverlay?.defaultProps as OverlayProps | undefined;
   const all = scope === 'all', value = all ? query : pageQuery;
   const groups = all ? findCommands(commands, query, category) : [];
   const results = groups.flatMap(group => group.items), current = results[Math.min(active, results.length - 1)];
@@ -108,6 +110,9 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
 
   const combobox = all ? { role: 'combobox', 'aria-autocomplete': 'list', 'aria-haspopup': 'listbox', 'aria-expanded': open, 'aria-controls': listId, 'aria-activedescendant': open && current ? commandOptionId(listId, current) : undefined } as const : {};
   return <div className="dv-shell-search-anchor" ref={anchorRef} onBlur={onBlur}>
+    {/* The dialogs' dim and blur behind the open results. z-index -1 keeps it inside the anchor's stacking context,
+        under the search box and the results but over the rest of the window. A click on it blurs the input, which closes the popup. */}
+    {all && open && <Overlay {...dialogDim} fixed zIndex={-1} className="dv-shell-search-backdrop" aria-hidden="true" />}
     <div className="dv-shell-searchbox" role="search" aria-label="DVDash search">
       {glyph(<><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>)}
       <select aria-label="Search scope" value={scope} onChange={event => changeScope(event.currentTarget.value as Scope)}>

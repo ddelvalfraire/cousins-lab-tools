@@ -718,6 +718,44 @@ test('every command center control works by mouse where clicked buttons take no 
   await expect(page.getByRole('listbox', { name: 'Search results' }), 'Escape closes the popup').toHaveCount(0);
 });
 
+test('the open search popup dims and blurs the page behind it like the dialogs, under the search box and popup', async ({ page }) => {
+  for (const [width, height] of [[1440, 900], [390, 844]]) for (const dark of [false, true]) {
+    const at = `${width}x${height} ${dark ? 'dark' : 'light'}`;
+    await page.setViewportSize({ width, height });
+    await story(page, 'screens-experiments--home', dark);
+    await page.locator('main').focus();
+    await page.keyboard.press('?');
+    const dialogOverlay = await page.locator('.mantine-Modal-overlay').evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, blur: s.backdropFilter }; });
+    expect(dialogOverlay, at).toEqual({ background: 'rgba(14, 26, 20, 0.4)', blur: 'blur(4px)' });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.mantine-Modal-overlay')).toHaveCount(0);
+
+    const backdrop = page.locator('.dv-shell-search-backdrop');
+    await expect(backdrop, `${at} no backdrop while closed`).toHaveCount(0);
+    await page.keyboard.press('Control+k');
+    await expect(backdrop, `${at} backdrop while open`).toHaveCount(1);
+    expect(await backdrop.evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, blur: s.backdropFilter }; }), at).toEqual(dialogOverlay);
+    expect(await backdrop.boundingBox(), `${at} covers the window`).toEqual({ x: 0, y: 0, width, height });
+    await expect(backdrop, `${at} hidden from screen readers`).toHaveAttribute('aria-hidden', 'true');
+    const topmost = (x: number, y: number) => page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      return el?.closest('.dv-shell-search-backdrop') ? 'backdrop' : el?.closest('.dv-cmd') ? 'popup' : el?.closest('.dv-shell-searchbox') ? 'searchbox' : el?.tagName;
+    }, [x, y] as const);
+    const box = (await page.locator('.dv-shell-searchbox').boundingBox())!, popup = (await page.locator('.dv-cmd').boundingBox())!;
+    expect(await topmost(box.x + box.width / 2, box.y + box.height / 2), `${at} search box above`).toBe('searchbox');
+    expect(await topmost(popup.x + popup.width / 2, popup.y + popup.height / 2), `${at} popup above`).toBe('popup');
+    expect(await topmost(width - 4, height - 4), `${at} page below`).toBe('backdrop');
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('combobox', { name: 'Search all DVDash' }), `${at} keyboard still drives the list`).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(backdrop, `${at} Escape removes it`).toHaveCount(0);
+    await page.keyboard.press('Control+k');
+    await page.mouse.click(width - 4, height - 4);
+    await expect(page.getByRole('listbox', { name: 'Search results' }), `${at} clicking the backdrop closes the popup`).toHaveCount(0);
+    await expect(backdrop).toHaveCount(0);
+  }
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);
