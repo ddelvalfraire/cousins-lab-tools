@@ -4,12 +4,13 @@ import { expect, fn, userEvent, within } from 'storybook/test';
 import { PlaybackChartCard, PlaybackTransport, RecordedSamples, StreamCard, sampleIndexAt, type PlaybackTransportProps } from './ExperimentWorkspace';
 import { liveStreams, recordedChannels, recordedSamples, recordedSamplesWithGap } from './ExperimentWorkspace.fixtures';
 
-/** The compact sticky playback transport (sticky-playback-review.html). Position and play state are owned by the page. */
+/** The compact sticky playback transport (sticky-playback-review.html). Position and play state are owned by the page.
+ *  The page's workspace container is what switches the bar to two rows when narrow, so the harness provides one. */
 function Transport(args: PlaybackTransportProps) {
   const [position, setPosition] = useState(args.position), [playing, setPlaying] = useState(args.playing), [speed, setSpeed] = useState(args.speed);
-  return <div className="dv-xw-recorded"><PlaybackTransport {...args} position={position} playing={playing} speed={speed}
+  return <div className="dv-workspace-body"><div className="dv-xw-recorded"><PlaybackTransport {...args} position={position} playing={playing} speed={speed}
     sampleIndex={sampleIndexAt(recordedSamples, position)}
-    onSeek={value => { setPosition(value); args.onSeek(value); }} onPlayingChange={value => { setPlaying(value); args.onPlayingChange(value); }} onSpeedChange={value => { setSpeed(value); args.onSpeedChange(value); }} /></div>;
+    onSeek={value => { setPosition(value); args.onSeek(value); }} onPlayingChange={value => { setPlaying(value); args.onPlayingChange(value); }} onSpeedChange={value => { setSpeed(value); args.onSpeedChange(value); }} /></div></div>;
 }
 
 const meta = {

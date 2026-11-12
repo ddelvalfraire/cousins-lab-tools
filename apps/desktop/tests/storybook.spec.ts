@@ -365,6 +365,15 @@ test('revision labels use a capital R on every page that shows one', async ({ pa
   }
 });
 
+test('the narrow transport stories put the scrubber on its own row, clear of the time', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const id of ['components-experimentworkspace--transport-paused', 'components-experimentworkspace--transport-playing', 'components-experimentworkspace--transport-ended']) {
+    await story(page, id);
+    const [time, seek] = await Promise.all(['.dv-xw-transport-time', '.dv-xw-seek'].map(selector => page.locator(selector).first().boundingBox()));
+    expect(seek!.y, `${id} scrubber below the time`).toBeGreaterThanOrEqual(time!.y + time!.height);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
