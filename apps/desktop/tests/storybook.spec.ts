@@ -325,6 +325,26 @@ test('the routine step connector runs through the step number centres', async ({
   for (const offset of offsets) expect(Math.abs(offset), 'connector to number centre').toBeLessThanOrEqual(0.5);
 });
 
+test('the experiments table keeps chips on one line at 772 px and names on one line at 390 px', async ({ page }) => {
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:experiments');
+    await expect(page.locator('.dv-exp-table tbody tr').first()).toBeVisible();
+    const rows = await page.locator('.dv-exp-table tbody tr').evaluateAll(trs => trs.map(tr => {
+      const name = tr.querySelector('.dv-exp-name')!;
+      return {
+        name: name.textContent, nameLines: Math.round(name.getBoundingClientRect().height / parseFloat(getComputedStyle(name).lineHeight)),
+        chipLines: new Set([...tr.querySelectorAll('.dv-exp-chips > *')].map(chip => Math.round(chip.getBoundingClientRect().top))).size,
+      };
+    }));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.nameLines, `${width} ${row.name} name lines`).toBe(1);
+      if (width === 1440) expect(row.chipLines, `${width} ${row.name} chip lines`).toBe(1);
+    }
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
