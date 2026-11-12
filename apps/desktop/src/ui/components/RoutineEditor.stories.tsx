@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
 import { RoutineEditor } from './RoutineEditor';
 import type { RoutineDefinition } from './RoutineEditor';
+import { chooseOption } from './chooseOption';
 
 const savedRoutine: RoutineDefinition = {
   parameters: [{ id: 'q1', name: 'Reference', seconds: 10 }, { id: 'q2', name: 'Settle', seconds: 5 }, { id: 'q3', name: 'Sample', seconds: 20 }],
@@ -69,7 +70,7 @@ export const StepUsingAParameter: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('heading', { name: 'Step 4 · Capture' })).toBeVisible();
     await expect(canvas.getByRole('radio', { name: 'Parameter' })).toBeChecked();
-    await expect(canvas.getByRole('combobox', { name: 'Parameter' })).toHaveDisplayValue('Sample · 30 s');
+    await expect(canvas.getByRole('combobox', { name: 'Parameter' })).toHaveTextContent('Sample · 30 s');
     await expect(chip(canvasElement, 's4')).toHaveTextContent('30 s · Sample');
     await expect(canvas.getByText('5 steps · 50 s total')).toBeVisible();
   },
@@ -118,12 +119,12 @@ export const ChangeStepType: Story = {
     // Changing a capture to a wait removes its name and says so.
     await userEvent.click(canvas.getByRole('button', { name: 'Edit step 4, Capture sample' }));
     await expect(note()).toBeNull();
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Type' }), 'wait');
+    await chooseOption(canvas.getByRole('combobox', { name: 'Type' }), 'wait');
     await expect(note()).toHaveTextContent(/^Wait steps don’t have a name, so “Sample” was removed\.$/);
     await expect(canvas.queryByRole('textbox', { name: 'What it captures' })).toBeNull();
     await expect(canvas.getByRole('heading', { name: 'Step 4 · Wait' })).toBeVisible();
     // And a wait changed to a note drops its duration.
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Type' }), 'annotate');
+    await chooseOption(canvas.getByRole('combobox', { name: 'Type' }), 'annotate');
     await expect(note()).toHaveTextContent(/^Notes don’t take time, so this step’s duration was removed\.$/);
     await expect(chip(canvasElement, 's4')).toBeNull();
   },

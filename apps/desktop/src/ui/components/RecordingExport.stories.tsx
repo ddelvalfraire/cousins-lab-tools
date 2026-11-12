@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { RecordingExportDialog, type RecordingExportDialogProps } from './RecordingExport';
 import { exportDefaults, exportRecording, exportRows, exportSignals } from './exchange-fixtures';
+import { chooseOption } from './chooseOption';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
 const dialog = (canvasElement: HTMLElement) => within(within(canvasElement.ownerDocument.body).getByRole('dialog'));
@@ -107,7 +108,7 @@ export const JsonFormat: Story = {
   args: { gaps: true },
   play: async ({ canvasElement }) => {
     const body = dialog(canvasElement);
-    await userEvent.selectOptions(body.getByRole('combobox', { name: 'Format' }), 'json');
+    await chooseOption(body.getByRole('combobox', { name: 'Format' }), 'json');
     await expect(body.getByText('Selected signals contain gaps. Missing samples will be null.')).toBeVisible();
     await expect(body.getByRole('checkbox', { name: 'Include preset reference' })).toBeEnabled();
     await expect(body.getByRole('button', { name: 'Export JSON' })).toBeEnabled();

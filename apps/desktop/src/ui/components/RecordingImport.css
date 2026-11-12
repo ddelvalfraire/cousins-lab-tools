@@ -20,7 +20,7 @@
 .dv-recording-import-channels { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
 
 .dv-recording-import-preset { display: block; margin-top: 20px; font-size: 12px; font-weight: 550; }
-.dv-recording-import-preset select { display: block; width: 100%; height: 35px; margin-top: 7px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-recording-import-preset .dv-select { display: block; width: 100%; height: 35px; margin-top: 7px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
 .dv-recording-import-preset small { display: block; margin-top: 6px; font-size: 11px; font-weight: 400; line-height: 1.6; color: var(--dv-ink-muted); }
 
 @media (max-width: 600px) {

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ExperimentsList } from './ExperimentsList';
 import type { ExperimentSummary, ExperimentsListProps } from './ExperimentsList';
+import { chooseOption } from './chooseOption';
 
 const experiments: ExperimentSummary[] = [
   { id: 'exp-026', name: 'Leaf respiration · Sample 026', kind: 'instrument', source: 'MS-01', preset: 'CO₂ & O₂ analysis', revision: 3, samples: 87, status: 'running', startedAt: '2026-11-06T14:02' },
@@ -154,7 +155,7 @@ export const Paginated: Story = {
     await expect(footer).toHaveTextContent('11–14 of 14 experiments');
     await expect(footer).toHaveTextContent('2 / 2');
     await expect(canvas.getByRole('button', { name: 'Next page' })).toBeDisabled();
-    await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Rows per page' }), '25');
+    await chooseOption(canvas.getByRole('combobox', { name: 'Rows per page' }), '25');
     await expect(rows(canvasElement)).toHaveLength(14);
     await expect(footer).toHaveTextContent('1 / 1');
   },

@@ -5,11 +5,11 @@
 }
 .dv-preset-editor *, .dv-preset-editor *::before, .dv-preset-editor *::after { box-sizing: border-box; }
 .dv-preset-editor :where(h2, h3, p) { margin: 0; }
-.dv-preset-editor :where(button, input, select) { font: inherit; }
+.dv-preset-editor :where(button, input) { font: inherit; }
 .dv-preset-editor button { cursor: pointer; color: inherit; touch-action: manipulation; }
 .dv-preset-editor button:disabled { cursor: default; }
 .dv-preset-editor svg { flex: none; pointer-events: none; }
-.dv-preset-editor :is(button, input, select, a):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+.dv-preset-editor :is(button, input, a):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-preset-editor [hidden] { display: none !important; }
 .pe-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
@@ -122,7 +122,7 @@
 
 /* Right sidebar. */
 .pe-side-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 550; margin-top: 16px; min-width: 0; }
-.pe-side-field input, .pe-side-field select { width: 100%; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 400; }
+.pe-side-field input, .pe-side-field .dv-select { width: 100%; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 400; }
 .pe-side-field [aria-invalid='true'] { border-color: var(--dv-error); }
 .pe-side-hint { font-size: 11px; font-weight: 400; color: var(--dv-ink-muted); line-height: 1.5; }
 .pe-fieldset { border: 0; margin: 16px 0 0; padding: 0; min-width: 0; }

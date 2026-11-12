@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
 import { PresetEditor } from './PresetEditor';
 import type { EditablePreset, PresetPanel } from './PresetEditor';
+import { chooseOption } from './chooseOption';
 
 const savedPanels = (): PresetPanel[] => [
   { id: 'p1', title: 'CO₂ and O₂ signals', kind: 'line', span: 12, signals: ['Mass 32', 'Mass 44'], x: null },
@@ -81,7 +82,7 @@ export const Saved: Story = {
     // The preview follows the sidebar settings.
     await userEvent.click(panel(canvasElement, 'p5').querySelector('h3')!);
     await expect(panel(canvasElement, 'p5')).toHaveAttribute('data-selected', 'true');
-    await userEvent.selectOptions(canvas.getByLabelText('Width'), 'Full');
+    await chooseOption(canvas.getByLabelText('Width'), 'Full');
     await expect(panel(canvasElement, 'p5')).toHaveAttribute('data-span', '12');
     await expect(canvas.getByText('Or drag the panel’s right edge.')).toBeVisible();
     await userEvent.click(canvas.getByRole('tab', { name: 'Signals' }));
@@ -322,7 +323,7 @@ export const AllKinds: Story = {
     await expect([...settings.querySelectorAll('.pe-setting-label')].map(el => el.textContent)).toEqual(['Zero offset', 'Span signal', 'Standard concentration']);
     await expect(settings.querySelector('.pe-qty')).toHaveTextContent('0.25mV');
     // Inert: nothing in either preview takes focus or input.
-    await expect(settings.querySelectorAll('input, select, textarea')).toHaveLength(0);
+    await expect(settings.querySelectorAll('input, select, textarea, [role=combobox]')).toHaveLength(0);
     await expect(controls.querySelector('.dv-acq-tag')).toHaveTextContent('Acquiring');
     await expect(controls.querySelector('.pe-controls')).toHaveTextContent('MS-01 · Connected87 samples00:43Stop acquisition');
     await expect(controls.querySelectorAll('.pe-controls button, .pe-controls input')).toHaveLength(0);

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within, type Mock } from 'storybook/test';
 import { ExperimentSetupForm, type SetupPreset, type SetupRoutine, type SetupSource } from './ExperimentSetupForm';
+import { chooseOption } from './chooseOption';
 
 const presets: SetupPreset[] = [
   { id: 'gas', name: 'CO₂ & O₂ analysis', revisions: [3, 2], signals: ['32', '44'] },
@@ -64,19 +65,19 @@ export const PrepareRecordedData: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     // A source without a required signal is explained in one sentence and blocks opening.
-    await userEvent.selectOptions(select(canvasElement, 'Recording'), 'sample026');
+    await chooseOption(select(canvasElement, 'Recording'), 'sample026');
     await expect(validation(canvasElement)).toHaveTextContent('Sample 026 is missing Mass 32. Choose a compatible source.');
     await expect(validation(canvasElement).querySelectorAll('li')).toHaveLength(0);
     await expect(openButton(canvasElement)).toBeDisabled();
-    await userEvent.selectOptions(select(canvasElement, 'Recording'), 'sample025');
+    await chooseOption(select(canvasElement, 'Recording'), 'sample025');
     // The reference recording must be chosen when included.
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Include a reference recording' }));
-    await userEvent.selectOptions(select(canvasElement, 'Reference recording'), '');
+    await chooseOption(select(canvasElement, 'Reference recording'), '');
     await expect(openButton(canvasElement)).toBeDisabled();
-    await userEvent.selectOptions(select(canvasElement, 'Reference recording'), 'reference023');
+    await chooseOption(select(canvasElement, 'Reference recording'), 'reference023');
     await expect(openButton(canvasElement)).toBeEnabled();
     // The chosen revision survives preparation; preparing locks the fields.
-    await userEvent.selectOptions(select(canvasElement, 'Revision'), '2');
+    await chooseOption(select(canvasElement, 'Revision'), '2');
     await userEvent.click(openButton(canvasElement));
     await expect(canvas.getByRole('textbox', { name: 'Experiment name' })).toBeDisabled();
     const prepared = await canvas.findByRole('heading', { name: 'Experiment prepared' }, { timeout: 3000 });
@@ -113,7 +114,7 @@ export const PrepareInstrumentStream: Story = {
     await expect(args.onOpen).toHaveBeenLastCalledWith(expect.objectContaining({ routine: { id: 'measure', revision: 2, parameters: { count: 200, interval: 0.25, delay: 0 } } }));
     // Another routine shows its own fields and sends its own parameters.
     await userEvent.click(canvas.getByRole('button', { name: 'Return to setup' }));
-    await userEvent.selectOptions(select(canvasElement, 'Routine revision'), 'reference');
+    await chooseOption(select(canvasElement, 'Routine revision'), 'reference');
     await expect(canvas.queryByRole('textbox', { name: 'Measurement count' })).toBeNull();
     await userEvent.clear(canvas.getByRole('textbox', { name: 'Wait' })); await userEvent.type(canvas.getByRole('textbox', { name: 'Wait' }), '7');
     await userEvent.click(openButton(canvasElement));
@@ -183,7 +184,7 @@ export const FixInputErrors: Story = {
     await userEvent.clear(count); await userEvent.type(count, '10');
     await expect(openButton(canvasElement)).toBeEnabled();
     // Changing the preset selects its latest revision and its requirements.
-    await userEvent.selectOptions(select(canvasElement, 'Preset'), 'isotope');
+    await chooseOption(select(canvasElement, 'Preset'), 'isotope');
     await expect(select(canvasElement, 'Revision')).toHaveValue('1');
     await expect(canvas.getByText(/Needs Mass 45/)).toBeVisible();
   },

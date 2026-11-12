@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { SidebarIcon, type SidebarIconName } from './RightSidebar';
 import { Chip } from './Chip';
+import { DvSelect } from './DvSelect';
 import './Approved.css';
 import './CatalogTable.css';
 
@@ -76,7 +77,7 @@ export function CatalogPagination({ noun, total, pager }: { noun: (n: number) =>
   return <div className="dv-cat-pagination">
     <span>{total ? `${start + 1}–${end} of ${noun(total)}` : noun(0)}</span>
     <div className="dv-cat-pagination-controls">
-      <label>Rows <select aria-label="Rows per page" value={size} onChange={event => setSize(Number(event.target.value))}>{PAGE_SIZES.map(n => <option key={n} value={n}>{n}</option>)}</select></label>
+      <label>Rows <DvSelect aria-label="Rows per page" value={String(size)} options={PAGE_SIZES.map(n => ({ value: String(n), label: String(n) }))} onChange={value => setSize(Number(value))} /></label>
       <button type="button" aria-label="First page" disabled={page === 0} onClick={() => setPage(0)}>«</button>
       <button type="button" aria-label="Previous page" disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
       <span>{page + 1} / {count}</span>

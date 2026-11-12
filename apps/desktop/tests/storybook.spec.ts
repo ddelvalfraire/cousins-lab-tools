@@ -1,7 +1,14 @@
-import { chromium, expect, test, type Page } from '@playwright/test';
+import { chromium, expect, test, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+
+/** Opens a DvSelect and picks an option by its value, as `selectOption` does for a native select. */
+async function choose(select: Locator, value: string) {
+  await select.click();
+  const list = select.page().locator(`[id="${await select.getAttribute('aria-controls')}"]`);
+  await list.locator(`[role=option][data-value="${value}"]`).click();
+}
 
 async function story(page: Page, id: string, dark = false) {
   await page.goto(`/iframe.html?id=${id}&viewMode=story${dark ? '&globals=appearance:dark' : ''}`);
@@ -111,9 +118,9 @@ test('scientific quantity conversion keeps the stored value and rejects values i
   await expect(field).toHaveValue('');
   await field.fill('-0.25');
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await unit.selectOption('µV');
+  await choose(unit, 'µV');
   await expect(field).toHaveValue('-250');
-  await unit.selectOption('V');
+  await choose(unit, 'V');
   await field.fill('1e308');
   await expect(page.getByRole('alert')).toContainText('too large to store');
   await expect(page.getByRole('alert')).toContainText('Still using -0.25 mV.');

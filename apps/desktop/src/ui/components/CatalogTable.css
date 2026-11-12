@@ -72,10 +72,10 @@
 /* Pagination footer */
 .dv-cat-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: 10px; color: var(--dv-ink-muted); flex-wrap: wrap; }
 .dv-cat-pagination-controls { display: flex; gap: 4px; align-items: center; }
-.dv-cat .dv-cat-pagination-controls button { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); color: var(--dv-ink); }
+.dv-cat .dv-cat-pagination-controls button:not(.dv-select) { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); color: var(--dv-ink); }
 .dv-cat .dv-cat-pagination-controls button:disabled { opacity: .4; }
-.dv-cat-pagination-controls button:focus-visible, .dv-cat-pagination select:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
-.dv-cat-pagination select { border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; padding: 5px; margin-inline: 5px; }
+.dv-cat-pagination-controls button:focus-visible, .dv-cat-pagination .dv-select:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-cat-pagination .dv-select { border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; padding: 5px; margin-inline: 5px; }
 
 /* Empty and no-results (.preset-state) */
 .dv-cat-state { padding: 50px 24px; text-align: center; border: 1px dashed var(--dv-line); border-radius: 8px; }

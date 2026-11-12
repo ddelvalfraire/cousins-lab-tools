@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { ScientificQuantityInput } from './ScientificQuantityInput';
+import { chooseOption } from './chooseOption';
 
 const meta = {
   title: 'Components/ScientificQuantityInput',
@@ -40,13 +41,13 @@ export const OrdinaryValue: Story = {
 export const ChangingUnits: Story = {
   play: async ({ canvasElement, args }) => {
     const { field, unit, stored } = parts(canvasElement);
-    await userEvent.selectOptions(unit, 'µV');
+    await chooseOption(unit, 'µV');
     await expect(field).toHaveValue('-250');
-    await userEvent.selectOptions(unit, 'V');
+    await chooseOption(unit, 'V');
     await expect(field).toHaveValue('-0.00025');
     await expect(stored).toHaveTextContent('-0.25 mV');
     await expect(args.onValueChange).not.toHaveBeenCalled();
-    await userEvent.selectOptions(unit, 'mV');
+    await chooseOption(unit, 'mV');
     await userEvent.clear(field); await userEvent.type(field, '1.5e3');
     await expect(stored).toHaveTextContent('1500 mV');
     await expect(args.onValueChange).toHaveBeenLastCalledWith(1500);
@@ -105,7 +106,7 @@ export const UnitFixesTooSmall: Story = {
   args: { initialText: '1e-323', initialUnit: 'µV' },
   play: async ({ canvasElement, args }) => {
     const { canvas, field, unit } = parts(canvasElement);
-    await userEvent.selectOptions(unit, 'mV');
+    await chooseOption(unit, 'mV');
     await expect(field).toHaveValue('1e-323');
     await expect(canvas.queryByRole('alert')).toBeNull();
     await expect(args.onValueChange).toHaveBeenLastCalledWith(1e-323);

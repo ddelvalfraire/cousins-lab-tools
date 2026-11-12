@@ -1,7 +1,7 @@
 /* Experiments list. Source: design/dvdash-field-review/experiments-home-review.html. */
 .dv-exp { container-type: inline-size; position: relative; color: var(--dv-ink); background: var(--dv-bg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
 .dv-exp :where(h1, h2, p) { margin: 0; }
-.dv-exp :where(button, select) { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+.dv-exp :where(button) { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-exp :where(button:disabled) { cursor: default; }
 .dv-exp :focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-exp svg { flex: none; pointer-events: none; }
@@ -50,10 +50,10 @@
 /* Pagination footer */
 .dv-exp-pagination { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: 10px; color: var(--dv-ink-muted); flex-wrap: wrap; }
 .dv-exp-pagination-controls { display: flex; gap: 4px; align-items: center; }
-.dv-exp-pagination-controls button { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
-.dv-exp .dv-exp-pagination-controls button { color: var(--dv-ink); }
+.dv-exp-pagination-controls button:not(.dv-select) { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
+.dv-exp .dv-exp-pagination-controls button:not(.dv-select) { color: var(--dv-ink); }
 .dv-exp-pagination-controls button:disabled { opacity: .4; }
-.dv-exp-pagination select { border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; padding: 5px; margin-inline: 5px; }
+.dv-exp-pagination .dv-select { border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; padding: 5px; margin-inline: 5px; }
 
 /* Empty states */
 .dv-exp-empty { padding: 26px 20px 27px; display: grid; justify-items: start; gap: 9px; }

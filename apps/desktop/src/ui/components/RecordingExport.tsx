@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Chip } from './Chip';
+import { DvSelect } from './DvSelect';
 import { StatusBanner } from './Primitives';
 import { formatDuration, ImportButton, ImportDialog, ImportFooterNote, ImportIcon, ImportProgressNote } from './ImportDialog';
 import './RecordingExport.css';
@@ -86,8 +87,10 @@ export function exportFileNameProblem(name: string) {
  * the signals to include, and the file name. Gaps are reported without blocking the export.
  * Values from design/dvdash-field-review/recording-export-review.html.
  */
+const FORMATS = [{ value: 'csv', label: 'CSV' }, { value: 'json', label: 'JSON' }];
+
 export function RecordingExportDialog({ opened, phase, recording, signals, value, onChange, rows, hasSelection = true, gaps = false, empty = false, result, onExport, onCancelExport, onDownloadAgain, onClose }: RecordingExportDialogProps) {
-  const [touched, setTouched] = useState(false), [attempted, setAttempted] = useState(false);
+  const [touched, setTouched] = useState(false), [attempted, setAttempted] = useState(false), formatLabel = useId();
   useEffect(() => { if (!opened) { setTouched(false); setAttempted(false); } }, [opened]);
   const set = (patch: Partial<RecordingExportSettings>) => onChange({ ...value, ...patch });
   const rangeProblem = exportRangeProblem(value, recording.duration);
@@ -179,7 +182,7 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
           <input value={value.fileName} title={value.fileName} aria-invalid={(attempted && !!nameProblem) || undefined} aria-describedby={attempted && nameProblem ? 'dv-export-name-error' : undefined} onChange={event => set({ fileName: event.currentTarget.value })} />
           <span className="dv-export-extension">.{value.format}</span>
         </span></label>
-        <label className="dv-export-field">Format<select value={value.format} onChange={event => set({ format: event.currentTarget.value as ExportFormat })}><option value="csv">CSV</option><option value="json">JSON</option></select></label>
+        <label className="dv-export-field"><span id={formatLabel}>Format</span><DvSelect aria-labelledby={formatLabel} value={value.format} options={FORMATS} onChange={format => set({ format: format as ExportFormat })} /></label>
       </div>
       {attempted && nameProblem && <div className="dv-export-name-feedback" id="dv-export-name-error"><StatusBanner severity="error" announce>{nameProblem}</StatusBanner></div>}
       <label className="dv-export-context" data-disabled={value.format !== 'json'}>

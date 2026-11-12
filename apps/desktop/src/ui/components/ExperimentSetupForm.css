@@ -1,12 +1,11 @@
 /* Prepare experiment. Source: design/dvdash-field-review/experiment-setup-review.html. */
 .dv-setup { container-type: inline-size; background: var(--dv-paper); color: var(--dv-ink); border: 1px solid var(--dv-line); border-radius: 12px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; min-width: 0; overflow: hidden; }
 .dv-setup :where(h2, h3, p) { margin: 0; }
-.dv-setup :where(button, input, select) { font: inherit; }
+.dv-setup :where(button, input) { font: inherit; }
 .dv-setup button { color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-setup button:disabled { cursor: default; opacity: .5; }
-.dv-setup select { touch-action: manipulation; }
 .dv-setup svg { flex: none; pointer-events: none; }
-.dv-setup :is(button, input, select):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+.dv-setup :is(button, input):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-setup-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 .dv-setup-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 24px 18px; }
@@ -28,13 +27,13 @@
 /* Fields */
 .dv-setup-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 550; }
 .dv-setup-full { margin-bottom: 16px; }
-.dv-setup-field > input, .dv-setup-field select { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 13px; font-weight: 400; }
+.dv-setup-field > input, .dv-setup-field .dv-select { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 13px; font-weight: 400; }
 .dv-setup-unit-input { display: flex; align-items: center; gap: 8px; padding: 0 9px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); }
 .dv-setup-unit-input:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 .dv-setup-unit-input input { width: 100%; min-width: 0; padding: 8px 0; border: 0; outline: none; background: none; color: var(--dv-ink); font-size: 13px; font-variant-numeric: tabular-nums; }
 .dv-setup .dv-setup-unit-input input:focus-visible { outline: none; }
 .dv-setup-unit-input span { font-size: 11px; color: var(--dv-ink-muted); }
-.dv-setup-unit-input:has([aria-invalid='true']), .dv-setup-field > input[aria-invalid='true'], .dv-setup-field select[aria-invalid='true'] { border-color: var(--dv-error); }
+.dv-setup-unit-input:has([aria-invalid='true']), .dv-setup-field > input[aria-invalid='true'], .dv-setup-field .dv-select[aria-invalid='true'] { border-color: var(--dv-error); }
 
 /* Recorded / live mode */
 .dv-setup-mode { display: flex; gap: 7px; padding: 4px; margin-bottom: 17px; background: var(--dv-bg); border: 1px solid var(--dv-line); border-radius: 8px; }

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Banner } from './Banner';
+import { DvSelect } from './DvSelect';
 import { ReviewIcon } from './ReviewIcons';
 import './Approved.css';
 import './SettingsPage.css';
@@ -86,6 +87,8 @@ export function reportProblemUrl(build: BuildInfo) {
 }
 
 /** Application preferences. Each change saves immediately and shows a Saved mark. */
+const SEPARATORS = [{ value: 'comma', label: 'Comma' }, { value: 'semicolon', label: 'Semicolon' }, { value: 'tab', label: 'Tab' }];
+
 export function SettingsPage({ settings, build, folderState, systemDecimal = 'point', onChange, onChooseFolder, onCopyCommit, hideHeader = false }: SettingsPageProps) {
   const id = useId();
   const [saved, setSaved] = useState(false);
@@ -95,7 +98,7 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
   const previousSettings = useRef(settings);
   const previousStatus = useRef(folderState.status);
   const chooseAgain = useRef<HTMLButtonElement>(null);
-  const delimiterSelect = useRef<HTMLSelectElement>(null);
+  const delimiterSelect = useRef<HTMLButtonElement>(null);
 
   const announce = (text: string) => {
     cancelAnimationFrame(timers.current.frame ?? 0);
@@ -184,11 +187,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           <div className="dv-settings-fields">
             <div className="dv-settings-field">
               <label htmlFor={ids.decimal}>Decimal separator</label>
-              <select id={ids.decimal} aria-describedby={ids.decimalHint} value={settings.decimal} onChange={event => onChange('decimal', event.target.value as DecimalPreference)}>
-                <option value="system">Match system ({systemDecimal})</option>
-                <option value="point">Point · 1,234.56</option>
-                <option value="comma">Comma · 1 234,56</option>
-              </select>
+              <DvSelect id={ids.decimal} aria-describedby={ids.decimalHint} value={settings.decimal} onChange={value => onChange('decimal', value as DecimalPreference)}
+                options={[{ value: 'system', label: `Match system (${systemDecimal})` }, { value: 'point', label: 'Point · 1,234.56' }, { value: 'comma', label: 'Comma · 1 234,56' }]} />
               <span className="dv-settings-hint" id={ids.decimalHint}>Number fields accept both a point and a comma, whatever is chosen here.</span>
             </div>
             <div className="dv-settings-preview" aria-live="off">
@@ -227,11 +227,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           <div className="dv-settings-fields">
             <div className="dv-settings-field">
               <label htmlFor={ids.delimiter}>Column separator in CSV files</label>
-              <select id={ids.delimiter} ref={delimiterSelect} aria-describedby={`${ids.delimiterHint} ${ids.exportMessage}`} aria-invalid={conflict} value={settings.delimiter} onChange={event => onChange('delimiter', event.target.value as ColumnSeparator)}>
-                <option value="comma">Comma</option>
-                <option value="semicolon">Semicolon</option>
-                <option value="tab">Tab</option>
-              </select>
+              <DvSelect id={ids.delimiter} ref={delimiterSelect} aria-describedby={`${ids.delimiterHint} ${ids.exportMessage}`} aria-invalid={conflict} value={settings.delimiter}
+                options={SEPARATORS} onChange={value => onChange('delimiter', value as ColumnSeparator)} />
               <span className="dv-settings-hint" id={ids.delimiterHint}>Spreadsheets in regions that use a decimal comma usually expect semicolons.</span>
             </div>
             <div id={ids.exportMessage} hidden={!conflict} data-testid="export-message">

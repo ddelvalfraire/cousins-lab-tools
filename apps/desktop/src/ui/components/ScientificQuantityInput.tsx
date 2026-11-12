@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { Banner } from './Banner';
+import { DvSelect } from './DvSelect';
 import './Approved.css';
 import './ScientificQuantityInput.css';
 
@@ -121,9 +122,8 @@ export function ScientificQuantityInput({
         <input id={inputId} value={text} disabled={disabled} aria-invalid={!!error} aria-describedby={`${hintId} ${messagesId}`}
           inputMode="decimal" autoComplete="off" spellCheck={false}
           onChange={event => { const next = event.currentTarget.value; setText(next); accept(next, unit); }} />
-        <select aria-label={`${label} unit`} value={unit} disabled={disabled} onChange={event => changeUnit(event.currentTarget.value as VoltageUnit)}>
-          {Object.keys(units).map(option => <option key={option} value={option}>{option}</option>)}
-        </select>
+        <DvSelect aria-label={`${label} unit`} value={unit} disabled={disabled} options={Object.keys(units).map(option => ({ value: option, label: option }))}
+          onChange={value => changeUnit(value as VoltageUnit)} />
       </div>
       <span className="dv-qty-hint" id={hintId}>{hint}</span>
     </div>

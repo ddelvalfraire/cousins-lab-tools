@@ -1,6 +1,6 @@
 /* Routine editor. Source: design/dvdash-field-review/routine-editor-review.html. Tokens: Approved.css. */
 .dv-re { position: relative; overflow: clip; container: dv-re / inline-size; color: var(--dv-ink); background: var(--dv-bg); border: 1px solid var(--dv-line); border-radius: 12px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
-:where(.dv-re) button, :where(.dv-re) input, :where(.dv-re) select { font: inherit; }
+:where(.dv-re) button, :where(.dv-re) input { font: inherit; }
 :where(.dv-re) button { cursor: pointer; color: inherit; touch-action: manipulation; }
 :where(.dv-re) button:disabled { cursor: default; }
 :where(.dv-re) h1, :where(.dv-re) h2, :where(.dv-re) p { margin: 0; }
@@ -77,7 +77,7 @@
 
 /* Right sidebar: RightSidebar. Field styles below. */
 .dv-re-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 550; margin-top: 16px; min-width: 0; }
-.dv-re-field input, .dv-re-field select { width: 100%; min-width: 0; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 400; }
+.dv-re-field input, .dv-re-field .dv-select { width: 100%; min-width: 0; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 400; }
 .dv-re-field [aria-invalid='true'] { border-color: var(--dv-error); }
 .dv-re-unit { display: flex; align-items: center; gap: 6px; border: 1px solid var(--dv-control); border-radius: 6px; padding: 0 9px; background: var(--dv-paper); }
 .dv-re-unit:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }

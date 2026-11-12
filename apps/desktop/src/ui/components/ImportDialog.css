@@ -18,7 +18,7 @@
 .dv-import-dialog :where(h2, h3, h4, p) { margin: 0; }
 .dv-import-dialog button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-import-dialog button:disabled { cursor: default; }
-.dv-import-dialog :is(button, input, select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 3px; }
+.dv-import-dialog :is(button, input):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 3px; }
 
 .dv-import-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; padding: 24px 24px 17px; }
 .dvdash .dv-import-title { margin: 0; font-size: 21px; font-weight: 650; line-height: 1.4; letter-spacing: -.35px; overflow-wrap: anywhere; }

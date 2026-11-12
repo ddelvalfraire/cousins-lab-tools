@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { RecordingImportDialog, type RecordingFile } from './RecordingImport';
 import { recordingFiles, recordingNames, recordingPresets, unreadableRecording, unreadableRecording2 } from './exchange-fixtures';
+import { chooseOption } from './chooseOption';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
 const dialog = (canvasElement: HTMLElement) => within(within(canvasElement.ownerDocument.body).getByRole('dialog'));
@@ -76,7 +77,7 @@ export const Review: Story = {
     await expect(body.getByText('03:30 total')).toBeVisible();
     await userEvent.type(body.getByRole('textbox', { name: 'Experiment name for leaf-respiration-025.csv' }), 'A');
     await expect(args.onNameChange).toHaveBeenLastCalledWith('sample25', 'Leaf respiration · Sample 025A');
-    await userEvent.selectOptions(body.getByRole('combobox', { name: /Open with preset/ }), 'signals');
+    await chooseOption(body.getByRole('combobox', { name: /Open with preset/ }), 'signals');
     await expect(args.onPresetChange).toHaveBeenCalledWith('signals');
     await userEvent.click(body.getByRole('button', { name: 'Back' }));
     await expect(args.onBack).toHaveBeenCalledTimes(1);

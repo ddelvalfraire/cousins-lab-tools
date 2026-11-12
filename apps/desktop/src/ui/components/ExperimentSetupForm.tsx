@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Banner } from './Banner';
+import { DvSelect } from './DvSelect';
 import './Approved.css';
 import './ExperimentSetupForm.css';
 
@@ -173,9 +174,7 @@ export function ExperimentSetupForm({
   const select = (name: string, label: string, value: string, options: { value: string; label: string }[], onChange: (value: string) => void, extra: { invalid?: boolean; describedBy?: string; className?: string } = {}) =>
     <div className={`dv-setup-field${extra.className ? ` ${extra.className}` : ''}`}>
       <label htmlFor={fieldId(name)}>{label}</label>
-      <select id={fieldId(name)} value={value} aria-invalid={extra.invalid} aria-describedby={extra.describedBy} onChange={event => onChange(event.currentTarget.value)}>
-        {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select>
+      <DvSelect id={fieldId(name)} value={value} options={options} aria-invalid={extra.invalid} aria-describedby={extra.describedBy} onChange={onChange} />
     </div>;
 
   return <section className="dv-setup" data-header={hideHeader ? 'hidden' : undefined} {...sectionLabel}>

@@ -1,11 +1,11 @@
 /* Settings page: approved settings-review.html, mapped onto the Approved.css tokens. */
 .dv-settings { container-type: inline-size; max-width: 760px; margin-inline: auto; overflow: hidden; border: 1px solid var(--dv-line); border-radius: 12px; background: var(--dv-paper); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
 .dv-settings :where(h2, h3, p) { margin: 0; }
-.dv-settings button, .dv-settings input, .dv-settings select { font: inherit; }
+.dv-settings button, .dv-settings input { font: inherit; }
 .dv-settings button { color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-settings button:disabled { cursor: default; opacity: .5; }
 .dv-settings svg { flex: none; pointer-events: none; }
-.dv-settings :is(button, input, select, a):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+.dv-settings :is(button, input, a):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 
 .dv-settings-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 22px 24px 18px; }
 .dv-settings-title h2 { font-size: 21px; font-weight: 650; letter-spacing: -.03em; line-height: normal; }
@@ -19,8 +19,8 @@
 .dv-settings-lead { font-size: 12px; color: var(--dv-ink-muted); line-height: 1.6; margin-top: 5px; }
 .dv-settings-fields { display: grid; gap: 18px; min-width: 0; }
 .dv-settings-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 550; }
-.dv-settings-field select { width: 100%; padding: 9px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 13px; font-weight: 400; }
-.dv-settings-field select[aria-invalid='true'] { border-color: var(--dv-error); }
+.dv-settings-field .dv-select { width: 100%; padding: 9px 10px; border: 1px solid var(--dv-control); border-radius: 6px; background: var(--dv-paper); color: var(--dv-ink); font-size: 13px; font-weight: 400; }
+.dv-settings-field .dv-select[aria-invalid='true'] { border-color: var(--dv-error); }
 .dv-settings-hint { font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); font-weight: 400; }
 
 .dv-settings fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }

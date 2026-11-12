@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
+import { DvSelect } from './DvSelect';
 import { StatusBanner } from './Primitives';
 import { formatDuration, formatFileSize, ImportButton, ImportChooseButton, ImportDialog, ImportDropzone, ImportFooterNote, ImportIcon, ImportProgress, ImportStatus } from './ImportDialog';
 import './RecordingImport.css';
@@ -52,7 +53,7 @@ const statusWord: Record<RecordingFileStatus, string> = { ready: 'Ready', error:
  * Values from design/dvdash-field-review/recording-import-review.html.
  */
 export function RecordingImportDialog({ opened, phase, files, names, presets, presetId, accept = '.csv,.json', onChooseFiles, onRemoveFile, onNameChange, onPresetChange, onReview, onBack, onImport, onStop, onRetry, onClose }: RecordingImportDialogProps) {
-  const ready = files.filter(file => file.status === 'ready');
+  const ready = files.filter(file => file.status === 'ready'), presetLabel = useId();
   const invalid = files.filter(file => file.status === 'error');
   const imported = files.filter(file => file.status === 'imported').length;
   const failed = files.filter(file => file.status === 'failed').length;
@@ -113,8 +114,8 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
         </li>)}
       </ul>}
     {phase === 'select' && files.length > 0 && <ImportChooseButton label="Add files" accept={accept} multiple onFiles={onChooseFiles} />}
-    {phase === 'review' && <label className="dv-recording-import-preset">Open with preset
-      <select value={presetId} onChange={event => onPresetChange(event.currentTarget.value)}>{presets.map(preset => <option key={preset.id} value={preset.id}>{preset.label}</option>)}</select>
+    {phase === 'review' && <label className="dv-recording-import-preset"><span id={presetLabel}>Open with preset</span>
+      <DvSelect aria-labelledby={presetLabel} value={presetId} options={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={onPresetChange} />
       <small>Each recording becomes a separate experiment.</small>
     </label>}
   </ImportDialog>;

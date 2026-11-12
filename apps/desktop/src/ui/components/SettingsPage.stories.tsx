@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { SettingsPage, type AppSettings, type BuildInfo, type FolderState, type SettingsPageProps } from './SettingsPage';
+import { chooseOption } from './chooseOption';
 
 const COMMIT_RELEASE = 'fdba48e6d504efa8b66f04b0dd8ea7f892fd4a6b';
 const COMMIT_LOCAL = 'a63f1dcebf65218c1c6a34257327a9c426903f73';
@@ -82,7 +83,7 @@ export const SavingChanges: Story = {
       await expect(args.onChange).toHaveBeenCalledWith('theme', 'dark');
       await expect(canvas.getByText('Saved')).toBeVisible();
       await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Theme saved.'));
-      await userEvent.selectOptions(canvas.getByLabelText('Decimal separator'), 'comma');
+      await chooseOption(canvas.getByLabelText('Decimal separator'), 'comma');
       await expect(canvas.getByTestId('number-preview')).toHaveTextContent('-1 234,56 mV');
     });
     await step('Choosing a folder waits, then replaces the path', async () => {

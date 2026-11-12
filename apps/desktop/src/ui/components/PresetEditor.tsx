@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useReducer, useRef, useState } from 
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { IconActivity, IconAdjustmentsHorizontal, IconAlertTriangle, IconChartDots, IconChartLine, IconCheck, IconCircleX, IconDeviceFloppy, IconHistory, IconNumbers, IconPlayerRecord, IconPlus, IconTable } from '@tabler/icons-react';
 import { Chip, StatusWord } from './Chip';
+import { DvSelect } from './DvSelect';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { StatusMessages } from './Primitives';
@@ -415,14 +416,13 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
                   {!current.title.trim() && <span className="pe-field-error" id={ids.field('title-err')}><IconCircleX aria-hidden />Enter a panel name.</span>}
                 </div>
                 <div className="pe-side-field"><label htmlFor={ids.field('kind')}>Shows</label>
-                  <select id={ids.field('kind')} value={current.kind} onChange={event => changeKind(current, event.currentTarget.value as PresetPanelKind)}>
-                    {Object.entries(PANEL_KINDS).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}
-                  </select>
+                  <DvSelect id={ids.field('kind')} value={current.kind} options={Object.entries(PANEL_KINDS).map(([kind, label]) => ({ value: kind, label }))}
+                    onChange={value => changeKind(current, value as PresetPanelKind)} />
                 </div>
                 <div className="pe-side-field"><label htmlFor={ids.field('width')}>Width</label>
-                  <select id={ids.field('width')} value={current.span} aria-describedby={ids.field('width-hint')} onChange={event => update(current.id, { span: Number(event.currentTarget.value) as PanelSpan })}>
-                    {SNAPS.filter(span => span >= MIN_SPAN[current.kind]).map(span => <option key={span} value={span}>{WIDTH_NAMES[span]}</option>)}
-                  </select>
+                  <DvSelect id={ids.field('width')} value={String(current.span)} aria-describedby={ids.field('width-hint')}
+                    options={SNAPS.filter(span => span >= MIN_SPAN[current.kind]).map(span => ({ value: String(span), label: WIDTH_NAMES[span] }))}
+                    onChange={value => update(current.id, { span: Number(value) as PanelSpan })} />
                   <span className="pe-side-hint" id={ids.field('width-hint')}>Or drag the panel’s right edge.</span>
                 </div>
                 {!showsSignals(current.kind) && <>
@@ -441,11 +441,9 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
               </>
               : current.kind === 'scatter' ? <>
                 {(['x', 'y'] as const).map(axis => <div key={axis} className="pe-side-field"><label htmlFor={ids.field(axis)}>{axis === 'x' ? 'X axis' : 'Y axis'}</label>
-                  <select id={ids.field(axis)} data-axis={axis} value={(axis === 'x' ? current.x : current.signals[0]) ?? ''} aria-invalid={!!sigError || undefined} aria-describedby={sigError ? ids.field('sig-err') : undefined}
-                    onChange={event => { const value = event.currentTarget.value; update(current.id, axis === 'x' ? { x: value || null } : { signals: value ? [value] : [] }); }}>
-                    <option value="">Choose a signal</option>
-                    {signals.map(signal => <option key={signal} value={signal}>{signal}</option>)}
-                  </select>
+                  <DvSelect id={ids.field(axis)} data-axis={axis} value={(axis === 'x' ? current.x : current.signals[0]) ?? ''} aria-invalid={!!sigError || undefined} aria-describedby={sigError ? ids.field('sig-err') : undefined}
+                    options={[{ value: '', label: 'Choose a signal' }, ...signals.map(signal => ({ value: signal, label: signal }))]}
+                    onChange={value => update(current.id, axis === 'x' ? { x: value || null } : { signals: value ? [value] : [] })} />
                 </div>)}
                 {sigError && <p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p>}
               </>
