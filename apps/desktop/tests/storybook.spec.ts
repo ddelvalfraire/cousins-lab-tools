@@ -555,6 +555,37 @@ test('the command center tabs scroll sideways under a mouse wheel in a narrow wi
   await expect(page.getByRole('combobox', { name: 'Search all DVDash' })).toHaveAttribute('aria-expanded', 'true');
 });
 
+/** Every visible destination, recent, card and button in the main sidebar, relative to the sidebar's corner. */
+const sidebarLayout = (page: Page) => page.locator('.dv-side-navigation').evaluate(nav => {
+  const origin = nav.getBoundingClientRect();
+  return [...nav.querySelectorAll('.dv-navigation-item, .dv-navigation-recent, .dv-navigation-acquisition')].filter(el => el.getClientRects().length).map(el => {
+    const box = el.getBoundingClientRect();
+    return `${el.textContent?.trim() || el.getAttribute('aria-label')}: ${Math.round(box.x - origin.x)},${Math.round(box.y - origin.y)} ${Math.round(box.width)}x${Math.round(box.height)}`;
+  });
+});
+/** Forces the style change that starts the transitions, then holds them at their first frame. */
+const holdTransitionsAtStart = (page: Page) => page.evaluate(() => {
+  document.querySelector('.dv-side-navigation')!.getBoundingClientRect();
+  const running = document.getAnimations();
+  running.forEach(animation => { animation.pause(); animation.currentTime = 0; });
+  return running.length;
+});
+
+test('the main sidebar keeps its content laid out while it collapses and expands', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 720 });
+  await story(page, 'screens-experiments--home');
+  const expanded = await sidebarLayout(page);
+  await page.getByRole('button', { name: 'Collapse', exact: true }).click();
+  expect(await holdTransitionsAtStart(page), 'the collapse animates').toBeGreaterThan(0);
+  const collapsing = await sidebarLayout(page);
+  await page.evaluate(() => document.getAnimations().forEach(animation => animation.finish()));
+  expect.soft(collapsing, 'first frame of the collapse').toEqual(await sidebarLayout(page));
+  await page.getByRole('button', { name: 'Expand', exact: true }).click();
+  expect(await holdTransitionsAtStart(page), 'the expand animates').toBeGreaterThan(0);
+  expect(await sidebarLayout(page), 'first frame of the expand').toEqual(expanded);
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);

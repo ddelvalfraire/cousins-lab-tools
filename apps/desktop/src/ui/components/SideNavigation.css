@@ -17,6 +17,10 @@
   font-size: 13px; transition: width var(--dv-nav-motion) var(--dv-nav-ease);
 }
 .dv-side-navigation[data-collapsed='true'] { width: 58px; padding-inline: 6px; overflow: visible; }
+/* The content takes the width of the state it is heading to (184 or 58 less the padding) as soon as the state flips,
+   so the 240 ms width change clips it instead of re-wrapping labels and the acquisition card on every frame. */
+.dv-side-navigation > :is(.dv-navigation-section, .dv-navigation-recents, .dv-navigation-bottom) { min-width: 160px; }
+.dv-side-navigation[data-collapsed='true'] > :is(.dv-navigation-section, .dv-navigation-recents, .dv-navigation-bottom) { min-width: 0; width: 46px; }
 :where(.dv-side-navigation, .dv-mobile-navigation, .dv-navigation-drawer) button { font: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-side-navigation button:focus-visible, .dv-mobile-navigation button:focus-visible, .dv-navigation-drawer button:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-side-navigation svg, .dv-mobile-navigation svg, .dv-navigation-drawer svg { flex: none; pointer-events: none; }
