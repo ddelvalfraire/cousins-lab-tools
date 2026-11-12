@@ -58,7 +58,7 @@ export const RecentExperiments: Story = {
     await expect(status).toHaveTextContent(/^Running$/);
     await expect(status.querySelectorAll('svg')).toHaveLength(1);
     await expect(within(first).getByText('Today')).toBeVisible();
-    await expect(within(first).getByText('14:02')).toBeVisible();
+    await expect(within(first).getByText('14:02:00')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Open saved samples: Isotope exchange · Trial 03' })).toHaveClass('dv-exp-open');
 
     // Headers sort with aria-sort and keep focus.

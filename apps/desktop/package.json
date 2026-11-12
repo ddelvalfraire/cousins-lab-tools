@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006 --no-open --disable-telemetry",
     "storybook:build": "storybook build --disable-telemetry",
+    "test:unit": "vitest run --project unit",
     "storybook:test": "vitest run --project storybook",
     "storybook:e2e": "playwright test --config playwright.storybook.config.ts",
     "storybook:check": "tsc --project tsconfig.storybook.json --noEmit",

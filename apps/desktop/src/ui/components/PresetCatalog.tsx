@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react';
+import { formatClockTime } from '../time';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
 import {
@@ -49,7 +50,7 @@ export interface PresetCatalogProps {
 const MONTH: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', MONTH);
 const fullDay = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { ...MONTH, year: 'numeric' });
-const time = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const time = (iso: string) => formatClockTime(iso);
 const noun = (n: number) => `${n} ${n === 1 ? 'preset' : 'presets'}`;
 const KIND_LABEL: Record<CatalogPresetPanel['kind'], string> = { line: 'Line chart', multi: 'Multi-series chart', scatter: 'Scatter plot', readout: 'Readout', input: 'Input', table: 'Table' };
 

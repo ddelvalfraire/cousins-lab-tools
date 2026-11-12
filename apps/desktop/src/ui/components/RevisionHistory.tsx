@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Chip } from './Chip';
+import { formatClockTime } from '../time';
 import { StatusBanner } from './Primitives';
 import { SidebarIcon } from './RightSidebar';
 import { ImportIcon } from './ImportDialog';
@@ -16,10 +17,9 @@ export interface PresetRevision {
 
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const dayFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-/** "2 Nov 2026 · 10:42", "2 Nov · 10:42" and "Saved 2 Nov 2026 at 10:42". */
+/** "2 Nov 2026 · 10:42:00", "2 Nov · 10:42:00" and "Saved 2 Nov 2026 at 10:42:00", in local time. */
 export function formatSavedAt(savedAt: string) {
-  const date = new Date(savedAt), time = timeFormat.format(date), day = dateFormat.format(date);
+  const date = new Date(savedAt), time = formatClockTime(date), day = dateFormat.format(date);
   return { full: `${day} · ${time}`, short: `${dayFormat.format(date)} · ${time}`, label: `Saved ${day} at ${time}` };
 }
 

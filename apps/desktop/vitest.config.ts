@@ -4,7 +4,7 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { fileURLToPath } from 'node:url';
 export default defineConfig({
   test: {
-    projects: [{
+    projects: [{ test: { name: 'unit', include: ['src/**/*.test.ts'], environment: 'node' } }, {
       plugins: [storybookTest({ configDir: fileURLToPath(new URL('./.storybook', import.meta.url)) })],
       test: {
         name: 'storybook', maxWorkers: 2, testTimeout: 30_000,

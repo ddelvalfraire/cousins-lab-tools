@@ -23,8 +23,8 @@ export const Revisions: Story = {
   play: async ({ canvasElement, args }) => {
     const list = within(within(canvasElement).getByRole('navigation', { name: 'Saved preset versions' }));
     const entries = list.getAllByRole('button');
-    await expect(entries[0]).toHaveTextContent('R3CurrentSelectedAdjusted signal scaling2 Nov · 10:425 panels');
-    await expect(list.getByLabelText('Saved 2 Nov 2026 at 10:42')).toBeVisible();
+    await expect(entries[0]).toHaveTextContent('R3CurrentSelectedAdjusted signal scaling2 Nov · 10:42:005 panels');
+    await expect(list.getByLabelText('Saved 2 Nov 2026 at 10:42:00')).toBeVisible();
     await userEvent.click(entries[2]);
     await expect(args.onSelect).toHaveBeenCalledWith(1);
   },

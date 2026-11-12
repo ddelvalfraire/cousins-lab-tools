@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ReviewIcon } from './ReviewIcons';
 import { Chip, StatusWord } from './Chip';
 import { DvSelect } from './DvSelect';
+import { formatClockTime } from '../time';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import type { StatusTone } from './Chip';
 import './ExperimentsList.css';
@@ -60,7 +61,7 @@ function formatDate(iso: string, now: Date) {
   const d = new Date(iso);
   return {
     date: sameDay(d, now) ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    time: formatClockTime(d),
   };
 }
 

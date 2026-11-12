@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
+import { formatClockTime } from '../time';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { InspectorButton, InspectorIcon, InspectorPane } from './InspectorParts';
@@ -24,7 +25,7 @@ export interface SavedResult {
   calibrationRevision: string;
   calibration: { revision: string; zero: number; scale: number } | null;
   preset: { name: string; revision: string } | null;
-  /** ISO time, UTC. */
+  /** ISO instant with its zone, e.g. `2026-04-14T09:20:00Z`; shown in local time. */
   savedAt: string;
 }
 /** What the results measure: a short symbol for the table and formula, a full label and the unit. */
@@ -33,7 +34,8 @@ export type SavedResultPhase = 'ready' | 'loading' | 'error';
 export type SavedResultTab = 'details' | 'context';
 
 const fmt = (value: number) => value.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-const savedDate = (iso: string) => `${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso))} · ${iso.slice(11, 16)} UTC`;
+/** "14 Apr 2026 · 09:20:00" in local time; the date and the time come from the same zone. */
+const savedDate = (iso: string) => `${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso))} · ${formatClockTime(iso)}`;
 
 /**
  * Saved results with a details button per row and pages of `pageSize`.

@@ -93,7 +93,7 @@ export function RevisionHistoryPage({ preset, navigate, initialRevision = preset
   const confirm = () => {
     setRestore('restoring');
     timer.current = window.setTimeout(() => {
-      const created: HistoryRevision = { ...revision, number: current + 1, note: `Restored from R${revision.number}`, savedAt: new Date().toISOString().slice(0, 19), restoredFrom: source };
+      const created: HistoryRevision = { ...revision, number: current + 1, note: `Restored from R${revision.number}`, savedAt: new Date().toISOString(), restoredFrom: source };
       setRevisions(list => [created, ...list]); setRestoredFrom(revision.number); setSelected(created.number); setTab('preview'); setRestore('restored');
     }, 600);
   };

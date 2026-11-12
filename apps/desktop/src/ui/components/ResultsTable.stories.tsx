@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Chip } from './Chip';
+import { formatClockTime } from '../time';
 import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';
 import { WorkspaceBody } from './RightSidebar';
@@ -55,7 +56,9 @@ export const SavedResultDetails: Story = {
     await expect(open(canvasElement, 'sample 025')).toHaveAttribute('aria-expanded', 'true');
     await expect(canvas.getByText('100.015', { selector: 'strong' })).toBeVisible();
     await expect(canvas.getByText('(1.508 − 0.303) × 83 = 100.015')).toBeVisible();
-    await expect(canvas.getByText('Saved 14 Apr 2026 · 09:20 UTC')).toBeVisible();
+    // The fixture saves at 09:20 UTC; the page shows it in the zone the test runs in, so the expectation is built the same way.
+    const saved = new Date('2026-04-14T09:20:00Z');
+    await expect(canvas.getByText(`Saved ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(saved)} · ${formatClockTime(saved)}`)).toBeVisible();
     await expect(canvas.getByText('1–3 of 6')).toBeVisible();
   },
 };
