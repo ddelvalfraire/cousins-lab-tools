@@ -199,6 +199,36 @@ test('confirmation dialogs add no second page banner', async ({ page }) => {
   }
 });
 
+test('every dialog and drawer blurs the page behind it and keeps its dim', async ({ page }) => {
+  const approvedDim = 'rgba(14, 26, 20, 0.4)', mantineDim = 'rgba(0, 0, 0, 0.6)';
+  const cases: { id: string; dark?: boolean; dim: string; open?: () => Promise<void> }[] = [
+    { id: 'screens-experiment--stop-confirmation', dim: approvedDim },
+    { id: 'screens-experiment--stop-confirmation', dark: true, dim: approvedDim },
+    { id: 'screens-experiment--live', dim: approvedDim, open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
+    { id: 'components-unsavedchangesdialog--several-changes', dark: true, dim: approvedDim },
+    { id: 'components-presetimport--review', dim: approvedDim },
+    { id: 'components-recordingimport--review', dark: true, dim: approvedDim },
+    { id: 'components-recordingexport--selected-interval', dim: approvedDim },
+    { id: 'components-keyboardshortcuts--mac-os', dark: true, dim: approvedDim },
+    { id: 'components-navigationdrawer--open', dim: approvedDim },
+    { id: 'components-instrumentcontrols--running', dim: mantineDim, open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
+    { id: 'components-overlays--menu-dialog-and-drawer', dim: mantineDim, open: () => page.getByRole('button', { name: 'Review revision', exact: true }).click() },
+    { id: 'components-overlays--menu-dialog-and-drawer', dark: true, dim: mantineDim, open: () => page.getByRole('button', { name: 'Open settings', exact: true }).click() },
+  ];
+  for (const { id, dark, dim, open } of cases) {
+    const name = `${id}${dark ? ' (dark)' : ''}`;
+    // Not story(): dialog-only stories render into a portal and leave the story root empty.
+    await page.goto(`/iframe.html?id=${id}&viewMode=story${dark ? '&globals=appearance:dark' : ''}`);
+    await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: 30_000 });
+    await open?.();
+    const overlay = page.locator('.mantine-Modal-overlay, .mantine-Drawer-overlay');
+    await expect(overlay, name).toHaveCount(1);
+    await expect(overlay, name).toBeVisible();
+    await expect(overlay, name).toHaveCSS('background-color', dim);
+    await expect(overlay, name).toHaveCSS('backdrop-filter', 'blur(4px)');
+  }
+});
+
 test('a scrolling import dialog body can take keyboard focus to scroll', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 640 });
   await page.goto('/iframe.html?id=components-presetimport--importing&viewMode=story');
