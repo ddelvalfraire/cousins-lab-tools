@@ -34,6 +34,11 @@
 .dv-right-sidebar .dv-right-sidebar-tabs [role='tab'][aria-selected='true'] { background: var(--dv-accent-soft); color: var(--dv-accent); font-weight: 600; }
 .dv-right-sidebar-tabs [role='tab']:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
 .dv-right-sidebar-tabs [role='tab']:disabled { opacity: .5; cursor: default; }
+.dv-right-sidebar-short { display: none; }
+@media (max-width: 600px) {
+  .dv-right-sidebar-short { display: inline; }
+  .dv-right-sidebar-tabs [role='tab']:has(.dv-right-sidebar-short) .dv-right-sidebar-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+}
 .dv-right-sidebar-badge { position: absolute; top: 3px; right: 2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; background: var(--dv-warn-bg); color: var(--dv-warn); font-size: 9px; font-weight: 650; line-height: 15px; font-variant-numeric: tabular-nums; text-align: center; }
 
 /* Pane content: sections, fields, facts (.sidebar-section, .sidebar-field, .side-facts) */

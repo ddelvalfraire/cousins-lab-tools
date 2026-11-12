@@ -392,6 +392,22 @@ test('the narrow preset editor shows the requires note on its own line, without 
   }
 });
 
+test('the routine editor rail says Params at 600 px or less and keeps Parameters as the tab name', async ({ page }) => {
+  for (const [width, label] of [[1440, 'Parameters'], [600, 'Params'], [390, 'Params']] as const) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:routine-edit');
+    const tab = page.getByRole('tab', { name: 'Parameters', exact: true });
+    await expect(tab).toBeVisible();
+    const { shown, room } = await tab.evaluate(button => {
+      const span = [...button.querySelectorAll('span')].find(s => s.getBoundingClientRect().width > 1)!;
+      const rail = button.parentElement!.getBoundingClientRect(), box = span.getBoundingClientRect();
+      return { shown: span.textContent, room: Math.min(box.left - rail.left, rail.right - box.right) };
+    });
+    expect(shown, `${width} rail label`).toBe(label);
+    if (label === 'Params') expect(room, `${width} space beside the label in the rail`).toBeGreaterThanOrEqual(6);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();

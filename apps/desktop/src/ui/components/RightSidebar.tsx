@@ -5,6 +5,8 @@ import './RightSidebar.css';
 export interface RightSidebarTab {
   id: string;
   label: string;
+  /** Shorter rail label for windows 600 px wide or less; the tab's name stays `label`. */
+  shortLabel?: string;
   icon: ReactNode;
   /** Optional count, e.g. issues on this tab. */
   badge?: number | string;
@@ -153,7 +155,7 @@ export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collaps
         return <button key={tab.id} ref={node => { tabRefs.current[tab.id] = node; }} type="button" role="tab" id={tabId(tab.id)} data-tab={tab.id}
           aria-controls={paneId} aria-selected={isSelected} aria-expanded={open && isSelected} tabIndex={isSelected ? 0 : -1}
           disabled={tab.disabled} title={tab.label} onClick={() => select(tab.id)}>
-          {tab.icon}<span>{tab.label}</span>
+          {tab.icon}<span className="dv-right-sidebar-label">{tab.label}</span>{tab.shortLabel && <span className="dv-right-sidebar-short" aria-hidden="true">{tab.shortLabel}</span>}
           {tab.badge !== undefined && <><span className="dv-right-sidebar-badge" aria-hidden="true">{tab.badge}</span><span className="dv-right-sidebar-sr">, {tab.badge}</span></>}
         </button>;
       })}

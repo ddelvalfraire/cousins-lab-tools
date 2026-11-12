@@ -470,7 +470,7 @@ function RoutineEditorDraft({
     </>;
   }
 
-  const sidebarTabs = [{ id: 'step', label: 'Step', icon: <SidebarIcon name="details" /> }, { id: 'parameters', label: 'Parameters', icon: <SidebarIcon name="parameters" /> }];
+  const sidebarTabs = [{ id: 'step', label: 'Step', icon: <SidebarIcon name="details" /> }, { id: 'parameters', label: 'Parameters', shortLabel: 'Params', icon: <SidebarIcon name="parameters" /> }];
   const switchTab = (next: 'step' | 'parameters') => { setTab(next); setBlocked(null); };
 
   return <section ref={rootRef} className="dv-re" aria-labelledby={hideHeader ? undefined : id('title')} aria-label={hideHeader ? name : undefined}>
