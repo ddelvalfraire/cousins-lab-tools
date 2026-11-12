@@ -40,7 +40,10 @@
 .dv-shell-sidebar { position: relative; z-index: 2; min-width: 0; min-height: 0; }
 .dv-shell-sidebar .dv-side-navigation { height: 100%; }
 .dv-shell-page-frame { container: dv-page-frame / inline-size; display: flex; min-width: 0; min-height: 0; }
-.dv-shell-page { container: dv-page / inline-size; position: relative; flex: 1 1 0; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-bg); outline: none; transition: padding-right var(--dv-side-motion); }
+/* The page scrolls in a ScrollFrame: the outer box takes the card's place in the frame, the card itself is the scroller. */
+.dv-shell-page-root { flex: 1 1 0; min-width: 0; min-height: 0; }
+.dv-shell-page-content { display: flex; flex-direction: column; flex: 1 0 auto; }
+.dv-shell-page { container: dv-page / inline-size; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-bg); outline: none; transition: padding-right var(--dv-side-motion); }
 /* The card takes focus from code after a navigation (and from the skip link) so screen readers start on the new page.
    It is not a control, so it gets no ring; this outranks the global .dvdash :focus-visible ring. */
 .dv-shell .dv-shell-page:focus-visible { outline: none; }
@@ -55,10 +58,11 @@
    ghosts then use the card, which starts at the same corner as the editor. */
 .dv-shell-page :is(.dv-cat, .dv-re, .dv-preset-editor) { position: static; }
 /* Every page fills the card. */
-.dv-shell-page > * { flex: 1 0 auto; }
+.dv-shell-page-content > * { flex: 1 0 auto; }
 /* Pages with a docked sidebar (WorkspaceBody) are exactly the card's height: the header stays, and the main column
    and the sidebar below it scroll on their own. Each wrapper between the card and the body becomes a column. */
-.dv-shell-page:has(.dv-workspace-body) { overflow: hidden; }
+/* Workspace pages scroll inside; important beats the scroller's inline overflow. */
+.dv-shell-page:has(.dv-workspace-body) { overflow: hidden !important; }
 .dv-shell-page :where(:has(.dv-workspace-body):not([hidden])) { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
 .dv-screen-body { padding: var(--dv-page-top) var(--dv-page-gutter) var(--dv-page-bottom); min-width: 0; }
 /* Each page uses the standard or wide content width (data-width, set per route in ScreenShell). The gutter is
@@ -67,9 +71,9 @@
 .dv-shell-page[data-width='wide'] { --dv-content-max: var(--dv-content-wide); }
 /* Small pages: one side padding for header and body (the header's own steps are the same, PageHeader.css). */
 /* Measured on what the page can use (the card minus any sidebar), the same width the header's own steps follow. */
-@container dv-page (max-width: 760px) { .dv-shell-page > * { --dv-page-pad: 20px; --dv-page-gutter: 20px; } }
-@container dv-page (max-width: 600px) { .dv-shell-page > * { --dv-page-pad: 16px; --dv-page-gutter: 16px; } }
-@container dv-page (max-width: 380px) { .dv-shell-page > * { --dv-page-pad: 12px; --dv-page-gutter: 12px; } }
+@container dv-page (max-width: 760px) { .dv-shell-page-content > * { --dv-page-pad: 20px; --dv-page-gutter: 20px; } }
+@container dv-page (max-width: 600px) { .dv-shell-page-content > * { --dv-page-pad: 16px; --dv-page-gutter: 16px; } }
+@container dv-page (max-width: 380px) { .dv-shell-page-content > * { --dv-page-pad: 12px; --dv-page-gutter: 12px; } }
 
 @container dv-shell (max-width: 800px) {
   .dv-shell-topbar { gap: 12px; }

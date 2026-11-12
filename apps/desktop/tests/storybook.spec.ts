@@ -670,7 +670,7 @@ const distinctColours = async (page: Page, clip: { x: number; y: number; width: 
   }, png);
 };
 
-test('the sidebar scroll bar stays hidden until the pointer is over the sidebar, and showing it moves nothing', async ({ baseURL }) => {
+test('the sidebar overlay scroll bar takes no width, stays hidden until the pointer is over the sidebar, and showing it moves nothing', async ({ baseURL }) => {
   // Headless Chromium hides scroll bars unless told otherwise; this test needs them drawn.
   const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'], executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined });
   try {
@@ -679,8 +679,8 @@ test('the sidebar scroll bar stays hidden until the pointer is over the sidebar,
       await story(page, 'screens-experiments--home', dark);
       const region = page.locator('.dv-navigation-scroll');
       const { gutter, box } = await region.evaluate((el: HTMLElement) => { const r = el.getBoundingClientRect(); return { gutter: el.offsetWidth - el.clientWidth, box: { x: r.x, y: r.y, width: r.width, height: r.height } }; });
-      expect(gutter, 'the region has a scroll bar').toBeGreaterThan(0);
-      const strip = { x: box.x + box.width - gutter, y: box.y, width: gutter, height: box.height };
+      expect(gutter, 'the overlay bar takes no width from the region').toBe(0);
+      const strip = { x: box.x + box.width - 8, y: box.y, width: 8, height: box.height };
       await page.mouse.move(800, 300);
       const idle = await sidebarLayout(page);
       expect(idle.filter(item => /^(Experiments|Presets|Routines|Instruments):/.test(item)).every(item => item.endsWith(' 160x40')), 'destinations keep their 160 px').toBe(true);

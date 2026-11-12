@@ -3,12 +3,14 @@ export const brand = { forest: '#063D30', jade: '#16A887', mint: '#8EF0B5', lime
 const forest: MantineColorsTuple = ['#eef8f0', '#d8efdf', '#b4dfc7', '#8acdb0', '#61b996', '#3aa67f', '#208767', '#126b51', '#0a503d', brand.forest];
 // Plain Modal and Drawer render these same overlay parts as the compound dialogs, so every dialog shares the approved dim and blur.
 const dialogOverlay = { defaultProps: { color: '#0e1a14', backgroundOpacity: 0.4, blur: 4 } };
+// Every scroll area gets the thin overlay bar (Approved.css); it shows on hover or while scrolling and takes no width.
+const scrollArea = { defaultProps: { scrollbarSize: 8, scrollHideDelay: 600 }, classNames: { scrollbar: 'dv-scroll-bar', thumb: 'dv-scroll-thumb' } };
 export const dvdashTheme = createTheme({
   primaryColor: 'forest', primaryShade: 9, colors: { forest }, autoContrast: true, focusRing: 'auto', defaultRadius: 'md',
   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   headings: { fontWeight: '650', sizes: { h1: { fontSize: '1.65rem', lineHeight: '1.2' }, h2: { fontSize: '1.1rem', lineHeight: '1.4' }, h3: { fontSize: '0.95rem', lineHeight: '1.4' } } },
   components: { Button: { defaultProps: { size: 'sm' } }, TextInput: { defaultProps: { size: 'sm' } }, NumberInput: { defaultProps: { size: 'sm' } }, Select: { defaultProps: { size: 'sm' } }, Paper: { defaultProps: { withBorder: true, radius: 'md' } },
-    ModalOverlay: dialogOverlay, DrawerOverlay: dialogOverlay },
+    ModalOverlay: dialogOverlay, DrawerOverlay: dialogOverlay, ScrollArea: scrollArea, ScrollAreaAutosize: scrollArea },
 });
 // Scientific series identity is independent of application branding.
 export const seriesColors = {

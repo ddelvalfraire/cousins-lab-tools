@@ -8,6 +8,7 @@ import { CommandGlyph, type CommandItem } from '../components/CommandCenter';
 import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellSearch';
 import './screens.css';
+import { ScrollFrame } from '../components/ScrollFrame';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
 export type Navigate = (page:ScreenRoute, id?:string) => void;
@@ -62,7 +63,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const [shortcuts, setShortcuts] = useState(false), [announcement, setAnnouncement] = useState('');
   const dark = useComputedColorScheme('light')==='dark', { toggleColorScheme } = useMantineColorScheme();
   const os = useOs(), mac = os==='macos' || os==='ios';
-  const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLElement>(null), goPrefix = useRef(0);
+  const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), goPrefix = useRef(0);
   const toggleAppearance = onAppearanceChange ?? toggleColorScheme;
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
@@ -127,7 +128,8 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
     </header>
     <div className="dv-shell-workspace">
       <div className="dv-shell-sidebar"><SideNavigation active={active} detail={detail} collapsed={collapsed} onCollapsedChange={setCollapsed} onNavigate={navigate} recents={recents} acquisition={acquisition} onOpenExperiment={openExperiment}/></div>
-      <div className="dv-shell-page-frame"><main ref={main} id="dvdash-screen-main" className="dv-shell-page" data-width={widePages.has(page)?'wide':'standard'} tabIndex={-1}>{children}</main></div>
+      <div className="dv-shell-page-frame"><ScrollFrame component="main" show="scroll" ref={main} id="dvdash-screen-main" className="dv-shell-page" data-width={widePages.has(page)?'wide':'standard'} tabIndex={-1}
+        rootClassName="dv-shell-page-root" contentClassName="dv-shell-page-content">{children}</ScrollFrame></div>
     </div>
     <NavigationDrawer withBar={false} opened={drawer} onOpenedChange={setDrawer} active={active} detail={detail} onNavigate={navigate} recents={recents} acquisition={acquisition} onOpenExperiment={openExperiment}/>
     <KeyboardShortcuts opened={shortcuts} onClose={()=>setShortcuts(false)} mac={mac}/>

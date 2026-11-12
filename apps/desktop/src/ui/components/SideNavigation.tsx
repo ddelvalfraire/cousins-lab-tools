@@ -3,6 +3,7 @@ import { Drawer } from '@mantine/core';
 import { useReducedMotion } from '@mantine/hooks';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { StatusWord } from './Chip';
+import { ScrollFrame } from './ScrollFrame';
 import './SideNavigation.css';
 
 export type NavigationDestination = 'experiments' | 'presets' | 'routines' | 'instruments' | 'settings';
@@ -167,7 +168,7 @@ function Sidebar({ active = 'experiments', collapsed = false, detail = false, co
   };
 
   return <aside id={id} className="dv-side-navigation" data-collapsed={collapsed} data-detail={detail || undefined} aria-label="Sidebar">
-    <div className="dv-navigation-scroll">
+    <ScrollFrame axes="y" className="dv-navigation-scroll" rootClassName="dv-navigation-scroll-root" contentClassName="dv-navigation-list">
       <nav className="dv-navigation-section" aria-label="Main navigation">
         <div className="dv-navigation-eyebrow" aria-hidden="true">{L.workspace}</div>
         {destinations.map(({ id: destination, icon }) => navItem(destination, icon))}
@@ -181,7 +182,7 @@ function Sidebar({ active = 'experiments', collapsed = false, detail = false, co
         </button>}
         {recents.map(recent => <RecentItem key={recent.id} recent={recent} onOpen={openExperiment} />)}
       </section>}
-    </div>
+    </ScrollFrame>
     <div className="dv-navigation-bottom">
       {acquisition && <>
         <AcquisitionCard acquisition={acquisition} onOpen={openExperiment} />
