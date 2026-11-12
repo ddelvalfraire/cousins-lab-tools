@@ -494,23 +494,29 @@ test('dialog traps focus, dismisses with Escape and returns focus', async ({ pag
   await expect(button).toBeFocused();
 });
 
-test('pages use the standard content width, centred, except the dense pages that use the wide width', async ({ page }) => {
-  await page.setViewportSize({ width: 2560, height: 1200 });
-  for (const [route, width] of [
-    ['settings', 772], ['prepare', 772], ['experiments', 772], ['presets', 772], ['routine-edit', 772],
-    ['preset-edit', 1760], ['experiment', 1760], ['review', 1760],
-  ] as const) {
-    await page.goto(`/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:${route}`);
-    await expect(page.locator('.dvdash h1 >> visible=true')).toBeVisible();
-    const m = await page.evaluate(() => {
-      const shown = (e: Element) => (e as HTMLElement).offsetParent !== null && !e.closest('[hidden]');
-      const card = document.querySelector('.dv-shell-page')!.getBoundingClientRect();
-      const bar = [...document.querySelectorAll('.dv-page-actionbar-inner')].find(shown)!.getBoundingClientRect();
-      const side = [...document.querySelectorAll('.dv-right-sidebar')].find(shown)?.getBoundingClientRect();
-      return { width: bar.width, left: bar.left - card.left, right: (side ? side.left : card.right) - bar.right };
-    });
-    expect(Math.round(m.width), `${route} width`).toBe(width);
-    expect(Math.abs(m.left - m.right), `${route} centred`).toBeLessThanOrEqual(1);
+test('forms and editors use the standard content width and lists and dense pages the wide width, centred', async ({ page }) => {
+  for (const [viewport, height] of [[2560, 1200], [1920, 1080], [1440, 900]]) {
+    await page.setViewportSize({ width: viewport, height });
+    for (const [route, max] of [
+      ['settings', 772], ['prepare', 772], ['routine-edit', 772],
+      ['experiments', 1760], ['presets', 1760], ['routines', 1760], ['instruments', 1760],
+      ['preset-edit', 1760], ['experiment', 1760], ['review', 1760],
+    ] as const) {
+      await page.goto(`/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:${route}`);
+      await expect(page.locator('.dvdash h1 >> visible=true')).toBeVisible();
+      const m = await page.evaluate(() => {
+        const shown = (e: Element) => (e as HTMLElement).offsetParent !== null && !e.closest('[hidden]');
+        const card = document.querySelector('.dv-shell-page')!.getBoundingClientRect();
+        const header = [...document.querySelectorAll('.dv-page-header-title .dv-page-header-width')].find(shown)!.getBoundingClientRect();
+        const side = [...document.querySelectorAll('.dv-right-sidebar')].find(shown)?.getBoundingClientRect();
+        const list = [...document.querySelectorAll('.dv-cat-frame, .dv-cat-routines, .dv-exp-frame')].find(shown)?.getBoundingClientRect();
+        const room = (side ? side.left : card.right - 1) - (card.left + 1);
+        return { width: header.width, room, list: list?.width, left: header.left - card.left, right: (side ? side.left : card.right) - header.right };
+      });
+      expect(Math.round(m.width), `${route} at ${viewport}: content width`).toBe(Math.min(max, Math.round(m.room) - 48));
+      if (m.list !== undefined) expect(Math.round(m.list), `${route} at ${viewport}: the list fills the content width`).toBe(Math.round(m.width));
+      expect(Math.abs(m.left - m.right), `${route} at ${viewport}: centred`).toBeLessThanOrEqual(1);
+    }
   }
 });
 

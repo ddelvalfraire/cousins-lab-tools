@@ -12,8 +12,8 @@ import './screens.css';
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
 export type Navigate = (page:ScreenRoute, id?:string) => void;
 
-/** Dense pages that need the wide content width; every other page uses the standard width (Approved.css). */
-const widePages:ReadonlySet<ScreenRoute> = new Set(['preset-edit','experiment','review']);
+/** Lists and dense pages use the wide content width, so their tables fill the card; forms and editors keep the standard width (Approved.css). */
+const widePages:ReadonlySet<ScreenRoute> = new Set(['experiments','presets','routines','instruments','preset-edit','experiment','review']);
 
 const parentOf = (page:ScreenRoute):NavigationDestination => ['preset','preset-edit','preset-history','prepare'].includes(page) ? 'presets' : ['experiment','review'].includes(page) ? 'experiments' : page==='routine-edit' ? 'routines' : page as NavigationDestination;
 const pageScope:Record<ScreenRoute,string> = { experiments:'Experiments', presets:'Presets', preset:'This preset', 'preset-edit':'This preset', 'preset-history':'This preset', prepare:'This preset', experiment:'This experiment', review:'This experiment', routines:'Routines', 'routine-edit':'This routine', instruments:'Instruments', settings:'Settings' };
