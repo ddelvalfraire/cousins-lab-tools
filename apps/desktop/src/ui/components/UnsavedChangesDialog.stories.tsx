@@ -35,7 +35,7 @@ export const OneChange: Story = {
     await expect(body.getByRole('heading', { name: 'Save changes before leaving?' })).toBeVisible();
     await expect(summary).toHaveTextContent(/^Sample interval changed from 0\.5 s to 0\.25 s\.$/);
     await expect(summary.querySelectorAll('li')).toHaveLength(0);
-    await expect(body.getByText('Saving creates r4. Discarding keeps r3 as it is.')).toBeVisible();
+    await expect(body.getByText('Saving creates R4. Discarding keeps R3 as it is.')).toBeVisible();
     await waitFor(() => expect(keep).toHaveFocus());
     await userEvent.keyboard('{Escape}');
     await expect(args.onKeepEditing).toHaveBeenCalledTimes(1);
@@ -52,7 +52,7 @@ export const SeveralChanges: Story = {
   args: { changes: [signals, interval, layout] },
   play: async ({ canvasElement }) => {
     const { summary } = dialogParts(canvasElement);
-    await expect(summary).toHaveTextContent('3 changes since r3:');
+    await expect(summary).toHaveTextContent('3 changes since R3:');
     await expect(within(summary).getAllByRole('listitem').map(item => item.textContent)).toEqual([signals.short, interval.short, layout.short]);
   },
 };
@@ -101,7 +101,7 @@ export const SaveFails: Story = {
   play: async ({ canvasElement, args }) => {
     const { body } = dialogParts(canvasElement);
     const messages = body.getByTestId('guard-messages');
-    await expect(messages).toHaveTextContent(/^Couldn’t save r4\. Your changes are still here\.$/);
+    await expect(messages).toHaveTextContent(/^Couldn’t save R4\. Your changes are still here\.$/);
     await expect(messages.querySelectorAll('li')).toHaveLength(0);
     await userEvent.click(body.getByRole('button', { name: 'Retry save' }));
     await expect(args.onSave).toHaveBeenCalledTimes(1);
@@ -114,7 +114,7 @@ export const SaveOutcomeUnknown: Story = {
   play: async ({ canvasElement, args }) => {
     const { body } = dialogParts(canvasElement);
     await expect(body.getByRole('heading', { name: 'Save changes before leaving?' })).toBeVisible();
-    await expect(body.getByTestId('guard-messages')).toHaveTextContent('Couldn’t confirm whether r4 was saved');
+    await expect(body.getByTestId('guard-messages')).toHaveTextContent('Couldn’t confirm whether R4 was saved');
     await expect(body.getByTestId('guard-messages').querySelector('[role=status]')).not.toBeNull();
     await expect(args.onCheckStatus).not.toHaveBeenCalled();
   },
@@ -126,7 +126,7 @@ export const ClosingWindow: Story = {
   play: async ({ canvasElement, args }) => {
     const { body } = dialogParts(canvasElement);
     await expect(body.getByRole('heading', { name: 'Save changes before closing?' })).toBeVisible();
-    await expect(body.getByTestId('guard-messages')).toHaveTextContent('Couldn’t confirm whether r4 was saved');
+    await expect(body.getByTestId('guard-messages')).toHaveTextContent('Couldn’t confirm whether R4 was saved');
     await userEvent.click(body.getByRole('button', { name: 'Check status' }));
     await expect(args.onCheckStatus).toHaveBeenCalledTimes(1);
     await expect(args.onSave).not.toHaveBeenCalled();

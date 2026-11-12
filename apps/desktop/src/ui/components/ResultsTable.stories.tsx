@@ -11,7 +11,7 @@ const results: SavedResult[] = [1.508, 1.742, 2.713, 1.920, 1.335, .850].map((me
   id: `result-${i + 1}`, sample: `Sample ${String(25 + i).padStart(3, '0')}`, start: 120 + i * 10, end: 140 + i * 10,
   mean, value: (mean - .303) * 83, sampleCount: 41, signal: 'Mass 44', signalUnit: 'mV',
   recording: `leaf-respiration-${String(25 + i).padStart(3, '0')}.csv`, sourceId: `recording-${25 + i}`,
-  calibrationRevision: 'c2', calibration: { revision: 'c2', zero: .303, scale: 83 }, preset: { name: 'Gas analysis', revision: 'r3' },
+  calibrationRevision: 'c2', calibration: { revision: 'c2', zero: .303, scale: 83 }, preset: { name: 'Gas analysis', revision: 'R3' },
   savedAt: `2026-04-14T09:${20 + i}:00Z`,
 }));
 const quantity: ResultQuantity = { symbol: 'CO₂', label: 'Dissolved CO₂', unit: 'nmol/mL', unitName: 'Nanomoles per millilitre' };

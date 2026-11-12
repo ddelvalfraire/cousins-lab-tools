@@ -69,7 +69,7 @@ export function UnsavedChangesDialog({ opened, intent = 'leave', changes, proble
   const confirmRef = useRef<HTMLButtonElement>(null);
   const busy = phase === 'saving' || phase === 'checking';
   const closing = intent === 'close';
-  const next = `r${revision + 1}`;
+  const next = `R${revision + 1}`;
   useFocusWhen(phase === 'failed' || phase === 'unknown', confirmRef);
 
   const message: { severity: 'error' | 'warning'; texts: string[] } | null = problems.length
@@ -90,9 +90,9 @@ export function UnsavedChangesDialog({ opened, intent = 'leave', changes, proble
     <div className="dv-guard-summary" data-testid="guard-summary">
       {changes.length === 1
         ? <p>{changes[0].sentence}</p>
-        : <><p>{changes.length} changes since r{revision}:</p><ul>{changes.map(change => <li key={change.short}>{change.short}</li>)}</ul></>}
+        : <><p>{changes.length} changes since R{revision}:</p><ul>{changes.map(change => <li key={change.short}>{change.short}</li>)}</ul></>}
     </div>
-    <p className="dv-guard-note">{problems.length ? 'This draft can’t be saved yet. Keep editing to fix it, or discard your changes.' : `Saving creates ${next}. Discarding keeps r${revision} as it is.`}</p>
+    <p className="dv-guard-note">{problems.length ? 'This draft can’t be saved yet. Keep editing to fix it, or discard your changes.' : `Saving creates ${next}. Discarding keeps R${revision} as it is.`}</p>
     {message && <div className="dv-guard-messages" data-testid="guard-messages"><Banner severity={message.severity} messages={message.texts} announce /></div>}
   </GuardDialog>;
 }

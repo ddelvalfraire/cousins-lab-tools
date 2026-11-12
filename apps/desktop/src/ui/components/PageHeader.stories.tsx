@@ -36,7 +36,7 @@ export const Detail: Story = {
   args: {
     title: 'CO₂ & O₂ analysis', count: undefined,
     breadcrumbs: [{ label: 'Workspace', onClick: fn() }, { label: 'Presets', onClick: fn() }, { label: 'CO₂ & O₂ analysis' }],
-    meta: <><Chip icon={<IconLayoutGrid aria-hidden />}>10 panels</Chip><Chip icon={<IconHistory aria-hidden />}>r3</Chip></>,
+    meta: <><Chip icon={<IconLayoutGrid aria-hidden />}>10 panels</Chip><Chip icon={<IconHistory aria-hidden />}>R3</Chip></>,
     actions: <><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>Use preset</HeaderButton><HeaderButton aria-label="More actions" icon={<IconDots aria-hidden />} /></>,
   },
 };
@@ -56,7 +56,7 @@ export const UnsavedChanges: Story = {
   args: {
     title: 'Edit preset', count: undefined,
     breadcrumbs: [{ label: 'Workspace', onClick: fn() }, { label: 'Presets', onClick: fn() }, { label: 'CO₂ & O₂ analysis', onClick: fn() }, { label: 'Edit' }],
-    meta: <><Chip icon={<IconHistory aria-hidden />}>r3</Chip><StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord></>,
+    meta: <><Chip icon={<IconHistory aria-hidden />}>R3</Chip><StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord></>,
     actions: <><HeaderButton>Discard changes</HeaderButton><HeaderButton variant="primary" icon={<IconDeviceFloppy aria-hidden />}>Save revision</HeaderButton></>,
   },
 };

@@ -143,7 +143,7 @@ export function ExperimentSetupForm({
 
   const announcer = <span className="dv-setup-sr" role="status" aria-live="polite" aria-atomic="true">{announcement}</span>;
   const header = (revision: number) => hideHeader ? null
-    : <header className="dv-setup-title"><h2 id={ids.title}>Prepare experiment</h2><span className="dv-setup-chip"><Icon name="clock" />Preset r{revision}</span></header>;
+    : <header className="dv-setup-title"><h2 id={ids.title}>Prepare experiment</h2><span className="dv-setup-chip"><Icon name="clock" />Preset R{revision}</span></header>;
   /** Section headings sit one level below the form title, or below the page title when the form has none. */
   const Heading = hideHeader ? 'h2' : 'h3';
   const sectionLabel = hideHeader ? { 'aria-label': 'Prepare experiment' } : { 'aria-labelledby': ids.title };
@@ -157,9 +157,9 @@ export function ExperimentSetupForm({
         {preparedMessage && <Banner severity="info" announce>{preparedMessage}</Banner>}
         <dl>
           <dt>Name</dt><dd>{prepared.name}</dd>
-          <dt>Preset</dt><dd>{prepared.preset.name} · r{prepared.preset.revision}</dd>
+          <dt>Preset</dt><dd>{prepared.preset.name} · R{prepared.preset.revision}</dd>
           <dt>Source</dt><dd>{sources.find(s => s.id === prepared.roles[role.id])?.name}</dd>
-          <dt>Routine</dt><dd>{preparedRoutine ? `${preparedRoutine.name} · r${preparedRoutine.revision}` : 'None'}</dd>
+          <dt>Routine</dt><dd>{preparedRoutine ? `${preparedRoutine.name} · R${preparedRoutine.revision}` : 'None'}</dd>
         </dl>
         <button type="button" className="dv-setup-button" onClick={() => { returning.current = true; setStatus('editing'); }}>Return to setup</button>
       </div>
@@ -192,7 +192,7 @@ export function ExperimentSetupForm({
             <div className="dv-setup-grid" data-layout="preset">
               {select('preset', 'Preset', values.presetId, presets.map(p => ({ value: p.id, label: p.name })),
                 id => { const next = presets.find(p => p.id === id)!; update({ presetId: next.id, revision: next.revisions[0] }); })}
-              {select('revision', 'Revision', String(values.revision), preset.revisions.map((r, index) => ({ value: String(r), label: `r${r}${index === 0 ? ' · Latest' : ''}` })),
+              {select('revision', 'Revision', String(values.revision), preset.revisions.map((r, index) => ({ value: String(r), label: `R${r}${index === 0 ? ' · Latest' : ''}` })),
                 revision => update({ revision: Number(revision) }))}
             </div>
           </section>
@@ -228,7 +228,7 @@ export function ExperimentSetupForm({
           {values.mode === 'live' && <section className="dv-setup-section" aria-labelledby={ids.routine}>
             <Heading id={ids.routine}>Routine settings</Heading>
             {select('routine', 'Routine revision', values.routineId,
-              [{ value: '', label: 'No routine' }, ...routines.map(r => ({ value: r.id, label: `${r.name} · r${r.revision}` }))],
+              [{ value: '', label: 'No routine' }, ...routines.map(r => ({ value: r.id, label: `${r.name} · R${r.revision}` }))],
               id => update({ routineId: id, parameters: defaults(routines.find(r => r.id === id)) }))}
             {routine && <>
               <div className="dv-setup-grid" data-layout="routine">

@@ -347,6 +347,24 @@ test('the experiments table keeps chips on one line at 772 px and names on one l
   }
 });
 
+test('revision labels use a capital R on every page that shows one', async ({ page }) => {
+  for (const id of [
+    'screens-experiments--home&args=initialPage:prepare', 'components-experimentsetupform--recorded-data', 'components-experimentsetupform--prepare-recorded-data',
+    'components-unsavedchangesdialog--one-change', 'components-unsavedchangesdialog--save-fails', 'components-unsavedchangesdialog--save-outcome-unknown',
+    'components-pageheader--detail', 'components-pageheader--unsaved-changes', 'components-commandcenter--results', 'screens-presets--use-preset',
+    'components-workspaceheader--recorded', 'components-savedresultinspector--open-another-result',
+  ]) {
+    await page.goto(`/iframe.html?id=${id}&viewMode=story`);
+    await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: 30_000 });
+    const lowercase = await page.evaluate(() => {
+      // React renders "r{revision}" as two text nodes, so join each element's own text before matching.
+      const texts = [...document.body.querySelectorAll(':not(script, style)')].map(el => [...el.childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join(''));
+      return texts.filter(text => /(^|[^\w-])r\d+\b/.test(text)).map(text => text.trim());
+    });
+    expect(lowercase, id).toEqual([]);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();

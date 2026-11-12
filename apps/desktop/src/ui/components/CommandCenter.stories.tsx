@@ -14,7 +14,7 @@ const items: CommandItem[] = [
   { id: 'shortcuts', kind: 'settings', title: 'Keyboard shortcuts', icon: <CommandGlyph name="keyboard" />, keys: ['?'], keywords: 'settings help keyboard shortcuts hotkeys commands' },
   { id: 'exp025', kind: 'experiments', title: 'Leaf respiration', meta: 'Sample 025 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, end: <StatusWord tone="accent" icon={<ReviewIcon name="signals" />}>Running</StatusWord>, keywords: 'mass 44 mass 45 MS-01', recent: true },
   { id: 'exp021', kind: 'experiments', title: 'Réponse du dioxyde de carbone pendant la variation de température', meta: 'Échantillon 021 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, keywords: 'carbon dioxide mass 44' },
-  { id: 'preco2', kind: 'presets', title: 'CO₂ & O₂ analysis', meta: '10 panels · Gas signals and derived values', icon: <CommandGlyph name="preset" />, end: <><CommandGlyph name="history" />r3</>, keywords: 'mass 44 mass 45 leaf respiration' },
+  { id: 'preco2', kind: 'presets', title: 'CO₂ & O₂ analysis', meta: '10 panels · Gas signals and derived values', icon: <CommandGlyph name="preset" />, end: <><CommandGlyph name="history" />R3</>, keywords: 'mass 44 mass 45 leaf respiration' },
   { id: 'ms01', kind: 'instruments', title: 'MS-01', meta: 'Mass spectrometer · 6 signals', icon: <CommandGlyph name="instrument" />, keywords: 'mass 44 mass 45 gas' },
 ];
 

@@ -54,7 +54,7 @@ export function savedResultsFor(experiment: ExperimentSummary, preset: PresetSpe
       mean: settings ? row.value / settings.scale + settings.zero : null, sampleCount: Math.round((row.end - row.start) * 2) + 1,
       signal: 'Mass 44', signalUnit: 'mV', recording: fileName(experiment), sourceId: experiment.id,
       calibrationRevision: row.context, calibration: settings ? { revision: row.context, ...settings } : null,
-      preset: { name: preset.name, revision: `r${row.revision}` }, savedAt: experiment.date,
+      preset: { name: preset.name, revision: `R${row.revision}` }, savedAt: experiment.date,
     };
   });
 }

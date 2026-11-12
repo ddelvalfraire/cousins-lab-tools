@@ -15,7 +15,7 @@ const experimentStatus: Record<ExperimentSummary['status'], { label: string; ton
   Recorded: { label: 'Recorded', tone: 'neutral', icon: <ReviewIcon name="check" /> },
   Interrupted: { label: 'Interrupted', tone: 'warning', icon: <ReviewIcon name="warn" /> },
 };
-const revision = (n: number) => <><CommandGlyph name="history" />r{n}</>;
+const revision = (n: number) => <><CommandGlyph name="history" />R{n}</>;
 
 /** Experiments, presets, routines and instruments as the catalog pages show them. Recent: the sidebar's recents and their presets. */
 export function searchRecords(rows: readonly ExperimentSummary[]): SearchRecord[] {

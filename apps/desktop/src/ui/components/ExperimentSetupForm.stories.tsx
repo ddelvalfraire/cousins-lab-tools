@@ -234,6 +234,6 @@ export const UnderPageHeader: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.queryByRole('heading', { name: 'Prepare experiment' })).toBeNull();
     await expect(canvas.getByRole('region', { name: 'Prepare experiment' })).toBeVisible();
-    await expect(canvas.queryByText(/^Preset r3$/)).toBeNull();
+    await expect(canvas.queryByText(/^Preset R3$/)).toBeNull();
   },
 };
