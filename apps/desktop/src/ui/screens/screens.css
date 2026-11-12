@@ -156,7 +156,8 @@
 /* Pages inside the frame card sit directly on the page: editors, Settings and the setup form drop their own card. */
 .dv-shell-page :is(.dv-preset-editor, .dv-re) { border: 0; border-radius: 0; }
 .dv-shell-page :is(.dv-settings, .dv-setup) { overflow: visible; border: 0; border-radius: 0; background: none; }
-.dv-shell-page .dv-settings { max-width: none; }
+/* settings-review.html's 760 px card less its 24 px padding, kept at the title's left edge. */
+.dv-shell-page .dv-settings { max-width: 712px; margin-inline: 0; }
 .dv-shell-page :is(.dv-settings-content, .dv-setup-content, .dv-setup-opened) { padding-inline: 0; }
 .dv-shell-page .dv-settings-content { padding-bottom: 0; }
 .dv-shell-page .dv-settings[data-header='hidden'] .dv-settings-section:first-child { padding-top: 0; }

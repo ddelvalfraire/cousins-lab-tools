@@ -408,6 +408,24 @@ test('the routine editor rail says Params at 600 px or less and keeps Parameters
   }
 });
 
+test('settings and new experiment forms keep their approved widths, left-aligned under the title', async ({ page }) => {
+  for (const [width, height] of [[2560, 1200], [1440, 900], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    for (const [route, selector, max] of [['settings', '.dv-settings', 712], ['prepare', '.dv-setup', 772]] as const) {
+      await page.goto(`/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:${route}`);
+      await expect(page.locator(selector).first()).toBeVisible();
+      const box = await page.locator(selector).first().evaluate(form => {
+        const title = document.querySelector('.dv-shell-page h1')!.getBoundingClientRect(), own = form.getBoundingClientRect(), label = form.querySelector('.dv-settings-section h3');
+        return { width: own.width, left: own.left - title.left, label: label ? label.getBoundingClientRect().width : null };
+      });
+      expect(box.width, `${route} at ${width}: form width`).toBeLessThanOrEqual(max);
+      if (width >= 1440) expect(box.width, `${route} at ${width}: form width`).toBe(max);
+      expect(Math.abs(box.left), `${route} at ${width}: form left edge to title`).toBeLessThanOrEqual(0.5);
+      if (box.label !== null && width >= 1440) expect(box.label, `${route} at ${width}: section label column`).toBe(200);
+    }
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
