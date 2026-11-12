@@ -41,3 +41,4 @@ export * from './components/SavedVersions';
 export * from './components/ExperimentWorkspace';
 export * from './components/CommandCenter';
 export * from './components/KeyboardShortcuts';
+export * from './components/DvSelect';
