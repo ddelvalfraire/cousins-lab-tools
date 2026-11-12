@@ -39,6 +39,9 @@
 .dv-shell-sidebar .dv-side-navigation { height: 100%; }
 .dv-shell-page-frame { container: dv-page-frame / inline-size; display: flex; min-width: 0; min-height: 0; }
 .dv-shell-page { container: dv-page / inline-size; position: relative; flex: 1 1 0; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-bg); outline: none; transition: padding-right var(--dv-side-motion); }
+/* The card takes focus from code after a navigation (and from the skip link) so screen readers start on the new page.
+   It is not a control, so it gets no ring; this outranks the global .dvdash :focus-visible ring. */
+.dv-shell .dv-shell-page:focus-visible { outline: none; }
 /* A page's right sidebar is docked to the card's right edge at full height, beside the header (RightSidebar.css).
    The card's right padding makes room for it, so the header and body centre in the rest: opening the sidebar
    moves the content left, its side margins shrink to the minimum first, and only then does it get narrower. */

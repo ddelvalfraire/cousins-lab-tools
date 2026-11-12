@@ -654,6 +654,24 @@ test('the sidebar scroll bar stays hidden until the pointer is over the sidebar,
   } finally { await browser.close(); }
 });
 
+test('opening a page from the command menu focuses the page without outlining it, and keyboard focus keeps its ring', async ({ page }) => {
+  const targets = [['settings', /^Open settings/, 'Settings'], ['go to presets', /^Go to presets/, 'Presets'], ['sample 024', /Sample 024/, 'Leaf respiration · Sample 024']] as const;
+  for (const [width, height, dark] of [[1440, 900, false], [390, 844, true]] as const) for (const [query, option, heading] of targets) {
+    const name = `${heading} at ${width}px ${dark ? 'dark' : 'light'}`;
+    await page.setViewportSize({ width, height });
+    await story(page, 'screens-experiments--home', dark);
+    await page.keyboard.press('Control+k');
+    await page.keyboard.type(query);
+    await page.getByRole('option', { name: option }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: heading }), name).toBeVisible();
+    const main = page.locator('#dvdash-screen-main');
+    await expect(main, name).toBeFocused();
+    await expect(main, name).toHaveCSS('outline-style', 'none');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => { const el = document.activeElement!; return el.matches(':focus-visible') && getComputedStyle(el).outlineStyle !== 'none'; }), `${name}: the next Tab shows a ring`).toBe(true);
+  }
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);
