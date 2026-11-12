@@ -15,7 +15,7 @@ export function GuardDialog({ opened, title, busy, onKeep, keepLabel, keepRef, a
     closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
     classNames={{ root: 'dvdash', inner: 'dv-guard-inner', content: 'dv-guard', header: 'dv-guard-header', title: 'dv-guard-title', body: 'dv-guard-body' }}
   >
-    <Modal.Overlay color="#0e1a14" backgroundOpacity={0.4} />
+    <Modal.Overlay />
     <Modal.Content>
       <Modal.Header role="none"><Modal.Title>{title}</Modal.Title></Modal.Header>
       <Modal.Body>

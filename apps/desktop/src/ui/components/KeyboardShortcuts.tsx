@@ -41,7 +41,7 @@ export function KeyboardShortcuts({ opened, onClose, mac, sections = shortcutSec
     opened={opened} onClose={onClose} centered size={450} padding={0} xOffset={16} transitionProps={{ duration: 120 }}
     classNames={{ root: 'dvdash', inner: 'dv-shortcuts-inner', content: 'dv-shortcuts', header: 'dv-shortcuts-header', title: 'dv-shortcuts-title', body: 'dv-shortcuts-body', close: 'dv-shortcuts-close' }}
   >
-    <Modal.Overlay color="#0e1a14" backgroundOpacity={0.4} />
+    <Modal.Overlay />
     <Modal.Content>
       <Modal.Header role="none"><Modal.Title>Keyboard shortcuts</Modal.Title><Modal.CloseButton aria-label="Close dialog" /></Modal.Header>
       <Modal.Body>

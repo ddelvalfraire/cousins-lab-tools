@@ -62,7 +62,7 @@ export function ImportDialog({ opened, onClose, title, description, steps, step 
   const id = useId();
   return <Modal.Root id={id} opened={opened} onClose={close} centered size={580} xOffset={10} closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
     classNames={{ root: 'dvdash', inner: 'dv-import-inner', content: className ? `dv-import-dialog ${className}` : 'dv-import-dialog' }}>
-    <Modal.Overlay color="#0e1a14" backgroundOpacity={0.4} />
+    <Modal.Overlay />
     <Modal.Content>
       <div className="dv-import-head">
         <div>

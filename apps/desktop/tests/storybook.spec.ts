@@ -199,23 +199,23 @@ test('confirmation dialogs add no second page banner', async ({ page }) => {
   }
 });
 
-test('every dialog and drawer blurs the page behind it and keeps its dim', async ({ page }) => {
-  const approvedDim = 'rgba(14, 26, 20, 0.4)', mantineDim = 'rgba(0, 0, 0, 0.6)';
-  const cases: { id: string; dark?: boolean; dim: string; open?: () => Promise<void> }[] = [
-    { id: 'screens-experiment--stop-confirmation', dim: approvedDim },
-    { id: 'screens-experiment--stop-confirmation', dark: true, dim: approvedDim },
-    { id: 'screens-experiment--live', dim: approvedDim, open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
-    { id: 'components-unsavedchangesdialog--several-changes', dark: true, dim: approvedDim },
-    { id: 'components-presetimport--review', dim: approvedDim },
-    { id: 'components-recordingimport--review', dark: true, dim: approvedDim },
-    { id: 'components-recordingexport--selected-interval', dim: approvedDim },
-    { id: 'components-keyboardshortcuts--mac-os', dark: true, dim: approvedDim },
-    { id: 'components-navigationdrawer--open', dim: approvedDim },
-    { id: 'components-instrumentcontrols--running', dim: mantineDim, open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
-    { id: 'components-overlays--menu-dialog-and-drawer', dim: mantineDim, open: () => page.getByRole('button', { name: 'Review revision', exact: true }).click() },
-    { id: 'components-overlays--menu-dialog-and-drawer', dark: true, dim: mantineDim, open: () => page.getByRole('button', { name: 'Open settings', exact: true }).click() },
+test('every dialog and drawer, plain Mantine ones included, blurs the page behind it with the approved dim', async ({ page }) => {
+  const approvedDim = 'rgba(14, 26, 20, 0.4)';
+  const cases: { id: string; dark?: boolean; open?: () => Promise<void> }[] = [
+    { id: 'screens-experiment--stop-confirmation' },
+    { id: 'screens-experiment--stop-confirmation', dark: true },
+    { id: 'screens-experiment--live', open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
+    { id: 'components-unsavedchangesdialog--several-changes', dark: true },
+    { id: 'components-presetimport--review' },
+    { id: 'components-recordingimport--review', dark: true },
+    { id: 'components-recordingexport--selected-interval' },
+    { id: 'components-keyboardshortcuts--mac-os', dark: true },
+    { id: 'components-navigationdrawer--open' },
+    { id: 'components-instrumentcontrols--running', open: () => page.getByRole('button', { name: 'Stop acquisition', exact: true }).click() },
+    { id: 'components-overlays--menu-dialog-and-drawer', open: () => page.getByRole('button', { name: 'Review revision', exact: true }).click() },
+    { id: 'components-overlays--menu-dialog-and-drawer', dark: true, open: () => page.getByRole('button', { name: 'Open settings', exact: true }).click() },
   ];
-  for (const { id, dark, dim, open } of cases) {
+  for (const { id, dark, open } of cases) {
     const name = `${id}${dark ? ' (dark)' : ''}`;
     // Not story(): dialog-only stories render into a portal and leave the story root empty.
     await page.goto(`/iframe.html?id=${id}&viewMode=story${dark ? '&globals=appearance:dark' : ''}`);
@@ -224,7 +224,7 @@ test('every dialog and drawer blurs the page behind it and keeps its dim', async
     const overlay = page.locator('.mantine-Modal-overlay, .mantine-Drawer-overlay');
     await expect(overlay, name).toHaveCount(1);
     await expect(overlay, name).toBeVisible();
-    await expect(overlay, name).toHaveCSS('background-color', dim);
+    await expect(overlay, name).toHaveCSS('background-color', approvedDim);
     await expect(overlay, name).toHaveCSS('backdrop-filter', 'blur(4px)');
   }
 });

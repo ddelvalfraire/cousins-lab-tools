@@ -231,7 +231,7 @@ export function NavigationDrawer({ onNavigate, onOpenExperiment, opened: openedP
       <Brand />
     </header>}
     <Drawer.Root opened={opened} onClose={close} size={280} position="left" transitionProps={{ duration: reducedMotion ? 0 : 220, timingFunction: 'cubic-bezier(.22,1,.36,1)' }}>
-      <Drawer.Overlay color="#0e1a14" backgroundOpacity={0.4} transitionProps={{ duration: reducedMotion ? 0 : 180 }} />
+      <Drawer.Overlay transitionProps={{ duration: reducedMotion ? 0 : 180 }} />
       <Drawer.Content aria-label="Navigation" className="dvdash dv-navigation-drawer">
         <div className="dv-navigation-drawer-head">
           <Brand />
