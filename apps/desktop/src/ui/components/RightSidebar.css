@@ -4,7 +4,7 @@
 .dv-right-sidebar { position: relative; flex: none; display: flex; flex-direction: row; justify-content: flex-end; box-sizing: border-box; width: var(--dv-side-open); min-width: 0; min-height: 0; overflow: hidden; border-inline-start: 1px solid var(--dv-line); background: var(--dv-paper); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; transition: width var(--dv-side-motion); }
 .dv-right-sidebar[data-collapsed='true'] { width: var(--dv-side-rail); }
 .dv-right-sidebar :where(h2, h3, p) { margin: 0; }
-.dv-right-sidebar :where(button, input, select) { font: inherit; }
+.dv-right-sidebar :where(button, input) { font: inherit; }
 .dv-right-sidebar button { color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-right-sidebar svg { flex: none; pointer-events: none; }
 .dv-right-sidebar-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
@@ -45,9 +45,9 @@
 .dv-sidebar-section { padding: 16px 0; border-top: 1px solid var(--dv-line); }
 .dv-sidebar-section h3 { margin: 0 0 12px; font-size: 11px; font-weight: 650; }
 .dv-sidebar-field { display: block; margin-bottom: 13px; font-size: 11px; font-weight: 500; line-height: 1.5; }
-.dv-sidebar-field :is(input, select) { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 33px; margin-top: 6px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
-.dv-sidebar-field :is(input, select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
-.dv-sidebar-field :is(input, select):disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
+.dv-sidebar-field :is(input, .dv-select) { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 33px; margin-top: 6px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-sidebar-field :is(input, .dv-select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
+.dv-sidebar-field :is(input, .dv-select):disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
 .dv-sidebar-field small { display: block; margin-top: 5px; color: var(--dv-ink-muted); font-size: 10px; font-weight: 400; }
 .dv-sidebar-facts { display: grid; gap: 11px; margin: 0; }
 .dv-sidebar-facts > div { display: flex; align-items: start; justify-content: space-between; gap: 12px; }

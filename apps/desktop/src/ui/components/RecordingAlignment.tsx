@@ -3,6 +3,7 @@ import { useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type uPlot from 'uplot';
 import { Chip } from './Chip';
+import { DvSelect } from './DvSelect';
 import { StatusBanner, type Severity } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';
@@ -148,10 +149,10 @@ function AlignmentPane({ editor, recordings, events }: { editor: AlignmentEditor
   const previous = useRef(status);
   useEffect(() => {
     if (previous.current === 'saving' && status === 'failed') root.current?.querySelector<HTMLElement>('[data-action="retry"]')?.focus();
-    if (previous.current === 'saving' && status === 'saved') root.current?.querySelector<HTMLElement>('select')?.focus();
+    if (previous.current === 'saving' && status === 'saved') root.current?.querySelector<HTMLElement>('.dv-select')?.focus();
     previous.current = status;
   }, [status]);
-  const discard = () => { editor.discard(); root.current?.querySelector<HTMLElement>('select')?.focus(); };
+  const discard = () => { editor.discard(); root.current?.querySelector<HTMLElement>('.dv-select')?.focus(); };
   const origins = alignmentOrigins(settings, recordings);
   return <InspectorPane ref={root} label="Alignment settings" actions={<>
     <div className="dv-insp-action-row">
@@ -163,11 +164,11 @@ function AlignmentPane({ editor, recordings, events }: { editor: AlignmentEditor
     <Announcer message={editor.announcement} />
   </>}>
     <div className="dv-insp-field"><label htmlFor={`${id}-method`}>Align recordings by</label>
-      <select id={`${id}-method`} value={settings.method} disabled={saving} onChange={e => editor.setMethod(e.currentTarget.value as AlignmentMethod)}>{methods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
+      <DvSelect id={`${id}-method`} value={settings.method} disabled={saving} options={methods} onChange={value => editor.setMethod(value as AlignmentMethod)} />
     </div>
     <p className="dv-insp-help">{methods.find(m => m.value === settings.method)!.help}</p>
     {event && <div className="dv-align-section"><div className="dv-insp-field"><label htmlFor={`${id}-event`}>Event</label>
-      <select id={`${id}-event`} value={settings.event} disabled={saving} onChange={e => editor.setEvent(e.currentTarget.value)}>{events.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}</select>
+      <DvSelect id={`${id}-event`} value={settings.event} disabled={saving} options={events.map(e => ({ value: e.id, label: e.label }))} onChange={editor.setEvent} />
     </div></div>}
     <section className="dv-align-section" aria-label="Recording origins">
       <h3>{event ? 'Event time in each recording' : settings.method === 'clock' ? 'Recording start times' : 'Recording origins'}</h3>

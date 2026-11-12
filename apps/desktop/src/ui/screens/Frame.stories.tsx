@@ -6,6 +6,7 @@ import { ScreenShell, type ScreenRoute, type ScreenShellProps, type SearchRecord
 import { CommandGlyph } from '../components/CommandCenter';
 import type { CurrentAcquisition, RecentExperiment } from '../components/SideNavigation';
 import { acquisitionTrace } from './approved-fixtures';
+import { chooseOption } from '../components/chooseOption';
 
 /** The main-sidebar review's sample recents and acquisition. */
 const recents:RecentExperiment[]=[{id:'025',title:'Sample 025',subtitle:'Leaf respiration',state:'live'},{id:'08',title:'Extract 08',subtitle:'Enzyme assay',state:'opened',tone:'violet'}];
@@ -57,7 +58,7 @@ export const Expanded:Story={
     // The logo is in the window bar, not the sidebar.
     await expect(canvasElement.querySelector('.dv-side-navigation .dv-brand-concept')).toBeNull();
     await expect(canvas.getByRole('button',{name:'DVDash experiments home'})).toBeVisible();
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveDisplayValue('Experiments');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('Experiments');
   },
 };
 
@@ -70,10 +71,10 @@ export const Navigation:Story={
     await userEvent.click(canvas.getByRole('button',{name:'Presets'}));
     await expect(canvas.getByRole('heading',{level:1,name:'Presets'})).toBeVisible();
     await expect(args.navigate).toHaveBeenLastCalledWith('presets',undefined);
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveDisplayValue('Presets');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('Presets');
     await userEvent.click(canvas.getAllByRole('button',{name:/Sample 025/})[0]);
     await expect(canvas.getByRole('heading',{level:1,name:'Leaf respiration · Sample 025'})).toBeVisible();
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveDisplayValue('This experiment');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('This experiment');
   },
 };
 
@@ -129,7 +130,7 @@ export const NarrowSearch:Story={
   parameters:{previewWidth:390},
   play:async({canvasElement})=>{
     const canvas=within(canvasElement);
-    await userEvent.selectOptions(canvas.getByRole('combobox',{name:'Search scope'}),'all');
+    await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'all');
     const input=canvas.getByRole('combobox',{name:'Search all DVDash'}) as HTMLInputElement, style=getComputedStyle(input);
     const context=document.createElement('canvas').getContext('2d')!;
     context.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
@@ -151,7 +152,7 @@ export const CommandCenterShortcut:Story={
     await userEvent.keyboard('{Control>}k{/Control}');
     await waitFor(()=>expect(commandCenter(canvasElement)).toHaveFocus());
     await expect(commandCenter(canvasElement)).toHaveAttribute('aria-expanded','true');
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveDisplayValue('All DVDash');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('All DVDash');
     await expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible();
     await expect(canvas.getByRole('group',{name:'Recent · Experiments'})).toBeVisible();
     await userEvent.keyboard('{Escape}');
@@ -214,12 +215,12 @@ export const ScopeChange:Story={
     await userEvent.type(searchInput(canvasElement),'mass');
     await expect(canvas.queryByRole('listbox')).toBeNull();
     await expect(canvas.getByText('Page content filtered by “mass”')).toBeVisible();
-    await userEvent.selectOptions(canvas.getByRole('combobox',{name:'Search scope'}),'All DVDash');
+    await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'All DVDash');
     await expect(commandCenter(canvasElement)).toHaveValue('mass');
     await expect(canvas.getByText('Page content')).toBeVisible();
     await expect(canvas.getByRole('group',{name:'Experiments'})).toBeVisible();
     await expect(canvas.getByRole('group',{name:'Instruments'})).toBeVisible();
-    await userEvent.selectOptions(canvas.getByRole('combobox',{name:'Search scope'}),'Experiments');
+    await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'Experiments');
     await expect(canvas.queryByRole('listbox')).toBeNull();
     await expect(canvas.getByText('Page content filtered by “mass”')).toBeVisible();
   },

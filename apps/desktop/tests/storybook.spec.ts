@@ -99,9 +99,9 @@ test('calibration readings keep the captured interval and can be undone', async 
 test('experiment display settings change the live view, not the recorded samples', async ({ page }) => {
   await story(page, 'screens-experiment--live');
   await page.getByRole('tab', { name: 'Display', exact: true }).click();
-  await page.getByLabel('Decimal places', { exact: true }).selectOption('3');
+  await choose(page.getByLabel('Decimal places', { exact: true }), '3');
   await expect(page.locator('[data-live-value=mass44]')).toHaveText(/^\d+\.\d{3}$/);
-  await page.getByLabel('Scale', { exact: true }).selectOption('fixed');
+  await choose(page.getByLabel('Scale', { exact: true }), 'fixed');
   await expect(page.getByLabel('Minimum Y', { exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Stop acquisition', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Stop acquisition', exact: true }).click();
@@ -466,7 +466,7 @@ test('settings and new experiment forms keep their approved widths, left-aligned
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();
-  await page.getByLabel('Align recordings by',{exact:true}).selectOption('event');
+  await choose(page.getByLabel('Align recordings by',{exact:true}), 'event');
   await page.getByLabel('Time since recording start',{exact:true}).first().fill('30');
   await expect(page.getByText('−30 s',{exact:true})).toBeVisible();
   // Tick labels: the unit, three signal ticks, then the first time tick, which moves with the event.

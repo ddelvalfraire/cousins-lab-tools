@@ -3,6 +3,7 @@ import { useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type uPlot from 'uplot';
 import { Chip } from './Chip';
+import { DvSelect } from './DvSelect';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';
@@ -136,13 +137,15 @@ export function PanelSourceBindingPane({ editor, sources, channels }: { editor: 
   const { draft, applied, status, problem, dirty } = editor, pending = status === 'switching';
   const s = sources.find(option => option.id === draft.source);
   const groups = [...new Set(sources.map(option => option.group))];
+  const sourceOptions = [{ value: '', label: 'Choose a source' }, ...groups.flatMap(group => sources.filter(option => option.group === group)
+    .map(option => ({ value: option.id, group, label: `${option.name} · ${option.channels.length} ${option.channels.length === 1 ? 'signal' : 'signals'}` })))];
   const previous = useRef(status);
   useEffect(() => {
     if (previous.current === 'switching' && status === 'failed') root.current?.querySelector<HTMLElement>('[data-action="retry"]')?.focus();
-    if (previous.current === 'switching' && status === 'idle') root.current?.querySelector<HTMLElement>('select')?.focus();
+    if (previous.current === 'switching' && status === 'idle') root.current?.querySelector<HTMLElement>('.dv-select')?.focus();
     previous.current = status;
   }, [status]);
-  const discard = () => { editor.discard(); root.current?.querySelector<HTMLElement>('select')?.focus(); };
+  const discard = () => { editor.discard(); root.current?.querySelector<HTMLElement>('.dv-select')?.focus(); };
   return <InspectorPane ref={root} label="Panel source settings" actions={<>
     <div className="dv-insp-action-row">
       <InspectorButton variant="primary" className="dv-src-apply" disabled={pending || !!problem || !dirty} onClick={editor.apply}>{pending ? 'Switching…' : 'Apply to panel'}</InspectorButton>
@@ -152,10 +155,7 @@ export function PanelSourceBindingPane({ editor, sources, channels }: { editor: 
     <Announcer message={editor.announcement} />
   </>}>
     <div className="dv-insp-field"><label htmlFor={`${id}-source`}>Data source</label>
-      <select id={`${id}-source`} value={draft.source} disabled={pending} onChange={e => editor.setSource(e.currentTarget.value)}>
-        <option value="">Choose a source</option>
-        {groups.map(group => <optgroup key={group} label={group}>{sources.filter(option => option.group === group).map(option => <option key={option.id} value={option.id}>{option.name} · {option.channels.length} {option.channels.length === 1 ? 'signal' : 'signals'}</option>)}</optgroup>)}
-      </select>
+      <DvSelect id={`${id}-source`} value={draft.source} disabled={pending} options={sourceOptions} onChange={editor.setSource} />
     </div>
     {s && <><div className="dv-src-identity"><InspectorIcon name={s.kind === 'Live' ? 'device' : 'file'} />{s.name}</div>
       <p className="dv-src-description">{s.file}<br />{s.kind} · {s.channels.length} {s.channels.length === 1 ? 'signal' : 'signals'} · {s.unit}</p></>}

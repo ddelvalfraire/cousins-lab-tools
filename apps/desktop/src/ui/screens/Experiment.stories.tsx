@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
+import { chooseOption } from '../components/chooseOption';
 
 /** The live experiment page (Sample 025 is acquiring). Frozen states for review against the approved mockups. */
 const meta={title:'Screens/Experiment',component:DVDashWorkspace,render:renderScreen,parameters:{layout:'fullscreen',previewWidth:'viewport'},args:{initialPage:'experiment',initialExperiment:'sample-025'}} satisfies Meta<typeof DVDashWorkspace>;
@@ -129,12 +130,12 @@ export const DisplayTab:Story={args:{experimentView:{tab:'display'}},
   play:async({canvasElement})=>{
     const canvas=within(canvasElement);
     await expect(canvas.getByLabelText('Minimum Y')).toBeDisabled();
-    await userEvent.selectOptions(canvas.getByLabelText('Scale'),'fixed');
+    await chooseOption(canvas.getByLabelText('Scale'),'fixed');
     await expect(canvas.getByLabelText('Minimum Y')).toBeEnabled();
-    await userEvent.selectOptions(canvas.getByLabelText('Decimal places'),'3');
+    await chooseOption(canvas.getByLabelText('Decimal places'),'3');
     await expect(canvasElement.querySelector('[data-live-value=mass44]')!.textContent).toMatch(/^\d+\.\d{3}$/);
-    await userEvent.selectOptions(canvas.getByLabelText('Scale'),'auto');
-    await userEvent.selectOptions(canvas.getByLabelText('Decimal places'),'2');
+    await chooseOption(canvas.getByLabelText('Scale'),'auto');
+    await chooseOption(canvas.getByLabelText('Decimal places'),'2');
   },
 };
 export const DisplayTabDark:Story={args:{experimentView:{tab:'display'}},...dark};

@@ -5,6 +5,7 @@ import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';
 import { PanelSourceChart, PanelSourceInspector, usePanelSource, type PanelBinding, type PanelChannel, type PanelSourceOption, type PanelSourceStatus, type StreamState } from './PanelSource';
 import { WorkspaceBody } from './RightSidebar';
+import { chooseOption } from './chooseOption';
 
 /** Synthetic sources from source-binding-review.html. */
 const rows = (count: number, n: number) => Array.from({ length: count }, (_, i) => ({ t: i / 2, 44: 1.55 + n * .09 + .2 * Math.sin(i / 19) + .35 * Math.exp(-(((i / 2 - 110) / 20) ** 2)), 45: .85 + n * .04 + .12 * Math.sin(i / 25), 49: .35 + .09 * Math.sin(i / 22) }));
@@ -124,7 +125,7 @@ export const ReceivingSamples: Story = { args: { scenario: 'live' } };
 export const SwitchResetsInterval: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.selectOptions(source(canvasElement), 'sample026');
+    await chooseOption(source(canvasElement), 'sample026');
     await expect(canvas.getByText(/Mass 49 is missing from this source/)).toBeVisible();
     await expect(chartSource(canvasElement)).toHaveTextContent('Sample 025');
     await userEvent.click(signal(canvasElement, 'Mass 49'));
@@ -169,7 +170,7 @@ export const RetryAfterFailedSwitch: Story = {
   args: { onApply: fn(failsOnce()) },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.selectOptions(source(canvasElement), 'sample026');
+    await chooseOption(source(canvasElement), 'sample026');
     await userEvent.click(signal(canvasElement, 'Mass 49'));
     await userEvent.click(apply(canvasElement));
     const retry = await canvas.findByRole('button', { name: 'Retry' });

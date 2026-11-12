@@ -8,7 +8,7 @@
 /* Window bar (.topbar) */
 .dv-shell-topbar { --search-leading: 192px; flex: none; display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 18px; background: var(--dv-frame); color: var(--dv-nav-strong); font-size: 13px; line-height: normal; }
 .dv-shell-topbar button { font: inherit; cursor: pointer; touch-action: manipulation; }
-.dv-shell-topbar :is(button, input, select):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
+.dv-shell-topbar :is(button, input):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-shell-ico { flex: none; width: 16px; height: 16px; pointer-events: none; }
 .dv-shell-wordmark { display: flex; flex: none; align-items: center; gap: 9px; width: 156px; padding: 0; border: 0; background: none; color: var(--dv-nav-strong); font-size: 20px; font-weight: 700; letter-spacing: -.05em; text-align: start; }
 .dv-shell-topbar .dv-shell-wordmark { font-size: 20px; font-weight: 700; letter-spacing: -.05em; }
@@ -19,8 +19,8 @@
 .dv-shell-searchbox:focus-within { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
 /* Over the open results' backdrop the ring keeps the undimmed bar colour on both sides, so it holds 3:1 contrast. */
 .dv-shell-search-anchor:has(.dv-shell-search-backdrop) .dv-shell-searchbox:focus-within { box-shadow: 0 0 0 6px var(--dv-frame); }
-.dv-shell-topbar .dv-shell-searchbox :is(input, select):focus-visible { outline: none; }
-.dv-shell-searchbox select { flex: none; min-width: 0; max-width: 150px; padding: 4px 5px; border: 0; border-radius: 4px; background: var(--dv-soft); color: var(--dv-ink); font: inherit; font-size: 10px; }
+.dv-shell-topbar .dv-shell-searchbox :is(input, .dv-select):focus-visible { outline: none; }
+.dv-shell-searchbox .dv-select { flex: none; min-width: 0; max-width: 150px; padding: 4px 5px; border: 0; border-radius: 4px; background: var(--dv-soft); color: var(--dv-ink); font: inherit; font-size: 10px; }
 .dv-shell-searchbox input { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: 12px; appearance: none; }
 .dv-shell-searchbox input::-webkit-search-cancel-button { display: none; }
 .dvdash .dv-shell-searchbox input::placeholder { color: var(--dv-ink-muted); }
@@ -81,7 +81,7 @@
   .dv-shell-topbar { --search-leading: 154px; }
   .dv-shell-wordmark { width: 124px; }
   .dv-shell-searchbox { gap: 5px; padding-inline: 7px; }
-  .dv-shell-searchbox select { max-width: 114px; font-size: 9px; }
+  .dv-shell-searchbox .dv-select { max-width: 114px; font-size: 9px; }
   .dv-shell-shortcut { display: none; }
 }
 @container dv-shell (max-width: 600px) {
@@ -93,7 +93,7 @@
 }
 @container dv-shell (max-width: 380px) {
   .dv-shell-tools { display: none; }
-  .dv-shell-searchbox select { max-width: 100px; }
+  .dv-shell-searchbox .dv-select { max-width: 100px; }
 }
 @media (prefers-reduced-motion: reduce) { .dv-shell-workspace, .dv-shell-page { transition: none; } }
 

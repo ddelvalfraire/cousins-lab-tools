@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Chip } from './Chip';
+import { DvSelect, type DvSelectOption } from './DvSelect';
 import { PageHeader } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody, type RightSidebarProps, type RightSidebarTab } from './RightSidebar';
 
@@ -10,6 +11,11 @@ const tabs: RightSidebarTab[] = [
   { id: 'signals', label: 'Signals', icon: <SidebarIcon name="signals" /> },
   { id: 'display', label: 'Display', icon: <SidebarIcon name="display" /> },
 ];
+
+function SampleSelect({ label, initial, options }: { label: string; initial: string; options: DvSelectOption[] }) {
+  const [value, setValue] = useState(initial), id = useId();
+  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label><DvSelect id={id} value={value} options={options} onChange={setValue} /></div>;
+}
 
 /** Sample settings for each tab, as in right-sidebar-review.html. */
 function Pane({ tab }: { tab?: string }) {
@@ -23,8 +29,8 @@ function Pane({ tab }: { tab?: string }) {
   </>;
   if (tab === 'display') return <>
     <SidebarSection title="Mass 44">
-      <label className="dv-sidebar-field">Scale<select defaultValue="auto"><option value="auto">Automatic</option><option value="fixed">Fixed range</option></select></label>
-      <label className="dv-sidebar-field">Decimal places<select defaultValue="3"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+      <SampleSelect label="Scale" initial="auto" options={[{ value: 'auto', label: 'Automatic' }, { value: 'fixed', label: 'Fixed range' }]} />
+      <SampleSelect label="Decimal places" initial="3" options={['1', '2', '3', '4'].map(n => ({ value: n, label: n }))} />
     </SidebarSection>
     <SidebarSection title="Axis units"><SidebarFacts items={[['Horizontal', 'Time · s'], ['Vertical', 'Signal · mV']]} /></SidebarSection>
   </>;

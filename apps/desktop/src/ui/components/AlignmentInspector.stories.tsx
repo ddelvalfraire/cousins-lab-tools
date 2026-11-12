@@ -5,6 +5,7 @@ import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';
 import { AlignmentPreviewChart, RecordingAlignmentInspector, useAlignmentEditor, type AlignmentEvent, type AlignmentRecording, type AlignmentSettings, type AlignmentStatus } from './RecordingAlignment';
 import { WorkspaceBody } from './RightSidebar';
+import { chooseOption } from './chooseOption';
 
 /** Synthetic recordings from alignment-inspector-review.html: the same response, 15 s apart. */
 const trace = (origin: number) => Array.from({ length: 301 }, (_, t) => ({ t, y: .303 + .85 * Math.exp(-(((t - origin - 18) / 13) ** 2)) + .14 * Math.exp(-(((t - origin - 55) / 18) ** 2)) }));
@@ -109,11 +110,11 @@ export const PreviewDiscardAndApply: Story = {
   args: { scenario: 'elapsed' },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.selectOptions(method(canvasElement), 'event');
+    await chooseOption(method(canvasElement), 'event');
     await expect(canvas.getByText('Preview')).toBeVisible();
     await expect(canvas.getByText('Set the same event to 0 s in both recordings.')).toBeVisible();
     await expect(chart(canvasElement, /Time from sample introduced \(s\)/)).toBeVisible();
-    await userEvent.selectOptions(canvas.getByLabelText('Event'), 'valve');
+    await chooseOption(canvas.getByLabelText('Event'), 'valve');
     await expect(canvas.getByDisplayValue('90')).toBeVisible();
     await expect(canvas.getByDisplayValue('102')).toBeVisible();
     await expect(chart(canvasElement, /Time from valve opened \(s\)/)).toBeVisible();
@@ -121,7 +122,7 @@ export const PreviewDiscardAndApply: Story = {
     await expect(method(canvasElement)).toHaveValue('elapsed');
     await expect(method(canvasElement)).toHaveFocus();
     await expect(canvas.queryByText('Preview')).toBeNull();
-    await userEvent.selectOptions(method(canvasElement), 'clock');
+    await chooseOption(method(canvasElement), 'clock');
     await expect(canvas.getByRole('heading', { name: 'Recording start times' })).toBeVisible();
     await userEvent.click(apply(canvasElement));
     await expect(apply(canvasElement)).toHaveTextContent('Applying…');
