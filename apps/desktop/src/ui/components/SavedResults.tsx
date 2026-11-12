@@ -4,6 +4,7 @@ import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { InspectorButton, InspectorIcon, InspectorPane } from './InspectorParts';
 import './SavedResults.css';
+import { ScrollFrame } from './ScrollFrame';
 
 /** A saved interval result with the inputs and calculation stored with it. Missing context is null, never reconstructed. */
 export interface SavedResult {
@@ -63,7 +64,7 @@ export function SavedResultsTable({ results, quantity, selectedId, expanded = tr
   return <div className="dv-insp dv-res-main">
     <section className="dv-res-card" aria-labelledby={titleId}>
       <header className="dv-res-head"><h2 id={titleId}>Saved results</h2><small>{results.length} {results.length === 1 ? 'result' : 'results'}</small></header>
-      <div className="dv-res-region" tabIndex={0} role="region" aria-label="Saved interval results">
+      <ScrollFrame axes="x" className="dv-res-region" tabIndex={0} role="region" aria-label="Saved interval results">
         {empty ? <div className="dv-res-empty"><h3>No saved results</h3><p>Saved interval results will appear here after calculation.</p></div>
           : <table>
             <thead><tr><th scope="col">Sample</th><th scope="col" className="dv-res-numeric">{quantity.symbol}<span className="dv-res-subline">{quantity.unit}</span></th><th scope="col">Calibration</th><th scope="col"><span className="dv-insp-sr">Details</span></th></tr></thead>
@@ -74,7 +75,7 @@ export function SavedResultsTable({ results, quantity, selectedId, expanded = tr
               <td><button type="button" className="dv-res-open" aria-label={`View ${r.sample.toLowerCase()} result`} aria-expanded={r.id === selectedId && expanded} onClick={() => onOpen?.(r.id)}><InspectorIcon name="chevron" /></button></td>
             </tr>)}</tbody>
           </table>}
-      </div>
+      </ScrollFrame>
       {!empty && <nav className="dv-res-pager" aria-label="Saved-results pagination">
         <span>{page * pageSize + 1}–{Math.min(results.length, page * pageSize + pageSize)} of {results.length}</span>
         <div className="dv-res-pager-actions">{pager.map(([label, icon, target, disabled]) => <button key={label} type="button" aria-label={label} disabled={disabled} onClick={() => go(target)}><InspectorIcon name={icon} /></button>)}</div>

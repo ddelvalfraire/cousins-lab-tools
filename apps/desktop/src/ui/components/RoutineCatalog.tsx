@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
+import { ScrollFrame } from './ScrollFrame';
 import {
   CatalogAction, CatalogArrow, CatalogChip, CatalogFilter, CatalogPagination, CatalogRoot, CatalogState, CatalogToolbar,
   SidebarEmpty, focusPane, normalize, useCatalogPage, useCatalogQuery,
@@ -63,7 +64,7 @@ function StepStrip({ routine, current, onStep }: { routine: CatalogRoutine; curr
   }, [routine.steps.length]);
   const next = () => { strip.current?.scrollBy({ left: 220, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); };
   return <div className="dv-cat-strip-wrap">
-    <div ref={strip} className="dv-cat-strip" role="group" aria-label={`${routine.name} · ${routine.steps.length} steps`} tabIndex={0} onScroll={measure}>
+    <ScrollFrame axes="x" rootClassName="dv-cat-strip-root" contentClassName="dv-cat-strip-list" ref={strip} className="dv-cat-strip" role="group" aria-label={`${routine.name} · ${routine.steps.length} steps`} tabIndex={0} onScroll={measure}>
       {routine.steps.map((step, i) => <span key={i} style={{ display: 'contents' }}>
         {i > 0 && <span className="dv-cat-step-connector" aria-hidden="true" />}
         <button type="button" className="dv-cat-step" aria-current={current === i} onClick={() => onStep(i)}>
@@ -71,7 +72,7 @@ function StepStrip({ routine, current, onStep }: { routine: CatalogRoutine; curr
           <span className="dv-cat-step-copy"><strong>{step.kind === 'capture' ? step.name : KIND[step.kind]}</strong><small>{step.kind === 'capture' ? `Capture · ${step.duration} s` : step.kind === 'wait' ? `${step.duration} s` : step.name}</small></span>
         </button>
       </span>)}
-    </div>
+    </ScrollFrame>
     <button type="button" className="dv-cat-scroll-next" aria-label={`Scroll ${routine.name} steps right`} disabled={atEnd} onClick={next}><CatalogArrow /></button>
   </div>;
 }

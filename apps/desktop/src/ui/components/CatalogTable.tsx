@@ -4,6 +4,7 @@ import { Chip } from './Chip';
 import { DvSelect } from './DvSelect';
 import './Approved.css';
 import './CatalogTable.css';
+import { ScrollFrame } from './ScrollFrame';
 
 /*
  * Shared pieces of the catalog pages (presets, instruments, routines), from the approved catalog mockups.
@@ -59,7 +60,7 @@ export function SortHeader<K extends string>({ sortKey, label, sort, onSort }: {
 
 /** Scrollable table frame (.preset-table-frame). */
 export function CatalogFrame({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="dv-cat-frame" role="region" aria-label={label} tabIndex={0}>{children}</div>;
+  return <ScrollFrame className="dv-cat-frame" role="region" aria-label={label} tabIndex={0}>{children}</ScrollFrame>;
 }
 
 export const PAGE_SIZES = [5, 10] as const;

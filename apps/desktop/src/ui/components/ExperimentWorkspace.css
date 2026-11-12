@@ -102,7 +102,7 @@
 .dv-xw-link { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 6px 0; border: 0; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 500; white-space: nowrap; }
 .dv-xw-recorded .dv-xw-link { color: var(--dv-accent); }
 .dv-xw-link:hover { text-decoration: underline; text-underline-offset: 3px; }
-.dv-xw-table-frame { overflow: auto; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
+.dv-xw-table-frame { border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
 .dv-xw-table-frame:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
 .dv-xw-table { width: 100%; table-layout: fixed; border-collapse: collapse; background: var(--dv-paper); font-size: 11px; font-variant-numeric: tabular-nums; }
 .dv-xw-table th { padding: 10px 12px; border-bottom: 1px solid var(--dv-line); color: var(--dv-ink-muted); font-size: 10px; font-weight: 500; text-align: right; }

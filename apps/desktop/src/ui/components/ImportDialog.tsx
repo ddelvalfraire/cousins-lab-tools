@@ -2,6 +2,7 @@ import { useId, useRef, type ChangeEvent, type DragEvent, type ReactNode } from 
 import { Loader, Modal } from '@mantine/core';
 import './Approved.css';
 import './ImportDialog.css';
+import { ScrollFrame } from './ScrollFrame';
 
 const round = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 /** Glyphs copied from the import and export mockups (recording-import-review.html, sideIcons). */
@@ -78,7 +79,7 @@ export function ImportDialog({ opened, onClose, title, description, steps, step 
         </span>)}
       </nav>}
       {/* Focusable so the body scrolls from the keyboard while its own controls are disabled (importing). */}
-      <div className="dv-import-body" role="region" aria-labelledby={`${id}-title`} tabIndex={0} style={{ maxHeight: bodyMaxHeight }}>{children}</div>
+      <ScrollFrame overscroll="contain" rootClassName="dv-import-body-root" className="dv-import-body" role="region" aria-labelledby={`${id}-title`} tabIndex={0} style={{ maxHeight: bodyMaxHeight }}>{children}</ScrollFrame>
       {(footerStart || actions) && <footer className="dv-import-footer">
         {footerStart ?? <span />}
         {actions && <div className="dv-import-actions">{actions}</div>}

@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import './Approved.css';
 import './RightSidebar.css';
+import { ScrollFrame } from './ScrollFrame';
 
 export interface RightSidebarTab {
   id: string;
@@ -147,9 +148,9 @@ export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collaps
         <div><h2>{title ?? current?.label}</h2>{subtitle && <small>{subtitle}</small>}</div>
         {collapsible && <button type="button" className="dv-right-sidebar-collapse" aria-label="Collapse right sidebar" title="Collapse sidebar" onClick={collapse}><CollapseGlyph /></button>}
       </div>
-      <div className="dv-right-sidebar-content">{children}</div>
+      <ScrollFrame axes="y" overscroll="contain" rootClassName="dv-right-sidebar-content-root" className="dv-right-sidebar-content">{children}</ScrollFrame>
     </section>
-    <div className="dv-right-sidebar-tabs" role="tablist" aria-label={tabsLabel ?? label} aria-orientation="vertical" onKeyDown={onKeyDown}>
+    <ScrollFrame axes="y" rootClassName="dv-right-sidebar-tabs-root" contentClassName="dv-right-sidebar-tabs-list" className="dv-right-sidebar-tabs" role="tablist" aria-label={tabsLabel ?? label} aria-orientation="vertical" onKeyDown={onKeyDown}>
       {tabs.map(tab => {
         const isSelected = tab.id === selected;
         return <button key={tab.id} ref={node => { tabRefs.current[tab.id] = node; }} type="button" role="tab" id={tabId(tab.id)} data-tab={tab.id}
@@ -159,7 +160,7 @@ export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collaps
           {tab.badge !== undefined && <><span className="dv-right-sidebar-badge" aria-hidden="true">{tab.badge}</span><span className="dv-right-sidebar-sr">, {tab.badge}</span></>}
         </button>;
       })}
-    </div>
+    </ScrollFrame>
   </aside>;
 }
 
@@ -180,7 +181,7 @@ export interface WorkspaceBodyProps {
  */
 export function WorkspaceBody({ sidebar, label = 'Page content', children }: WorkspaceBodyProps) {
   return <div className="dv-workspace-body"><div className="dv-workspace-grid">
-    <div className="dv-workspace-main" role="region" aria-label={label} tabIndex={0}>{children}</div>
+    <ScrollFrame rootClassName="dv-workspace-main-root" className="dv-workspace-main" role="region" aria-label={label} tabIndex={0}>{children}</ScrollFrame>
     {sidebar}
   </div></div>;
 }

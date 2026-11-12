@@ -4,7 +4,7 @@
 .dv-res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 14px 12px; }
 .dv-res-head h2 { font-size: 14px; font-weight: 650; }
 .dv-res-head small { color: var(--dv-ink-muted); font-size: 11px; }
-.dv-res-region { position: relative; overflow-x: auto; scrollbar-width: thin; }
+.dv-res-region { position: relative; }
 .dv-res-region:focus-visible { outline-offset: -2px; }
 .dv-res-region table { width: 100%; min-width: 285px; border-collapse: collapse; font-size: 12px; }
 .dv-res-region th { padding: 10px; border-bottom: 1px solid var(--dv-line); color: var(--dv-ink-muted); font-size: 11px; font-weight: 500; text-align: left; }

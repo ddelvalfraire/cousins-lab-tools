@@ -66,8 +66,10 @@
 /*
  * Overlay scroll bars (ScrollFrame and every Mantine ScrollArea): no track and a thin ink thumb.
  * A ScrollFrame's outer box doesn't clip: the scroller inside clips its own content, so its focus ring stays whole.
+ * It is a column so the scroller also shrinks with a frame whose height comes from flex, where its 100% height can't resolve.
  */
 .dvdash .dv-scroll { overflow: visible; }
+.dvdash .dv-scroll:not([hidden]) { display: flex; flex-direction: column; }
 .dvdash .dv-scroll-bar, .dvdash .dv-scroll-bar:hover { background: transparent; }
 .dvdash .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 38%, transparent); }
 .dvdash .dv-scroll-bar:hover .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 58%, transparent); }

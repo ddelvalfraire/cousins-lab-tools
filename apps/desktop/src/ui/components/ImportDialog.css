@@ -13,7 +13,7 @@
   display: flex; flex-direction: column; overflow: hidden;
 }
 .dv-import-dialog > * { flex: none; }
-.dv-import-dialog > .dv-import-body { flex: 0 1 auto; min-height: 0; }
+.dv-import-dialog > .dv-import-body-root { flex: 0 1 auto; min-height: 0; }
 [data-mantine-color-scheme='dark'] .dvdash .dv-import-dialog { --dv-import-red: #ecb0a9; }
 .dv-import-dialog :where(h2, h3, h4, p) { margin: 0; }
 .dv-import-dialog button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
@@ -33,7 +33,7 @@
 .dv-import-steps [aria-current='step'] { color: var(--dv-ink); font-weight: 600; }
 .dv-import-steps svg { width: 12px; height: 12px; }
 
-.dv-import-body { padding: 0 24px; overflow: auto; overscroll-behavior: contain; }
+.dv-import-body { padding: 0 24px; }
 .dv-import-body:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: -2px; }
 
 .dv-import-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px 24px; }

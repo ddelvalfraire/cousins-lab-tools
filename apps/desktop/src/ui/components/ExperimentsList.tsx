@@ -6,6 +6,7 @@ import { DvSelect } from './DvSelect';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import type { StatusTone } from './Chip';
 import './ExperimentsList.css';
+import { ScrollFrame } from './ScrollFrame';
 
 export type ExperimentStatus = 'running' | 'recorded' | 'interrupted';
 
@@ -126,7 +127,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
           <p>Search looks at experiment names, sources and presets.</p>
           <button className="dv-exp-plain-button" type="button" onClick={clear}>Clear filter</button>
         </div></div>
-      : <div className="dv-exp-frame" tabIndex={0} role="region" aria-label="Experiments table">
+      : <ScrollFrame className="dv-exp-frame" tabIndex={0} role="region" aria-label="Experiments table">
           <table className="dv-exp-table">
             <caption className="dv-exp-sr-only">Recent experiments</caption>
             <colgroup><col /><col /><col /><col /><col /></colgroup>
@@ -157,7 +158,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
               </tr>;
             })}</tbody>
           </table>
-        </div>;
+        </ScrollFrame>;
     const first = current * pageSize;
     content = <>
       {search && <div className="dv-exp-filter">

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import { Kbd } from '@mantine/core';
 import './Approved.css';
 import './CommandCenter.css';
+import { ScrollFrame } from './ScrollFrame';
 
 /*
  * The command center: the results list under the window bar's search box when it searches All DVDash.
@@ -141,10 +142,10 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
   // Every click in the results keeps focus in the search input. Safari and Firefox on macOS don't focus a clicked
   // button, so without this the input blurs to nothing and the popup closes before the click lands.
   return <div className="dv-cmd" onMouseDown={event => event.preventDefault()}>
-    <div className="dv-cmd-types" ref={typesRef} role="group" aria-label="Search result type">
+    <ScrollFrame axes="x" contentClassName="dv-cmd-types-list" className="dv-cmd-types" ref={typesRef} role="group" aria-label="Search result type">
       {(['all', ...commandGroupOrder] as const).map(type => <button key={type} type="button" aria-pressed={category === type} onClick={() => onCategoryChange(type)}>{type === 'all' ? 'All' : groupLabel[type]}</button>)}
-    </div>
-    <div className="dv-cmd-body">
+    </ScrollFrame>
+    <ScrollFrame axes="y" overscroll="contain" className="dv-cmd-body">
       {groups.length === 0 && <div className="dv-cmd-empty">
         {searchGlyph}
         <p className="dv-cmd-empty-title">{typed ? `No results for “${query}”` : category === 'all' ? 'No recent items' : `No recent ${groupLabel[category].toLowerCase()}`}</p>
@@ -165,7 +166,7 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
           })}
         </div>)}
       </div>
-    </div>
+    </ScrollFrame>
     <div className="dv-cmd-footer">
       <button type="button" onClick={onShortcuts}>Shortcuts <span aria-hidden="true">?</span></button>
       <span aria-hidden="true">↑ ↓ navigate · ↵ select · Esc close</span>

@@ -3,6 +3,7 @@ import { useComputedColorScheme } from '@mantine/core';
 import uPlot from 'uplot';
 import { seriesColors } from '../theme';
 import { formatMeasurement } from '../measurement';
+import { ScrollFrame } from './ScrollFrame';
 
 export type LineDash = 'solid' | 'dashed' | 'dotted';
 /** Dash patterns from the approved inspector charts: dashed `6 4`, dotted `2 4`. */
@@ -156,16 +157,16 @@ export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLab
     u.redraw(false);
   }, [data, range, selection, marker, clock]);
   const description = `${series.map(s => s.label).join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`;
-  if (!frame) return <div className="dv-plot-scroll" tabIndex={0} role="region" aria-label={description}><div ref={host} className="dv-plot" role="img" aria-label={series.map(s => s.label).join(', ')} /></div>;
+  if (!frame) return <ScrollFrame axes="x" className="dv-plot-scroll" tabIndex={0} role="region" aria-label={description}><div ref={host} className="dv-plot" role="img" aria-label={series.map(s => s.label).join(', ')} /></ScrollFrame>;
   return <>
-    <div className="dv-plot-scroll" tabIndex={0} role="region" aria-label={description}>
+    <ScrollFrame axes="x" className="dv-plot-scroll" tabIndex={0} role="region" aria-label={description}>
       <div className="dv-plot dv-plot-sparse">
         <div ref={host} role="img" aria-label={series.map(s => s.label).join(', ')} />
         {overlay && <svg className="dv-plot-ticks" width={overlay.width} height={overlay.height} aria-hidden="true" focusable="false">
           {overlay.labels.map((label, i) => <text key={i} x={label.x} y={label.y} textAnchor={label.anchor}>{label.text}</text>)}
         </svg>}
       </div>
-    </div>
+    </ScrollFrame>
     <p className="dv-plot-x-title">{xLabel}</p>
   </>;
 }

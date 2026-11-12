@@ -6,6 +6,7 @@ import { StatusWord } from './Chip';
 import { Banner } from './Banner';
 import './Approved.css';
 import './CalibrationCurve.css';
+import { ScrollFrame } from './ScrollFrame';
 
 export interface CalibrationStandard {
   id: string;
@@ -75,7 +76,7 @@ export function CalibrationCurve({ title = 'CO₂ calibration · Mass 44', capti
     </div>
     <div className="dv-curve-frame" hidden={view !== 'chart'}><CurvePlot standards={standards} fit={fit} axisMax={axisMax} labelledBy={`${titleId} ${summaryId}`} /></div>
     <div hidden={view !== 'table'}>
-      <div className="dv-curve-table" tabIndex={0} role="region" aria-labelledby={captionId}>
+      <ScrollFrame rootClassName="dv-curve-table-root" className="dv-curve-table" tabIndex={0} role="region" aria-labelledby={captionId}>
         <table>
           <caption id={captionId}>{caption}</caption>
           <thead><tr><th scope="col">Standard</th><th scope="col">Concentration<small>µmol/mol</small></th><th scope="col">Mean signal<small>mV</small></th><th scope="col">Fitted<small>mV</small></th><th scope="col">Residual<small>mV</small></th><th scope="col">Status</th></tr></thead>
@@ -92,7 +93,7 @@ export function CalibrationCurve({ title = 'CO₂ calibration · Mass 44', capti
             </tr>;
           })}</tbody>
         </table>
-      </div>
+      </ScrollFrame>
     </div>
     <div className="dv-curve-legend">
       <span><svg viewBox="0 0 16 12" aria-hidden><circle cx="8" cy="6" r="4.5" fill="var(--dv-blue)" /></svg>Included standard</span>

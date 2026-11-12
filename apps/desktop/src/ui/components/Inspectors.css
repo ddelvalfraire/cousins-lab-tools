@@ -46,7 +46,8 @@
 
 /* Sidebar pane: scroll area plus pinned actions (.scroll, .sidebar-actions). Cancels RightSidebar's content padding. */
 .dv-insp-pane { display: flex; flex-direction: column; height: calc(100% + 16px); margin: 0 -16px -16px; }
-.dv-insp-scroll { flex: 1; min-height: 0; padding: 0 16px 16px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.dv-insp-scroll-root { flex: 1; min-height: 0; }
+.dv-insp-scroll { padding: 0 16px 16px; }
 .dv-insp-scroll:focus-visible { outline-offset: -2px; }
 .dv-insp-actions { flex: none; padding: 0 16px 14px; }
 .dv-insp-actions .dv-insp-action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }

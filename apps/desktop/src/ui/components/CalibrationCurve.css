@@ -13,7 +13,8 @@
 .dv-curve-legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 11px; color: var(--dv-ink-muted); margin-top: 12px; }
 .dv-curve-legend span { display: flex; align-items: center; gap: 6px; }
 .dv-curve-legend svg { width: 16px; height: 12px; flex: none; }
-.dv-curve-table { margin-top: 14px; height: 300px; overflow: auto; border: 1px solid var(--dv-line); border-radius: 6px; }
+.dv-curve-table-root { margin-top: 14px; height: 300px; }
+.dv-curve-table { border: 1px solid var(--dv-line); border-radius: 6px; }
 .dv-curve-table:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
 .dv-curve-table table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
 .dv-curve-table caption { text-align: left; font-size: 11px; color: var(--dv-ink-muted); padding: 9px 10px; caption-side: bottom; }

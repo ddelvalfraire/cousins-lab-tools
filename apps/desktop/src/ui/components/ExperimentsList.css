@@ -21,7 +21,7 @@
 .dv-exp-count { font-size: 12px; color: var(--dv-ink-muted); }
 
 /* Table */
-.dv-exp-frame { position: relative; border: 1px solid var(--dv-line); border-radius: 8px; overflow: auto; background: var(--dv-paper); }
+.dv-exp-frame { position: relative; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
 .dv-exp .dv-exp-frame:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 /* The meta columns take their content width and the name takes the rest, so the chips keep one line at the 772 px content width. */
 .dv-exp-table { width: 100%; border-collapse: collapse; font-size: 12px; }

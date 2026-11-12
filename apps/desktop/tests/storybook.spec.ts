@@ -5,8 +5,10 @@ import { resolve } from 'node:path';
 
 /** Opens a DvSelect and picks an option by its value, as `selectOption` does for a native select. */
 async function choose(select: Locator, value: string) {
-  await select.click();
-  const list = select.page().locator(`[id="${await select.getAttribute('aria-controls')}"]`);
+  // Hold the button itself: once open, the list carries the same label.
+  const trigger = (await select.elementHandle())!;
+  await trigger.click();
+  const list = select.page().locator(`[id="${await trigger.getAttribute('aria-controls')}"]`);
   await list.locator(`[role=option][data-value="${value}"]`).click();
 }
 
@@ -437,7 +439,7 @@ test('the routine editor rail says Params at 600 px or less and keeps Parameters
     await expect(tab).toBeVisible();
     const { shown, room } = await tab.evaluate(button => {
       const span = [...button.querySelectorAll('span')].find(s => s.getBoundingClientRect().width > 1)!;
-      const rail = button.parentElement!.getBoundingClientRect(), box = span.getBoundingClientRect();
+      const rail = button.closest('.dv-right-sidebar-tabs')!.getBoundingClientRect(), box = span.getBoundingClientRect();
       return { shown: span.textContent, room: Math.min(box.left - rail.left, rail.right - box.right) };
     });
     expect(shown, `${width} rail label`).toBe(label);

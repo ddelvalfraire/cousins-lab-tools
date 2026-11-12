@@ -8,6 +8,7 @@ import { AffectedPanelFlag, ProblemsPanel, problemFlag, problemsSummary, type Pr
 import type { LiveStream, RecordedChannel, RecordedSample } from './ExperimentWorkspace.fixtures';
 import './Approved.css';
 import './ExperimentWorkspace.css';
+import { ScrollFrame } from './ScrollFrame';
 
 /* Glyphs from the approved mockups (24 px grid, 1.6 stroke). */
 const strokeProps = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, focusable: false } as const;
@@ -148,7 +149,7 @@ export function RecordedSamples({ rows, position }: { rows: readonly RecordedSam
   const shown = Math.min(page, pages - 1), start = shown * PAGE_SIZE, visible = rows.slice(start, start + PAGE_SIZE);
   return <section className="dv-xw-samples" aria-labelledby="dv-xw-samples-title">
     <header><h2 id="dv-xw-samples-title">Recorded samples</h2><button type="button" className="dv-xw-link" onClick={() => setPage(Math.floor(current / PAGE_SIZE))}>Show current sample</button></header>
-    <div className="dv-xw-table-frame" role="region" aria-label="Recorded samples table" tabIndex={0}>
+    <ScrollFrame className="dv-xw-table-frame" role="region" aria-label="Recorded samples table" tabIndex={0}>
       <table className="dv-xw-table">
         <caption className="dv-xw-sr">Sample values from the recording</caption>
         <thead><tr><th scope="col">Time<small>s</small></th><th scope="col">Mass 44<small>mV</small></th><th scope="col">Mass 45<small>mV</small></th></tr></thead>
@@ -156,7 +157,7 @@ export function RecordedSamples({ rows, position }: { rows: readonly RecordedSam
           <td>{row.time.toFixed(1)}</td><td>{fixed(row.mass44, 3)}</td><td>{fixed(row.mass45, 3)}</td>
         </tr>)}</tbody>
       </table>
-    </div>
+    </ScrollFrame>
     <div className="dv-xw-pagination">
       <span>{rows.length ? `${start + 1}–${start + visible.length} of ${rows.length} samples` : 'No samples'}</span>
       <div className="dv-xw-page-actions">

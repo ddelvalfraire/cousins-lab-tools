@@ -31,7 +31,7 @@
 .dv-cat-views button:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
 
 /* Table */
-.dv-cat-frame { border: 1px solid var(--dv-line); border-radius: 8px; overflow: auto; background: var(--dv-paper); }
+.dv-cat-frame { border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
 .dv-cat-frame:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 .dv-cat-table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 600px; font-size: 12px; }
 .dv-cat-table[data-catalog='presets'] col:nth-child(2) { width: 76px; }
@@ -189,7 +189,9 @@
 .dv-cat .dv-cat-routine-action .dv-cat-action { padding-top: 2px; }
 .dv-cat-routine-revision { padding-top: 2px; }
 .dv-cat-strip-wrap { display: flex; align-items: center; gap: 8px; margin-top: 14px; border-top: 1px solid var(--dv-line); padding: 9px 0; }
-.dv-cat-strip { display: flex; align-items: center; gap: 0; overflow: auto; min-width: 0; flex: 1 1 0%; padding: 4px 2px 7px; scroll-behavior: smooth; scrollbar-width: thin; }
+.dv-cat-strip-root { min-width: 0; flex: 1 1 0%; }
+.dv-cat-strip { padding: 4px 2px 7px; scroll-behavior: smooth; }
+.dv-cat-strip-list { display: flex; align-items: center; gap: 0; width: max-content; min-width: 100%; }
 .dv-cat-strip:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 .dv-cat .dv-cat-step { display: flex; align-items: center; gap: 7px; flex: none; text-align: left; padding: 3px 6px; border-radius: 4px; color: var(--dv-ink); }
 .dv-cat .dv-cat-step:hover { background: var(--dv-soft); }

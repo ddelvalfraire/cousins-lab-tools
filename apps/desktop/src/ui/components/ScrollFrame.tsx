@@ -11,6 +11,8 @@ export interface ScrollFrameProps extends HTMLAttributes<HTMLElement> {
   rootClassName?: string;
   /** Class for the box inside the scroller that holds the children, when they need a flex or grid parent. */
   contentClassName?: string;
+  /** Stops a scroll that reaches the end from scrolling the page behind. */
+  overscroll?: 'contain';
   /** Element for the scroller, for example `main`. */
   component?: ElementType;
   ref?: Ref<HTMLDivElement>;
@@ -21,9 +23,9 @@ export interface ScrollFrameProps extends HTMLAttributes<HTMLElement> {
  * and never moves the content. Every other prop (class, role, label, tabIndex, handlers) goes to the scrolling
  * element itself, so focus, keyboard scrolling, sticky headers and scroll positions work as on a plain overflow box.
  */
-export function ScrollFrame({ axes = 'xy', show = 'hover', className, rootClassName, contentClassName, component, ref, children, ...scroller }: ScrollFrameProps) {
+export function ScrollFrame({ axes = 'xy', show = 'hover', className, rootClassName, contentClassName, overscroll, component, hidden, ref, children, ...scroller }: ScrollFrameProps) {
   // The viewport's class must go through classNames; Mantine replaces a className given in viewportProps.
-  return <ScrollArea type={show} scrollbars={axes} viewportRef={ref} className={rootClassName ? `dv-scroll ${rootClassName}` : 'dv-scroll'}
+  return <ScrollArea type={show} scrollbars={axes} overscrollBehavior={overscroll} hidden={hidden} viewportRef={ref} className={rootClassName ? `dv-scroll ${rootClassName}` : 'dv-scroll'}
     classNames={{ viewport: className, content: contentClassName }}
     viewportProps={{ ...scroller, ...(component ? { component } : {}) } as HTMLAttributes<HTMLDivElement>}>{children}</ScrollArea>;
 }

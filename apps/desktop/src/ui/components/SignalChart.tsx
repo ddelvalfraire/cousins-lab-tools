@@ -9,6 +9,7 @@ import { StatusMessages } from './Primitives';
 import { useElementWidth } from './useElementWidth';
 import './Approved.css';
 import './SignalChart.css';
+import { ScrollFrame } from './ScrollFrame';
 export { ScientificPlot } from './ScientificPlot';
 export type { PlotSeries } from './ScientificPlot';
 
@@ -173,12 +174,12 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
     // Do not rebuild from uncommitted scales during uPlot's initial microtask; only schedule a repaint.
     u.redraw(false);
   }, [data, bands]);
-  return <div className="dv-plot-scroll" tabIndex={0} role="region" aria-label={`${labels.join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`}>
+  return <ScrollFrame axes="x" className="dv-plot-scroll" tabIndex={0} role="region" aria-label={`${labels.join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`}>
     <div className="dv-signal-plot">
       <div ref={host} className="dv-plot" role="img" aria-label={labels.join(', ')} />
       {boxes.map(b => <div key={`${b.left}-${b.width}`} className="dv-gap-band" style={{ left: b.left, top: b.top, width: b.width, height: b.height }}><span>{b.label}</span></div>)}
     </div>
-  </div>;
+  </ScrollFrame>;
 }
 
 type ConnectMode = 'never' | 'always' | 'threshold';
@@ -257,7 +258,7 @@ export function SignalChart({ state = 'recorded', initialView = 'chart', initial
         view === 'chart' && !log && analysis.orders >= 4 && { severity: 'info', text: `Values span about ${Math.round(analysis.orders)} orders of magnitude. Switch to a log scale to see the low end.` },
       ]} action={unavailable ? <Group gap="xs"><Button size="compact-xs" variant="default" onClick={() => { onRetry?.(); setMessage('Display retry requested. Acquisition was not restarted.'); }}>Retry</Button><Button size="compact-xs" variant="default" disabled={!rows.length} onClick={() => { setRecorded(true); setMessage('Recorded example selected. The live source remains unavailable.'); }}>Open recorded example</Button></Group> : undefined} />
       <div hidden={view !== 'chart'} style={{ position: 'relative' }}><SignalPlot data={data} labels={labels} bands={analysis.bands} limits={limits} logarithmic={log} logDecades={log && analysis.logOrders >= 2} points={analysis.irregular} />{(!currentRows.length) && <div className="dv-chart-empty"><Text fw={600}>{unavailable ? 'Signal unavailable' : 'No samples yet'}</Text><Text size="sm" c="dimmed">{unavailable ? `No display samples from ${sourceLabel}.` : 'This recording contains no signal samples.'}</Text></div>}</div>
-      <div hidden={view !== 'table'} className="dv-table-frame" style={{ height: 280 }} tabIndex={0} role="region" aria-label="Signal sample table"><Table striped highlightOnHover><Table.Caption>{onlyNotes ? `${noted} of ` : ''}{currentRows.length} original rows · {caption}</Table.Caption><Table.Thead><Table.Tr><Table.Th>Elapsed (s)</Table.Th>{labels.map(label => <Table.Th key={label}>{label} (mV)</Table.Th>)}<Table.Th className="dv-signal-note">Note</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{tableRows.map(({ row, note }, i) => <Table.Tr key={`${row.time}-${i}`}><Table.Td>{row.time.toFixed(analysis.irregular ? 2 : 1)}</Table.Td>{keys.map(k => <Table.Td key={k}>{formatMeasurement(row[k], Number(precision))}</Table.Td>)}<Table.Td className="dv-signal-note" data-noted={note ? true : undefined}>{note}</Table.Td></Table.Tr>)}{!tableRows.length && <Table.Tr><Table.Td colSpan={keys.length + 2}>{onlyNotes && currentRows.length ? 'No rows have notes.' : 'No samples in this range.'}</Table.Td></Table.Tr>}</Table.Tbody></Table></div>
+      <ScrollFrame hidden={view !== 'table'} className="dv-table-frame" style={{ height: 280 }} tabIndex={0} role="region" aria-label="Signal sample table"><Table striped highlightOnHover><Table.Caption>{onlyNotes ? `${noted} of ` : ''}{currentRows.length} original rows · {caption}</Table.Caption><Table.Thead><Table.Tr><Table.Th>Elapsed (s)</Table.Th>{labels.map(label => <Table.Th key={label}>{label} (mV)</Table.Th>)}<Table.Th className="dv-signal-note">Note</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{tableRows.map(({ row, note }, i) => <Table.Tr key={`${row.time}-${i}`}><Table.Td>{row.time.toFixed(analysis.irregular ? 2 : 1)}</Table.Td>{keys.map(k => <Table.Td key={k}>{formatMeasurement(row[k], Number(precision))}</Table.Td>)}<Table.Td className="dv-signal-note" data-noted={note ? true : undefined}>{note}</Table.Td></Table.Tr>)}{!tableRows.length && <Table.Tr><Table.Td colSpan={keys.length + 2}>{onlyNotes && currentRows.length ? 'No rows have notes.' : 'No samples in this range.'}</Table.Td></Table.Tr>}</Table.Tbody></Table></ScrollFrame>
     </div>
     <div className="dv-controls"><Group justify="space-between"><Text size="sm" fw={650}>Vertical axis</Text><Text size="xs" c="dimmed">Display only</Text></Group>
       <Select label="Y-axis limits" value={fixed ? 'fixed' : 'auto'} onChange={v => setFixed(v === 'fixed')} allowDeselect={false} data={[{ label: 'Auto scale', value: 'auto' }, { label: 'Fixed limits', value: 'fixed' }]} />

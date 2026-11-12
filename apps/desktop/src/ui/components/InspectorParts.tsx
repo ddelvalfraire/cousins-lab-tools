@@ -1,6 +1,7 @@
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 import './Approved.css';
 import './Inspectors.css';
+import { ScrollFrame } from './ScrollFrame';
 
 /**
  * Shared pieces for the calibration checklist, alignment, saved-result and panel-source inspectors.
@@ -50,7 +51,7 @@ export function UnitInput({ unit, invalid, ...props }: InputHTMLAttributes<HTMLI
  */
 export function InspectorPane({ label, actions, children, ref }: { label: string; actions?: ReactNode; children: ReactNode; ref?: Ref<HTMLDivElement> }) {
   return <div ref={ref} className="dv-insp dv-insp-pane">
-    <div className="dv-insp-scroll" role="region" aria-label={label} tabIndex={0}>{children}</div>
+    <ScrollFrame axes="y" overscroll="contain" rootClassName="dv-insp-scroll-root" className="dv-insp-scroll" role="region" aria-label={label} tabIndex={0}>{children}</ScrollFrame>
     {actions && <div className="dv-insp-actions">{actions}</div>}
   </div>;
 }
