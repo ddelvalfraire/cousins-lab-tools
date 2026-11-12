@@ -514,6 +514,33 @@ test('pages use the standard content width, centred, except the dense pages that
   }
 });
 
+test('no page header shows an empty action bar, so lists without header actions start as far under the title as the new experiment form', async ({ page }) => {
+  const layout = () => page.evaluate(() => {
+    const shown = (e: Element) => (e as HTMLElement).offsetParent !== null && !e.closest('[hidden]');
+    const header = [...document.querySelectorAll('.dv-shell-page .dv-page-header')].find(shown)!;
+    const bar = header.querySelector('.dv-page-actionbar');
+    const title = header.querySelector('.dv-page-title-line')!.getBoundingClientRect().bottom;
+    const body = header.nextElementSibling!.querySelector('.dv-workspace-main, .dv-exp-body') ?? header.nextElementSibling!;
+    const first = [...body.children].find(shown)!.getBoundingClientRect().top;
+    const list = document.querySelector('.dv-shell-page :is(.dv-cat-frame, .dv-cat-routines, .dv-exp-frame, .dv-setup)')?.getBoundingClientRect().top ?? NaN;
+    return { emptyBar: !!bar && !bar.textContent!.trim() && !bar.querySelector('button'), headerToFirst: first - header.getBoundingClientRect().bottom, titleToList: list - title };
+  });
+  for (const [width, height] of [[1440, 900], [2560, 1200], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:prepare');
+    await expect(page.locator('.dv-setup')).toBeVisible();
+    const reference = await layout();
+    for (const args of ['initialPage:routines', 'initialPage:instruments', 'initialPage:experiments;empty:!true', 'initialPage:experiments', 'initialPage:presets', 'initialPage:settings']) {
+      await page.goto(`/iframe.html?id=screens-experiments--home&viewMode=story&args=${args}`);
+      await expect(page.locator('.dv-shell-page h1')).toBeVisible();
+      const m = await layout();
+      expect(m.emptyBar, `${args} at ${width}: empty action bar`).toBe(false);
+      expect(m.headerToFirst, `${args} at ${width}: header to first content`).toBe(16);
+      if (args === 'initialPage:routines' || args === 'initialPage:instruments') expect(m.titleToList, `${args} at ${width}: title to list, as on New experiment`).toBe(reference.titleToList);
+    }
+  }
+});
+
 test('import and export dialogs keep their actions in view in a short window and scroll the body', async ({ page }) => {
   for (const [width, height] of [[1280, 640], [390, 600]]) {
     await page.setViewportSize({ width, height });

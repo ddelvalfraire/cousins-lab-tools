@@ -172,7 +172,7 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
   </>;
 
   return <CatalogRoot label="Presets">
-    <PageHeader title="Presets" breadcrumbs={breadcrumbs} count={rows.length} meta={<></>} actions={actions || undefined} />
+    <PageHeader title="Presets" breadcrumbs={breadcrumbs} count={rows.length} actions={actions || undefined} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)}>

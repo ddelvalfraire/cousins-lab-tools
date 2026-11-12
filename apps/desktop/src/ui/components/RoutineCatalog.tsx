@@ -164,7 +164,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'steps', label: 'Steps', icon: <SidebarIcon name="panels" /> }, { id: 'inputs', label: 'Inputs', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Routines">
-    <PageHeader title="Routines" breadcrumbs={breadcrumbs} count={rows.length} meta={<></>} />
+    <PageHeader title="Routines" breadcrumbs={breadcrumbs} count={rows.length} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)} />

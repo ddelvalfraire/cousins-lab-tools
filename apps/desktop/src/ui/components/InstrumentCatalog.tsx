@@ -149,7 +149,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'channels', label: 'Channels', icon: <SidebarIcon name="signals" /> }, { id: 'connect', label: 'Connect', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Instruments">
-    <PageHeader title="Instruments" breadcrumbs={breadcrumbs} count={rows.length} meta={<></>} />
+    <PageHeader title="Instruments" breadcrumbs={breadcrumbs} count={rows.length} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)} />
