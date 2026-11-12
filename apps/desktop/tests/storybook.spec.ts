@@ -374,6 +374,24 @@ test('the narrow transport stories put the scrubber on its own row, clear of the
   }
 });
 
+test('the narrow preset editor shows the requires note on its own line, without a leading dot', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const url of ['/iframe.html?id=screens-experiments--home&viewMode=story&args=initialPage:preset-edit', '/iframe.html?id=components-preseteditor--narrow-window&viewMode=story']) {
+    await page.goto(url);
+    await expect(page.locator('.pe-requires .dv-chip').first()).toBeVisible();
+    const note = await page.locator('.pe-requires').first().evaluate(requires => {
+      const span = requires.querySelector(':scope > span:last-child') as HTMLElement, box = span.getBoundingClientRect(), text = document.createRange();
+      text.selectNodeContents(span);
+      const chipsBottom = Math.max(...[...requires.querySelectorAll('.dv-chip')].map(chip => chip.getBoundingClientRect().bottom));
+      return { text: span.innerText.trim(), below: box.top >= chipsBottom, left: Math.round(box.left - requires.getBoundingClientRect().left), lines: new Set([...text.getClientRects()].map(rect => Math.round(rect.top))).size };
+    });
+    expect(note.text, `${url} note text`).toBe('worked out from the panels');
+    expect(note.below, `${url} note under the chips`).toBe(true);
+    expect(note.left, `${url} note starts the line`).toBe(0);
+    expect(note.lines, `${url} note lines`).toBe(1);
+  }
+});
+
 test('alignment event edits update the chart data rather than original samples', async ({ page }) => {
   await story(page,'screens-review--recording-overview');
   await page.getByRole('tab',{name:'Align & compare',exact:true}).click();

@@ -458,7 +458,7 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
               </>}
     </RightSidebar>}>
         <div className="pe-messages" id={ids.messages} hidden={!messages.length}><StatusMessages messages={messages} /></div>
-        <div className="pe-requires">{required.length > 0 && <>Requires {required.map(signal => <Chip key={signal} icon={<IconActivity aria-hidden />}>{signal}</Chip>)}<span>· worked out from the panels</span></>}</div>
+        <div className="pe-requires">{required.length > 0 && <>Requires {required.map(signal => <Chip key={signal} icon={<IconActivity aria-hidden />}>{signal}</Chip>)}<span className="pe-requires-note"><span className="pe-requires-dot" aria-hidden="true">· </span>worked out from the panels</span></>}</div>
         <h2 className="pe-sr-only">Panels</h2>
         <div ref={canvasRef} className="pe-canvas" aria-label="Preset layout" data-mode={drag ? (drag.valid ? 'drag' : 'nodrop') : kb ? 'drag' : undefined} onBlur={canvasBlur}>{canvasContent()}</div>
         <div className="pe-add-row" ref={addRowRef}>
