@@ -149,4 +149,8 @@ export const ExportFailed: Story = {
 
 export const LongFileName: Story = {
   args: { value: { ...exportDefaults, fileName: 'carbon-dioxide-and-oxygen-response-during-temperature-and-concentration-changes-sample-025' } },
+  play: async ({ canvasElement, args }) => {
+    // The field cuts the name, so hovering shows it in full.
+    await expect(dialog(canvasElement).getByRole('textbox', { name: /File name/ })).toHaveAttribute('title', args.value.fileName);
+  },
 };

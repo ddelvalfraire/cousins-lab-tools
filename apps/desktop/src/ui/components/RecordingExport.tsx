@@ -176,7 +176,7 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
       <div className="dv-export-divider" />
       <div className="dv-export-field-row">
         <label className="dv-export-field">File name<span className="dv-export-filename" data-invalid={attempted && !!nameProblem}>
-          <input value={value.fileName} aria-invalid={(attempted && !!nameProblem) || undefined} aria-describedby={attempted && nameProblem ? 'dv-export-name-error' : undefined} onChange={event => set({ fileName: event.currentTarget.value })} />
+          <input value={value.fileName} title={value.fileName} aria-invalid={(attempted && !!nameProblem) || undefined} aria-describedby={attempted && nameProblem ? 'dv-export-name-error' : undefined} onChange={event => set({ fileName: event.currentTarget.value })} />
           <span className="dv-export-extension">.{value.format}</span>
         </span></label>
         <label className="dv-export-field">Format<select value={value.format} onChange={event => set({ format: event.currentTarget.value as ExportFormat })}><option value="csv">CSV</option><option value="json">JSON</option></select></label>
