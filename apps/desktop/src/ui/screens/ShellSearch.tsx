@@ -1,4 +1,4 @@
-import { useEffect, useId, useImperativeHandle, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode, type Ref } from 'react';
+import { useEffect, useId, useImperativeHandle, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { flushSync } from 'react-dom';
 import { CommandCenter, KeyCaps, commandOptionId, findCommands, type CommandCategory, type CommandItem } from '../components/CommandCenter';
 
@@ -95,6 +95,8 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
     else if (event.key === 'Escape' && open) { event.preventDefault(); close(true); }
     else if (event.key === 'Enter' && !all) event.preventDefault();
   };
+  /** A click on the box's buttons leaves focus where it was (see CommandCenter), so the popup stays open on macOS. */
+  const keepInputFocus = (event: MouseEvent) => event.preventDefault();
   const onBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!anchorRef.current?.contains(event.relatedTarget as Node | null)) { setOpen(false); returnFocus.current = null; }
   };
@@ -114,8 +116,8 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
       <input ref={inputRef} type="search" autoComplete="off" spellCheck={false} value={value} {...combobox}
         aria-label={all ? 'Search all DVDash' : `Search ${pageLabel.toLowerCase()}`} placeholder={all ? 'Search DVDash…' : pagePlaceholder}
         onChange={event => change(event.currentTarget.value)} onFocus={() => { if (all && !quietFocus.current) setOpen(true); }} onKeyDown={onKeyDown} />
-      {value && <button type="button" className="dv-shell-clear" aria-label="Clear search" onClick={clear}>{glyph(<path d="m6 6 12 12M6 18 18 6" />)}</button>}
-      <button type="button" className="dv-shell-shortcut" title={`Open command center · ${mac ? '⌘' : 'Ctrl'} K`} onClick={openCommandCenter}>
+      {value && <button type="button" className="dv-shell-clear" aria-label="Clear search" onMouseDown={keepInputFocus} onClick={clear}>{glyph(<path d="m6 6 12 12M6 18 18 6" />)}</button>}
+      <button type="button" className="dv-shell-shortcut" title={`Open command center · ${mac ? '⌘' : 'Ctrl'} K`} onMouseDown={keepInputFocus} onClick={openCommandCenter}>
         <span className="dv-shell-sr">Open command center</span><KeyCaps keys={['Mod', 'K']} mac={mac} size="xs" />
       </button>
     </div>

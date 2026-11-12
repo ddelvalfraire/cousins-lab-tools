@@ -672,6 +672,52 @@ test('opening a page from the command menu focuses the page without outlining it
   }
 });
 
+test('every command center control works by mouse where clicked buttons take no focus, as in Safari and Firefox on macOS', async ({ page }) => {
+  // Linux Chromium focuses a clicked button. macOS browsers leave focus nowhere, so the search input blurs with no relatedTarget.
+  await page.addInitScript(() => window.addEventListener('mousedown', event => {
+    if (event.defaultPrevented || !(event.target instanceof Element) || !event.target.closest('button')) return;
+    event.preventDefault();
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await story(page, 'screens-experiments--home');
+  const input = page.getByRole('combobox', { name: 'Search all DVDash' }), tabs = page.getByRole('group', { name: 'Search result type' });
+  await page.keyboard.press('Control+k');
+  for (const name of ['Actions', 'Settings', 'Experiments', 'Presets', 'Routines', 'Instruments', 'All']) {
+    await tabs.getByRole('button', { name, exact: true }).click();
+    await expect(tabs.getByRole('button', { name, exact: true }), `${name} tab applies`).toHaveAttribute('aria-pressed', 'true');
+    await expect(input, `${name} tab keeps the popup open`).toHaveAttribute('aria-expanded', 'true');
+    await expect(input, `${name} tab keeps focus in the search`).toBeFocused();
+  }
+  await input.fill('argon');
+  await page.locator('.dv-cmd-empty').getByRole('button', { name: 'Clear search' }).click();
+  await expect(input, 'Clear search in the popup empties the query').toHaveValue('');
+  await expect(input, 'Clear search in the popup keeps it open').toHaveAttribute('aria-expanded', 'true');
+  await input.fill('leaf');
+  await page.getByRole('search').getByRole('button', { name: 'Clear search' }).click();
+  await expect(input, 'the search box clear button empties the query').toHaveValue('');
+  await expect(input, 'the search box clear button keeps the popup open').toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('search').getByRole('button', { name: /Open command center/ }).click();
+  await expect(input, 'the keycaps button keeps the popup open').toHaveAttribute('aria-expanded', 'true');
+  await expect(input).toBeFocused();
+  await page.locator('.dv-cmd-footer').getByRole('button', { name: /Shortcuts/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' }), 'Shortcuts in the footer opens the panel').toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
+  await page.keyboard.press('Control+k');
+  await input.fill('go to presets');
+  await page.getByRole('option', { name: /Go to presets/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Presets' }), 'clicking a row runs it').toBeVisible();
+  await expect(page.getByRole('listbox', { name: 'Search results' }), 'running a row closes the popup').toHaveCount(0);
+  await page.keyboard.press('Control+k');
+  await expect(input).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.click(1400, 880);
+  await expect(page.getByRole('listbox', { name: 'Search results' }), 'clicking outside closes the popup').toHaveCount(0);
+  await page.keyboard.press('Control+k');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox', { name: 'Search results' }), 'Escape closes the popup').toHaveCount(0);
+});
+
 test('gallery filters the complete registry', async ({ page }) => {
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);

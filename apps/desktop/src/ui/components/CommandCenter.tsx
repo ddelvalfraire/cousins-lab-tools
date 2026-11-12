@@ -138,7 +138,9 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
     return () => row.removeEventListener('wheel', onWheel);
   }, []);
   let index = 0;
-  return <div className="dv-cmd">
+  // Every click in the results keeps focus in the search input. Safari and Firefox on macOS don't focus a clicked
+  // button, so without this the input blurs to nothing and the popup closes before the click lands.
+  return <div className="dv-cmd" onMouseDown={event => event.preventDefault()}>
     <div className="dv-cmd-types" ref={typesRef} role="group" aria-label="Search result type">
       {(['all', ...commandGroupOrder] as const).map(type => <button key={type} type="button" aria-pressed={category === type} onClick={() => onCategoryChange(type)}>{type === 'all' ? 'All' : groupLabel[type]}</button>)}
     </div>
@@ -155,7 +157,7 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
           {group.items.map(item => {
             const i = index++, command = item.kind === 'actions' || item.kind === 'settings';
             return <div key={item.id} id={commandOptionId(listId, item)} role="option" aria-selected={i === activeIndex} className="dv-cmd-row" data-command={command || undefined}
-              onMouseDown={event => event.preventDefault()} onMouseMove={() => { if (i !== activeIndex) onActiveIndexChange(i); }} onClick={() => onSelect(item)}>
+              onMouseMove={() => { if (i !== activeIndex) onActiveIndexChange(i); }} onClick={() => onSelect(item)}>
               <span className="dv-cmd-row-icon">{item.icon}</span>
               <span className="dv-cmd-row-copy"><span className="dv-cmd-row-title">{item.title}</span>{item.meta && <span className="dv-cmd-row-meta">{item.meta}</span>}</span>
               {(item.keys || item.end) && <span className="dv-cmd-row-end">{item.keys ? <KeyCaps keys={item.keys} sequence={item.sequence} mac={mac} /> : item.end}</span>}
