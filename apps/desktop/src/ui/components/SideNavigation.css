@@ -25,6 +25,19 @@
    Its negative margin and matching padding reach into the sidebar's padding, so it doesn't clip the items' focus rings. */
 .dv-navigation-scroll { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 24px; margin: -6px -12px; padding: 6px 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 .dv-side-navigation[data-collapsed='true'] .dv-navigation-scroll { margin-inline: 0; padding-inline: 0; overflow: visible; }
+/* The scroll bar takes the sidebar's right padding (no end padding) beside content fixed at 160 px, so neither
+   showing it nor starting to scroll changes a width. Its thumb is transparent until the pointer or focus is inside. */
+.dv-navigation-scroll { --dv-nav-thumb: color-mix(in srgb, var(--dv-nav-text), transparent 55%);
+  padding-inline-end: 0; scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.dv-navigation-scroll > * { max-width: 160px; }
+.dv-navigation-scroll:is(:hover, :focus-within) { scrollbar-color: var(--dv-nav-thumb) transparent; }
+/* WebKit without scrollbar-color (Safari, the macOS web view) styles its own 6 px bar the same way. */
+@supports not (scrollbar-color: auto) {
+  .dv-navigation-scroll { scrollbar-width: auto; }
+  .dv-navigation-scroll::-webkit-scrollbar { width: 6px; }
+  .dv-navigation-scroll::-webkit-scrollbar-thumb { border-radius: 3px; background: transparent; }
+  .dv-navigation-scroll:is(:hover, :focus-within)::-webkit-scrollbar-thumb { background: var(--dv-nav-thumb); }
+}
 :where(.dv-side-navigation, .dv-mobile-navigation, .dv-navigation-drawer) button { font: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-side-navigation button:focus-visible, .dv-mobile-navigation button:focus-visible, .dv-navigation-drawer button:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-side-navigation svg, .dv-mobile-navigation svg, .dv-navigation-drawer svg { flex: none; pointer-events: none; }
@@ -95,5 +108,8 @@
 .dv-navigation-drawer.mantine-Drawer-inner { inset-inline-start: 0; }
 .dv-navigation-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 0 16px; }
 .dv-navigation-drawer .dv-side-navigation { width: 100%; height: auto; min-height: calc(100dvh - 52px); }
+/* The drawer scrolls as a whole, so its sidebar's region is a plain column at the drawer's width. */
+.dv-navigation-drawer .dv-navigation-scroll { margin: 0; padding: 0; overflow: visible; }
+.dv-navigation-drawer .dv-navigation-scroll > * { max-width: none; }
 
 @media (prefers-reduced-motion: reduce) { .dv-side-navigation { transition: none; } }

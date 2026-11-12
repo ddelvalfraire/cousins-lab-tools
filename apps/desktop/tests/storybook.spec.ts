@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { chromium, expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -615,6 +615,43 @@ test('the sidebar pins the acquisition card, Settings and Collapse and scrolls o
   const tall = await sidebarScroll(page);
   expect(tall.scrolls, 'nothing scrolls when everything fits').toBe(false);
   expect(tall.nav.bottom - tall.bottom.bottom, 'the bottom group sits on the sidebar padding').toBe(10);
+});
+
+/** Number of distinct colours in a strip of the page, read back through a canvas. */
+const distinctColours = async (page: Page, clip: { x: number; y: number; width: number; height: number }) => {
+  const png = (await page.screenshot({ clip })).toString('base64');
+  return page.evaluate(async png => {
+    const image = new Image(); image.src = `data:image/png;base64,${png}`; await image.decode();
+    const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+    const context = canvas.getContext('2d')!; context.drawImage(image, 0, 0);
+    const data = context.getImageData(0, 0, image.width, image.height).data, seen = new Set<number>();
+    for (let i = 0; i < data.length; i += 4) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2]);
+    return seen.size;
+  }, png);
+};
+
+test('the sidebar scroll bar stays hidden until the pointer is over the sidebar, and showing it moves nothing', async ({ baseURL }) => {
+  // Headless Chromium hides scroll bars unless told otherwise; this test needs them drawn.
+  const browser = await chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'], executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined });
+  try {
+    for (const dark of [false, true]) {
+      const page = await browser.newPage({ baseURL, viewport: { width: 1440, height: 600 }, reducedMotion: 'reduce' });
+      await story(page, 'screens-experiments--home', dark);
+      const region = page.locator('.dv-navigation-scroll');
+      const { gutter, box } = await region.evaluate((el: HTMLElement) => { const r = el.getBoundingClientRect(); return { gutter: el.offsetWidth - el.clientWidth, box: { x: r.x, y: r.y, width: r.width, height: r.height } }; });
+      expect(gutter, 'the region has a scroll bar').toBeGreaterThan(0);
+      const strip = { x: box.x + box.width - gutter, y: box.y, width: gutter, height: box.height };
+      await page.mouse.move(800, 300);
+      const idle = await sidebarLayout(page);
+      expect(idle.filter(item => /^(Experiments|Presets|Routines|Instruments):/.test(item)).every(item => item.endsWith(' 160x40')), 'destinations keep their 160 px').toBe(true);
+      expect(await distinctColours(page, strip), `idle scroll bar ${dark ? 'dark' : 'light'}`).toBe(1);
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await expect.poll(() => distinctColours(page, strip), { message: `scroll bar under the pointer ${dark ? 'dark' : 'light'}` }).toBeGreaterThan(1);
+      expect(await sidebarLayout(page), 'showing the scroll bar moves nothing').toEqual(idle);
+      expect((await page.locator('.dv-side-navigation').boundingBox())!.width).toBe(184);
+      await page.close();
+    }
+  } finally { await browser.close(); }
 });
 
 test('gallery filters the complete registry', async ({ page }) => {
