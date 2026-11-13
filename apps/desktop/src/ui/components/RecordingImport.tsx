@@ -45,6 +45,7 @@ export interface RecordingImportDialogProps {
   onClose: () => void;
 }
 
+const PRESET_LABEL = 'Open with preset';
 const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
 const statusWord: Record<RecordingFileStatus, string> = { ready: 'Ready', error: 'Needs attention', importing: 'Importing…', imported: 'Imported', failed: 'Failed' };
 
@@ -115,8 +116,8 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
         </li>)}
       </ul>}
     {phase === 'select' && files.length > 0 && <ImportChooseButton label="Add files" accept={accept} multiple onFiles={onChooseFiles} />}
-    {phase === 'review' && <label className="dv-recording-import-preset"><span id={presetLabel}>Open with preset</span>
-      <Select aria-labelledby={presetLabel} value={presetId} data={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={chosen(onPresetChange)} />
+    {phase === 'review' && <label className="dv-recording-import-preset"><span id={presetLabel}>{PRESET_LABEL}</span>
+      <Select aria-labelledby={presetLabel} aria-label={PRESET_LABEL} value={presetId} data={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={chosen(onPresetChange)} />
       <small>Each recording becomes a separate experiment.</small>
     </label>}
   </ImportDialog>;

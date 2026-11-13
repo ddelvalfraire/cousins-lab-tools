@@ -61,6 +61,7 @@ const NEW_PANEL: Record<PresetPanelKind, { title: string; span: PanelSpan; icon:
   readout: { title: 'New readout', span: 4, icon: IconNumbers }, table: { title: 'New table', span: 6, icon: IconTable },
   inputs: { title: 'New settings', span: 4, icon: IconAdjustmentsHorizontal }, controls: { title: 'Recording controls', span: 12, icon: IconPlayerRecord },
 };
+const FIELD = { kind: 'Shows', width: 'Width', x: 'X axis', y: 'Y axis' };
 const same = (a: readonly PresetPanel[], b: readonly PresetPanel[]) => JSON.stringify(a) === JSON.stringify(b);
 function moved(panels: readonly PresetPanel[], id: string, to: number) {
   const from = panels.findIndex(panel => panel.id === id);
@@ -416,12 +417,12 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
                   <input id={ids.field('title')} value={current.title} autoComplete="off" aria-invalid={!current.title.trim()} aria-describedby={!current.title.trim() ? ids.field('title-err') : undefined} onChange={event => update(current.id, { title: event.currentTarget.value })} />
                   {!current.title.trim() && <span className="pe-field-error" id={ids.field('title-err')}><IconCircleX aria-hidden />Enter a panel name.</span>}
                 </div>
-                <div className="pe-side-field"><label htmlFor={ids.field('kind')}>Shows</label>
-                  <Select id={ids.field('kind')} value={current.kind} data={Object.entries(PANEL_KINDS).map(([kind, label]) => ({ value: kind, label }))}
+                <div className="pe-side-field"><label htmlFor={ids.field('kind')}>{FIELD.kind}</label>
+                  <Select id={ids.field('kind')} aria-label={FIELD.kind} value={current.kind} data={Object.entries(PANEL_KINDS).map(([kind, label]) => ({ value: kind, label }))}
                     onChange={chosen(value => changeKind(current, value as PresetPanelKind))} />
                 </div>
-                <div className="pe-side-field"><label htmlFor={ids.field('width')}>Width</label>
-                  <Select id={ids.field('width')} value={String(current.span)} {...selectAria({ describedBy: ids.field('width-hint') })}
+                <div className="pe-side-field"><label htmlFor={ids.field('width')}>{FIELD.width}</label>
+                  <Select id={ids.field('width')} aria-label={FIELD.width} value={String(current.span)} {...selectAria({ describedBy: ids.field('width-hint') })}
                     data={SNAPS.filter(span => span >= MIN_SPAN[current.kind]).map(span => ({ value: String(span), label: WIDTH_NAMES[span] }))}
                     onChange={chosen(value => update(current.id, { span: Number(value) as PanelSpan }))} />
                   <span className="pe-side-hint" id={ids.field('width-hint')}>Or drag the panel’s right edge.</span>
@@ -441,8 +442,8 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
                 </>}
               </>
               : current.kind === 'scatter' ? <>
-                {(['x', 'y'] as const).map(axis => <div key={axis} className="pe-side-field"><label htmlFor={ids.field(axis)}>{axis === 'x' ? 'X axis' : 'Y axis'}</label>
-                  <Select id={ids.field(axis)} data-axis={axis} value={(axis === 'x' ? current.x : current.signals[0]) ?? ''} {...selectAria({ invalid: !!sigError, describedBy: sigError ? ids.field('sig-err') : undefined })}
+                {(['x', 'y'] as const).map(axis => <div key={axis} className="pe-side-field"><label htmlFor={ids.field(axis)}>{FIELD[axis]}</label>
+                  <Select id={ids.field(axis)} aria-label={FIELD[axis]} data-axis={axis} value={(axis === 'x' ? current.x : current.signals[0]) ?? ''} {...selectAria({ invalid: !!sigError, describedBy: sigError ? ids.field('sig-err') : undefined })}
                     data={[{ value: '', label: 'Choose a signal' }, ...signals.map(signal => ({ value: signal, label: signal }))]}
                     onChange={chosen(value => update(current.id, axis === 'x' ? { x: value || null } : { signals: value ? [value] : [] }))} />
                 </div>)}

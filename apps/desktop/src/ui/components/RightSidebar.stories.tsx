@@ -15,7 +15,7 @@ const tabs: RightSidebarTab[] = [
 
 function SampleSelect({ label, initial, options }: { label: string; initial: string; options: ComboboxItem[] }) {
   const [value, setValue] = useState(initial), id = useId();
-  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label><Select id={id} value={value} data={options} onChange={chosen(setValue)} /></div>;
+  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label><Select id={id} aria-label={label} value={value} data={options} onChange={chosen(setValue)} /></div>;
 }
 
 /** Sample settings for each tab, as in right-sidebar-review.html. */

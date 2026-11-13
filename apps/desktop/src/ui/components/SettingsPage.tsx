@@ -88,6 +88,7 @@ export function reportProblemUrl(build: BuildInfo) {
 }
 
 /** Application preferences. Each change saves immediately and shows a Saved mark. */
+const FIELD = { decimal: 'Decimal separator', delimiter: 'Column separator in CSV files' };
 const SEPARATORS = [{ value: 'comma', label: 'Comma' }, { value: 'semicolon', label: 'Semicolon' }, { value: 'tab', label: 'Tab' }];
 
 export function SettingsPage({ settings, build, folderState, systemDecimal = 'point', onChange, onChooseFolder, onCopyCommit, hideHeader = false }: SettingsPageProps) {
@@ -187,8 +188,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           <div><h3 id={section('numbers')}>Numbers</h3><p className="dv-settings-lead">How values are shown on screen and written to exported files.</p></div>
           <div className="dv-settings-fields">
             <div className="dv-settings-field">
-              <label htmlFor={ids.decimal}>Decimal separator</label>
-              <Select id={ids.decimal} {...selectAria({ describedBy: ids.decimalHint })} value={settings.decimal} onChange={chosen(value => onChange('decimal', value as DecimalPreference))}
+              <label htmlFor={ids.decimal}>{FIELD.decimal}</label>
+              <Select id={ids.decimal} aria-label={FIELD.decimal} {...selectAria({ describedBy: ids.decimalHint })} value={settings.decimal} onChange={chosen(value => onChange('decimal', value as DecimalPreference))}
                 data={[{ value: 'system', label: `Match system (${systemDecimal})` }, { value: 'point', label: 'Point · 1,234.56' }, { value: 'comma', label: 'Comma · 1 234,56' }]} />
               <span className="dv-settings-hint" id={ids.decimalHint}>Number fields accept both a point and a comma, whatever is chosen here.</span>
             </div>
@@ -227,8 +228,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           <div><h3 id={section('export')}>Export</h3><p className="dv-settings-lead">Defaults for exported data files. You can still change them when exporting.</p></div>
           <div className="dv-settings-fields">
             <div className="dv-settings-field">
-              <label htmlFor={ids.delimiter}>Column separator in CSV files</label>
-              <Select id={ids.delimiter} ref={delimiterSelect} {...selectAria({ describedBy: `${ids.delimiterHint} ${ids.exportMessage}`, invalid: conflict })} value={settings.delimiter}
+              <label htmlFor={ids.delimiter}>{FIELD.delimiter}</label>
+              <Select id={ids.delimiter} aria-label={FIELD.delimiter} ref={delimiterSelect} {...selectAria({ describedBy: `${ids.delimiterHint} ${ids.exportMessage}`, invalid: conflict })} value={settings.delimiter}
                 data={SEPARATORS} onChange={chosen(value => onChange('delimiter', value as ColumnSeparator))} />
               <span className="dv-settings-hint" id={ids.delimiterHint}>Spreadsheets in regions that use a decimal comma usually expect semicolons.</span>
             </div>

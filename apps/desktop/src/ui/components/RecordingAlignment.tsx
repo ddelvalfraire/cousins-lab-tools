@@ -117,6 +117,7 @@ export function useAlignmentEditor({ recordings, saved: initialSaved, initialSet
   };
 }
 
+const FIELD = { method: 'Align recordings by', event: 'Event' };
 const tabs: RightSidebarTab[] = [
   { id: 'align', label: 'Align', icon: <InspectorIcon name="align" /> },
   { id: 'sources', label: 'Sources', icon: <InspectorIcon name="file" /> },
@@ -163,12 +164,12 @@ function AlignmentPane({ editor, recordings, events }: { editor: AlignmentEditor
     {status === 'saved' && <div className="dv-insp-status"><StatusBanner severity="info">Alignment saved.</StatusBanner></div>}
     <Announcer message={editor.announcement} />
   </>}>
-    <div className="dv-insp-field"><label htmlFor={`${id}-method`}>Align recordings by</label>
-      <Select id={`${id}-method`} value={settings.method} disabled={saving} data={methods} onChange={chosen(value => editor.setMethod(value as AlignmentMethod))} />
+    <div className="dv-insp-field"><label htmlFor={`${id}-method`}>{FIELD.method}</label>
+      <Select id={`${id}-method`} aria-label={FIELD.method} value={settings.method} disabled={saving} data={methods} onChange={chosen(value => editor.setMethod(value as AlignmentMethod))} />
     </div>
     <p className="dv-insp-help">{methods.find(m => m.value === settings.method)!.help}</p>
-    {event && <div className="dv-align-section"><div className="dv-insp-field"><label htmlFor={`${id}-event`}>Event</label>
-      <Select id={`${id}-event`} value={settings.event} disabled={saving} data={events.map(e => ({ value: e.id, label: e.label }))} onChange={chosen(editor.setEvent)} />
+    {event && <div className="dv-align-section"><div className="dv-insp-field"><label htmlFor={`${id}-event`}>{FIELD.event}</label>
+      <Select id={`${id}-event`} aria-label={FIELD.event} value={settings.event} disabled={saving} data={events.map(e => ({ value: e.id, label: e.label }))} onChange={chosen(editor.setEvent)} />
     </div></div>}
     <section className="dv-align-section" aria-label="Recording origins">
       <h3>{event ? 'Event time in each recording' : settings.method === 'clock' ? 'Recording start times' : 'Recording origins'}</h3>

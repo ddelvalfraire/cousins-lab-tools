@@ -18,7 +18,7 @@ function Field({ label, initial, error, onChange, data, disabled }: { label: str
   const id = useId(), [value, setValue] = useState(initial);
   return <div style={{ display: 'grid', gap: 6, fontSize: 13 }}>
     <label htmlFor={id} style={{ fontWeight: 600 }}>{label}</label>
-    <Select id={id} data={data} value={value} disabled={disabled} {...selectAria({ invalid: !!error, describedBy: error ? `${id}-error` : undefined })}
+    <Select id={id} aria-label={label} data={data} value={value} disabled={disabled} {...selectAria({ invalid: !!error, describedBy: error ? `${id}-error` : undefined })}
       onChange={chosen(next => { setValue(next); onChange(next); })} />
     {error && <span id={`${id}-error`} style={{ color: 'var(--dv-error)' }}>{error}</span>}
   </div>;
@@ -163,11 +163,12 @@ export const Keyboard: Story = {
 };
 
 function InDialog() {
+  const label = 'Column separator';
   const [value, setValue] = useState<string | null>('comma');
   return <Modal opened onClose={() => {}} title="Export recording" closeButtonProps={{ 'aria-label': 'Close' }} classNames={{ root: 'dvdash' }}>
     <div style={{ height: 70, overflow: 'hidden' }}>
-      <label htmlFor="export-separator" style={{ display: 'block', fontSize: 13 }}>Column separator</label>
-      <Select id="export-separator" data={separators} value={value} onChange={setValue} />
+      <label htmlFor="export-separator" style={{ display: 'block', fontSize: 13 }}>{label}</label>
+      <Select id="export-separator" aria-label={label} data={separators} value={value} onChange={setValue} />
     </div>
   </Modal>;
 }
@@ -193,11 +194,12 @@ export const InsideDialog: Story = {
 };
 
 function InScroller() {
+  const label = 'Recording';
   const [value, setValue] = useState<string | null>('sample001');
   return <div data-testid="scroller" style={{ height: 160, overflow: 'auto', border: '1px solid var(--dv-line)', padding: 12 }}>
     <div style={{ height: 120 }} />
-    <label htmlFor="scroll-recording" style={{ display: 'block', fontSize: 13 }}>Recording</label>
-    <Select id="scroll-recording" data={recordings} value={value} onChange={setValue} />
+    <label htmlFor="scroll-recording" style={{ display: 'block', fontSize: 13 }}>{label}</label>
+    <Select id="scroll-recording" aria-label={label} data={recordings} value={value} onChange={setValue} />
     <div style={{ height: 200 }} />
   </div>;
 }
@@ -227,5 +229,31 @@ export const Narrow: Story = {
     const box = listbox.closest('.dv-select-dropdown')!.getBoundingClientRect();
     await expect(box.left).toBeGreaterThanOrEqual(0);
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth);
+  },
+};
+
+function LabelledBy() {
+  const labelId = useId(), label = 'Export format';
+  const [value, setValue] = useState<string | null>('csv');
+  return <label style={{ display: 'grid', gap: 6, fontSize: 13 }}><span id={labelId}>{label}</span>
+    <Select aria-labelledby={labelId} aria-label={label} data={[{ value: 'csv', label: 'CSV' }, { value: 'json', label: 'JSON' }]} value={value} onChange={setValue} />
+  </label>;
+}
+
+/** An open list is named after its field, whether a `<label htmlFor>` or `aria-labelledby` names the field. */
+export const ListNames: Story = {
+  render: args => <div style={{ display: 'grid', gap: 16 }}><Field {...args} /><LabelledBy /></div>,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement), body = within(document.body);
+    const byLabel = select(canvasElement), byLabelledBy = select(canvasElement, 'Export format');
+    await expect(canvas.getByText('Column separator', { selector: 'label' })).toHaveAttribute('for', byLabel.id);
+    await expect(byLabelledBy).toHaveAttribute('aria-labelledby', canvas.getByText('Export format').id);
+    for (const [control, name] of [[byLabel, 'Column separator'], [byLabelledBy, 'Export format']] as const) {
+      await userEvent.click(control);
+      const listbox = await openList(control);
+      await expect(body.getByRole('listbox', { name })).toBe(listbox);
+      await userEvent.keyboard('{Escape}');
+      await expect(control).toHaveAttribute('aria-expanded', 'false');
+    }
   },
 };

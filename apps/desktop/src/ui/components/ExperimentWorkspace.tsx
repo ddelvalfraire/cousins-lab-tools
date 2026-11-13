@@ -185,9 +185,9 @@ const SPEEDS = [0.25, 0.5, 1, 2, 4].map(value => ({ value: String(value), label:
 const SCALES = [{ value: 'auto', label: 'Automatic' }, { value: 'fixed', label: 'Fixed range' }];
 const PRECISIONS = [1, 2, 3, 4].map(n => ({ value: String(n), label: String(n) }));
 
-function SideField({ label, children }: { label: string; children: (id: string) => ReactNode }) {
+function SideField({ label, children }: { label: string; children: (id: string, label: string) => ReactNode }) {
   const id = useId();
-  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label>{children(id)}</div>;
+  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label>{children(id, label)}</div>;
 }
 
 /* ---------- Right sidebar panes (right-sidebar-review.html, diagnostics-review.html) ---------- */
@@ -253,12 +253,12 @@ export function DisplayPane({ signal, settings, onChange, axes, children }: {
   const auto = settings.scale === 'auto';
   return <>
     <SidebarSection title={signal}>
-      <SideField label="Scale">{id => <Select id={id} value={settings.scale} data={SCALES} onChange={chosen(value => onChange({ ...settings, scale: value as DisplaySettings['scale'] }))} />}</SideField>
+      <SideField label="Scale">{(id, label) => <Select id={id} aria-label={label} value={settings.scale} data={SCALES} onChange={chosen(value => onChange({ ...settings, scale: value as DisplaySettings['scale'] }))} />}</SideField>
       <div className="dv-xw-field-pair">
         <SideField label="Minimum Y">{id => <input id={id} inputMode="decimal" value={settings.min} disabled={auto} onChange={event => onChange({ ...settings, min: event.currentTarget.value })} />}</SideField>
         <SideField label="Maximum Y">{id => <input id={id} inputMode="decimal" value={settings.max} disabled={auto} onChange={event => onChange({ ...settings, max: event.currentTarget.value })} />}</SideField>
       </div>
-      <SideField label="Decimal places">{id => <Select id={id} value={String(settings.precision)} data={PRECISIONS} onChange={chosen(value => onChange({ ...settings, precision: Number(value) }))} />}</SideField>
+      <SideField label="Decimal places">{(id, label) => <Select id={id} aria-label={label} value={String(settings.precision)} data={PRECISIONS} onChange={chosen(value => onChange({ ...settings, precision: Number(value) }))} />}</SideField>
       <span className="dv-sidebar-save" role="status"><SidebarIcon name="check" />Saved</span>
     </SidebarSection>
     <SidebarSection title="Axis units"><SidebarFacts items={axes} /></SidebarSection>

@@ -104,6 +104,7 @@ export function usePanelSource({ sources, channels, requires, applied: initialAp
   };
 }
 
+const SOURCE_LABEL = 'Data source';
 const tabs: RightSidebarTab[] = [
   { id: 'binding', label: 'Data', icon: <InspectorIcon name="signal" /> },
   { id: 'context', label: 'Source', icon: <InspectorIcon name="file" /> },
@@ -154,8 +155,8 @@ export function PanelSourceBindingPane({ editor, sources, channels }: { editor: 
     {status === 'failed' && <div className="dv-insp-status"><StatusBanner severity="error">Could not switch the panel source. The previous source is still shown. <button type="button" className="dv-insp-link" data-action="retry" onClick={editor.apply}>Retry</button></StatusBanner></div>}
     <Announcer message={editor.announcement} />
   </>}>
-    <div className="dv-insp-field"><label htmlFor={`${id}-source`}>Data source</label>
-      <Select id={`${id}-source`} value={draft.source} disabled={pending} data={sourceOptions} onChange={chosen(editor.setSource)} />
+    <div className="dv-insp-field"><label htmlFor={`${id}-source`}>{SOURCE_LABEL}</label>
+      <Select id={`${id}-source`} aria-label={SOURCE_LABEL} value={draft.source} disabled={pending} data={sourceOptions} onChange={chosen(editor.setSource)} />
     </div>
     {s && <><div className="dv-src-identity"><InspectorIcon name={s.kind === 'Live' ? 'device' : 'file'} />{s.name}</div>
       <p className="dv-src-description">{s.file}<br />{s.kind} · {s.channels.length} {s.channels.length === 1 ? 'signal' : 'signals'} · {s.unit}</p></>}

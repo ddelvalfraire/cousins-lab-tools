@@ -60,6 +60,7 @@ export interface RoutineEditorProps {
 }
 
 const KIND: Record<RoutineStepKind, string> = { capture: 'Capture', wait: 'Wait', annotate: 'Note' };
+const FIELD = { kind: 'Type', param: 'Parameter' };
 const KIND_ICON = { capture: IconActivity, wait: IconClock, annotate: IconNote };
 const ICON = { stroke: 1.6, 'aria-hidden': true } as const;
 const EMPTY: RoutineDefinition = { parameters: [], steps: [] };
@@ -401,8 +402,8 @@ function RoutineEditorDraft({
     const duration = current.duration, source = duration && 'param' in duration ? 'param' : 'fixed';
     const durationError = issues.find(e => e.includes('duration') || e.includes('parameter'));
     return <>
-      <div className="dv-re-field"><label htmlFor={id('kind')}>Type</label>
-        <Select id={id('kind')} data-field="kind" value={current.kind} data={(Object.keys(KIND) as RoutineStepKind[]).map(k => ({ value: k, label: KIND[k] }))}
+      <div className="dv-re-field"><label htmlFor={id('kind')}>{FIELD.kind}</label>
+        <Select id={id('kind')} aria-label={FIELD.kind} data-field="kind" value={current.kind} data={(Object.keys(KIND) as RoutineStepKind[]).map(k => ({ value: k, label: KIND[k] }))}
           onChange={chosen(value => changeKind(current, value as RoutineStepKind))} />
       </div>
       {current.kind !== 'wait' && <div className="dv-re-field"><label htmlFor={id('name')}>{current.kind === 'capture' ? 'What it captures' : 'Note text'}</label>
@@ -426,8 +427,8 @@ function RoutineEditorDraft({
               aria-invalid={!!durationError} aria-describedby={durationError ? id('duration-error') : undefined} onBlur={() => clearRaw(`fixed:${current.id}`)}
               onChange={e => { const text = e.currentTarget.value; setRawValue(`fixed:${current.id}`, text); update(r => { r.steps.find(s => s.id === current.id)!.duration = { fixed: parseSeconds(text) }; }); }} /><span>s</span></div>
           </div>
-          : <div className="dv-re-field"><label htmlFor={id('param')}>Parameter</label>
-            <Select id={id('param')} data-field="param" value={duration.param}
+          : <div className="dv-re-field"><label htmlFor={id('param')}>{FIELD.param}</label>
+            <Select id={id('param')} aria-label={FIELD.param} data-field="param" value={duration.param}
               {...selectAria({ invalid: !!durationError, describedBy: `${id('param-hint')}${durationError ? ` ${id('duration-error')}` : ''}` })}
               data={[{ value: '', label: 'Choose a parameter' }, ...draft.parameters.map(p => ({ value: p.id, label: `${p.name || 'Unnamed'} · ${fmt(p.seconds)}` }))]}
               onChange={chosen(value => update(r => { r.steps.find(s => s.id === current.id)!.duration = { param: value }; }))} />

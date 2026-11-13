@@ -88,6 +88,7 @@ export function exportFileNameProblem(name: string) {
  * the signals to include, and the file name. Gaps are reported without blocking the export.
  * Values from design/dvdash-field-review/recording-export-review.html.
  */
+const FORMAT_LABEL = 'Format';
 const FORMATS = [{ value: 'csv', label: 'CSV' }, { value: 'json', label: 'JSON' }];
 
 export function RecordingExportDialog({ opened, phase, recording, signals, value, onChange, rows, hasSelection = true, gaps = false, empty = false, result, onExport, onCancelExport, onDownloadAgain, onClose }: RecordingExportDialogProps) {
@@ -183,7 +184,7 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
           <input value={value.fileName} title={value.fileName} aria-invalid={(attempted && !!nameProblem) || undefined} aria-describedby={attempted && nameProblem ? 'dv-export-name-error' : undefined} onChange={event => set({ fileName: event.currentTarget.value })} />
           <span className="dv-export-extension">.{value.format}</span>
         </span></label>
-        <label className="dv-export-field"><span id={formatLabel}>Format</span><Select aria-labelledby={formatLabel} value={value.format} data={FORMATS} onChange={chosen(format => set({ format: format as ExportFormat }))} /></label>
+        <label className="dv-export-field"><span id={formatLabel}>{FORMAT_LABEL}</span><Select aria-labelledby={formatLabel} aria-label={FORMAT_LABEL} value={value.format} data={FORMATS} onChange={chosen(format => set({ format: format as ExportFormat }))} /></label>
       </div>
       {attempted && nameProblem && <div className="dv-export-name-feedback" id="dv-export-name-error"><StatusBanner severity="error" announce>{nameProblem}</StatusBanner></div>}
       <label className="dv-export-context" data-disabled={value.format !== 'json'}>

@@ -175,7 +175,7 @@ export function ExperimentSetupForm({
   const select = (name: string, label: string, value: string, options: { value: string; label: string }[], onChange: (value: string) => void, extra: { invalid?: boolean; describedBy?: string; className?: string } = {}) =>
     <div className={`dv-setup-field${extra.className ? ` ${extra.className}` : ''}`}>
       <label htmlFor={fieldId(name)}>{label}</label>
-      <Select id={fieldId(name)} value={value} data={options} {...selectAria(extra)} onChange={chosen(onChange)} />
+      <Select id={fieldId(name)} aria-label={label} value={value} data={options} {...selectAria(extra)} onChange={chosen(onChange)} />
     </div>;
 
   return <section className="dv-setup" data-header={hideHeader ? 'hidden' : undefined} {...sectionLabel}>
