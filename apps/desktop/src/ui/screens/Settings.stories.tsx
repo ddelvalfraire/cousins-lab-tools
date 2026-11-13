@@ -44,12 +44,13 @@ export const SearchScrollsToSetting:Story={
     await waitFor(()=>expect(inView(canvasElement,box)).toBe(false));
     await pick(canvasElement,'decimal',/^Decimal separator/);
     await waitFor(()=>expect(highlight(box)).toBe('pulse'));
+    const pulsing=highlightAnimations(box).length;
     await expect(canvas.getByRole('combobox',{name:'Decimal separator'})).toHaveFocus();
     await expect(ringShown(canvas.getByRole('combobox',{name:'Decimal separator'})),'A field opened from search keeps its focus ring').toBe(true);
     await waitFor(()=>expect(inView(canvasElement,box)).toBe(true));
     await expect(window.scrollY).toBe(0);
     await expect(canvasElement.querySelector('.dv-shell-sr[role=status]')).toHaveTextContent('Decimal separator, Settings, Numbers.');
-    await expect(highlightAnimations(box).length).toBeGreaterThan(0);
+    await expect(pulsing,'The highlight animates while it shows').toBeGreaterThan(0);
     await waitFor(()=>expect(highlight(box)).toBeUndefined(),{timeout:REVEAL_MS+1000});
     await expect(canvas.getByRole('combobox',{name:'Decimal separator'})).toHaveFocus();
   },
