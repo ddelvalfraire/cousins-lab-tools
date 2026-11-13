@@ -35,7 +35,7 @@
 .dv-shell-menu svg { width: 20px; height: 20px; }
 
 /* Below the bar: the sidebar on the frame, then the page card with an 8 px gap right and bottom (.workspace, .content) */
-.dv-shell-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 184px minmax(0, 1fr); padding: 0 8px 8px 0; transition: grid-template-columns 240ms cubic-bezier(.22,1,.36,1); }
+.dv-shell-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 11.5rem minmax(0, 1fr); padding: 0 8px 8px 0; transition: grid-template-columns 240ms cubic-bezier(.22,1,.36,1); }
 .dv-shell[data-navigation-collapsed='true'] .dv-shell-workspace { grid-template-columns: 58px minmax(0, 1fr); }
 .dv-shell-sidebar { position: relative; z-index: 2; min-width: 0; min-height: 0; }
 .dv-shell-sidebar .dv-side-navigation { height: 100%; }
