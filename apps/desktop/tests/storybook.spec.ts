@@ -12,8 +12,9 @@ async function choose(select: Locator, value: string) {
   await list.locator(`[role=option][value="${value}"]`).click();
 }
 
-async function story(page: Page, id: string, dark = false) {
-  await page.goto(`/iframe.html?id=${id}&viewMode=story${dark ? '&globals=appearance:dark' : ''}`);
+async function story(page: Page, id: string, dark = false, textSize?: 'large' | 'larger' | 'largest') {
+  const globals = [...(dark ? ['appearance:dark'] : []), ...(textSize ? [`textSize:${textSize}`] : [])];
+  await page.goto(`/iframe.html?id=${id}&viewMode=story${globals.length ? `&globals=${globals.join(';')}` : ''}`);
   await expect(page.locator('#storybook-root .dvdash')).toBeVisible({ timeout: id.startsWith('gallery-') ? 30_000 : 10_000 });
   await expect(page.locator('#storybook-root')).not.toBeEmpty();
   // The a11y addon runs axe in afterEach; a second axe run started before it ends throws "Axe is already running".
@@ -966,6 +967,35 @@ for (const width of [390, 1280]) for (const dark of [false, true]) {
       const result = await new AxeBuilder({ page }).include('#storybook-root').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })), id).toEqual([]);
       if (id === 'screens-experiment--recorded') await page.screenshot({ path: `test-results/dashboard-${width}-${dark ? 'dark' : 'light'}.png`, fullPage: true });
+    }
+  });
+}
+
+/** Text that a box with hidden overflow cuts off without an ellipsis, so part of a word or label cannot be read. */
+const cutText = () => [...document.querySelectorAll<HTMLElement>('#storybook-root *, body > [data-portal] *')].flatMap(element => {
+  if (![...element.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent!.trim())) return [];
+  const own = element.getBoundingClientRect();
+  if (own.width < 2 || own.height < 2) return [];
+  for (let box: HTMLElement | null = element, depth = 0; box && depth < 4; box = box.parentElement, depth++) {
+    const style = getComputedStyle(box);
+    if (!/hidden|clip/.test(style.overflowX + style.overflowY) || style.textOverflow === 'ellipsis') continue;
+    if (box.scrollWidth > box.clientWidth + 1 || box.scrollHeight > box.clientHeight + 1) return [`${element.tagName.toLowerCase()}.${element.className} “${element.textContent!.trim().slice(0, 30)}” cut by ${box.scrollWidth - box.clientWidth}×${box.scrollHeight - box.clientHeight} px`];
+  }
+  return [];
+});
+
+for (const width of [390, 1280]) for (const dark of [false, true]) {
+  test(`representative screens at the largest text size: no cut text, overflow or accessibility problems at ${width}px ${dark ? 'dark' : 'light'}`, async ({ page }) => {
+    test.setTimeout(180_000); await page.setViewportSize({ width, height: 900 });
+    for (const id of ['screens-experiments--home', 'screens-experiment--live', 'screens-experiment--recorded', 'screens-settings--appearance', 'screens-routines--catalog', 'components-preseteditor--saved', 'components-routineeditor--saved', 'components-recordingimport--review']) {
+      await story(page, id, dark, 'largest');
+      await expect(page.locator('html'), id).toHaveAttribute('data-dv-text-size', 'largest');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${id}: the window does not scroll sideways`).toBe(true);
+      expect(await page.evaluate(() => { const main = document.querySelector('#dvdash-screen-main'); return !main || main.scrollWidth <= main.clientWidth + 1; }), `${id}: the page does not scroll sideways`).toBe(true);
+      expect(await page.evaluate(() => [...document.querySelectorAll('[role=dialog]')].filter(dialog => dialog.scrollWidth > dialog.clientWidth + 1 || dialog.getBoundingClientRect().right > innerWidth + 1).length), `${id}: dialogs fit the window`).toBe(0);
+      expect(await page.evaluate(cutText), `${id}: no text is cut off`).toEqual([]);
+      const result = await new AxeBuilder({ page }).include('#storybook-root').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+      expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })), id).toEqual([]);
     }
   });
 }

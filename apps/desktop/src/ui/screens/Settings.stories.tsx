@@ -8,6 +8,8 @@ const meta={title:'Screens/Settings',component:DVDashWorkspace,render:renderScre
 export default meta;
 type Story=StoryObj<typeof meta>;
 export const Appearance:Story={};
+/** Settings at the Largest text size, the page that offers it. */
+export const AppearanceLargestText:Story={globals:{textSize:'largest'}};
 
 const page=(canvasElement:HTMLElement)=>canvasElement.querySelector<HTMLElement>('#dvdash-screen-main')!;
 const target=(canvasElement:HTMLElement,id:string)=>canvasElement.querySelector<HTMLElement>(`[data-search-target="${id}"]`)!;

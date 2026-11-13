@@ -45,6 +45,8 @@ export const Live:Story={
   },
 };
 export const LiveDark:Story={...dark};
+/** The live experiment at the Largest text size. */
+export const LiveLargestText:Story={globals:{textSize:'largest'}};
 /** Narrow: the tab rail stays docked at the card's right edge and the pane opens as a sheet over the streams. */
 export const LiveNarrow:Story={...narrow,
   play:async({canvasElement})=>{
