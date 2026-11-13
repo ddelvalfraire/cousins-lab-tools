@@ -73,3 +73,34 @@
 .dvdash .dv-scroll-bar, .dvdash .dv-scroll-bar:hover { background: transparent; }
 .dvdash .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 38%, transparent); }
 .dvdash .dv-scroll-bar:hover .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 58%, transparent); }
+
+/*
+ * Select: Mantine Select, given these class names by the theme (theme.ts). A field sizes it through the --dv-select-*
+ * variables on .dv-select instead of restyling the parts, so every select keeps one look. The input box is set here
+ * directly rather than through Mantine's input variables, so a field's own `input` rule can't restyle it by accident.
+ */
+.dvdash .dv-select {
+  --dv-select-height: 36px; --dv-select-font: 13px; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
+  --dv-select-border: var(--dv-control); --dv-select-bg: var(--dv-paper); --dv-select-weight: 400;
+  min-width: 0;
+}
+.dvdash .dv-select-wrapper { --input-right-section-width: var(--dv-select-section); }
+.dvdash .dv-select-input {
+  height: var(--dv-select-height); min-height: var(--dv-select-height); margin: 0; padding-block: 0; padding-inline: var(--dv-select-pad) var(--dv-select-section);
+  border: 1px solid var(--dv-select-border); border-radius: var(--dv-select-radius); background: var(--dv-select-bg); color: var(--dv-ink);
+  font-family: inherit; font-size: var(--dv-select-font); font-weight: var(--dv-select-weight); line-height: 1.2; text-overflow: ellipsis; transition: none;
+}
+.dvdash .dv-select-input:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
+.dvdash .dv-select-input[data-error] { border-color: var(--dv-error); }
+.dvdash .dv-select-input:disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
+.dvdash .dv-select-chevron { width: 1.1em; height: 1.1em; color: var(--dv-ink-muted); stroke-width: 2; font-size: var(--dv-select-font); }
+.dvdash .dv-select-input[data-expanded] + .dv-select-section .dv-select-chevron { transform: rotate(180deg); }
+
+/* The open list: the command centre's popup look, with the highlighted row in the accent. */
+.dvdash.dv-select-dropdown { max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 12px 30px #09261920; font-size: 13px; line-height: 1.4; }
+.dvdash .dv-select-option { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 6px 6px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
+.dvdash .dv-select-option > svg, .dvdash .dv-select-option > div:first-child { flex: none; opacity: 1; width: 14px; height: 14px; margin-top: 2px; }
+.dvdash .dv-select-option[data-checked] { font-weight: 600; }
+.dvdash .dv-select-option[data-combobox-selected], .dvdash .dv-select-option:hover:not([data-combobox-disabled]) { background: var(--dv-accent); color: var(--dv-on-accent); }
+.dvdash .dv-select-option[data-combobox-disabled] { opacity: 1; color: var(--dv-ink-muted); }
+.dvdash .dv-select-group { padding: 8px 6px 4px; color: var(--dv-ink-muted); font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }

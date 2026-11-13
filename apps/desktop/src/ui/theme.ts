@@ -1,15 +1,39 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core';
+import { createTheme, Select, type MantineColorsTuple } from '@mantine/core';
+import { IconChevronDown } from '@tabler/icons-react';
+import { createElement } from 'react';
+import './components/Approved.css';
 export const brand = { forest: '#063D30', jade: '#16A887', mint: '#8EF0B5', lime: '#E8F7A1', ivory: '#F7F8F2' } as const;
 const forest: MantineColorsTuple = ['#eef8f0', '#d8efdf', '#b4dfc7', '#8acdb0', '#61b996', '#3aa67f', '#208767', '#126b51', '#0a503d', brand.forest];
 // Plain Modal and Drawer render these same overlay parts as the compound dialogs, so every dialog shares the approved dim and blur.
 const dialogOverlay = { defaultProps: { color: '#0e1a14', backgroundOpacity: 0.4, blur: 4 } };
 // Every scroll area gets the thin overlay bar (Approved.css); it shows on hover or while scrolling and takes no width.
 const scrollArea = { defaultProps: { scrollbarSize: 8, scrollHideDelay: 600 }, classNames: { scrollbar: 'dv-scroll-bar', thumb: 'dv-scroll-thumb' } };
+// The one select: Mantine Select, styled in Approved.css. Fields size it through the --dv-select-* variables.
+const select = Select.extend({
+  defaultProps: {
+    size: 'sm', rightSection: createElement(IconChevronDown, { className: 'dv-select-chevron', 'aria-hidden': true }), searchable: false, allowDeselect: false, withCheckIcon: true, withAlignedLabels: true, maxDropdownHeight: 'min(320px, 45vh)',
+    // Select passes its own scroll bar size and offset, which would override the ScrollArea theme defaults above.
+    // A long list's scroller must be focusable for axe, and it sits inside the listbox, which may only own options and
+    // groups. Focus stays on the field while the list is open, and Tab closes the list before it can reach the scroller.
+    scrollAreaProps: { scrollbarSize: 8, offsetScrollbars: false, viewportProps: { tabIndex: 0, role: 'group' } },
+    comboboxProps: {
+      // Portalled at Mantine's popover layer (300), above modals and drawers (200); opening it moves nothing on the page.
+      withinPortal: true, position: 'bottom-start', offset: 4, width: 'max-content', resetSelectionOnOptionHover: true, transitionProps: { duration: 0 },
+      // At least as wide as the field, so a narrow field still shows whole option names; Approved.css caps it at the window.
+      middlewares: { flip: true, shift: { padding: 8 }, size: { apply: ({ rects, elements }) => { elements.floating.style.minWidth = `${rects.reference.width}px`; } } },
+    },
+  },
+  classNames: {
+    root: 'dv-select', wrapper: 'dv-select-wrapper', input: 'dv-select-input', section: 'dv-select-section',
+    // The list is portalled out of the .dvdash tree, so it carries the class for the app tokens to resolve.
+    dropdown: 'dvdash dv-select-dropdown', option: 'dv-select-option', groupLabel: 'dv-select-group',
+  },
+});
 export const dvdashTheme = createTheme({
   primaryColor: 'forest', primaryShade: 9, colors: { forest }, autoContrast: true, focusRing: 'auto', defaultRadius: 'md',
   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   headings: { fontWeight: '650', sizes: { h1: { fontSize: '1.65rem', lineHeight: '1.2' }, h2: { fontSize: '1.1rem', lineHeight: '1.4' }, h3: { fontSize: '0.95rem', lineHeight: '1.4' } } },
-  components: { Button: { defaultProps: { size: 'sm' } }, TextInput: { defaultProps: { size: 'sm' } }, NumberInput: { defaultProps: { size: 'sm' } }, Select: { defaultProps: { size: 'sm' } }, Paper: { defaultProps: { withBorder: true, radius: 'md' } },
+  components: { Button: { defaultProps: { size: 'sm' } }, TextInput: { defaultProps: { size: 'sm' } }, NumberInput: { defaultProps: { size: 'sm' } }, Select: select, Paper: { defaultProps: { withBorder: true, radius: 'md' } },
     ModalOverlay: dialogOverlay, DrawerOverlay: dialogOverlay, ScrollArea: scrollArea, ScrollAreaAutosize: scrollArea },
 });
 // Scientific series identity is independent of application branding.
