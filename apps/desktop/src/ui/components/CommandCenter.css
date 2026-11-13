@@ -1,6 +1,6 @@
 /* Command center results. Values from design/dvdash-field-review/command-library-review.html
    (.search-popover, .search-types, .search-result, .result-group, .search-empty, .search-footer). */
-.dv-cmd { position: absolute; top: calc(100% + 9px); left: 0; right: 0; overflow: hidden; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-paper); box-shadow: 0 12px 30px #09261920; color: var(--dv-ink); font-size: 13px; line-height: normal; text-align: start; animation: dv-cmd-enter 120ms ease-out; }
+.dv-cmd { position: absolute; top: calc(100% + 9px); left: 0; right: 0; overflow: hidden; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-paper); box-shadow: 0 12px 30px #09261920; color: var(--dv-ink); font-size: 13px; line-height: normal; text-align: start; animation: dv-cmd-enter var(--dv-motion-base) var(--dv-ease-out); }
 .dv-cmd button { font: inherit; cursor: pointer; }
 .dv-cmd-types { padding: 0 13px; border-bottom: 1px solid var(--dv-line); }
 .dv-cmd-types-list { display: flex; align-items: stretch; gap: 12px; width: max-content; min-width: 100%; }

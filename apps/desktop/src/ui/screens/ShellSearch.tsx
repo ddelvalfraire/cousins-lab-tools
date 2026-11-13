@@ -1,7 +1,9 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { flushSync } from 'react-dom';
-import { Overlay, Select, useMantineTheme, type OverlayProps } from '@mantine/core';
+import { Overlay, Select, Transition, useMantineTheme, type OverlayProps } from '@mantine/core';
+import { Presence } from '../components/Motion';
 import { chosen } from '../components/select';
+import { motion } from '../motion';
 import { CommandCenter, KeyCaps, commandOptionId, findCommands, type CommandCategory, type CommandItem } from '../components/CommandCenter';
 
 /** A command center row and what choosing it does. */
@@ -113,7 +115,10 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
   return <div className="dv-shell-search-anchor" ref={anchorRef} onBlur={onBlur}>
     {/* The dialogs' dim and blur behind the open results. z-index -1 keeps it inside the anchor's stacking context,
         under the search box and the results but over the rest of the window. A click on it blurs the input, which closes the popup. */}
-    {all && open && <Overlay {...dialogDim} fixed zIndex={-1} className="dv-shell-search-backdrop" aria-hidden="true" />}
+    {/* The dim fades itself: a fading wrapper would cut its blur off from the page and lift it over the search box. */}
+    <Transition mounted={all && open} transition="fade" duration={motion.base} exitDuration={motion.fast} timingFunction={motion.easeOut}>
+      {styles => <Overlay {...dialogDim} fixed zIndex={-1} className="dv-shell-search-backdrop" aria-hidden="true" style={styles} />}
+    </Transition>
     <div className="dv-shell-searchbox" role="search" aria-label="DVDash search">
       {glyph(<><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>)}
       <Select aria-label="Search scope" value={scope} data={[{ value: 'page', label: pageLabel, disabled: !filterable }, { value: 'all', label: 'All DVDash' }]}
@@ -126,7 +131,7 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
         <span className="dv-shell-sr">Open command center</span><KeyCaps keys={['Mod', 'K']} mac={mac} size="xs" />
       </button>
     </div>
-    {all && open && <CommandCenter listId={listId} groups={groups} query={query} category={category} onCategoryChange={next => { setCategory(next); setActive(0); }}
-      activeIndex={active} onActiveIndexChange={setActive} onSelect={item => choose(item as ShellCommand)} onClearQuery={clear} onShortcuts={() => { setOpen(false); focusQuietly(); onShortcuts(); }} mac={mac} />}
+    <Presence show={all && open} variant="fade"><CommandCenter listId={listId} groups={groups} query={query} category={category} onCategoryChange={next => { setCategory(next); setActive(0); }}
+      activeIndex={active} onActiveIndexChange={setActive} onSelect={item => choose(item as ShellCommand)} onClearQuery={clear} onShortcuts={() => { setOpen(false); focusQuietly(); onShortcuts(); }} mac={mac} /></Presence>
   </div>;
 }

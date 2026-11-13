@@ -126,7 +126,7 @@ export const SwitchResetsInterval: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await chooseOption(source(canvasElement), 'sample026');
-    await expect(canvas.getByText(/Mass 49 is missing from this source/)).toBeVisible();
+    await waitFor(() => expect(canvas.getByText(/Mass 49 is missing from this source/)).toBeVisible());
     await expect(chartSource(canvasElement)).toHaveTextContent('Sample 025');
     await userEvent.click(signal(canvasElement, 'Mass 49'));
     await expect(signal(canvasElement, 'Mass 49')).toBeDisabled();
@@ -157,7 +157,7 @@ export const SignalChangeKeepsInterval: Story = {
     await expect(canvas.getByText('Selected interval: 120–140 s')).toBeVisible();
     await userEvent.click(signal(canvasElement, 'Mass 44'));
     await userEvent.click(signal(canvasElement, 'Mass 49'));
-    await expect(canvas.getByText('Choose at least one signal.')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Choose at least one signal.')).toBeVisible());
     await expect(apply(canvasElement)).toBeDisabled();
     await userEvent.click(canvas.getByRole('button', { name: 'Discard' }));
     await expect(signal(canvasElement, 'Mass 44')).toBeChecked();

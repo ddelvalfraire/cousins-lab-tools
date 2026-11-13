@@ -7,6 +7,7 @@ import { CommandGlyph } from '../components/CommandCenter';
 import type { CurrentAcquisition, RecentExperiment } from '../components/SideNavigation';
 import { acquisitionTrace } from './approved-fixtures';
 import { chooseOption } from '../components/chooseOption';
+import { settleMotion } from '../components/settleMotion';
 
 /** The main-sidebar review's sample recents and acquisition. */
 const recents:RecentExperiment[]=[{id:'025',title:'Sample 025',subtitle:'Leaf respiration',state:'live'},{id:'08',title:'Extract 08',subtitle:'Enzyme assay',state:'opened',tone:'violet'}];
@@ -137,6 +138,7 @@ export const NarrowSearch:Story={
     const room=input.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
     await expect(canvasElement.querySelector('.dv-shell-shortcut')).not.toBeVisible();
     await expect(context.measureText(input.placeholder).width).toBeLessThanOrEqual(room);
+    await settleMotion();
   },
 };
 
@@ -153,7 +155,7 @@ export const CommandCenterShortcut:Story={
     await waitFor(()=>expect(commandCenter(canvasElement)).toHaveFocus());
     await expect(commandCenter(canvasElement)).toHaveAttribute('aria-expanded','true');
     await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('All DVDash');
-    await expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible();
+    await waitFor(()=>expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible());
     await expect(canvas.getByRole('group',{name:'Recent · Experiments'})).toBeVisible();
     await userEvent.keyboard('{Escape}');
     await expect(canvas.queryByRole('listbox')).toBeNull();
@@ -218,7 +220,7 @@ export const ScopeChange:Story={
     await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'All DVDash');
     await expect(commandCenter(canvasElement)).toHaveValue('mass');
     await expect(canvas.getByText('Page content')).toBeVisible();
-    await expect(canvas.getByRole('group',{name:'Experiments'})).toBeVisible();
+    await waitFor(()=>expect(canvas.getByRole('group',{name:'Experiments'})).toBeVisible());
     await expect(canvas.getByRole('group',{name:'Instruments'})).toBeVisible();
     await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'Experiments');
     await expect(canvas.queryByRole('listbox')).toBeNull();
@@ -233,7 +235,7 @@ export const EmptyAndNoResults:Story={
     await userEvent.keyboard('{Control>}k{/Control}');
     const types=within(canvas.getByRole('group',{name:'Search result type'}));
     await userEvent.click(types.getByRole('button',{name:'Routines'}));
-    await expect(canvas.getByText('No recent routines')).toBeVisible();
+    await waitFor(()=>expect(canvas.getByText('No recent routines')).toBeVisible());
     await userEvent.click(types.getByRole('button',{name:'All'}));
     await userEvent.type(commandCenter(canvasElement),'argon');
     await expect(canvas.getByText('No results for “argon”')).toBeVisible();
