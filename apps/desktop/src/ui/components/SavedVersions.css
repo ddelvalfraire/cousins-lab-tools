@@ -1,45 +1,46 @@
 /* Saved version view. Values from design/dvdash-field-review/revision-chips-review.html (.saved-version-*, .saved-*, .revision-tabs). */
-.dv-saved-version { min-width: 0; color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dv-saved-version { min-width: 0; color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
 .dv-saved-version :where(h2, h3, p) { margin: 0; }
 
 .dv-saved-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.dv-saved-heading h2 { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.4; letter-spacing: -.3px; overflow-wrap: anywhere; }
-.dv-saved-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 9px; font-size: 10px; color: var(--dv-ink-muted); }
+.dv-saved-heading h2 { margin: 0; font-size: 1.125rem; font-weight: 650; line-height: 1.4; letter-spacing: -.3px; overflow-wrap: anywhere; }
+.dv-saved-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 9px; font-size: .625rem; color: var(--dv-ink-muted); }
 .dv-saved-meta .dv-chip { background: transparent; }
-.dv-saved-current { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid transparent; border-radius: 5px; background: var(--dv-accent-soft); color: var(--dv-accent); font-size: 10px; line-height: 1.4; white-space: nowrap; }
+.dv-saved-current { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid transparent; border-radius: 5px; background: var(--dv-accent-soft); color: var(--dv-accent); font-size: .625rem; line-height: 1.4; white-space: nowrap; }
 
 .dv-saved-tabs { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--dv-line); }
-.dv-saved-tabs button { padding: 0 0 10px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--dv-ink-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.dv-saved-tabs button { padding: 0 0 10px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--dv-ink-muted); font: inherit; font-size: .75rem; cursor: pointer; }
 .dv-saved-tabs button[aria-selected='true'] { border-bottom-color: var(--dv-accent); color: var(--dv-ink); font-weight: 600; }
 .dv-saved-tabs button:focus-visible, .dv-saved-version [role='tabpanel']:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 3px; }
 
-.dv-saved-caption { margin-bottom: 14px; font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); }
-.dv-saved-empty { padding: 32px 10px; font-size: 12px; line-height: 1.7; color: var(--dv-ink-muted); }
-.dv-saved-empty strong { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 600; color: var(--dv-ink); }
+.dv-saved-caption { margin-bottom: 14px; font-size: .6875rem; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-saved-empty { padding: 32px 10px; font-size: .75rem; line-height: 1.7; color: var(--dv-ink-muted); }
+.dv-saved-empty strong { display: block; margin-bottom: 7px; font-size: .875rem; font-weight: 600; color: var(--dv-ink); }
 .dv-saved-skeleton { height: 34px; margin: 20px 0; border-radius: 4px; background: var(--dv-soft); }
 .dv-saved-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
 
 .dv-saved-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .dv-saved-chart { min-width: 0; padding: 14px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); }
-.dv-saved-chart h3 { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.5; }
-.dv-saved-reading { margin-top: 10px; font-size: 20px; font-weight: 650; letter-spacing: -.3px; font-variant-numeric: tabular-nums; }
-.dv-saved-reading small { margin-left: 5px; font-size: 11px; font-weight: 400; letter-spacing: 0; color: var(--dv-ink-muted); }
-.dv-saved-legend { display: flex; align-items: center; gap: 5px; margin-top: 9px; font-size: 10px; color: var(--dv-ink-muted); }
+.dv-saved-chart h3 { margin: 0; font-size: .75rem; font-weight: 600; line-height: 1.5; }
+.dv-saved-reading { margin-top: 10px; font-size: 1.25rem; font-weight: 650; letter-spacing: -.3px; font-variant-numeric: tabular-nums; }
+.dv-saved-reading small { margin-left: 5px; font-size: .6875rem; font-weight: 400; letter-spacing: 0; color: var(--dv-ink-muted); }
+.dv-saved-legend { display: flex; align-items: center; gap: 5px; margin-top: 9px; font-size: .625rem; color: var(--dv-ink-muted); }
 .dv-saved-legend span { width: 12px; height: 2px; background: var(--dv-blue); }
 .dv-saved-plot { display: block; width: 100%; height: 150px; margin-top: 8px; }
+/* Labels sit at fixed coordinates in the plot, so they keep their px size at every text size (see SignalChart.css). */
 .dv-saved-plot text { font-family: inherit; font-size: 9px; fill: var(--dv-ink-muted); }
 .dv-saved-plot-grid { fill: none; stroke: var(--dv-line); stroke-width: .6; }
 .dv-saved-plot-signal { fill: none; stroke: var(--dv-blue); stroke-width: 1.6; stroke-linejoin: round; }
 .dv-saved-readouts { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .dv-saved-readout { min-width: 0; padding: 13px 12px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); }
-.dv-saved-readout h3 { margin: 0 0 10px; font-size: 11px; font-weight: 550; }
-.dv-saved-readout strong { font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.dv-saved-readout small { display: inline-block; margin-left: 4px; font-size: 10px; font-weight: 400; color: var(--dv-ink-muted); }
+.dv-saved-readout h3 { margin: 0 0 10px; font-size: .6875rem; font-weight: 550; }
+.dv-saved-readout strong { font-size: 1.1875rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.dv-saved-readout small { display: inline-block; margin-left: 4px; font-size: .625rem; font-weight: 400; color: var(--dv-ink-muted); }
 .dv-saved-readout[data-single] { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; }
 .dv-saved-readout[data-single] h3 { margin: 0; }
 .dv-saved-input { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
-.dv-saved-input input { width: 100%; min-width: 0; height: 30px; padding: 5px 7px; border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-soft); color: var(--dv-ink-muted); font: inherit; font-size: 12px; }
-.dv-saved-note { margin: 13px 0 0; font-size: 10px; line-height: 1.6; color: var(--dv-ink-muted); }
+.dv-saved-input input { width: 100%; min-width: 0; height: 30px; padding: 5px 7px; border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-soft); color: var(--dv-ink-muted); font: inherit; font-size: .75rem; }
+.dv-saved-note { margin: 13px 0 0; font-size: .625rem; line-height: 1.6; color: var(--dv-ink-muted); }
 
 @container dv-workspace (max-width: 1050px) {
   .dv-saved-heading { flex-wrap: wrap; }
