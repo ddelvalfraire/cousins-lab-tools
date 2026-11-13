@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Banner } from './Banner';
+import { Presence } from './Motion';
 import { Select } from '@mantine/core';
 import { chosen, selectAria } from './select';
 import './Approved.css';
@@ -215,22 +216,22 @@ export function ExperimentSetupForm({
             <p className="dv-setup-meta">{source && (values.mode === 'recorded'
               ? <><Icon name="file" />{source.file} · {source.samples} samples · {source.duration} s</>
               : <><Icon name="signal" />{source.detail} · {source.connected ? 'Available' : 'Offline'}</>)}</p>
-            {values.mode === 'recorded' && <div>
+            <Presence show={values.mode === 'recorded'}>
               <label className="dv-setup-reference-toggle">
                 <input type="checkbox" checked={values.includeReference} onChange={event => update({ includeReference: event.currentTarget.checked })} />Include a reference recording
               </label>
-              {values.includeReference && select('reference', 'Reference recording', values.referenceId,
+              <Presence show={values.includeReference}>{select('reference', 'Reference recording', values.referenceId,
                 [{ value: '', label: 'Choose a recording' }, ...recordings.map(s => ({ value: s.id, label: s.name }))],
-                referenceId => update({ referenceId }), { invalid: invalid('reference'), describedBy: describedBy(), className: 'dv-setup-reference-field' })}
-            </div>}
+                referenceId => update({ referenceId }), { invalid: invalid('reference'), describedBy: describedBy(), className: 'dv-setup-reference-field' })}</Presence>
+            </Presence>
           </section>
 
-          {values.mode === 'live' && <section className="dv-setup-section" aria-labelledby={ids.routine}>
+          <Presence show={values.mode === 'live'}><section className="dv-setup-section" aria-labelledby={ids.routine}>
             <Heading id={ids.routine}>Routine settings</Heading>
             {select('routine', 'Routine revision', values.routineId,
               [{ value: '', label: 'No routine' }, ...routines.map(r => ({ value: r.id, label: `${r.name} · R${r.revision}` }))],
               id => update({ routineId: id, parameters: defaults(routines.find(r => r.id === id)) }))}
-            {routine && <>
+            <Presence show={!!routine}>{routine && <>
               <div className="dv-setup-grid" data-layout="routine">
                 {routine.fields.map(field => <div key={field.id} className="dv-setup-field">
                   <label htmlFor={fieldId(`parameter-${field.id}`)}>{field.label}</label>
@@ -243,16 +244,16 @@ export function ExperimentSetupForm({
                 </div>)}
               </div>
               <div className="dv-setup-summary"><span className="dv-setup-chip"><Icon name="clock" />{routine.steps} steps</span></div>
-            </>}
-          </section>}
+            </>}</Presence>
+          </section></Presence>
 
-          <div id={ids.validation} className="dv-setup-messages" hidden={!problems.length}>
+          <div id={ids.validation}><Presence show={problems.length > 0}><div className="dv-setup-messages">
             {problems.length > 0 && <Banner severity="error" messages={problems.map(problem => problem.text)} />}
-          </div>
-          {status === 'failed' && <div className="dv-setup-messages">
+          </div></Presence></div>
+          <Presence show={status === 'failed'}><div className="dv-setup-messages">
             <Banner severity="error" messages={['Could not prepare the experiment. Your settings are retained.']}
               action={<button type="button" ref={retryRef} onClick={() => void open()}>Retry</button>} />
-          </div>}
+          </div></Presence>
         </div>
       </fieldset>
       <div className="dv-setup-actions">

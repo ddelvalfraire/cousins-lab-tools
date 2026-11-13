@@ -18,7 +18,7 @@
 /* Under the shared page header the card has no title row of its own. */
 .dv-setup[data-header='hidden'] .dv-setup-content { padding-top: 22px; }
 .dv-setup-section { padding: 20px 0; border-top: 1px solid var(--dv-line); }
-.dv-setup-section:first-child { padding-top: 0; border-top: 0; }
+.dv-setup-content > .dv-setup-section:first-child { padding-top: 0; border-top: 0; }
 .dv-setup-section > :is(h2, h3) { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
 .dv-setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
 .dv-setup-grid[data-layout='preset'] { grid-template-columns: minmax(0, 1fr) 130px; }
