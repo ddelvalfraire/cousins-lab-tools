@@ -6,12 +6,12 @@
 .dv-shell :where(.dv-side-navigation) { font-family: inherit; }
 
 /* Window bar (.topbar) */
-.dv-shell-topbar { --search-leading: 192px; flex: none; display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 18px; background: var(--dv-frame); color: var(--dv-nav-strong); font-size: 13px; line-height: normal; }
+.dv-shell-topbar { --search-leading: 192px; flex: none; display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 18px; background: var(--dv-frame); color: var(--dv-nav-strong); font-size: .8125rem; line-height: normal; }
 .dv-shell-topbar button { font: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-shell-topbar :is(button, input):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
 .dv-shell-ico { flex: none; width: 16px; height: 16px; pointer-events: none; }
-.dv-shell-wordmark { display: flex; flex: none; align-items: center; gap: 9px; width: 156px; padding: 0; border: 0; background: none; color: var(--dv-nav-strong); font-size: 20px; font-weight: 700; letter-spacing: -.05em; text-align: start; }
-.dv-shell-topbar .dv-shell-wordmark { font-size: 20px; font-weight: 700; letter-spacing: -.05em; }
+.dv-shell-wordmark { display: flex; flex: none; align-items: center; gap: 9px; width: 156px; padding: 0; border: 0; background: none; color: var(--dv-nav-strong); font-size: 1.25rem; font-weight: 700; letter-spacing: -.05em; text-align: start; }
+.dv-shell-topbar .dv-shell-wordmark { font-size: 1.25rem; font-weight: 700; letter-spacing: -.05em; }
 .dv-shell-wordmark .dv-brand-concept { width: 28px; height: 28px; border-radius: 6px; }
 .dv-shell-wordmark .dv-brand-concept img { width: 252.99px; height: 168.66px; left: -11.36px; top: -30.8px; }
 .dv-shell-search-anchor { position: relative; z-index: 5; flex: 1; min-width: 100px; max-width: 580px; margin-inline-start: max(0px, calc((100cqw - 580px) / 2 - var(--search-leading))); }
@@ -20,8 +20,8 @@
 /* Over the open results' backdrop the ring keeps the undimmed bar colour on both sides, so it holds 3:1 contrast. */
 .dv-shell-search-anchor:has(.dv-shell-search-backdrop) .dv-shell-searchbox:focus-within { box-shadow: 0 0 0 6px var(--dv-frame); }
 .dv-shell-topbar .dv-shell-searchbox input:not(.dv-select-input):focus-visible { outline: none; }
-.dv-shell-searchbox .dv-select { --dv-select-height: 20px; --dv-select-font: 10px; --dv-select-pad: 5px; --dv-select-radius: 4px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-section: 16px; flex: none; width: 96px; }
-.dv-shell-searchbox input:not(.dv-select-input) { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: 12px; appearance: none; }
+.dv-shell-searchbox .dv-select { --dv-select-height: 20px; --dv-select-font: .625rem; --dv-select-pad: 5px; --dv-select-radius: 4px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-section: 16px; flex: none; width: 96px; }
+.dv-shell-searchbox input:not(.dv-select-input) { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: .75rem; appearance: none; }
 .dv-shell-searchbox input::-webkit-search-cancel-button { display: none; }
 .dvdash .dv-shell-searchbox input::placeholder { color: var(--dv-ink-muted); }
 .dv-shell-shortcut { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--dv-ink-muted); }
@@ -85,7 +85,7 @@
   .dv-shell-topbar { --search-leading: 154px; }
   .dv-shell-wordmark { width: 124px; }
   .dv-shell-searchbox { gap: 5px; padding-inline: 7px; }
-  .dv-shell-searchbox .dv-select { --dv-select-font: 9px; width: 88px; }
+  .dv-shell-searchbox .dv-select { --dv-select-font: .5625rem; width: 88px; }
   .dv-shell-shortcut { display: none; }
 }
 @container dv-shell (max-width: 600px) {
@@ -102,7 +102,7 @@
 @media (prefers-reduced-motion: reduce) { .dv-shell-workspace, .dv-shell-page { transition: none; } }
 
 .dv-screen-heading { padding:24px 30px; border-bottom:1px solid var(--dv-border); background:var(--dv-panel); }
-.dv-screen-breadcrumb { display:flex; align-items:center; gap:8px; color:var(--dv-muted); font-size:11px; margin-bottom:18px; flex-wrap:wrap; }
+.dv-screen-breadcrumb { display:flex; align-items:center; gap:8px; color:var(--dv-muted); font-size:.6875rem; margin-bottom:18px; flex-wrap:wrap; }
 .dv-screen-title-row { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
 .dv-screen-section { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
 .dv-screen-section h2 { margin:0; }
@@ -116,19 +116,19 @@
 [data-mantine-color-scheme='dark'] .dv-summary-icon { background:#284937; color:#b5e6ca; }
 [data-mantine-color-scheme='dark'] .dv-summary-card:nth-child(2) .dv-summary-icon { background:#243c50; color:#bfd9f3; }
 [data-mantine-color-scheme='dark'] .dv-summary-card:nth-child(3) .dv-summary-icon { background:#493d28; color:#ecd5a5; }
-.dv-summary-number { font-size:25px; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.2; }
+.dv-summary-number { font-size:1.5625rem; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.2; }
 .dv-screen-table { overflow:auto; border:1px solid var(--dv-border); border-radius:10px; background:var(--dv-panel); }
 .dv-screen-table table { white-space:nowrap; font-variant-numeric:tabular-nums; }
-.dv-screen-table th { background:var(--dv-canvas); color:var(--dv-muted); font-size:12px; }
+.dv-screen-table th { background:var(--dv-canvas); color:var(--dv-muted); font-size:.75rem; }
 .dv-screen-table th, .dv-screen-table td { padding:14px 16px; }
 .dv-screen-table td:last-child { text-align:right; }
-.dv-table-name { color:var(--dv-text); font-weight:650; font-size:14px; text-align:start; }
+.dv-table-name { color:var(--dv-text); font-weight:650; font-size:.875rem; text-align:start; }
 .dv-table-name:hover { text-decoration:underline; }
 .dv-preset-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:18px; }
 .dv-preset-card { padding:0; overflow:hidden; }
 .dv-preset-art { display:block; width:100%; padding:24px; background:color-mix(in srgb,var(--dv-canvas) 70%,var(--dv-panel)); border-bottom:1px solid var(--dv-border); }
 .dv-preset-card-body { padding:20px; }
-.dv-preset-card-body h2 { font-size:18px; }
+.dv-preset-card-body h2 { font-size:1.125rem; }
 .dv-preset-preview { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:3px; height:174px; width:100%; padding:10px; border:1px solid var(--dv-border); border-radius:7px; background:var(--dv-panel); overflow:hidden; }
 .dv-preview-tile { min-width:0; position:relative; overflow:hidden; border-radius:3px; border:1px solid #bdcbd9; background:#e8eef7; }
 .dv-preview-tile svg { position:absolute; inset:15% 8% 10%; width:84%; height:75%; fill:none; stroke:#4774a7; stroke-width:1.8; }
@@ -138,7 +138,7 @@
 .dv-preview-controls { background:#e8edeb; border-color:#bdc9c3; }
 .dv-preview-lines { position:absolute; inset:18% 10%; display:grid; gap:3px; }
 .dv-preview-lines i { background:currentColor; color:#728478; opacity:.25; height:2px; }
-.dv-preview-label { position:absolute; inset:8px auto auto 9px; max-width:calc(100% - 18px); font-size:11px; color:#223d32; font-weight:600; background:#ffffffd9; border-radius:3px; padding:2px 4px; }
+.dv-preview-label { position:absolute; inset:8px auto auto 9px; max-width:calc(100% - 18px); font-size:.6875rem; color:#223d32; font-weight:600; background:#ffffffd9; border-radius:3px; padding:2px 4px; }
 .dv-preset-preview-detailed { height:440px; gap:6px; padding:16px; }
 .dv-experiment-summary ~ .dv-preset-grid .dv-preset-preview { height:94px; }
 [data-mantine-color-scheme='dark'] .dv-preview-tile { background:#253e56; border-color:#4d6983; }
@@ -153,14 +153,14 @@
 .dv-workspace-plots > *, .dv-workspace-lower > * { min-width:0; }
 .dv-playback { display:flex; align-items:center; flex-wrap:wrap; gap:14px; background:var(--dv-panel); border:1px solid var(--dv-border); border-radius:12px; padding:14px 18px; box-shadow:0 4px 18px #063d3009; }
 .dv-playback-slider { flex:1; min-width:140px; }
-.dv-playback-time { font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dv-playback-time { font-size:.75rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
 /* First child of the window bar landmark; the type is pinned so it does not take the bar's 13 px. */
-.dv-skip-link { position:absolute; top:0; left:12px; transform:translateY(-120%); z-index:300; background:var(--dv-panel); padding:12px; color:var(--dv-text); font-size:14px; line-height:21px; }
+.dv-skip-link { position:absolute; top:0; left:12px; transform:translateY(-120%); z-index:300; background:var(--dv-panel); padding:12px; color:var(--dv-text); font-size:.875rem; line-height:1.3125rem; }
 .dv-skip-link:focus { transform:none; }
 
 @media(max-width:1100px) { .dv-screen-heading { padding:22px; } }
 @media(max-width:800px) { .dv-screen-heading { padding:18px; } .dv-workspace-plots, .dv-workspace-lower { grid-template-columns:minmax(0,1fr); } }
-@media(max-width:480px) { .dv-experiment-summary { grid-template-columns:minmax(0,1fr); gap:8px; } .dv-summary-card { padding:12px 16px; } .dv-screen-actions { width:100%; } .dv-screen-title-row h1 { font-size:24px; } .dv-preset-preview-detailed { height:340px; } .dv-preview-label { font-size:9px; inset:3px auto auto 3px; max-width:calc(100% - 6px); } }
+@media(max-width:480px) { .dv-experiment-summary { grid-template-columns:minmax(0,1fr); gap:8px; } .dv-summary-card { padding:12px 16px; } .dv-screen-actions { width:100%; } .dv-screen-title-row h1 { font-size:1.5rem; } .dv-preset-preview-detailed { height:340px; } .dv-preview-label { font-size:.5625rem; inset:3px auto auto 3px; max-width:calc(100% - 6px); } }
 
 /* Pages inside the frame card sit directly on the page: editors, Settings and the setup form drop their own card. */
 .dv-shell-page :is(.dv-preset-editor, .dv-re) { border: 0; border-radius: 0; }
@@ -176,7 +176,7 @@
 /* Without the card's paper behind it, the units preview keeps a rule to stay distinct from the page. */
 .dv-shell-page .dv-settings-preview { box-shadow: inset 0 0 0 1px var(--dv-line); }
 /* Frame stories: the mockup's page placeholder (.page-placeholder). */
-.dv-frame-placeholder { display: grid; place-items: center; height: 420px; margin: 16px 24px 24px; border: 1px dashed var(--dv-line); border-radius: 8px; color: var(--dv-ink-muted); font-size: 12px; }
+.dv-frame-placeholder { display: grid; place-items: center; height: 420px; margin: 16px 24px 24px; border: 1px dashed var(--dv-line); border-radius: 8px; color: var(--dv-ink-muted); font-size: .75rem; }
 
 /* Review & export page: shared header, then each tab's content beside its inspector. */
 .dv-review-page { min-height: 100%; background: var(--dv-bg); color: var(--dv-ink); }

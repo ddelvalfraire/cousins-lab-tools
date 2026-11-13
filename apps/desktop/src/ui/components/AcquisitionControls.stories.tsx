@@ -22,9 +22,9 @@ const meta = {
   },
   // Example context: the experiment header the action bar sits in, as in the mockups.
   decorators: [(Story, { args }) => <div style={{ background: 'var(--dv-bg)', border: '1px solid var(--dv-line)', borderRadius: 12, padding: '20px 24px 24px', color: 'var(--dv-ink)' }}>
-    <h2 style={{ margin: '0 0 8px', fontSize: 25, lineHeight: '30px', fontWeight: 650, letterSpacing: '-.035em' }}>Leaf respiration · {args.experimentName}</h2>
+    <h2 style={{ margin: '0 0 8px', fontSize: '1.5625rem', lineHeight: '1.875rem', fontWeight: 650, letterSpacing: '-.035em' }}>Leaf respiration · {args.experimentName}</h2>
     <Story />
-    <div style={{ height: 300, marginTop: 12, border: '1px dashed var(--dv-line)', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'var(--dv-ink-muted)', fontSize: 12, background: 'var(--dv-paper)' }}>Experiment workspace</div>
+    <div style={{ height: 300, marginTop: 12, border: '1px dashed var(--dv-line)', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'var(--dv-ink-muted)', fontSize: '.75rem', background: 'var(--dv-paper)' }}>Experiment workspace</div>
   </div>],
   parameters: { previewWidth: 960 },
 } satisfies Meta<typeof AcquisitionControls>;

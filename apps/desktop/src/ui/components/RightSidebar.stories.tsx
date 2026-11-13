@@ -60,7 +60,7 @@ function InPage(args: RightSidebarProps) {
     <WorkspaceBody sidebar={<RightSidebar {...args} activeTab={tab} collapsed={collapsed}
       onTabChange={id => { setTab(id); args.onTabChange?.(id); }}
       onCollapsedChange={value => { setCollapsed(value); args.onCollapsedChange?.(value); }}><Pane tab={tab} /></RightSidebar>}>
-      <div className="dv-right-sidebar-example-main" style={{ height: 460, border: '1px dashed var(--dv-line)', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'var(--dv-ink-muted)', fontSize: 12 }}>Page content</div>
+      <div className="dv-right-sidebar-example-main" style={{ height: 460, border: '1px dashed var(--dv-line)', borderRadius: 8, display: 'grid', placeItems: 'center', color: 'var(--dv-ink-muted)', fontSize: '.75rem' }}>Page content</div>
     </WorkspaceBody>
   </div>;
 }

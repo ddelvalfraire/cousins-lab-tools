@@ -16,7 +16,7 @@ const sources: ComboboxData = [
 /** A field labelled the way the app labels its selects: its own `<label htmlFor>` and an error kept outside the field. */
 function Field({ label, initial, error, onChange, data, disabled }: { label: string; initial: string; error?: string; onChange: (value: string) => void; data: ComboboxData; disabled?: boolean }) {
   const id = useId(), [value, setValue] = useState(initial);
-  return <div style={{ display: 'grid', gap: 6, fontSize: 13 }}>
+  return <div style={{ display: 'grid', gap: 6, fontSize: '.8125rem' }}>
     <label htmlFor={id} style={{ fontWeight: 600 }}>{label}</label>
     <Select id={id} aria-label={label} data={data} value={value} disabled={disabled} {...selectAria({ invalid: !!error, describedBy: error ? `${id}-error` : undefined })}
       onChange={chosen(next => { setValue(next); onChange(next); })} />
@@ -170,7 +170,7 @@ function InDialog() {
   const [value, setValue] = useState<string | null>('comma');
   return <Modal opened onClose={() => {}} title="Export recording" closeButtonProps={{ 'aria-label': 'Close' }} classNames={{ root: 'dvdash' }}>
     <div style={{ height: 70, overflow: 'hidden' }}>
-      <label htmlFor="export-separator" style={{ display: 'block', fontSize: 13 }}>{label}</label>
+      <label htmlFor="export-separator" style={{ display: 'block', fontSize: '.8125rem' }}>{label}</label>
       <Select id="export-separator" aria-label={label} data={separators} value={value} onChange={setValue} />
     </div>
   </Modal>;
@@ -201,7 +201,7 @@ function InScroller() {
   const [value, setValue] = useState<string | null>('sample001');
   return <div data-testid="scroller" style={{ height: 160, overflow: 'auto', border: '1px solid var(--dv-line)', padding: 12 }}>
     <div style={{ height: 120 }} />
-    <label htmlFor="scroll-recording" style={{ display: 'block', fontSize: 13 }}>{label}</label>
+    <label htmlFor="scroll-recording" style={{ display: 'block', fontSize: '.8125rem' }}>{label}</label>
     <Select id="scroll-recording" aria-label={label} data={recordings} value={value} onChange={setValue} />
     <div style={{ height: 200 }} />
   </div>;
@@ -238,7 +238,7 @@ export const Narrow: Story = {
 function LabelledBy() {
   const labelId = useId(), label = 'Export format';
   const [value, setValue] = useState<string | null>('csv');
-  return <label style={{ display: 'grid', gap: 6, fontSize: 13 }}><span id={labelId}>{label}</span>
+  return <label style={{ display: 'grid', gap: 6, fontSize: '.8125rem' }}><span id={labelId}>{label}</span>
     <Select aria-labelledby={labelId} aria-label={label} data={[{ value: 'csv', label: 'CSV' }, { value: 'json', label: 'JSON' }]} value={value} onChange={setValue} />
   </label>;
 }

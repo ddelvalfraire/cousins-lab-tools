@@ -7,7 +7,7 @@ import { StatusBanner } from './Primitives';
 
 function MessageDemo({ variant }: { variant: 'collapse' | 'fade' | 'pop' }) {
   const [error, setError] = useState<string | null>('Choose a reference recording.');
-  return <div style={{ display: 'grid', gap: 12, fontSize: 13 }}>
+  return <div style={{ display: 'grid', gap: 12, fontSize: '.8125rem' }}>
     <button type="button" onClick={() => setError(current => current ? null : 'Choose a reference recording.')}>{error ? 'Fix the problem' : 'Break it again'}</button>
     <Presence show={!!error} variant={variant}><StatusBanner severity="error">{error}<a href="#reference">Go to the field</a></StatusBanner></Presence>
     <p data-testid="below">Content under the message moves with it.</p>
@@ -16,7 +16,7 @@ function MessageDemo({ variant }: { variant: 'collapse' | 'fade' | 'pop' }) {
 
 function TabsDemo() {
   const [tab, setTab] = useState<'details' | 'signals'>('details');
-  return <div style={{ display: 'grid', gap: 12, fontSize: 13 }}>
+  return <div style={{ display: 'grid', gap: 12, fontSize: '.8125rem' }}>
     <div role="tablist" aria-label="Pane">
       {(['details', 'signals'] as const).map(id => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{id === 'details' ? 'Details' : 'Signals'}</button>)}
     </div>

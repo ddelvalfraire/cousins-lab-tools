@@ -1,5 +1,5 @@
 /* Approved message banner (design/dvdash-field-review "banner"). */
-.dv-banner-approved { display: flex; align-items: flex-start; gap: 7px; padding: 10px 11px; border: 1px solid var(--dv-info-line); border-radius: 6px; background: var(--dv-info-bg); color: var(--dv-info); font-size: 12px; line-height: 1.5; font-weight: 400; overflow-wrap: anywhere; }
+.dv-banner-approved { display: flex; align-items: flex-start; gap: 7px; padding: 10px 11px; border: 1px solid var(--dv-info-line); border-radius: 6px; background: var(--dv-info-bg); color: var(--dv-info); font-size: .75rem; line-height: 1.5; font-weight: 400; overflow-wrap: anywhere; }
 .dv-banner-approved > svg { width: 14px; height: 14px; margin-top: 2px; flex: none; }
 .dv-banner-approved > div { min-width: 0; }
 .dv-banner-approved[data-severity='warning'] { color: var(--dv-warn); background: var(--dv-warn-bg); border-color: var(--dv-warn-line); }
@@ -9,5 +9,5 @@
 .dv-banner-approved > div > p + p { margin-top: 3px; }
 .dv-banner-approved > div > ul { margin: 0; padding-left: 17px; }
 .dv-banner-approved li + li { margin-top: 4px; }
-.dv-banner-approved > div > button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 11px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.dv-banner-approved > div > button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: .6875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .dv-banner-approved > div > button:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; border-radius: 2px; }

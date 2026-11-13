@@ -2,16 +2,16 @@
    (.command-dialog, .shortcut-section, .shortcut-list). */
 /* Mantine's fixed layer sets no left offset, so a padded or flex-centred body would shift it. */
 .dv-shortcuts-inner { left: 0; }
-.dvdash .dv-shortcuts { max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border: 1px solid var(--dv-line); border-radius: 11px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 15px 50px #0003; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dvdash .dv-shortcuts { max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border: 1px solid var(--dv-line); border-radius: 11px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 15px 50px #0003; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
 .dvdash .dv-shortcuts-header { position: static; min-height: 0; gap: 12px; align-items: flex-start; margin: 0 0 12px; padding: 22px 22px 0; background: transparent; }
-.dvdash .dv-shortcuts-title { font-family: inherit; font-size: 19px; font-weight: 600; line-height: 1.35; letter-spacing: -.02em; }
+.dvdash .dv-shortcuts-title { font-family: inherit; font-size: 1.1875rem; font-weight: 600; line-height: 1.35; letter-spacing: -.02em; }
 .dvdash .dv-shortcuts-close { width: 25px; height: 25px; min-width: 25px; min-height: 25px; color: var(--dv-ink-muted); }
 .dvdash .dv-shortcuts-body { padding: 0 22px 22px; }
-.dv-shortcuts p { margin: 0; color: var(--dv-ink-muted); font-size: 12px; line-height: 1.65; }
+.dv-shortcuts p { margin: 0; color: var(--dv-ink-muted); font-size: .75rem; line-height: 1.65; }
 .dv-shortcuts-section { margin-top: 19px; }
-.dv-shortcuts-section h3 { margin: 0 0 6px; color: var(--dv-ink-muted); font-size: 10px; font-weight: 600; }
+.dv-shortcuts-section h3 { margin: 0 0 6px; color: var(--dv-ink-muted); font-size: .625rem; font-weight: 600; }
 .dv-shortcuts-section dl { margin: 0; }
-.dv-shortcuts-section dl > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 37px; border-bottom: 1px solid var(--dv-line); font-size: 11px; }
+.dv-shortcuts-section dl > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 37px; border-bottom: 1px solid var(--dv-line); font-size: .6875rem; }
 .dv-shortcuts-section :is(dt, dd) { margin: 0; }
-.dv-shortcuts .dv-shortcuts-note { margin-top: 16px; font-size: 11px; }
+.dv-shortcuts .dv-shortcuts-note { margin-top: 16px; font-size: .6875rem; }
 @media (max-width: 600px) { .dvdash .dv-shortcuts-header { padding: 18px 18px 0; } .dvdash .dv-shortcuts-body { padding: 0 18px 18px; } }

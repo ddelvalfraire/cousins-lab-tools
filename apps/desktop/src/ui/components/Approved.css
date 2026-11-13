@@ -2,6 +2,8 @@
  * Approved review palette and shared pieces.
  * Values come from design/dvdash-field-review (light and "Matcha dark").
  * New components use these tokens; older components keep their own until replaced.
+ * Text sizes are rem against a 16 px root (.75rem is 12 px, .6875rem is 11 px), so all text follows the root font size.
+ * Borders, icons and layout widths stay in px.
  */
 .dvdash {
   --dv-bg: #f8faf8; --dv-paper: #fff; --dv-ink: #24322c; --dv-ink-muted: #617168;
@@ -69,14 +71,14 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
 @keyframes dv-swap-out { to { opacity: 0; } }
 
 /* Chip: small labelled state with an icon (approved catalog "side-chip"). */
-.dv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: 10px; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: .625rem; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dv-chip > span { overflow: hidden; text-overflow: ellipsis; }
 .dv-chip > svg { width: 12px; height: 12px; flex: none; }
 .dv-chip[data-tone='accent'] { border-color: color-mix(in srgb, var(--dv-accent), transparent 55%); background: var(--dv-accent-soft); color: var(--dv-accent); }
 .dv-chip[data-tone='warning'] { border-color: var(--dv-warn-line); background: var(--dv-warn-bg); color: var(--dv-warn); }
 
 /* Status word: icon plus word, coloured by state, never colour alone. */
-.dv-status-word { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--dv-ink-muted); white-space: nowrap; }
+.dv-status-word { display: inline-flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 500; color: var(--dv-ink-muted); white-space: nowrap; }
 .dv-status-word > svg { width: 13px; height: 13px; flex: none; }
 .dv-status-word[data-tone='accent'] { color: var(--dv-accent); }
 .dv-status-word[data-tone='warning'] { color: var(--dv-warn); }
@@ -100,7 +102,7 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
  * directly rather than through Mantine's input variables, so a field's own `input` rule can't restyle it by accident.
  */
 .dvdash .dv-select {
-  --dv-select-height: 36px; --dv-select-font: 13px; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
+  --dv-select-height: 36px; --dv-select-font: .8125rem; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
   --dv-select-border: var(--dv-control); --dv-select-bg: var(--dv-paper); --dv-select-weight: 400;
   min-width: 0;
 }
@@ -117,12 +119,12 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
 .dvdash .dv-select-input[data-expanded] + .dv-select-section .dv-select-chevron { transform: rotate(180deg); }
 
 /* The open list: the command centre's popup look, with the highlighted row in the accent. */
-.dvdash.dv-select-dropdown { max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 12px 30px #09261920; font-size: 13px; line-height: 1.4; }
+.dvdash.dv-select-dropdown { max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 12px 30px #09261920; font-size: .8125rem; line-height: 1.4; }
 @media (prefers-reduced-motion: no-preference) { .dvdash.dv-select-dropdown { animation: dv-select-in var(--dv-motion-fast) var(--dv-ease-out); } }
 @keyframes dv-select-in { from { opacity: 0; } }
-.dvdash .dv-select-option { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 6px 6px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
+.dvdash .dv-select-option { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 6px 6px; border-radius: 5px; font-size: .8125rem; overflow-wrap: anywhere; }
 .dvdash .dv-select-option > svg, .dvdash .dv-select-option > div:first-child { flex: none; opacity: 1; width: 14px; height: 14px; margin-top: 2px; }
 .dvdash .dv-select-option[data-checked] { font-weight: 600; }
 .dvdash .dv-select-option[data-combobox-selected], .dvdash .dv-select-option:hover:not([data-combobox-disabled]) { background: var(--dv-accent); color: var(--dv-on-accent); }
 .dvdash .dv-select-option[data-combobox-disabled] { opacity: 1; color: var(--dv-ink-muted); }
-.dvdash .dv-select-group { padding: 8px 6px 4px; color: var(--dv-ink-muted); font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.dvdash .dv-select-group { padding: 8px 6px 4px; color: var(--dv-ink-muted); font-size: .6875rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }

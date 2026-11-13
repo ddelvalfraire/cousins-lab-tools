@@ -1,33 +1,33 @@
 /* Shared page header. Values from design/dvdash-field-review/shared-header-review.html (.shared-header, .shared-actionbar). */
-.dv-page-header { container: dv-page-header / inline-size; flex: none; background: var(--dv-bg); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: normal; }
+.dv-page-header { container: dv-page-header / inline-size; flex: none; background: var(--dv-bg); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
 /* Header content follows the shared page width (Approved.css --dv-page-gutter), so it lines up with the body. */
 .dv-page-header-width { width: 100%; min-width: 0; }
 
 /* 88 px title area */
 .dv-page-header-title { height: 88px; min-height: 88px; max-height: 88px; display: flex; align-items: center; padding: 0 var(--dv-page-gutter); background: var(--dv-bg); }
-.dv-page-breadcrumbs { display: block; height: 16px; min-height: 16px; margin: 0 0 9px; overflow: visible; font-size: 10px; line-height: 1.5; color: var(--dv-ink-muted); }
+.dv-page-breadcrumbs { display: block; height: 16px; min-height: 16px; margin: 0 0 9px; overflow: visible; font-size: .625rem; line-height: 1.5; color: var(--dv-ink-muted); }
 .dv-page-crumbs { flex-wrap: nowrap; min-width: 0; width: 100%; height: 16px; overflow: hidden; }
-.dv-page-crumbs .mantine-Breadcrumbs-breadcrumb { flex: none; min-width: 0; max-width: 190px; padding: 0; overflow: hidden; color: var(--dv-ink-muted); font: inherit; font-size: 10px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.dv-page-crumbs .mantine-Breadcrumbs-breadcrumb { flex: none; min-width: 0; max-width: 190px; padding: 0; overflow: hidden; color: var(--dv-ink-muted); font: inherit; font-size: .625rem; line-height: 1rem; text-overflow: ellipsis; white-space: nowrap; }
 .dv-page-crumbs [aria-current='page'] { flex: 1; max-width: none; color: var(--dv-ink); }
 .dv-page-crumbs .mantine-Breadcrumbs-separator { flex: none; color: var(--dv-ink-muted); }
 .dv-page-crumbs .mantine-Breadcrumbs-separator svg { display: block; width: 11px; height: 11px; }
 .dv-page-crumbs button.mantine-Breadcrumbs-breadcrumb:hover { color: var(--dv-ink); }
 .dv-page-title-line { position: relative; display: flex; align-items: center; justify-content: flex-start; gap: 10px; height: 30px; min-height: 30px; min-width: 0; margin: 0; }
-.dvdash .dv-page-title, .dv-page-title { flex: 0 1 auto; min-width: 0; max-width: 100%; margin: 0; overflow: hidden; color: var(--dv-ink); font-size: 25px; font-weight: 650; line-height: 30px; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.dvdash .dv-page-title, .dv-page-title { flex: 0 1 auto; min-width: 0; max-width: 100%; margin: 0; overflow: hidden; color: var(--dv-ink); font-size: 1.5625rem; font-weight: 650; line-height: 1.875rem; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
 .dv-page-title:focus { outline: none; }
-.dv-page-count { flex: none; color: var(--dv-ink-muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dv-page-count { flex: none; color: var(--dv-ink-muted); font-size: .6875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* 48 px action bar */
 .dv-page-actionbar { height: 48px; min-height: 48px; max-height: 48px; padding: 0 var(--dv-page-gutter); background: var(--dv-bg); }
 .dv-page-actionbar-inner { height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
 .dv-page-meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
 .dv-page-meta:empty { flex: 1; }
-.dv-page-metadata, .dv-page-description { display: flex; align-items: center; gap: 5px 12px; min-width: 0; overflow: hidden; color: var(--dv-ink-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.dv-page-metadata, .dv-page-description { display: flex; align-items: center; gap: 5px 12px; min-width: 0; overflow: hidden; color: var(--dv-ink-muted); font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
 .dv-page-metadata svg { width: 13px; height: 13px; }
 .dv-page-actions { position: relative; display: flex; flex: none; align-items: center; gap: 7px; }
 
 /* Header buttons (.header-button). `button.` keeps these ahead of hosts' `:where(button) { font: inherit }` resets. */
-button.dv-header-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 31px; padding: 7px 10px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-size: 11px; font-weight: 500; line-height: 1.3; white-space: nowrap; cursor: pointer; touch-action: manipulation; }
+button.dv-header-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 31px; padding: 7px 10px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-size: .6875rem; font-weight: 500; line-height: 1.3; white-space: nowrap; cursor: pointer; touch-action: manipulation; }
 button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-events: none; }
 .dv-header-button:hover:not(:disabled) { background: var(--dv-soft); }
 .dv-header-button:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
@@ -40,7 +40,7 @@ button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-eve
 .dv-page-navigation { padding: 0 var(--dv-page-gutter); background: var(--dv-bg); border-bottom: 1px solid var(--dv-line); }
 .dv-page-navigation .mantine-Tabs-list { gap: 18px; border-bottom: 0; }
 .dv-page-navigation .mantine-Tabs-list::before { display: none; }
-.dv-page-navigation .mantine-Tabs-tab { padding: 11px 2px; color: var(--dv-ink-muted); font-size: 12px; }
+.dv-page-navigation .mantine-Tabs-tab { padding: 11px 2px; color: var(--dv-ink-muted); font-size: .75rem; }
 .dv-page-navigation .mantine-Tabs-tab[data-active] { color: var(--dv-ink); font-weight: 650; }
 
 @container dv-page-header (max-width: 760px) {
@@ -50,8 +50,8 @@ button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-eve
 }
 @container dv-page-header (max-width: 600px) {
   .dv-page-header-title, .dv-page-actionbar, .dv-page-navigation { padding-inline: 16px; }
-  .dvdash .dv-page-title, .dv-page-title { font-size: 22px; }
-  button.dv-header-button { padding: 7px 9px; font-size: 10px; }
+  .dvdash .dv-page-title, .dv-page-title { font-size: 1.375rem; }
+  button.dv-header-button { padding: 7px 9px; font-size: .625rem; }
   button.dv-header-button svg { width: 13px; height: 13px; }
   .dv-page-meta { gap: 4px; }
   .dv-page-actionbar-inner { gap: 8px; }
@@ -64,7 +64,7 @@ button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-eve
 }
 @container dv-page-header (max-width: 380px) {
   .dv-page-header-title, .dv-page-actionbar, .dv-page-navigation { padding-inline: 12px; }
-  .dv-page-metadata, .dv-page-description { font-size: 10px; }
-  button.dv-header-button { padding-inline: 8px; font-size: 10px; }
+  .dv-page-metadata, .dv-page-description { font-size: .625rem; }
+  button.dv-header-button { padding-inline: 8px; font-size: .625rem; }
   .dv-page-actions { gap: 5px; }
 }

@@ -14,7 +14,7 @@
   position: relative; box-sizing: border-box; width: 184px; height: 100%; min-height: 0;
   display: flex; flex-direction: column; gap: 24px; padding: 12px 12px 10px;
   overflow: hidden; background: var(--dv-nav-frame); color: var(--dv-nav-text);
-  font-size: 13px; transition: width var(--dv-nav-motion) var(--dv-nav-ease);
+  font-size: .8125rem; transition: width var(--dv-nav-motion) var(--dv-nav-ease);
 }
 .dv-side-navigation[data-collapsed='true'] { width: 58px; padding-inline: 6px; overflow: visible; }
 /* The content takes the width of the state it is heading to (184 or 58 less the padding) as soon as the state flips,
@@ -37,14 +37,14 @@
 
 /* Brand (drawer head and compact bar): the approved logo crop at 28 px (same crop as .dv-brand-concept, scaled).
    The sidebar itself has no logo row; the window bar carries the wordmark. */
-.dv-navigation-brand { display: flex; align-items: center; gap: 8px; color: var(--dv-nav-strong); font-size: 17px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.dv-navigation-brand { display: flex; align-items: center; gap: 8px; color: var(--dv-nav-strong); font-size: 1.0625rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
 .dv-navigation-brand .dv-brand-concept { width: 28px; height: 28px; border-radius: 6px; }
 .dv-navigation-brand .dv-brand-concept img { width: 252.99px; height: 168.66px; left: -11.36px; top: -30.8px; }
 
 /* Destinations */
 .dv-navigation-section { display: grid; gap: 4px; }
-.dv-navigation-eyebrow { font-size: 9px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--dv-nav-muted); padding: 0 10px; margin-bottom: 7px; white-space: nowrap; }
-.dv-navigation-item { position: relative; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 10px; border: 0; border-radius: 7px; background: none; color: var(--dv-nav-text); font-size: 12px; text-align: start; }
+.dv-navigation-eyebrow { font-size: .5625rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--dv-nav-muted); padding: 0 10px; margin-bottom: 7px; white-space: nowrap; }
+.dv-navigation-item { position: relative; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 10px; border: 0; border-radius: 7px; background: none; color: var(--dv-nav-text); font-size: .75rem; text-align: start; }
 .dv-navigation-item:hover { background: var(--dv-nav-hover); color: var(--dv-nav-strong); }
 .dv-navigation-item[aria-current='page'] { background: var(--dv-nav-active); color: var(--dv-nav-strong); font-weight: 600; }
 .dv-navigation-item svg { width: 18px; height: 18px; }
@@ -58,9 +58,9 @@
 .dv-navigation-recent-glyph[data-tone='violet'] { color: var(--dv-purple); border-color: color-mix(in srgb, var(--dv-purple), transparent 73%); background: color-mix(in srgb, var(--dv-purple), transparent 93%); }
 .dv-navigation-recent-glyph svg { width: 15px; height: 15px; }
 .dv-navigation-recent-copy { min-width: 0; flex: 1; }
-.dv-navigation-recent-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dv-nav-strong); font-size: 11px; font-weight: 600; }
-.dv-navigation-recent-copy small { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dv-nav-muted); font-size: 9px; }
-.dv-navigation-recent-state { position: relative; flex: none; color: var(--dv-nav-muted); font-size: 8px; }
+.dv-navigation-recent-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dv-nav-strong); font-size: .6875rem; font-weight: 600; }
+.dv-navigation-recent-copy small { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dv-nav-muted); font-size: .5625rem; }
+.dv-navigation-recent-state { position: relative; flex: none; color: var(--dv-nav-muted); font-size: .5rem; }
 .dv-navigation-recent-state svg { display: block; width: 12px; height: 12px; }
 .dv-navigation-recent-state[data-live] { color: var(--dv-accent); font-weight: 650; letter-spacing: .02em; }
 .dv-navigation-recents-trigger, .dv-navigation-rail-acquisition { display: none; }
@@ -68,14 +68,14 @@
 /* Bottom: current acquisition, Settings, Collapse */
 .dv-navigation-bottom { margin-top: auto; display: grid; gap: 13px; }
 .dv-navigation-acquisition { min-width: 0; padding: 12px; border: 1px solid var(--dv-line); border-radius: 9px; background: var(--dv-paper); box-shadow: 0 3px 9px #13231a06; }
-.dv-navigation-acquisition-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; white-space: nowrap; font-size: 9px; }
-.dv-navigation-acquisition-status .dv-status-word { gap: 4px; font-size: 9px; font-weight: 600; }
+.dv-navigation-acquisition-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; white-space: nowrap; font-size: .5625rem; }
+.dv-navigation-acquisition-status .dv-status-word { gap: 4px; font-size: .5625rem; font-weight: 600; }
 .dv-navigation-acquisition-status .dv-status-word > svg { width: 12px; height: 12px; }
 .dv-navigation-acquisition-source { color: var(--dv-ink-muted); }
-.dv-navigation-acquisition-title { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 0 5px; border: 0; background: none; color: var(--dv-ink); font-size: 12px; font-weight: 650; text-align: start; }
+.dv-navigation-acquisition-title { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 0 5px; border: 0; background: none; color: var(--dv-ink); font-size: .75rem; font-weight: 650; text-align: start; }
 .dv-navigation-acquisition-title svg { width: 13px; height: 13px; }
 .dv-navigation-acquisition-spark { display: block; width: 100%; height: 32px; margin: 4px 0 8px; }
-.dv-navigation-acquisition-numbers { display: flex; justify-content: space-between; gap: 8px; color: var(--dv-ink-muted); font-size: 9px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dv-navigation-acquisition-numbers { display: flex; justify-content: space-between; gap: 8px; color: var(--dv-ink-muted); font-size: .5625rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dv-navigation-acquisition-numbers b { color: var(--dv-ink); font-weight: 600; }
 
 /* Collapsed rail: names stay as accessible names and appear on hover or focus. */
@@ -86,7 +86,7 @@
 .dv-navigation-recents-trigger[aria-expanded='true'] { background: var(--dv-nav-active); color: var(--dv-nav-strong); }
 .dv-side-navigation[data-collapsed='true'] .dv-navigation-item[data-tip]:is(:hover, :focus-visible)::after {
   content: attr(data-tip); position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); z-index: 5;
-  padding: 5px 8px; border-radius: 5px; background: var(--dv-ink); color: var(--dv-paper); font-size: 11px; font-weight: 500; white-space: nowrap; pointer-events: none;
+  padding: 5px 8px; border-radius: 5px; background: var(--dv-ink); color: var(--dv-paper); font-size: .6875rem; font-weight: 500; white-space: nowrap; pointer-events: none;
 }
 /* The flyout's fading wrapper covers the sidebar without taking a place in its flex column, so the column's gap and the flyout's position are unchanged. */
 .dv-navigation-flyout-layer { position: absolute; inset: 0; z-index: 6; pointer-events: none; }

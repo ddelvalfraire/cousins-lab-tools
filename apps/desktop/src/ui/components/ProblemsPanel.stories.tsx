@@ -222,7 +222,7 @@ export const HighlightedPanel: Story = {
       const flag = problemFlag(args.problems, args.selectedId, panel.id);
       return <AffectedPanelFlag key={panel.id} severity={flag?.severity} label={flag?.label}>
         <section aria-label={panel.title} style={{ background: 'var(--dv-paper)', border: '1px solid var(--dv-line)', borderRadius: 8, padding: '12px 14px 14px', minHeight: 96 }}>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{panel.title}</h3>
+          <h3 style={{ margin: 0, fontSize: '.8125rem', fontWeight: 600 }}>{panel.title}</h3>
         </section>
       </AffectedPanelFlag>;
     })}
