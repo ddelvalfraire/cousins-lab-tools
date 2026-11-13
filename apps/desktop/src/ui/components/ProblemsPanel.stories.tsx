@@ -83,7 +83,7 @@ export const SeveralProblems: Story = {
     await expect(args.onSelect).toHaveBeenLastCalledWith('i1');
     // The workspace (here, the story args) owns selection; wait for it to come back as selectedId.
     await waitFor(() => expect(canvasElement.querySelector('[data-problem=i1]')).toHaveAttribute('data-selected', 'true'));
-    await expect(canvas.getByText(/Samples recorded before 14:02:31 are saved\./)).toBeVisible();
+    await waitFor(() => expect(canvas.getByText(/Samples recorded before 14:02:31 are saved\./)).toBeVisible());
     for (const panel of ['CO₂ and O₂ signals', 'Current readings', 'Recent samples']) await expect(canvas.getByText(panel)).toBeVisible();
     await userEvent.click(head());
     await expect(head()).toHaveAttribute('aria-expanded', 'false');
@@ -104,7 +104,7 @@ export const SeveralProblems: Story = {
     // Dismiss a notice, by keyboard.
     canvas.getByRole('button', { name: /3 samples arrived out of order/ }).focus();
     await userEvent.keyboard('{Enter}');
-    await expect(canvas.getByRole('button', { name: 'Dismiss' })).toBeVisible();
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Dismiss' })).toBeVisible());
     canvas.getByRole('button', { name: 'Dismiss' }).focus();
     await userEvent.keyboard('{Enter}');
     await expect(args.onDismiss).toHaveBeenCalledWith('i4');
@@ -160,7 +160,7 @@ export const Fixed: Story = {
     await expect(canvas.getByText('Dismissed at 14:05:31')).toBeVisible();
     await userEvent.click(toggle);
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(canvas.queryByText('Fixed at 14:05:20')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Fixed at 14:05:20')).toBeNull());
   },
 };
 

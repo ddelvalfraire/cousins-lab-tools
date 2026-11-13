@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { ExperimentsList } from './ExperimentsList';
 import type { ExperimentSummary, ExperimentsListProps } from './ExperimentsList';
 import { chooseOption } from './chooseOption';
@@ -125,7 +125,9 @@ export const ClearNoMatches: Story = {
     await userEvent.click(within(canvasElement.querySelector('.dv-exp-empty') as HTMLElement).getByRole('button', { name: 'Clear filter' }));
     await expect(args.onClearQuery).toHaveBeenCalledOnce();
     await expect(rows(canvasElement)).toHaveLength(4);
-    await expect(canvasElement.querySelector('.dv-exp-filter')).toBeNull();
+    await expect(within(canvasElement).queryByRole('button', { name: 'Clear filter' })).toBeNull();
+    await waitFor(() => expect(canvasElement.querySelector('.dv-exp-filter')).toBeNull());
+    await waitFor(() => expect(canvasElement.querySelector('.dv-exp-empty')).toBeNull());
   },
 };
 

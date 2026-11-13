@@ -5,6 +5,7 @@ import {
   IconInfoCircle, IconLayoutBoardSplit, IconRefresh,
 } from '@tabler/icons-react';
 import { Chip } from './Chip';
+import { Presence } from './Motion';
 import './ProblemsPanel.css';
 
 export type ProblemSeverity = 'error' | 'warning' | 'info';
@@ -190,7 +191,7 @@ export function ProblemsPanel({
         <span className="dv-prob-copy"><strong>{problem.title}</strong><small>{problem.when}</small></span>
         <IconChevronDown className="dv-prob-chev" aria-hidden />
       </button>
-      {expanded && <div className="dv-prob-body" id={bodyId}>
+      <Presence show={expanded}><div className="dv-prob-body" id={bodyId}>
         <p>{problem.explanation}</p>
         {problem.affects.length > 0 && <div className="dv-prob-affects">
           {problem.affects.map(a => <Chip key={a.id} icon={<IconLayoutBoardSplit aria-hidden />}>{a.title}</Chip>)}
@@ -204,9 +205,9 @@ export function ProblemsPanel({
               aria-disabled={status === 'pending' || undefined} onClick={() => act(problem, action)}>{icon}{label}</button>;
           })}
         </div>
-        {status === 'pending' && fix?.waiting && <p className="dv-prob-result" data-state="pending" role="status"><IconHistory aria-hidden />{fix.waiting}</p>}
-        {status === 'failed' && fix?.failed && <p className="dv-prob-result" data-state="failed" role="alert"><IconCircleX aria-hidden />{fix.failed}</p>}
-      </div>}
+        <Presence show={status === 'pending' && !!fix?.waiting}><p className="dv-prob-result" data-state="pending" role="status"><IconHistory aria-hidden />{fix?.waiting}</p></Presence>
+        <Presence show={status === 'failed' && !!fix?.failed}><p className="dv-prob-result" data-state="failed" role="alert"><IconCircleX aria-hidden />{fix?.failed}</p></Presence>
+      </div></Presence>
     </div>;
   }
 
@@ -229,14 +230,14 @@ export function ProblemsPanel({
       <button type="button" className="dv-prob-resolved-toggle" data-resolved-toggle aria-expanded={resolvedOpen} aria-controls={resolvedOpen ? resolvedId : undefined} onClick={() => setResolvedOpen(v => !v)}>
         <IconChevronDown aria-hidden />{resolved.length} resolved in this session
       </button>
-      {resolvedOpen && <div id={resolvedId}>
+      <Presence show={resolvedOpen}><div id={resolvedId}>
         {resolved.map(r => <div key={r.id} className="dv-prob-item">
           <div className="dv-prob-head">
             <span className="dv-prob-sev" data-severity="resolved"><IconCheck aria-hidden /></span>
             <span className="dv-prob-copy"><strong>{r.title}</strong><small>{r.how === 'fixed' ? 'Fixed' : 'Dismissed'} at {r.at}</small></span>
           </div>
         </div>)}
-      </div>}
+      </div></Presence>
     </>}
     <div className="dv-prob-sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
   </div>;

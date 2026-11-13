@@ -88,6 +88,9 @@
   content: attr(data-tip); position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); z-index: 5;
   padding: 5px 8px; border-radius: 5px; background: var(--dv-ink); color: var(--dv-paper); font-size: 11px; font-weight: 500; white-space: nowrap; pointer-events: none;
 }
+/* The flyout's fading wrapper covers the sidebar without taking a place in its flex column, so the column's gap and the flyout's position are unchanged. */
+.dv-navigation-flyout-layer { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.dv-navigation-flyout-layer > .dv-navigation-flyout { pointer-events: auto; }
 .dv-navigation-flyout { position: absolute; z-index: 6; left: calc(100% + 2px); box-sizing: border-box; width: 230px; padding: 8px; border: 1px solid var(--dv-line); border-radius: 9px; background: var(--dv-paper); box-shadow: 0 10px 30px #0b1a1222; }
 
 /* Compact window: menu bar and drawer */

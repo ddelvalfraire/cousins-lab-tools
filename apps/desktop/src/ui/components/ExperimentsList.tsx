@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ReviewIcon } from './ReviewIcons';
 import { Chip, StatusWord } from './Chip';
 import { Select } from '@mantine/core';
+import { Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { formatClockTime } from '../time';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
@@ -163,12 +164,12 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
         </ScrollFrame>;
     const first = current * pageSize;
     content = <>
-      {search && <div className="dv-exp-filter">
+      <Presence show={!!search}><div className="dv-exp-filter">
         <div className="dv-exp-filter-query"><ReviewIcon name="filter" strokeWidth={1.7} /><span>Filtered by “{search}”</span></div>
         <button className="dv-exp-text-button" type="button" onClick={clear}>Clear filter</button>
-      </div>}
+      </div></Presence>
       <div className="dv-exp-toolbar"><span className="dv-exp-count">{search ? `${filtered.length} of ${noun(experiments.length)}` : noun(experiments.length)}</span></div>
-      {body}
+      <Swap swapKey={filtered.length ? 'table' : 'empty'}>{body}</Swap>
       {filtered.length > 0 && <div className="dv-exp-pagination">
         <span>{first + 1}–{first + visible.length} of {noun(filtered.length)}</span>
         <div className="dv-exp-pagination-controls">

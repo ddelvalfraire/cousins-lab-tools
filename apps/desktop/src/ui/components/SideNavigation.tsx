@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Drawer } from '@mantine/core';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { StatusWord } from './Chip';
+import { Presence } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
 import './SideNavigation.css';
 
@@ -198,9 +199,9 @@ function Sidebar({ active = 'experiments', collapsed = false, detail = false, co
         </button>}
       </div>
     </div>
-    {showFlyout && <div ref={flyoutRef} className="dv-navigation-flyout" role="dialog" aria-label={L.recent} style={{ top: flyoutTop }}>
+    <Presence show={showFlyout} variant="fade" className="dv-navigation-flyout-layer"><div ref={flyoutRef} className="dv-navigation-flyout" role="dialog" aria-label={L.recent} style={{ top: flyoutTop }}>
       {recents.map(recent => <RecentItem key={recent.id} recent={recent} onOpen={openExperiment} />)}
-    </div>}
+    </div></Presence>
   </aside>;
 }
 

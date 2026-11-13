@@ -19,7 +19,7 @@ export const SearchScope:Story={play:async({canvasElement})=>{
   await expect(canvasElement.querySelectorAll('tbody tr')).toHaveLength(1);
   await expect(canvas.queryByRole('listbox')).toBeNull();
   await chooseOption(scope,'All DVDash');
-  await expect(canvas.queryByText('Filtered by “enzyme”')).toBeNull();
+  await waitFor(()=>expect(canvas.queryByText('Filtered by “enzyme”')).toBeNull());
   await expect(canvas.getByRole('group',{name:'Experiments'})).toHaveTextContent('Enzyme assay · Extract 08');
   await userEvent.type(canvas.getByRole('combobox',{name:'Search all DVDash'}),'{Enter}');
   await expect(canvas.getByRole('heading',{level:1,name:'Enzyme assay · Extract 08'})).toBeVisible();
