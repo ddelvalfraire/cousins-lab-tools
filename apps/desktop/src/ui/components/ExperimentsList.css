@@ -50,10 +50,10 @@
 /* Pagination footer */
 .dv-exp-pagination { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: .625rem; color: var(--dv-ink-muted); flex-wrap: wrap; }
 .dv-exp-pagination-controls { display: flex; gap: 4px; align-items: center; }
-.dv-exp-pagination-controls button { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
+.dv-exp-pagination-controls button { width: 1.6875rem; height: 1.6875rem; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
 .dv-exp .dv-exp-pagination-controls button { color: var(--dv-ink); }
 .dv-exp-pagination-controls button:disabled { opacity: .4; }
-.dv-exp-pagination .dv-select { --dv-select-height: 24px; --dv-select-font: .625rem; --dv-select-pad: 6px; --dv-select-radius: 4px; --dv-select-border: var(--dv-line); --dv-select-section: 18px; display: inline-block; width: 54px; margin-inline: 5px; vertical-align: middle; }
+.dv-exp-pagination .dv-select { --dv-select-height: 1.5rem; --dv-select-font: .625rem; --dv-select-pad: 6px; --dv-select-radius: 4px; --dv-select-border: var(--dv-line); --dv-select-section: 18px; display: inline-block; width: 54px; margin-inline: 5px; vertical-align: middle; }
 
 /* Empty states */
 .dv-exp-empty { padding: 26px 20px 27px; display: grid; justify-items: start; gap: 9px; }

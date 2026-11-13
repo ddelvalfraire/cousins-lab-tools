@@ -25,7 +25,7 @@
 .dv-insp .dv-res-revision .dv-insp-ico { width: 13px; height: 13px; }
 .dv-res-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--dv-line); color: var(--dv-ink-muted); font-size: .6875rem; }
 .dv-res-pager-actions { display: flex; gap: 3px; }
-.dv-insp .dv-res-pager button { display: grid; place-items: center; min-width: 30px; height: 30px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font-size: .75rem; }
+.dv-insp .dv-res-pager button { display: grid; place-items: center; min-width: 1.875rem; height: 1.875rem; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font-size: .75rem; }
 .dv-res-empty { padding: 28px 14px; }
 .dv-res-empty h3 { font-size: .875rem; }
 .dv-insp .dv-res-empty p { margin-top: 8px; color: var(--dv-ink-muted); font-size: .75rem; line-height: 1.6; }

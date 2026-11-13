@@ -72,10 +72,10 @@
 /* Pagination footer */
 .dv-cat-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: .625rem; color: var(--dv-ink-muted); flex-wrap: wrap; }
 .dv-cat-pagination-controls { display: flex; gap: 4px; align-items: center; }
-.dv-cat .dv-cat-pagination-controls button { width: 27px; height: 27px; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); color: var(--dv-ink); }
+.dv-cat .dv-cat-pagination-controls button { width: 1.6875rem; height: 1.6875rem; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); color: var(--dv-ink); }
 .dv-cat .dv-cat-pagination-controls button:disabled { opacity: .4; }
 .dv-cat-pagination-controls button:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
-.dv-cat-pagination .dv-select { --dv-select-height: 24px; --dv-select-font: .625rem; --dv-select-pad: 6px; --dv-select-radius: 4px; --dv-select-border: var(--dv-line); --dv-select-section: 18px; display: inline-block; width: 54px; margin-inline: 5px; vertical-align: middle; }
+.dv-cat-pagination .dv-select { --dv-select-height: 1.5rem; --dv-select-font: .625rem; --dv-select-pad: 6px; --dv-select-radius: 4px; --dv-select-border: var(--dv-line); --dv-select-section: 18px; display: inline-block; width: 54px; margin-inline: 5px; vertical-align: middle; }
 
 /* Empty and no-results (.preset-state) */
 .dv-cat-state { padding: 50px 24px; text-align: center; border: 1px dashed var(--dv-line); border-radius: 8px; }
@@ -196,7 +196,7 @@
 .dv-cat .dv-cat-step { display: flex; align-items: center; gap: 7px; flex: none; text-align: left; padding: 3px 6px; border-radius: 4px; color: var(--dv-ink); }
 .dv-cat .dv-cat-step:hover { background: var(--dv-soft); }
 .dv-cat .dv-cat-step[aria-current='true'] { background: var(--dv-accent-soft); color: var(--dv-accent); }
-.dv-cat-step-number { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--dv-soft); font-size: .625rem; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; flex: none; }
+.dv-cat-step-number { width: 1.25rem; height: 1.25rem; display: grid; place-items: center; border-radius: 50%; background: var(--dv-soft); font-size: .625rem; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; flex: none; }
 .dv-cat-step-copy strong { display: block; font-size: .6875rem; font-weight: 550; line-height: 1.4; }
 .dv-cat-step-copy small { font-size: .625rem; display: block; color: var(--dv-ink-muted); margin-top: 2px; line-height: 1.4; }
 .dv-cat-step-connector { width: 20px; height: 1px; background: var(--dv-line); flex: none; margin-inline: 3px; }

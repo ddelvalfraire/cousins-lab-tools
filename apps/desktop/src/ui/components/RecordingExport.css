@@ -23,7 +23,7 @@
 .dv-export-interval { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 9px 0; }
 .dv-export-time-field { display: block; min-width: 0; font-size: .6875rem; font-weight: 500; }
 .dv-export-time-input { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 0 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); }
-.dv-export-time-input input { width: 100%; min-width: 0; height: 31px; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; font-variant-numeric: tabular-nums; }
+.dv-export-time-input input { width: 100%; min-width: 0; height: 1.9375rem; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; font-variant-numeric: tabular-nums; }
 .dv-export-time-input span { flex: none; font-size: .6875rem; color: var(--dv-ink-muted); }
 .dv-export-time-input:focus-within, .dv-export-filename:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 .dv-export-dialog .dv-export-time-input input:focus-visible, .dv-export-dialog .dv-export-filename input:focus-visible { outline: none; }
@@ -47,10 +47,10 @@
 
 .dv-export-field-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 14px; align-items: start; }
 .dv-export-field { display: block; min-width: 0; font-size: .75rem; font-weight: 550; }
-.dv-export-field .dv-select { --dv-select-height: 34px; --dv-select-font: .75rem; --dv-select-pad: 8px; --dv-select-radius: 5px; --dv-select-border: var(--dv-line); margin-top: 7px; }
+.dv-export-field .dv-select { --dv-select-height: 2.125rem; --dv-select-font: .75rem; --dv-select-pad: 8px; --dv-select-radius: 5px; --dv-select-border: var(--dv-line); margin-top: 7px; }
 .dv-export-filename { display: flex; align-items: center; gap: 5px; min-width: 0; margin-top: 7px; padding: 0 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); }
 .dv-export-filename[data-invalid='true'] { border-color: var(--dv-import-red); }
-.dv-export-filename input { width: 100%; min-width: 0; height: 32px; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-export-filename input { width: 100%; min-width: 0; height: 2rem; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; }
 .dv-export-extension { flex: none; font-size: .6875rem; color: var(--dv-ink-muted); }
 .dv-export-name-feedback { margin-top: 10px; }
 .dv-export-context { display: flex; align-items: center; gap: 9px; margin-top: 14px; font-size: .6875rem; color: var(--dv-ink); }

@@ -20,7 +20,7 @@
 .dv-preset-import-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
 .dv-preset-import-name { display: block; font-size: .75rem; font-weight: 550; }
-.dv-preset-import-name input { display: block; width: 100%; height: 34px; margin-top: 7px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-preset-import-name input { display: block; width: 100%; height: 2.125rem; margin-top: 7px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
 .dv-preset-import-name input:disabled { background: var(--dv-soft); color: var(--dv-ink-muted); }
 
 .dv-preset-import-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--dv-line); }

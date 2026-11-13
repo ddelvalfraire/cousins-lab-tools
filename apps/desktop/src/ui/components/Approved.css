@@ -107,7 +107,7 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
  * directly rather than through Mantine's input variables, so a field's own `input` rule can't restyle it by accident.
  */
 .dvdash .dv-select {
-  --dv-select-height: 36px; --dv-select-font: .8125rem; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
+  --dv-select-height: 2.25rem; --dv-select-font: .8125rem; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
   --dv-select-border: var(--dv-control); --dv-select-bg: var(--dv-paper); --dv-select-weight: 400;
   min-width: 0;
 }

@@ -45,7 +45,7 @@
 .dv-re-step[data-lifted='true'] { z-index: 4; border-color: var(--dv-accent); box-shadow: 0 0 0 2px var(--dv-accent), 0 14px 30px #10271b2e; transform: translateY(-3px); }
 /* The connector runs through the number centres: step padding, grip, gap and half the 22 px number, less half the 1 px line. */
 .dv-re-step + .dv-re-step::before { content: ""; position: absolute; left: calc(12px + 28px + 10px + 11px - .5px); top: -11px; height: 10px; border-left: 1px dashed var(--dv-control); }
-.dv-re-step-number { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--dv-soft); font-size: .625rem; color: var(--dv-ink-muted); flex: none; font-variant-numeric: tabular-nums; }
+.dv-re-step-number { width: 1.375rem; height: 1.375rem; display: grid; place-items: center; border-radius: 50%; background: var(--dv-soft); font-size: .625rem; color: var(--dv-ink-muted); flex: none; font-variant-numeric: tabular-nums; }
 .dv-re-step-mark { width: 30px; height: 30px; border: 1px solid var(--dv-line); border-radius: 7px; display: grid; place-items: center; flex: none; background: var(--dv-bg); color: var(--dv-accent); }
 .dv-re-step-mark[data-kind='wait'] { color: var(--dv-ink-muted); }
 .dv-re-step-mark[data-kind='annotate'] { color: var(--dv-purple); }
@@ -80,7 +80,7 @@
 /* A field's collapsing error carries the column gap above it, so the gap opens and closes with the error. */
 .dv-re-field > [data-presence] { margin-top: -7px; }
 .dv-re-field > [data-presence] > * { margin-top: 7px; }
-.dv-re-field .dv-select { --dv-select-height: 32px; --dv-select-font: .75rem; --dv-select-pad: 9px; }
+.dv-re-field .dv-select { --dv-select-height: 2rem; --dv-select-font: .75rem; --dv-select-pad: 9px; }
 .dv-re-field input:not(.dv-select-input) { width: 100%; min-width: 0; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: .75rem; font-weight: 400; }
 .dv-re-field [aria-invalid='true'] { border-color: var(--dv-error); }
 .dv-re-unit { display: flex; align-items: center; gap: 6px; border: 1px solid var(--dv-control); border-radius: 6px; padding: 0 9px; background: var(--dv-paper); }

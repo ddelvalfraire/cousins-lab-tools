@@ -15,12 +15,12 @@
 .dv-shell-wordmark .dv-brand-concept { width: 28px; height: 28px; border-radius: 6px; }
 .dv-shell-wordmark .dv-brand-concept img { width: 252.99px; height: 168.66px; left: -11.36px; top: -30.8px; }
 .dv-shell-search-anchor { position: relative; z-index: 5; flex: 1; min-width: 100px; max-width: 580px; margin-inline-start: max(0px, calc((100cqw - 580px) / 2 - var(--search-leading))); }
-.dv-shell-searchbox { display: flex; align-items: center; gap: 8px; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); color: var(--dv-ink-muted); }
+.dv-shell-searchbox { display: flex; align-items: center; gap: 8px; min-width: 0; height: 2.125rem; padding: 0 10px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); color: var(--dv-ink-muted); }
 .dv-shell-searchbox:focus-within { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
 /* Over the open results' backdrop the ring keeps the undimmed bar colour on both sides, so it holds 3:1 contrast. */
 .dv-shell-search-anchor:has(.dv-shell-search-backdrop) .dv-shell-searchbox:focus-within { box-shadow: 0 0 0 6px var(--dv-frame); }
 .dv-shell-topbar .dv-shell-searchbox input:not(.dv-select-input):focus-visible { outline: none; }
-.dv-shell-searchbox .dv-select { --dv-select-height: 20px; --dv-select-font: .625rem; --dv-select-pad: 5px; --dv-select-radius: 4px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-section: 16px; flex: none; width: 96px; }
+.dv-shell-searchbox .dv-select { --dv-select-height: 1.25rem; --dv-select-font: .625rem; --dv-select-pad: 5px; --dv-select-radius: 4px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-section: 16px; flex: none; width: 96px; }
 .dv-shell-searchbox input:not(.dv-select-input) { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: .75rem; appearance: none; }
 .dv-shell-searchbox input::-webkit-search-cancel-button { display: none; }
 .dvdash .dv-shell-searchbox input::placeholder { color: var(--dv-ink-muted); }

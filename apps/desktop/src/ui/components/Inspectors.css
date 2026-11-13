@@ -33,7 +33,7 @@
 
 /* .field with a select */
 .dv-insp-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: .75rem; font-weight: 550; }
-.dv-insp-field .dv-select { --dv-select-height: 32px; --dv-select-font: .75rem; --dv-select-pad: 9px; }
+.dv-insp-field .dv-select { --dv-select-height: 2rem; --dv-select-font: .75rem; --dv-select-pad: 9px; }
 .dv-insp .dv-insp-help { margin-top: 9px; color: var(--dv-ink-muted); font-size: .6875rem; line-height: 1.6; }
 .dv-insp-status { margin-top: 12px; }
 

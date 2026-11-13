@@ -80,7 +80,7 @@
 .dv-xw-timeline:hover::-webkit-slider-thumb { transform: scale(1.12); }
 .dv-xw-total { grid-area: total; width: 7ch; font-size: .625rem; line-height: 1.5; text-align: right; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dv-xw-speed { grid-area: speed; justify-self: end; display: flex; align-items: center; gap: 7px; font-size: .625rem; color: var(--dv-ink-muted); }
-.dv-xw-speed .dv-select { --dv-select-height: 29px; --dv-select-font: .6875rem; --dv-select-pad: 9px; --dv-select-radius: 18px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-weight: 550; --dv-select-section: 20px; width: 66px; }
+.dv-xw-speed .dv-select { --dv-select-height: 1.8125rem; --dv-select-font: .6875rem; --dv-select-pad: 9px; --dv-select-radius: 18px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-weight: 550; --dv-select-section: 20px; width: 66px; }
 
 /* Playback charts */
 .dv-xw-charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--dv-gap); }
@@ -112,7 +112,7 @@
 .dv-xw-table tr[data-current='true'] { background: var(--dv-soft); font-weight: 600; }
 .dv-xw-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; font-size: .625rem; color: var(--dv-ink-muted); }
 .dv-xw-page-actions { display: flex; align-items: center; gap: 4px; }
-.dv-xw-page-actions button { display: grid; place-items: center; min-width: 25px; height: 25px; border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); font-size: .625rem; }
+.dv-xw-page-actions button { display: grid; place-items: center; min-width: 1.5625rem; height: 1.5625rem; border: 1px solid var(--dv-line); border-radius: 4px; background: var(--dv-paper); font-size: .625rem; }
 .dv-xw-recorded .dv-xw-page-actions button { color: var(--dv-ink-muted); }
 .dv-xw-page-actions button:disabled { opacity: .35; cursor: default; }
 .dv-xw-shortcuts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 19px; padding-top: 0; font-size: .625rem; color: var(--dv-ink-muted); }
