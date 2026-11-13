@@ -59,7 +59,7 @@ export const RecentExperiments: Story = {
     await expect(status.querySelectorAll('svg')).toHaveLength(1);
     await expect(within(first).getByText('Today')).toBeVisible();
     await expect(within(first).getByText('14:02:00')).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'Open saved samples: Isotope exchange · Trial 03' })).toHaveClass('dv-exp-open');
+    await expect(within(first.closest('table')!).getByRole('button', { name: 'Open saved samples: Isotope exchange · Trial 03' })).toHaveClass('dv-exp-open');
 
     // Headers sort with aria-sort and keep focus.
     const date = canvas.getByRole('columnheader', { name: /Date/ });
@@ -75,11 +75,13 @@ export const RecentExperiments: Story = {
     await expect(rows(canvasElement)[0]).toHaveTextContent('Trial 03');
     await expect(samples).toHaveFocus();
 
-    // Opening reports the experiment; the action names the status-specific verb.
-    await userEvent.click(canvas.getByRole('button', { name: 'Open live: Leaf respiration · Sample 026' }));
+    // Opening reports the experiment; the action names the status-specific verb. The name selects the row instead, as in the catalogs.
+    const table = within(canvasElement.querySelector('table')!);
+    await userEvent.click(table.getByRole('button', { name: 'Open live: Leaf respiration · Sample 026' }));
     await expect(args.onOpen).toHaveBeenLastCalledWith('exp-026');
-    await userEvent.click(canvas.getByRole('button', { name: 'Enzyme assay · Extract 08' }));
-    await expect(args.onOpen).toHaveBeenLastCalledWith('enz-08');
+    await userEvent.click(table.getByRole('button', { name: 'Enzyme assay · Extract 08' }));
+    await expect(args.onOpen).toHaveBeenCalledOnce();
+    await expect(table.getByRole('button', { name: 'Enzyme assay · Extract 08' }).closest('tr')).toHaveAttribute('data-selected', 'true');
     await userEvent.click(canvas.getByRole('button', { name: 'Import recordings…' }));
     await expect(args.onImport).toHaveBeenCalledOnce();
     await userEvent.click(canvas.getByRole('button', { name: 'New experiment…' }));

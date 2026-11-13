@@ -10,6 +10,8 @@ import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import type { StatusTone } from './Chip';
 import './ExperimentsList.css';
 import { ScrollFrame } from './ScrollFrame';
+import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
+import { CatalogAction, SidebarEmpty, focusPane } from './CatalogTable';
 import { pages } from '../search-registry';
 
 export type ExperimentStatus = 'running' | 'recorded' | 'interrupted';
@@ -43,6 +45,9 @@ export interface ExperimentsListProps {
   hideHeader?: boolean;
   /** Trail above the title. Defaults to Workspace › Experiments. */
   breadcrumbs?: readonly PageBreadcrumb[];
+  /** Experiment shown in the Details sidebar. Defaults to the first row; a filter that hides it shows the first match. */
+  initialSelected?: string | null;
+  initialCollapsed?: boolean;
 }
 
 type SortKey = 'name' | 'samples' | 'status' | 'date';
@@ -59,6 +64,7 @@ const STATUS_ORDER: Record<ExperimentStatus, number> = { running: 0, interrupted
 const PAGE_SIZES = [10, 25] as const;
 
 const noun = (n: number) => `${n} ${n === 1 ? 'experiment' : 'experiments'}`;
+const fullDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 function formatDate(iso: string, now: Date) {
   const d = new Date(iso);
@@ -78,13 +84,16 @@ function compare(key: SortKey, a: ExperimentSummary, b: ExperimentSummary) {
 }
 
 /** Experiments home list: shared page header and actions, sortable table, pagination, filter and empty states. */
-export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExperiment, onImport, onClearQuery, hideHeader = false, breadcrumbs = [{ label: 'Workspace' }, { label: 'Experiments' }] }: ExperimentsListProps) {
+export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExperiment, onImport, onClearQuery, hideHeader = false, breadcrumbs = [{ label: 'Workspace' }, { label: 'Experiments' }], initialSelected, initialCollapsed = false }: ExperimentsListProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [ascending, setAscending] = useState(false);
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
   const [page, setPage] = useState(0);
   const [announcement, setAnnouncement] = useState('');
-  const titleId = useId();
+  const titleId = useId(), sidebarId = useId().replace(/:/g, '');
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelected ?? null);
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const [reveal, setReveal] = useState(0);
   const reference = now ?? new Date();
   const search = query.trim();
 
@@ -98,6 +107,9 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
   const current = Math.min(page, pageCount - 1);
   useEffect(() => { setPage(0); }, [search, pageSize]);
   const visible = filtered.slice(current * pageSize, (current + 1) * pageSize);
+  // Without a choice, or when the filter hides it, the first row the list shows is the selection.
+  const selected = filtered.find(e => e.id === selectedId) ?? filtered[0] ?? null;
+  const select = (id: string) => { setSelectedId(id); setCollapsed(false); setReveal(n => n + 1); focusPane(sidebarId); };
 
   const sortBy = (key: SortKey) => {
     if (key === sortKey) setAscending(!ascending);
@@ -143,11 +155,11 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
               const status = STATUS[e.status];
               const when = formatDate(e.startedAt, reference);
               const instrument = e.kind === 'instrument';
-              return <tr key={e.id}>
+              return <tr key={e.id} data-selected={selected?.id === e.id}>
                 <td><div className="dv-exp-identity">
                   <span className="dv-exp-mark">{instrument ? <InstrumentMark /> : <RecordingMark />}</span>
                   <div>
-                    <button type="button" className="dv-exp-name" onClick={() => onOpen(e.id)}>{e.name}</button>
+                    <button type="button" className="dv-exp-name" onClick={() => select(e.id)}>{e.name}</button>
                     <div className="dv-exp-chips">
                       <Chip icon={<ReviewIcon name={instrument ? 'signals' : 'file'} />} title={`${instrument ? 'Instrument' : 'Recording'} ${e.source}`}>{e.source}</Chip>
                       <Chip icon={<ReviewIcon name="panels" />} title={`Preset ${e.preset}`}>{e.preset}</Chip>
@@ -185,9 +197,30 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
     </>;
   }
 
+  let pane;
+  if (!selected) pane = <SidebarEmpty icon={<SidebarIcon name="details" />} title="Select an experiment" message="Open an experiment name to inspect its source, preset and samples." />;
+  else {
+    const status = STATUS[selected.status], instrument = selected.kind === 'instrument';
+    pane = <>
+      <SidebarSection>
+        <div className="dv-cat-detail-identity"><span className="dv-exp-mark">{instrument ? <InstrumentMark /> : <RecordingMark />}</span><div><strong>{selected.name}</strong><small>{selected.source}</small></div></div>
+        <StatusWord tone={status.tone} icon={status.icon}>{status.label}</StatusWord>
+        <div className="dv-cat-actions"><CatalogAction label={`${status.action}: ${selected.name}`} onClick={() => onOpen(selected.id)}>{status.action}</CatalogAction></div>
+      </SidebarSection>
+      <SidebarSection title="Recording"><SidebarFacts items={[
+        [instrument ? 'Instrument' : 'Recording file', selected.source],
+        ['Preset', `${selected.preset} · R${selected.revision}`],
+        ['Started', <>{fullDay(selected.startedAt)}<br />{formatClockTime(selected.startedAt)}</>],
+        ['Samples', selected.samples.toLocaleString('en-US')],
+      ]} /></SidebarSection>
+    </>;
+  }
+  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Experiment tools" activeTab="details" collapsed={collapsed} onCollapsedChange={setCollapsed} revealKey={reveal} subtitle={selected?.name ?? pages.experiments.title}
+    tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }]}><Swap swapKey={selected?.id ?? ''}>{pane}</Swap></RightSidebar>;
+
   return <section className="dv-exp" aria-labelledby={hideHeader ? undefined : titleId} aria-label={hideHeader ? 'Experiments' : undefined}>
     {!hideHeader && <PageHeader title={pages.experiments.title} titleId={titleId} breadcrumbs={breadcrumbs} count={experiments.length ? noun(experiments.length) : undefined} actions={experiments.length > 0 ? actions : undefined} />}
-    <div className="dv-exp-body">{content}</div>
+    <WorkspaceBody sidebar={sidebar}>{content}</WorkspaceBody>
     <div className="dv-exp-sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
   </section>;
 }

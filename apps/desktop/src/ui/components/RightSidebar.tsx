@@ -37,6 +37,8 @@ export interface RightSidebarProps {
   id?: string;
   /** Hide the collapse button. */
   collapsible?: boolean;
+  /** A new value opens the sheet in a narrow page, e.g. when the page selects another item for the pane. */
+  revealKey?: string | number;
   /** Pane content for the selected tab. */
   children?: ReactNode;
 }
@@ -90,7 +92,7 @@ function useSheetMode(ref: RefObject<HTMLElement | null>) {
  * Escape, the collapse button or a click outside closes it.
  * Values from design/dvdash-field-review/right-sidebar-review.html.
  */
-export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collapsed, defaultCollapsed = false, onCollapsedChange, title, subtitle, label = 'Page tools', tabsLabel, id, collapsible = true, children }: RightSidebarProps) {
+export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collapsed, defaultCollapsed = false, onCollapsedChange, title, subtitle, label = 'Page tools', tabsLabel, id, collapsible = true, revealKey, children }: RightSidebarProps) {
   const autoId = useId(), base = id ?? autoId;
   const [ownTab, setOwnTab] = useState(defaultTab ?? tabs.find(tab => !tab.disabled)?.id ?? tabs[0]?.id);
   const [ownCollapsed, setOwnCollapsed] = useState(defaultCollapsed);
@@ -101,12 +103,12 @@ export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collaps
   // The sheet starts closed whenever the page becomes narrow.
   useEffect(() => { if (!sheet) setSheetOpen(false); }, [sheet]);
   // A page that opens the sidebar itself (another tab, or expanded) opens the sheet too.
-  const requested = useRef({ activeTab, collapsed });
+  const requested = useRef({ activeTab, collapsed, revealKey });
   useEffect(() => {
     const before = requested.current;
-    requested.current = { activeTab, collapsed };
-    if (sheet && collapsed !== true && (before.activeTab !== activeTab || before.collapsed !== collapsed)) setSheetOpen(true);
-  }, [sheet, activeTab, collapsed]);
+    requested.current = { activeTab, collapsed, revealKey };
+    if (sheet && collapsed !== true && (before.activeTab !== activeTab || before.collapsed !== collapsed || before.revealKey !== revealKey)) setSheetOpen(true);
+  }, [sheet, activeTab, collapsed, revealKey]);
   const open = sheet ? sheetOpen : !isCollapsed;
   const tabId = (tab: string) => `${base}-tab-${tab}`, paneId = `${base}-pane`;
   const current = tabs.find(tab => tab.id === selected);

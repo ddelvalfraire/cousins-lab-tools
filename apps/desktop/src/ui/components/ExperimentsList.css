@@ -1,5 +1,5 @@
 /* Experiments list. Source: design/dvdash-field-review/experiments-home-review.html. */
-.dv-exp { container-type: inline-size; position: relative; color: var(--dv-ink); background: var(--dv-bg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
+.dv-exp { position: relative; color: var(--dv-ink); background: var(--dv-bg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
 .dv-exp :where(h1, h2, p) { margin: 0; }
 .dv-exp :where(button) { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 .dv-exp :where(button:disabled) { cursor: default; }
@@ -9,8 +9,7 @@
 
 /* Header and action bar: the shared PageHeader. */
 
-/* Body, filter line and toolbar */
-.dv-exp-body { padding: var(--dv-page-top) var(--dv-page-gutter) var(--dv-page-bottom); min-height: 250px; }
+/* Filter line and toolbar; the body is the shared WorkspaceBody with the Details sidebar. */
 .dv-exp-filter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: .6875rem; color: var(--dv-ink-muted); }
 .dv-exp-filter-query { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .dv-exp-filter-query span { overflow-wrap: anywhere; }
@@ -32,6 +31,9 @@
 .dv-exp-table td { padding: 11px 12px; border-bottom: 1px solid var(--dv-line); vertical-align: middle; }
 .dv-exp-table tr:last-child td { border-bottom: 0; }
 .dv-exp-table tbody tr:hover { background: var(--dv-bg); }
+.dv-exp-table tbody tr[data-selected='true'] { background: var(--dv-accent-soft); }
+/* Muted text on the accent tint falls below 4.5:1, so the selected row uses ink, as the catalogs do. */
+.dv-exp-table tbody tr[data-selected='true'] { --dv-ink-muted: var(--dv-ink); }
 /* At narrow widths the table scrolls; this keeps a typical name (about 181 px) on one line instead of squeezing it. */
 .dv-exp-identity { display: flex; gap: 12px; align-items: center; min-width: 240px; }
 .dv-exp-identity > div { min-width: 0; }

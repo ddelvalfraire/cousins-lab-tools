@@ -56,7 +56,7 @@
 @container dv-page-frame (max-width: 1052px) { .dv-shell-page { --dv-side-open: 292px; } }
 /* The sidebar is positioned against the card, so no page root between them may be positioned. The editors' drag
    ghosts then use the card, which starts at the same corner as the editor. */
-.dv-shell-page :is(.dv-cat, .dv-re, .dv-preset-editor) { position: static; }
+.dv-shell-page :is(.dv-cat, .dv-exp, .dv-re, .dv-preset-editor) { position: static; }
 /* Every page fills the card. */
 .dv-shell-page-content > * { flex: 1 0 auto; }
 /* Pages with a docked sidebar (WorkspaceBody) are exactly the card's height: the header stays, and the main column
