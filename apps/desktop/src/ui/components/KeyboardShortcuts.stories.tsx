@@ -19,7 +19,7 @@ export const MacOS: Story = {
     await expect(shortcuts.getByText('Shortcuts for macOS.')).toBeVisible();
     const command = shortcuts.getByText('Open command center').parentElement!;
     await expect([...command.querySelectorAll('kbd')].map(key => key.textContent)).toEqual(['⌘', 'K']);
-    const presets = shortcuts.getByText('Presets', { selector: 'dt' }).parentElement!;
+    const presets = shortcuts.getByText('Go to Presets', { selector: 'dt' }).parentElement!;
     await expect(presets).toHaveTextContent('GthenP');
     await waitFor(() => expect(shortcuts.getByRole('button', { name: 'Close dialog' })).toHaveFocus());
     await userEvent.keyboard('{Escape}');
@@ -32,7 +32,7 @@ export const WindowsAndLinux: Story = {
   play: async ({ canvasElement }) => {
     const shortcuts = within(await dialog(canvasElement));
     await expect(shortcuts.getByText('Shortcuts for Windows and Linux.')).toBeVisible();
-    const settings = shortcuts.getByText('Open settings').parentElement!;
+    const settings = shortcuts.getByText('Go to Settings').parentElement!;
     await expect([...settings.querySelectorAll('kbd')].map(key => key.textContent)).toEqual(['Ctrl', ',']);
   },
 };

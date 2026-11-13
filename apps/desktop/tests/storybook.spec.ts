@@ -762,7 +762,7 @@ test('the sidebar overlay scroll bar takes no width, stays hidden until the poin
 });
 
 test('opening a page from the command menu focuses the page without outlining it, and keyboard focus keeps its ring', async ({ page }) => {
-  const targets = [['settings', /^Open settings/, 'Settings'], ['go to presets', /^Go to presets/, 'Presets'], ['sample 024', /Sample 024/, 'Leaf respiration · Sample 024']] as const;
+  const targets = [['go to settings', /^Go to Settings/, 'Settings'], ['go to presets', /^Go to Presets/, 'Presets'], ['sample 024', /Sample 024/, 'Leaf respiration · Sample 024']] as const;
   for (const [width, height, dark] of [[1440, 900, false], [390, 844, true]] as const) for (const [query, option, heading] of targets) {
     const name = `${heading} at ${width}px ${dark ? 'dark' : 'light'}`;
     await page.setViewportSize({ width, height });
@@ -813,7 +813,7 @@ test('every command center control works by mouse where clicked buttons take no 
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toHaveCount(0);
   await page.keyboard.press('Control+k');
   await input.fill('go to presets');
-  await page.getByRole('option', { name: /Go to presets/ }).click();
+  await page.getByRole('option', { name: /Go to Presets/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Presets' }), 'clicking a row runs it').toBeVisible();
   await expect(page.getByRole('listbox', { name: 'Search results' }), 'running a row closes the popup').toHaveCount(0);
   await page.keyboard.press('Control+k');

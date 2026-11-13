@@ -9,9 +9,9 @@ import { ReviewIcon } from './ReviewIcons';
 const items: CommandItem[] = [
   { id: 'new', kind: 'actions', title: 'New experiment…', icon: <CommandGlyph name="experiment" />, keys: ['N'], featured: true, keywords: 'create new experiment setup' },
   { id: 'import', kind: 'actions', title: 'Import recordings…', icon: <CommandGlyph name="import" />, keys: ['I'], featured: true, keywords: 'open file csv import recording data' },
-  { id: 'go-presets', kind: 'actions', title: 'Go to presets', icon: <CommandGlyph name="preset" />, keys: ['G', 'P'], sequence: true, keywords: 'go navigation' },
-  { id: 'appearance', kind: 'settings', title: 'Appearance', icon: <CommandGlyph name="sun" />, end: 'Light', keywords: 'settings preferences display light dark mode theme' },
-  { id: 'shortcuts', kind: 'settings', title: 'Keyboard shortcuts', icon: <CommandGlyph name="keyboard" />, keys: ['?'], keywords: 'settings help keyboard shortcuts hotkeys commands' },
+  { id: 'go-presets', kind: 'actions', title: 'Go to Presets', icon: <CommandGlyph name="preset" />, keys: ['G', 'P'], sequence: true, keywords: 'go navigation' },
+  { id: 'shortcuts', kind: 'actions', title: 'Show keyboard shortcuts', icon: <CommandGlyph name="keyboard" />, keys: ['?'], keywords: 'help keyboard shortcuts hotkeys commands' },
+  { id: 'theme', kind: 'settings', title: 'Theme', meta: 'Settings · Appearance', icon: <CommandGlyph name="sun" />, end: 'Light', keywords: 'preferences display light dark mode appearance' },
   { id: 'exp025', kind: 'experiments', title: 'Leaf respiration', meta: 'Sample 025 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, end: <StatusWord tone="accent" icon={<ReviewIcon name="signals" />}>Running</StatusWord>, keywords: 'mass 44 mass 45 MS-01', recent: true },
   { id: 'exp021', kind: 'experiments', title: 'Réponse du dioxyde de carbone pendant la variation de température', meta: 'Échantillon 021 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, keywords: 'carbon dioxide mass 44' },
   { id: 'preco2', kind: 'presets', title: 'CO₂ & O₂ analysis', meta: '10 panels · Gas signals and derived values', icon: <CommandGlyph name="preset" />, end: <><CommandGlyph name="history" />R3</>, keywords: 'mass 44 mass 45 leaf respiration' },
@@ -44,7 +44,7 @@ export const Suggested: Story = {
     const canvas = within(canvasElement);
     await expect(groupNames(canvasElement)).toEqual(['Suggested actions', 'Settings', 'Recent · Experiments']);
     await expect(canvas.getByRole('option', { name: /New experiment/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(canvas.queryByRole('option', { name: /Go to presets/ })).toBeNull();
+    await expect(canvas.queryByRole('option', { name: /Go to Presets/ })).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: /Shortcuts/ }));
     await expect(args.onShortcuts).toHaveBeenCalled();
   },

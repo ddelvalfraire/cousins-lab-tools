@@ -52,6 +52,7 @@ export type SearchRecord = CommandItem & { page:ScreenRoute; pageId?:string };
 
 const goShortcuts = { e:'experiments', p:'presets', r:'routines', i:'instruments' } as const;
 const goGlyph = { experiments:'experiment', presets:'preset', routines:'routine', instruments:'instrument' } as const;
+const pageTitle = { experiments:'Experiments', presets:'Presets', routines:'Routines', instruments:'Instruments' } as const;
 
 /**
  * The application frame: a window bar (wordmark, search, tools) across the top; below it, on the frame
@@ -67,17 +68,17 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
-  const goTo = (to:keyof typeof goGlyph, key:string):ShellCommand => ({ id:`go-${to}`, kind:'actions', title:`Go to ${to}`, icon:<CommandGlyph name={goGlyph[to]}/>, keys:['G',key], sequence:true, keywords:'go navigation', run:()=>go(to) });
+  const goTo = (to:keyof typeof goGlyph, key:string):ShellCommand => ({ id:`go-${to}`, kind:'actions', title:`Go to ${pageTitle[to]}`, icon:<CommandGlyph name={goGlyph[to]}/>, keys:['G',key], sequence:true, keywords:'go navigation', run:()=>go(to) });
   /* Commands and settings from command-center-review.html. Stop acquisition stays on the experiment page. */
   const commands:ShellCommand[] = [
     ...(onNewExperiment ? [{ id:'new', kind:'actions', title:'New experiment…', icon:<CommandGlyph name="experiment"/>, keys:['N'], featured:true, keywords:'create new experiment setup', run:onNewExperiment } as const] : []),
     ...(onImportRecordings ? [{ id:'import', kind:'actions', title:'Import recordings…', icon:<CommandGlyph name="import"/>, keys:['I'], featured:true, keywords:'open file csv import recording data', run:onImportRecordings } as const] : []),
-    { id:'settings', kind:'actions', title:'Open settings', icon:<CommandGlyph name="settings"/>, keys:['Mod',','], keywords:'preferences settings configuration', run:()=>go('settings') },
-    { id:'theme', kind:'actions', title:`Switch to ${dark?'light':'dark'} appearance`, icon:<CommandGlyph name={dark?'sun':'moon'}/>, keywords:'light dark mode theme appearance colors', run:()=>{ toggleAppearance(); setAnnouncement(`${dark?'Light':'Dark'} appearance applied.`); } },
+    { id:'settings', kind:'actions', title:'Go to Settings', icon:<CommandGlyph name="settings"/>, keys:['Mod',','], keywords:'preferences settings configuration', run:()=>go('settings') },
+    { id:'appearance', kind:'actions', title:`Use ${dark?'light':'dark'} appearance`, icon:<CommandGlyph name={dark?'sun':'moon'}/>, keywords:'light dark mode theme appearance colors', run:()=>{ toggleAppearance(); setAnnouncement(`${dark?'Light':'Dark'} appearance applied.`); } },
     goTo('experiments','E'), goTo('presets','P'), goTo('routines','R'), goTo('instruments','I'),
-    { id:'appearance', kind:'settings', title:'Appearance', icon:<CommandGlyph name="sun"/>, end:dark?'Dark':'Light', keywords:'settings preferences display light dark mode theme', run:()=>go('settings') },
-    { id:'storage', kind:'settings', title:'Data & storage', icon:<CommandGlyph name="storage"/>, end:'This device', keywords:'settings recordings results storage files folder local device', run:()=>go('settings') },
-    { id:'shortcuts', kind:'settings', title:'Keyboard shortcuts', icon:<CommandGlyph name="keyboard"/>, keys:['?'], keywords:'settings help keyboard shortcuts hotkeys commands', run:()=>setShortcuts(true) },
+    { id:'shortcuts', kind:'actions', title:'Show keyboard shortcuts', icon:<CommandGlyph name="keyboard"/>, keys:['?'], keywords:'help keyboard shortcuts hotkeys commands', run:()=>setShortcuts(true) },
+    { id:'theme', kind:'settings', title:'Theme', meta:'Settings · Appearance', icon:<CommandGlyph name="sun"/>, end:dark?'Dark':'Light', keywords:'preferences display light dark mode appearance', run:()=>go('settings') },
+    { id:'folder', kind:'settings', title:'Recordings folder', meta:'Settings · Recordings', icon:<CommandGlyph name="storage"/>, keywords:'preferences recordings results storage files folder local device', run:()=>go('settings') },
     ...searchRecords.map(record => ({ ...record, run:()=>go(record.page, record.pageId) })),
   ];
 
@@ -96,7 +97,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
       const to = goShortcuts[key as keyof typeof goShortcuts];
       if (to) { event.preventDefault(); go(to); return; }
     }
-    if (key==='g') { goPrefix.current = now; setAnnouncement('Go to: E experiments, P presets, R routines, I instruments.'); }
+    if (key==='g') { goPrefix.current = now; setAnnouncement('Go to: E Experiments, P Presets, R Routines, I Instruments.'); }
     else if (key==='n' && onNewExperiment) { event.preventDefault(); onNewExperiment(); }
     else if (key==='i' && onImportRecordings) { event.preventDefault(); onImportRecordings(); }
     else if (event.key==='?') { event.preventDefault(); setShortcuts(true); }
@@ -123,7 +124,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
         pageQuery={pageQuery} onPageQueryChange={onPageQueryChange} commands={commands} mac={mac} onShortcuts={()=>setShortcuts(true)} onAnnounce={setAnnouncement}/>
       <div className="dv-shell-tools">
         <button type="button" className="dv-shell-icon-button" aria-label={`Use ${dark?'light':'dark'} appearance`} title={`Use ${dark?'light':'dark'} appearance`} onClick={event=>toggleAppearance(event.currentTarget)}>{dark?icons.sun:icons.moon}</button>
-        <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?" onClick={()=>setShortcuts(true)}>{icons.keyboard}</button>
+        <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Show keyboard shortcuts" title="Show keyboard shortcuts · ?" onClick={()=>setShortcuts(true)}>{icons.keyboard}</button>
       </div>
     </header>
     <div className="dv-shell-workspace">

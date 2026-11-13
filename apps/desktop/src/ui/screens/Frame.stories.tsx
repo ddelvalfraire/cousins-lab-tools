@@ -176,7 +176,7 @@ export const ArrowKeysAndEnter:Story={
     await userEvent.keyboard('{ArrowUp}{ArrowUp}');
     await expect(selected(canvasElement)).toHaveTextContent('Leaf respiration · Sample 025');
     await userEvent.type(input,'go to presets');
-    await expect(selected(canvasElement)).toHaveTextContent('Go to presets');
+    await expect(selected(canvasElement)).toHaveTextContent('Go to Presets');
     await userEvent.keyboard('{Enter}');
     await expect(canvas.getByRole('heading',{level:1,name:'Presets'})).toBeVisible();
     await expect(args.navigate).toHaveBeenLastCalledWith('presets',undefined);
@@ -202,7 +202,7 @@ export const ShortcutsPanel:Story={
     await waitFor(()=>expect(body.getByRole('dialog',{name:'Keyboard shortcuts'})).toBeVisible());
     await userEvent.keyboard('{Escape}');
     await waitFor(()=>expect(body.queryByRole('dialog',{name:'Keyboard shortcuts'})).toBeNull());
-    const button=canvas.getByRole('button',{name:'Keyboard shortcuts'});
+    const button=canvas.getByRole('button',{name:'Show keyboard shortcuts'});
     await userEvent.click(button);
     await waitFor(()=>expect(body.getByRole('dialog',{name:'Keyboard shortcuts'})).toBeVisible());
     await userEvent.keyboard('{Escape}');

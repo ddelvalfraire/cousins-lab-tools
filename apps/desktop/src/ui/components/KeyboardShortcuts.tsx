@@ -11,18 +11,18 @@ export const shortcutSections: readonly ShortcutSection[] = [
   { title: 'Search and settings', rows: [
     { label: 'Open command center', keys: ['Mod', 'K'] },
     { label: 'Filter this page', keys: ['/'] },
-    { label: 'Open settings', keys: ['Mod', ','] },
-    { label: 'Keyboard shortcuts', keys: ['?'] },
+    { label: 'Go to Settings', keys: ['Mod', ','] },
+    { label: 'Show keyboard shortcuts', keys: ['?'] },
   ] },
   { title: 'Common actions', rows: [
-    { label: 'New experiment', keys: ['N'] },
-    { label: 'Import recordings', keys: ['I'] },
+    { label: 'New experiment…', keys: ['N'] },
+    { label: 'Import recordings…', keys: ['I'] },
   ] },
   { title: 'Go to a page', rows: [
-    { label: 'Experiments', keys: ['G', 'E'], sequence: true },
-    { label: 'Presets', keys: ['G', 'P'], sequence: true },
-    { label: 'Routines', keys: ['G', 'R'], sequence: true },
-    { label: 'Instruments', keys: ['G', 'I'], sequence: true },
+    { label: 'Go to Experiments', keys: ['G', 'E'], sequence: true },
+    { label: 'Go to Presets', keys: ['G', 'P'], sequence: true },
+    { label: 'Go to Routines', keys: ['G', 'R'], sequence: true },
+    { label: 'Go to Instruments', keys: ['G', 'I'], sequence: true },
   ] },
 ];
 
