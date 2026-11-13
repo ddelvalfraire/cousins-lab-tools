@@ -971,15 +971,24 @@ for (const width of [390, 1280]) for (const dark of [false, true]) {
   });
 }
 
-/** Text that a box with hidden overflow cuts off without an ellipsis, so part of a word or label cannot be read. */
+/**
+ * Text cut off without an ellipsis: a box with hidden overflow whose own text does not fit, or text that straddles the
+ * edge of a box with hidden overflow, so part of a word or label cannot be read. Text a scroller can reach is not cut.
+ */
 const cutText = () => [...document.querySelectorAll<HTMLElement>('#storybook-root *, body > [data-portal] *')].flatMap(element => {
   if (![...element.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent!.trim())) return [];
   const own = element.getBoundingClientRect();
   if (own.width < 2 || own.height < 2) return [];
-  for (let box: HTMLElement | null = element, depth = 0; box && depth < 4; box = box.parentElement, depth++) {
+  const name = `${element.tagName.toLowerCase()}.${element.className} “${element.textContent!.trim().slice(0, 30)}”`;
+  for (let box: HTMLElement | null = element, depth = 0; box && depth < 5; box = box.parentElement, depth++) {
     const style = getComputedStyle(box);
+    if (/auto|scroll/.test(style.overflowX + style.overflowY)) return [];
     if (!/hidden|clip/.test(style.overflowX + style.overflowY) || style.textOverflow === 'ellipsis') continue;
-    if (box.scrollWidth > box.clientWidth + 1 || box.scrollHeight > box.clientHeight + 1) return [`${element.tagName.toLowerCase()}.${element.className} “${element.textContent!.trim().slice(0, 30)}” cut by ${box.scrollWidth - box.clientWidth}×${box.scrollHeight - box.clientHeight} px`];
+    if (depth === 0 && (box.scrollWidth > box.clientWidth + 1 || box.scrollHeight > box.clientHeight + 1)) return [`${name} overflows its own box by ${box.scrollWidth - box.clientWidth}×${box.scrollHeight - box.clientHeight} px`];
+    const edge = box.getBoundingClientRect();
+    const inside = own.right > edge.left && own.left < edge.right && own.bottom > edge.top && own.top < edge.bottom;
+    const past = Math.max(edge.left - own.left, own.right - edge.right, edge.top - own.top, own.bottom - edge.bottom);
+    if (inside && past > 1) return [`${name} cut ${Math.round(past)} px by ${box.tagName.toLowerCase()}.${box.className}`];
   }
   return [];
 });
@@ -987,14 +996,22 @@ const cutText = () => [...document.querySelectorAll<HTMLElement>('#storybook-roo
 for (const width of [390, 1280]) for (const dark of [false, true]) {
   test(`representative screens at the largest text size: no cut text, overflow or accessibility problems at ${width}px ${dark ? 'dark' : 'light'}`, async ({ page }) => {
     test.setTimeout(180_000); await page.setViewportSize({ width, height: 900 });
-    for (const id of ['screens-experiments--home', 'screens-experiment--live', 'screens-experiment--recorded', 'screens-settings--appearance', 'screens-routines--catalog', 'components-preseteditor--saved', 'components-routineeditor--saved', 'components-recordingimport--review']) {
-      await story(page, id, dark, 'largest');
+    // Stories whose play checks default-size geometry fail at Largest, so these have no play or check content only.
+    for (const id of ['screens-experiments--home-largest-text', 'screens-experiment--live-largest-text', 'screens-experiment--recorded', 'screens-settings--appearance-largest-text', 'screens-routines--catalog', 'components-preseteditor--saved', 'components-routineeditor--saved', 'components-recordingimport--review']) {
+      const dialogOnly = id === 'components-recordingimport--review';
+      if (dialogOnly) {
+        // Not story(): the dialog renders in a portal and leaves the story root empty.
+        await page.goto(`/iframe.html?id=${id}&viewMode=story&globals=${dark ? 'appearance:dark;' : ''}textSize:largest`);
+        await expect(page.getByRole('dialog'), id).toBeVisible({ timeout: 10_000 });
+        await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: 30_000 });
+      } else await story(page, id, dark, 'largest');
       await expect(page.locator('html'), id).toHaveAttribute('data-dv-text-size', 'largest');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${id}: the window does not scroll sideways`).toBe(true);
-      expect(await page.evaluate(() => { const main = document.querySelector('#dvdash-screen-main'); return !main || main.scrollWidth <= main.clientWidth + 1; }), `${id}: the page does not scroll sideways`).toBe(true);
+      // The narrow sheet waits off to the right of the page, which hides sideways overflow, so only a page that can scroll counts.
+      expect(await page.evaluate(() => { const main = document.querySelector('#dvdash-screen-main'); return !main || /hidden|clip/.test(getComputedStyle(main).overflowX) || main.scrollWidth <= main.clientWidth + 1; }), `${id}: the page does not scroll sideways`).toBe(true);
       expect(await page.evaluate(() => [...document.querySelectorAll('[role=dialog]')].filter(dialog => dialog.scrollWidth > dialog.clientWidth + 1 || dialog.getBoundingClientRect().right > innerWidth + 1).length), `${id}: dialogs fit the window`).toBe(0);
       expect(await page.evaluate(cutText), `${id}: no text is cut off`).toEqual([]);
-      const result = await new AxeBuilder({ page }).include('#storybook-root').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+      const result = await new AxeBuilder({ page }).include(dialogOnly ? '[role=dialog]' : '#storybook-root').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) })), id).toEqual([]);
     }
   });
