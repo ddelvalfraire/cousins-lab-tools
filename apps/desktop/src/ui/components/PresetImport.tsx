@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Chip } from './Chip';
+import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { formatFileSize, ImportButton, ImportChooseButton, ImportDialog, ImportDropzone, ImportIcon, ImportProgressNote } from './ImportDialog';
 import './PresetImport.css';
@@ -105,18 +106,19 @@ export function PresetImportDialog({ opened, phase, file, definition, problems =
   return <ImportDialog opened={opened} onClose={onClose} busy={importing} closeLabel="Close import dialog" bodyMaxHeight={620}
     title={phase === 'done' ? 'Preset imported' : 'Import preset'} description="Add a reusable experiment layout."
     steps={phase === 'done' ? undefined : ['File', 'Review']} step={reviewing ? 1 : 0} footerStart={footerStart} actions={actions}>
+    <Swap swapKey={phase === 'choose' || phase === 'done' ? phase : reviewing ? 'review' : 'file'}>
     {phase !== 'done' && file && <div className="dv-preset-import-file"><ImportIcon name="file" /><span>{file.name} · {formatFileSize(file.size)}</span></div>}
     {phase === 'choose' && <ImportDropzone title="Drop a preset definition here" hint="Choose a file from your computer." action="Choose file" accept={accept} onFiles={choose} />}
-    {phase === 'checking' && <ImportProgressNote title="Checking file…" detail="Validating the definition and its references." />}
-    {phase === 'invalid' && <div className="dv-preset-import-feedback"><StatusBanner severity="error" announce>
+    <Presence show={phase === 'checking'}><ImportProgressNote title="Checking file…" detail="Validating the definition and its references." /></Presence>
+    <Presence show={phase === 'invalid'}><div className="dv-preset-import-feedback"><StatusBanner severity="error" announce>
       {problems.length > 1
         ? <><span>This definition can’t be imported.</span><ul className="dv-preset-import-problems">{problems.map(problem => <li key={problem}>{problem}</li>)}</ul></>
         : `This definition can’t be imported. ${problems[0] ?? ''}`.trim()}
-    </StatusBanner></div>}
-    {phase === 'ready' && definition && <div className="dv-preset-import-ready"><div className="dv-preset-import-chips">
+    </StatusBanner></div></Presence>
+    <Presence show={phase === 'ready' && !!definition}>{definition && <div className="dv-preset-import-ready"><div className="dv-preset-import-chips">
       <Chip icon={<ImportIcon name="panels" />}>{plural(definition.layout.length, 'panel')}</Chip>
       <Chip icon={<ImportIcon name="revisions" />}>Source R{definition.sourceRevision}</Chip>
-    </div></div>}
+    </div></div>}</Presence>
     {(phase === 'checking' || phase === 'invalid' || phase === 'ready') && <ImportChooseButton label="Replace file" accept={accept} onFiles={choose} />}
 
     {phase === 'done' && definition && <>
@@ -124,8 +126,8 @@ export function PresetImportDialog({ opened, phase, file, definition, problems =
       <DefinitionOverview definition={definition} title={name} />
     </>}
     {reviewing && definition && <>
-      {phase === 'failed' && <div className="dv-preset-import-feedback"><StatusBanner severity="error" announce>Couldn’t add the preset. Try again.</StatusBanner></div>}
-      {phase !== 'failed' && nameTaken && <div className="dv-preset-import-feedback"><StatusBanner severity="warning">A preset with the original name already exists. A separate copy will be added.</StatusBanner></div>}
+      <Presence show={phase === 'failed'}><div className="dv-preset-import-feedback"><StatusBanner severity="error" announce>Couldn’t add the preset. Try again.</StatusBanner></div></Presence>
+      <Presence show={phase !== 'failed' && nameTaken}><div className="dv-preset-import-feedback"><StatusBanner severity="warning">A preset with the original name already exists. A separate copy will be added.</StatusBanner></div></Presence>
       <DefinitionOverview definition={definition} title={name.trim() || definition.name} />
       <label className="dv-preset-import-name">Preset name<input value={name} disabled={importing} onChange={event => onNameChange(event.currentTarget.value)} /></label>
       {definition.routines.length > 0 && <section className="dv-preset-import-section">
@@ -150,6 +152,7 @@ export function PresetImportDialog({ opened, phase, file, definition, problems =
         <div className="dv-preset-import-info"><StatusBanner>Assign instruments when using the preset.</StatusBanner></div>
       </section>}
     </>}
+    </Swap>
   </ImportDialog>;
 }
 

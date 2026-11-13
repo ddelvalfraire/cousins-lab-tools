@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { Select } from '@mantine/core';
+import { Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { formatDuration, formatFileSize, ImportButton, ImportChooseButton, ImportDialog, ImportDropzone, ImportFooterNote, ImportIcon, ImportProgress, ImportStatus } from './ImportDialog';
@@ -77,13 +78,14 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
   return <ImportDialog opened={opened} onClose={onClose} busy={phase === 'importing'} closeLabel="Close import dialog"
     title={phase === 'done' ? 'Recordings imported' : 'Import recordings'} description="Create experiments from saved recordings."
     steps={editable ? ['Files', 'Review'] : undefined} step={phase === 'review' ? 1 : 0} footerStart={footerStart} actions={actions}>
-    {phase === 'select' && invalid.length > 0 && <div className="dv-recording-import-feedback"><StatusBanner severity="error" announce>
+    <Swap swapKey={editable ? phase : 'working'}>
+    <Presence show={phase === 'select' && invalid.length > 0}>{invalid.length > 0 && <div className="dv-recording-import-feedback"><StatusBanner severity="error" announce>
       {invalid.length === 1
         ? <><strong>{invalid[0].name}:</strong> {invalid[0].problem}</>
         : <><span>{invalid.length} files need attention.</span><ul className="dv-recording-import-problems">{invalid.map(file => <li key={file.id}><strong>{file.name}:</strong> {file.problem}</li>)}</ul></>}
-    </StatusBanner></div>}
-    {phase === 'done' && <div className="dv-recording-import-feedback"><StatusBanner announce>{plural(imported, 'recording')} imported.</StatusBanner></div>}
-    {phase === 'failed' && <div className="dv-recording-import-feedback"><StatusBanner severity="error" announce>{failed === 1 ? '1 recording couldn’t be imported.' : `${failed} recordings couldn’t be imported.`}</StatusBanner></div>}
+    </StatusBanner></div>}</Presence>
+    <Presence show={phase === 'done'}><div className="dv-recording-import-feedback"><StatusBanner announce>{plural(imported, 'recording')} imported.</StatusBanner></div></Presence>
+    <Presence show={phase === 'failed'}><div className="dv-recording-import-feedback"><StatusBanner severity="error" announce>{failed === 1 ? '1 recording couldn’t be imported.' : `${failed} recordings couldn’t be imported.`}</StatusBanner></div></Presence>
     {phase === 'review' && <div className="dv-recording-import-summary">
       <Chip icon={<ImportIcon name="details" />}>{plural(ready.length, 'recording')}</Chip>
       {totalDuration > 0 && <Chip icon={<ImportIcon name="clock" />}>{formatDuration(totalDuration)} total</Chip>}
@@ -120,6 +122,7 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
       <Select aria-labelledby={presetLabel} aria-label={PRESET_LABEL} value={presetId} data={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={chosen(onPresetChange)} />
       <small>Each recording becomes a separate experiment.</small>
     </label>}
+    </Swap>
   </ImportDialog>;
 }
 

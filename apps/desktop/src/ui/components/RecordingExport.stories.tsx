@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { RecordingExportDialog, type RecordingExportDialogProps } from './RecordingExport';
 import { exportDefaults, exportRecording, exportRows, exportSignals } from './exchange-fixtures';
 import { chooseOption } from './chooseOption';
@@ -43,7 +43,10 @@ export const ChangeInterval: Story = {
     const body = dialog(canvasElement);
     const end = body.getByRole('textbox', { name: 'End time in seconds' });
     await userEvent.clear(end);
+    const problem = await body.findByRole('status');
     await userEvent.type(end, '240');
+    await expect(body.queryByRole('status')).toBeNull();
+    await waitFor(() => expect(problem).not.toBeInTheDocument());
     await expect(body.getByText('02:00–04:00')).toBeVisible();
     await expect(body.getByText('241 rows · 4 signals')).toBeVisible();
     await userEvent.click(body.getByRole('button', { name: 'Export CSV' }));

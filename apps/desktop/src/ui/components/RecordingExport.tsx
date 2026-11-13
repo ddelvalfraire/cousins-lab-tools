@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { Chip } from './Chip';
 import { Select } from '@mantine/core';
+import { Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { formatDuration, ImportButton, ImportDialog, ImportFooterNote, ImportIcon, ImportProgressNote } from './ImportDialog';
@@ -129,6 +130,7 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
       <ImportIcon name="details" /><strong>{recording.name}</strong>
       <Chip icon={<ImportIcon name="revisions" />}>Preset R{recording.preset.revision}</Chip>
     </div>
+    <Swap swapKey={phase === 'failed' ? 'ready' : phase}>
     {phase === 'preparing' && <ImportProgressNote variant="export" title="Preparing export…" detail={`${rows} rows · ${selected} signals`} />}
     {phase === 'done' && result && <>
       <div className="dv-export-feedback"><StatusBanner announce>Export file prepared.</StatusBanner></div>
@@ -142,10 +144,10 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
       </div>
     </>}
     {(phase === 'ready' || phase === 'failed') && <>
-      {phase === 'failed' && <div className="dv-export-feedback"><StatusBanner severity="error" announce>The export couldn’t be prepared. Try again.</StatusBanner></div>}
+      <Presence show={phase === 'failed'}><div className="dv-export-feedback"><StatusBanner severity="error" announce>The export couldn’t be prepared. Try again.</StatusBanner></div></Presence>
       {empty && <div className="dv-export-feedback"><StatusBanner>No recorded samples are available to export.</StatusBanner></div>}
-      {gaps && !empty && <div className="dv-export-feedback"><StatusBanner severity="warning">Selected signals contain gaps. Missing samples will be {value.format === 'csv' ? 'blank' : 'null'}.</StatusBanner></div>}
-      {attempted && !selected && <div className="dv-export-feedback"><StatusBanner severity="error" announce>Select at least one signal.</StatusBanner></div>}
+      <Presence show={gaps && !empty}><div className="dv-export-feedback"><StatusBanner severity="warning">Selected signals contain gaps. Missing samples will be {value.format === 'csv' ? 'blank' : 'null'}.</StatusBanner></div></Presence>
+      <Presence show={attempted && !selected}><div className="dv-export-feedback"><StatusBanner severity="error" announce>Select at least one signal.</StatusBanner></div></Presence>
       <fieldset className="dv-export-section">
         <legend>Time range</legend>
         <label className="dv-export-scope">
@@ -160,8 +162,8 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
         </label>
         <div className="dv-export-interval">{timeField('start', 'Start')}{timeField('end', 'End')}</div>
         <p className="dv-export-interval-hint" id="dv-export-range-hint">Seconds from recording start · 0–{Math.round(recording.duration)} s</p>
-        {showRange && rangeProblem && <div className="dv-export-interval-feedback" id="dv-export-range-error"><StatusBanner severity="error" announce>{rangeProblem.message}</StatusBanner></div>}
-        {value.range === 'interval' && !rangeProblem && !empty && rows === 0 && <div className="dv-export-interval-feedback"><StatusBanner>No samples fall in this interval.</StatusBanner></div>}
+        <Presence show={showRange && !!rangeProblem}><div className="dv-export-interval-feedback" id="dv-export-range-error"><StatusBanner severity="error" announce>{rangeProblem?.message}</StatusBanner></div></Presence>
+        <Presence show={value.range === 'interval' && !rangeProblem && !empty && rows === 0}><div className="dv-export-interval-feedback"><StatusBanner>No samples fall in this interval.</StatusBanner></div></Presence>
       </fieldset>
       <div className="dv-export-divider" />
       <div className="dv-export-group-heading"><h3>Signals</h3><span>{selected} selected</span></div>
@@ -186,11 +188,12 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
         </span></label>
         <label className="dv-export-field"><span id={formatLabel}>{FORMAT_LABEL}</span><Select aria-labelledby={formatLabel} aria-label={FORMAT_LABEL} value={value.format} data={FORMATS} onChange={chosen(format => set({ format: format as ExportFormat }))} /></label>
       </div>
-      {attempted && nameProblem && <div className="dv-export-name-feedback" id="dv-export-name-error"><StatusBanner severity="error" announce>{nameProblem}</StatusBanner></div>}
+      <Presence show={attempted && !!nameProblem}><div className="dv-export-name-feedback" id="dv-export-name-error"><StatusBanner severity="error" announce>{nameProblem}</StatusBanner></div></Presence>
       <label className="dv-export-context" data-disabled={value.format !== 'json'}>
         <input type="checkbox" checked={value.format === 'json' && value.includePreset} disabled={value.format !== 'json'} onChange={event => set({ includePreset: event.currentTarget.checked })} />Include preset reference
       </label>
       <p className="dv-export-context-note">{value.format === 'json' ? `${recording.preset.name} · R${recording.preset.revision}` : 'Available in JSON. Signal units are included in both formats.'}</p>
     </>}
+    </Swap>
   </ImportDialog>;
 }
