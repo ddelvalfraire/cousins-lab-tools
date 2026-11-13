@@ -522,6 +522,34 @@ test('under reduced motion appearance changes are instant, without a view transi
   expect(await viewTransitions(page)).toBe(0);
 });
 
+/** Clicks the story's toggle and reports, one frame later, what is left of the message it hides. */
+async function hideMessage(page: Page) {
+  return page.evaluate(async () => {
+    [...document.querySelectorAll('button')].find(button => button.textContent === 'Fix the problem')!.click();
+    await new Promise(requestAnimationFrame);
+    const banner = document.querySelector('#storybook-root .dv-banner-approved');
+    const running = document.getAnimations().filter(animation => animation.playState === 'running').length;
+    return { inPage: !!banner, inert: !!banner?.closest('[inert]'), running };
+  });
+}
+
+test('under reduced motion a message that leaves is gone in the next frame, with nothing animating', async ({ page }) => {
+  await story(page, 'foundations-motion--message-leaves');
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(await hideMessage(page)).toEqual({ inPage: false, inert: false, running: 0 });
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('with motion on a message that leaves animates out, then leaves the page and the accessibility tree', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await story(page, 'foundations-motion--message-leaves');
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(await hideMessage(page), 'still on screen and inert while it collapses').toEqual({ inPage: true, inert: true, running: 1 });
+  await expect(page.getByRole('alert'), 'out of the accessibility tree at once').toHaveCount(0);
+  await expect(page.locator('#storybook-root .dv-banner-approved'), 'removed once the collapse ends').toHaveCount(0);
+  expect(await page.locator('#storybook-root').ariaSnapshot()).not.toContain('alert');
+});
+
 test('routine steps reorder without dragging and unsaveable steps block saving', async ({ page }) => {
   // The story's play test edits the routine on load, so only check what follows from these actions.
   await story(page, 'components-routineeditor--saved');
