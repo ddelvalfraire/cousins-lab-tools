@@ -1,4 +1,3 @@
-import { Collapse, Transition, type MantineTransition } from '@mantine/core';
 import { useReducedMotion } from '@mantine/hooks';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { motion } from '../motion';
@@ -17,28 +16,51 @@ export interface PresenceProps {
   children: ReactNode;
 }
 
-const pop: MantineTransition = {
-  in: { opacity: 1, transform: 'translateY(0) scale(1)' },
-  out: { opacity: 0, transform: 'translateY(-4px) scale(.98)' },
-  transitionProperty: 'opacity, transform',
-};
+type Variant = NonNullable<PresenceProps['variant']>;
+
+function frames(variant: Variant, entering: boolean, height: number): Keyframe[] {
+  const shown: Keyframe = { opacity: 1 }, hidden: Keyframe = { opacity: 0 };
+  if (variant === 'collapse') { shown.height = `${height}px`; hidden.height = '0px'; }
+  if (variant === 'pop') { shown.transform = 'none'; hidden.transform = 'translateY(-4px) scale(.98)'; }
+  return entering ? [hidden, shown] : [shown, hidden];
+}
 
 /**
- * Animates something in and out. While it leaves it keeps its last content, is inert and hidden from assistive
- * technology, so it takes no focus or tab stop and is not read twice; once it has left it is unmounted.
- * Reduced motion (the theme's respectReducedMotion) makes every change instant.
+ * Animates something in and out. Entering content is in the page, focusable and announced at once; it only fades
+ * (and for `collapse` grows) into place. While it leaves it keeps its last content, is inert and hidden from
+ * assistive technology, so it takes no focus or tab stop and is not read twice; once it has left it is unmounted.
+ * Under reduced motion every change is instant.
  */
 export function Presence({ show, variant = 'collapse', className, children }: PresenceProps) {
+  const reduced = useReducedMotion(false, { getInitialValueInEffect: false });
+  const [present, setPresent] = useState(show);
+  if (show && !present) setPresent(true);
   // The children usually depend on the state that hides them (`error && …`), so the leaving copy is the last shown one.
   const last = useRef(children);
   if (show) last.current = children;
-  const content = show ? children : last.current;
-  if (variant === 'collapse') {
-    return <Collapse expanded={show} keepMounted={false} transitionDuration={show ? motion.base : motion.fast} transitionTimingFunction={motion.easeOut} className={className}>{content}</Collapse>;
-  }
-  return <Transition mounted={show} transition={variant === 'pop' ? pop : 'fade'} duration={motion.base} exitDuration={motion.fast} timingFunction={motion.easeOut}>
-    {styles => <div className={className} style={styles} inert={!show} aria-hidden={!show || undefined}>{content}</div>}
-  </Transition>;
+  const ref = useRef<HTMLDivElement>(null), animation = useRef<Animation | null>(null), mounted = useRef(false);
+  useLayoutEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    const element = ref.current, running = animation.current;
+    if (!element || reduced || typeof element.animate !== 'function') { running?.cancel(); if (!show) setPresent(false); return; }
+    // Measured before the running animation is dropped, so a reversal starts where the last one had got to.
+    const now = element.getBoundingClientRect().height, opacity = running ? Number(getComputedStyle(element).opacity) : show ? 0 : 1;
+    running?.cancel();
+    const full = element.scrollHeight;
+    const keyframes = frames(variant, show, full);
+    if (running) { keyframes[0].opacity = opacity; if (variant === 'collapse') keyframes[0].height = `${now}px`; }
+    if (variant === 'collapse') element.style.overflow = 'hidden';
+    const next = element.animate(keyframes, { duration: show ? motion.base : motion.fast, easing: motion.easeOut, fill: show ? 'none' : 'forwards' });
+    animation.current = next;
+    next.onfinish = () => {
+      if (animation.current !== next) return;
+      animation.current = null; element.style.overflow = '';
+      if (!show) setPresent(false);
+    };
+  }, [show]);
+  useEffect(() => () => animation.current?.cancel(), []);
+  if (!present) return null;
+  return <div ref={ref} className={className} data-presence={variant} data-motion={show ? undefined : 'leave'} inert={!show} aria-hidden={!show || undefined}>{show ? children : last.current}</div>;
 }
 
 export interface SwapProps {
@@ -76,7 +98,8 @@ export function Swap({ swapKey, className, style, children }: SwapProps) {
     const timer = window.setTimeout(() => setEntering(null), motion.base);
     return () => window.clearTimeout(timer);
   }, [entering]);
-  const items = leaving && leaving.key !== swapKey ? [{ ...leaving, out: true }, { key: swapKey, node: children, out: false }] : [{ key: swapKey, node: children, out: false }];
+  // The leaving copy comes last, so queries and the reading order meet the current content first.
+  const items = leaving && leaving.key !== swapKey ? [{ key: swapKey, node: children, out: false }, { ...leaving, out: true }] : [{ key: swapKey, node: children, out: false }];
   return <div className={className ? `dv-swap ${className}` : 'dv-swap'} style={style}>
     {items.map(item => item.out
       ? <div key={item.key} className="dv-swap-item" data-motion="leave" inert aria-hidden="true">{item.node}</div>

@@ -57,6 +57,8 @@
   --dv-motion-fast: 120ms; --dv-motion-base: 180ms; --dv-motion-slow: 240ms; --dv-motion-reveal: 420ms;
   --dv-ease-out: cubic-bezier(.22, 1, .36, 1); --dv-ease-in-out: cubic-bezier(.4, 0, .2, 1);
 }
+/* Presence (Motion.tsx): a collapsing wrapper keeps its children's margins, so its measured height is its real height. */
+[data-presence='collapse'] { display: flow-root; }
 /* Swap (Motion.tsx): the new content keeps the layout; the old one sits over it, clipped to its box, while it fades. */
 .dv-swap { position: relative; min-width: 0; }
 .dv-swap-item[data-motion='enter'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
