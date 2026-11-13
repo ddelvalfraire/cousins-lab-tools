@@ -57,6 +57,8 @@
   --dv-motion-fast: 120ms; --dv-motion-base: 180ms; --dv-motion-slow: 240ms; --dv-motion-reveal: 420ms;
   --dv-ease-out: cubic-bezier(.22, 1, .36, 1); --dv-ease-in-out: cubic-bezier(.4, 0, .2, 1);
 }
+/* Colour scheme reveal (colorSchemeTransition.ts): the new scheme grows over the old one as a circle, without the default cross-fade. */
+html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 /* Presence (Motion.tsx): a collapsing wrapper keeps its children's margins, so its measured height is its real height. */
 [data-presence='collapse'] { display: flow-root; }
 /* Swap (Motion.tsx): the new content keeps the layout; the old one sits over it, clipped to its box, while it fades. */
