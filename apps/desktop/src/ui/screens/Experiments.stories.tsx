@@ -54,3 +54,90 @@ export const OpenFromCommandCenter:Story={play:async({canvasElement})=>{
   await userEvent.keyboard('n');
   await expect(canvas.getByRole('heading',{name:'New experiment',level:1})).toBeVisible();
 }};
+
+const side=(root:HTMLElement)=>root.querySelector<HTMLElement>('.dv-right-sidebar')!;
+const listRows=(root:HTMLElement)=>[...root.querySelectorAll('.dv-exp-table tbody tr')];
+/** Waits out the swap's fade so only the new experiment is in the pane. */
+const sidebarShows=(root:HTMLElement,name:string)=>waitFor(()=>expect([...side(root).querySelectorAll('.dv-cat-detail-identity strong')].map(e=>e.textContent)).toEqual([name]));
+const fits=async(root:HTMLElement)=>{for(const el of side(root).querySelectorAll<HTMLElement>('.dv-right-sidebar-content, .dv-sidebar-facts, .dv-cat-detail-identity'))await expect(el.scrollWidth,el.className).toBeLessThanOrEqual(el.clientWidth);};
+
+/** The first row is selected as the page opens and the Details sidebar shows it; its action opens the experiment. */
+export const DetailsSidebar:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement),pane=within(side(canvasElement));
+  await expect(listRows(canvasElement)[0]).toHaveAttribute('data-selected','true');
+  await expect(side(canvasElement)).toHaveAttribute('data-mode','docked');
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','false');
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 025');
+  for(const text of ['Running','Instrument','CO₂ & O₂ analysis · R3','Oct 30, 2026','15:12:00','87'])await expect(side(canvasElement)).toHaveTextContent(text);
+  await userEvent.click(pane.getByRole('button',{name:'Open live: Leaf respiration · Sample 025'}));
+  await expect(canvas.getByRole('heading',{level:1,name:'Leaf respiration · Sample 025'})).toBeVisible();
+}};
+
+/** A click or Enter on another name selects its row, updates the sidebar and moves focus to it, as in the catalogs. */
+export const ChangeSelection:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement),table=within(canvasElement.querySelector('table')!);
+  await userEvent.click(table.getByRole('button',{name:'Leaf respiration · Sample 024'}));
+  await expect(listRows(canvasElement).map(row=>row.getAttribute('data-selected'))).toEqual(['false','true','false','false']);
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 024');
+  await expect(side(canvasElement)).toHaveTextContent('Recording file');
+  await waitFor(()=>expect(side(canvasElement).querySelector('[role=tabpanel]')).toHaveFocus());
+  table.getByRole('button',{name:'Enzyme assay · Extract 08'}).focus();
+  await userEvent.keyboard('{Enter}');
+  await sidebarShows(canvasElement,'Enzyme assay · Extract 08');
+  await expect(listRows(canvasElement)[2]).toHaveAttribute('data-selected','true');
+  await expect(canvas.getByRole('heading',{level:1,name:'Experiments'})).toBeVisible();
+}};
+
+/** No experiments: the sidebar says what it will show, as the catalogs do. */
+export const EmptySidebar:Story={args:{empty:true},play:async({canvasElement})=>{
+  await expect(within(side(canvasElement)).getByText('Select an experiment')).toBeVisible();
+  await expect(side(canvasElement).querySelector('.dv-sidebar-facts')).toBeNull();
+}};
+
+/** A filter that matches nothing leaves nothing selected; clearing it selects the first row again. */
+export const FilteredToNothing:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement);
+  await userEvent.type(canvas.getByRole('searchbox',{name:'Search experiments'}),'argon');
+  await waitFor(()=>expect(within(side(canvasElement)).getByText('Select an experiment')).toBeVisible());
+  await userEvent.click(canvas.getAllByRole('button',{name:'Clear filter'})[0]);
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 025');
+}};
+
+/** Collapse keeps the rail; the Details tab opens the pane again on the same experiment. */
+export const SidebarCollapse:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement);
+  await userEvent.click(canvas.getByRole('button',{name:'Collapse right sidebar'}));
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','true');
+  await userEvent.click(canvas.getByRole('tab',{name:'Details'}));
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','false');
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 025');
+}};
+
+/** At 390 px the pane is a sheet over the list: closed at first, opened by each selection, closed by Escape. */
+export const NarrowSheet:Story={parameters:{previewWidth:390},play:async({canvasElement})=>{
+  const table=within(canvasElement.querySelector('table')!);
+  await expect(side(canvasElement)).toHaveAttribute('data-mode','sheet');
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','true');
+  await userEvent.click(table.getByRole('button',{name:'Leaf respiration · Sample 024'}));
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','false');
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 024');
+  await waitFor(()=>expect(side(canvasElement).querySelector('[role=tabpanel]')).toHaveFocus());
+  await userEvent.keyboard('{Escape}');
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','true');
+  await userEvent.click(table.getByRole('button',{name:'Enzyme assay · Extract 08'}));
+  await expect(side(canvasElement)).toHaveAttribute('data-collapsed','false');
+  await sidebarShows(canvasElement,'Enzyme assay · Extract 08');
+  await fits(canvasElement);
+}};
+
+/** Dark appearance with the first row selected. */
+export const DetailsSidebarDark:Story={globals:{appearance:'dark'},play:async({canvasElement})=>{await sidebarShows(canvasElement,'Leaf respiration · Sample 025');await fits(canvasElement);}};
+/** Largest text: the facts wrap inside the pane and the header buttons stay on the title line. */
+export const DetailsSidebarLargestText:Story={globals:{textSize:'largest'},play:async({canvasElement})=>{
+  await sidebarShows(canvasElement,'Leaf respiration · Sample 025');
+  await fits(canvasElement);
+  await expect(canvasElement.querySelector('.dv-shell-page .dv-page-header')).toHaveAttribute('data-actions','title');
+  await expect(canvasElement.querySelector('.dv-shell-page .dv-page-actionbar')).toBeNull();
+}};
+/** Largest text at 390 px: the sheet opens on a selection and its facts fit. */
+export const NarrowSheetLargestText:Story={...NarrowSheet,globals:{textSize:'largest'}};
