@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Group, NumberInput, Paper, SegmentedControl, Select, Table, Text, TextInput, Title, useComputedColorScheme } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconChartLine, IconTable } from '@tabler/icons-react';
+import { useAppearance } from '../appearance';
+import { rootTextScale } from '../textSize';
 import uPlot from 'uplot';
 import type { SignalSample } from '../fixtures';
 import { seriesColors } from '../theme';
@@ -121,7 +123,7 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
   const current = useRef({ data, bands });
   current.current = { data, bands };
   const [boxes, setBoxes] = useState<BandBox[]>([]);
-  const scheme = useComputedColorScheme('light');
+  const scheme = useComputedColorScheme('light'), { textSize } = useAppearance();
   const labelKey = JSON.stringify(labels), limitKey = JSON.stringify(limits ?? null), hasBands = bands.length > 0;
   useEffect(() => {
     const el = host.current; if (!el) return;
@@ -137,7 +139,9 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
       }).filter(b => b.width > 0);
       setBoxes(prev => JSON.stringify(prev) === JSON.stringify(next) ? prev : next);
     };
-    const yAxis: uPlot.Axis = { label: yLabel, stroke: ink, font: '11px system-ui', labelFont: '12px system-ui', size: 58, grid: { stroke: scheme === 'dark' ? '#40564a' : '#e2e8df', width: 1 } };
+    // Axis text follows the Text size setting; the axes grow with it so tick labels are not cut off.
+    const s = rootTextScale(), font = `${11 * s}px system-ui`, labelFont = `${12 * s}px system-ui`;
+    const yAxis: uPlot.Axis = { label: yLabel, stroke: ink, font, labelFont, size: 58 * s, labelSize: 30 * s, grid: { stroke: scheme === 'dark' ? '#40564a' : '#e2e8df', width: 1 } };
     if (logDecades) Object.assign(yAxis, {
       splits: (_u: uPlot, _i: number, min: number, max: number) => { const out: number[] = []; for (let e = Math.ceil(Math.log10(min) - 1e-9); e <= Math.floor(Math.log10(max) + 1e-9); e++) out.push(10 ** e); return out; },
       values: (_u: uPlot, splits: number[]) => splits.map(decade),
@@ -152,7 +156,7 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
         else { const bounds = uPlot.rangeNum(min, max, 0.1, true); next = logarithmic ? [Math.max(bounds[0] ?? min, min / 2, Number.MIN_VALUE), bounds[1] ?? max] : [bounds[0] ?? min, bounds[1] ?? max]; }
         lastY.current = next; return next;
       }) } },
-      axes: [{ label: xLabel, stroke: ink, grid: { show: false }, font: '11px system-ui', labelFont: '12px system-ui' }, yAxis],
+      axes: [{ label: xLabel, stroke: ink, grid: { show: false }, font, labelFont, size: 50 * s, labelSize: 30 * s }, yAxis],
       series: [{ label: xLabel }, ...parsedLabels.map((label, i) => ({
         label, stroke: colors[i % colors.length], width: 2, dash: i === 1 ? [6, 4] : [], spanGaps: false,
         value: (_u: uPlot, value: number | null) => `${formatMeasurement(value)} mV`,
@@ -165,7 +169,7 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
     const observer = new ResizeObserver(() => { if (host.current) u.setSize({ width: Math.max(minimumWidth, host.current.clientWidth), height }); });
     observer.observe(el);
     return () => { observer.disconnect(); u.destroy(); plot.current = null; };
-  }, [labelKey, scheme, limitKey, logarithmic, logDecades, points, hasBands, height, minimumWidth, xLabel, yLabel]);
+  }, [labelKey, scheme, textSize, limitKey, logarithmic, logDecades, points, hasBands, height, minimumWidth, xLabel, yLabel]);
   useEffect(() => {
     const u = plot.current; if (!u) return;
     u.setData(data);

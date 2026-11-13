@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useComputedColorScheme } from '@mantine/core';
+import { useAppearance } from '../appearance';
+import { rootTextScale } from '../textSize';
 import uPlot from 'uplot';
 import { seriesColors } from '../theme';
 import { formatMeasurement } from '../measurement';
@@ -57,7 +59,7 @@ export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLab
   const callbacks = useRef({ onSelection, selection, range, data, marker, clock });
   callbacks.current = { onSelection, selection, range, data, marker, clock };
   const [overlay, setOverlay] = useState<Overlay | null>(null);
-  const scheme = useComputedColorScheme('light');
+  const scheme = useComputedColorScheme('light'), { textSize } = useAppearance();
   const seriesKey = JSON.stringify(series);
   const limitKey = JSON.stringify(limits);
   const frame = sparse ? { left: 42, bottom: 37, ...(typeof sparse === 'object' ? sparse : {}) } : null;
@@ -110,6 +112,8 @@ export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLab
       const next = { width: u.width, height: u.height, labels };
       setOverlay(prev => JSON.stringify(prev) === JSON.stringify(next) ? prev : next);
     };
+    // Axis text follows the Text size setting; the axes grow with it so tick labels are not cut off.
+    const s = rootTextScale(), font = `${11 * s}px system-ui`, labelFont = `${12 * s}px system-ui`;
     const options: uPlot.Options = {
       width: Math.max(minimumWidth, el.clientWidth), height,
       ...(sparseFrame ? { padding: [SPARSE_TOP, SPARSE_RIGHT, sparseFrame.bottom, sparseFrame.left] as uPlot.Padding } : {}),
@@ -120,8 +124,8 @@ export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLab
         lastYExtent.current = next; return next;
       }) } },
       axes: sparseFrame ? [{ show: false }, { show: false }] : [
-        { label: xLabel, stroke: ink, grid: { show: false }, font: '11px system-ui', labelFont: '12px system-ui', ...(callbacks.current.clock !== undefined ? { values: (_u: uPlot, splits: number[]) => splits.map(v => { const at = callbacks.current.clock; return at === null || at === undefined ? '—' : clockText(at + v); }) } : {}) },
-        { label: yLabel, stroke: ink, font: '11px system-ui', labelFont: '12px system-ui', size: 58, grid: { stroke: scheme === 'dark' ? '#40564a' : '#e2e8df', width: 1 } },
+        { label: xLabel, stroke: ink, grid: { show: false }, font, labelFont, size: 50 * s, labelSize: 30 * s, ...(callbacks.current.clock !== undefined ? { values: (_u: uPlot, splits: number[]) => splits.map(v => { const at = callbacks.current.clock; return at === null || at === undefined ? '—' : clockText(at + v); }) } : {}) },
+        { label: yLabel, stroke: ink, font, labelFont, size: 58 * s, labelSize: 30 * s, grid: { stroke: scheme === 'dark' ? '#40564a' : '#e2e8df', width: 1 } },
       ],
       series: [{ label: xLabel }, ...parsedSeries.map((s, i) => ({ label: s.label, stroke: s.color ?? colors[i % colors.length], width: 2, dash: s.dash ? dashes[s.dash] : i === 1 ? dashes.dashed : [], value: (_u: uPlot, value: number | null) => `${formatMeasurement(value)} ${s.unit}`, paths: points || s.kind === 'points' ? () => null : undefined, points: { show: () => points || s.kind === 'points' || callbacks.current.data[0].length === 1, size: 5 } }))],
       legend: { show: false }, cursor: { drag: { x: true, y: false, setScale: false } },
@@ -146,7 +150,7 @@ export function ScientificPlot({ data, series, xLabel = 'Elapsed time (s)', yLab
     const observer = new ResizeObserver(() => { if (host.current) u.setSize({ width: Math.max(minimumWidth, host.current.clientWidth), height }); });
     observer.observe(el);
     return () => { observer.disconnect(); u.destroy(); plot.current = null; };
-  }, [seriesKey, scheme, limitKey, logarithmic, points, height, xLabel, yLabel, minimumWidth, frameKey, unit, soft]);
+  }, [seriesKey, scheme, textSize, limitKey, logarithmic, points, height, xLabel, yLabel, minimumWidth, frameKey, unit, soft]);
   useEffect(() => {
     const u = plot.current; if (!u) return;
     u.setData(data);

@@ -1,6 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useComputedColorScheme } from '@mantine/core';
 import { IconAlertTriangle, IconCircleCheck, IconCircleX } from '@tabler/icons-react';
+import { useAppearance } from '../appearance';
+import { rootTextScale } from '../textSize';
 import uPlot from 'uplot';
 import { StatusWord } from './Chip';
 import { Banner } from './Banner';
@@ -116,7 +118,7 @@ function CurvePlot({ standards, fit, axisMax, labelledBy }: { standards: Calibra
   const host = useRef<HTMLDivElement>(null);
   const current = useRef({ standards, fit });
   current.current = { standards, fit };
-  const scheme = useComputedColorScheme('light');
+  const scheme = useComputedColorScheme('light'), { textSize } = useAppearance();
   const key = JSON.stringify([standards, fit, axisMax ?? null]);
   useEffect(() => {
     const el = host.current; if (!el) return;
@@ -127,15 +129,17 @@ function CurvePlot({ standards, fit, axisMax, labelledBy }: { standards: Calibra
     const yLow = Math.min(0, ...signals) < 0 ? -niceTop(-Math.min(...signals) * 1.05, 5).top : 0;
     const ticks = (top: number, step: number, low = 0) => Array.from({ length: Math.round((top - low) / step) + 1 }, (_, i) => +(low + i * step).toPrecision(12));
     const size = () => ({ width: Math.max(1, el.clientWidth), height: el.clientHeight || 300 });
+    // Axis text follows the Text size setting, and the axes grow with it.
+    const s = rootTextScale();
     const axis = (label: string, splits: number[]): uPlot.Axis => ({
-      label, font: `11px ${FONT}`, labelFont: `11px ${FONT}`, labelGap: 0, stroke: () => tokens(el).muted, splits: () => splits, values: (_u, values) => values.map(v => String(+v.toPrecision(12))), gap: 8,
+      label, font: `${11 * s}px ${FONT}`, labelFont: `${11 * s}px ${FONT}`, labelGap: 0, stroke: () => tokens(el).muted, splits: () => splits, values: (_u, values) => values.map(v => String(+v.toPrecision(12))), gap: 8,
       grid: { stroke: () => tokens(el).line, width: 1 }, ticks: { show: false },
     });
     const u = new uPlot({
-      // Plot margins from the mockup: 10 px above, 12 px right; the axes take 58 px left and 44 px below.
+      // Plot margins from the mockup: 10 px above, 12 px right; at the Default text size the axes take 58 px left and 44 px below.
       ...size(), padding: [10, 12, 0, 0], legend: { show: false }, cursor: { show: false },
       scales: { x: { time: false, range: [0, x.top] }, y: { range: [yLow, y.top] } },
-      axes: [{ ...axis('Concentration (µmol/mol)', ticks(x.top, x.step)), size: 26, labelSize: 18, labelGap: 7 }, { ...axis('Mean signal (mV)', ticks(y.top, y.step, yLow)), size: 40, labelSize: 18 }],
+      axes: [{ ...axis('Concentration (µmol/mol)', ticks(x.top, x.step)), size: 26 * s, labelSize: 18 * s, labelGap: 7 }, { ...axis('Mean signal (mV)', ticks(y.top, y.step, yLow)), size: 40 * s, labelSize: 18 * s }],
       series: [{}, { label: 'Mean signal', paths: () => null, points: { show: false } }],
       hooks: { draw: [u => {
         const c = tokens(el), ctx = u.ctx, r = uPlot.pxRatio, { left, top, width, height } = u.bbox;
@@ -164,6 +168,6 @@ function CurvePlot({ standards, fit, axisMax, labelledBy }: { standards: Calibra
     observer.observe(el);
     return () => { observer.disconnect(); u.destroy(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, scheme]);
+  }, [key, scheme, textSize]);
   return <div ref={host} className="dv-curve-plot" role="img" aria-labelledby={labelledBy} />;
 }
