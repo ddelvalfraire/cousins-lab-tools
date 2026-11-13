@@ -485,6 +485,43 @@ test('screens follow the Storybook appearance global',async({page})=>{
   await expect(page.locator('html')).toHaveAttribute('data-mantine-color-scheme','light');
 });
 
+/** Counts calls to document.startViewTransition, still letting each one run. */
+const countViewTransitions = (page: Page) => page.evaluate(() => {
+  const start = document.startViewTransition.bind(document), counted = window as unknown as { viewTransitions: number };
+  counted.viewTransitions = 0;
+  document.startViewTransition = ((update: () => void) => { counted.viewTransitions++; return start(update); }) as typeof document.startViewTransition;
+});
+const viewTransitions = (page: Page) => page.evaluate(() => (window as unknown as { viewTransitions: number }).viewTransitions);
+
+test('appearance changes reveal the new scheme with a view transition, from a control or the system', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference', colorScheme: 'light' });
+  const html = page.locator('html');
+  await story(page, 'screens-experiments--home');
+  await countViewTransitions(page);
+  await page.getByRole('button', { name: 'Use dark appearance', exact: true }).click();
+  await expect(html).toHaveAttribute('data-mantine-color-scheme', 'dark');
+  expect(await viewTransitions(page), 'the window-bar button').toBe(1);
+  await expect(html).not.toHaveAttribute('data-dv-theme-reveal');
+
+  await story(page, 'screens-settings--appearance');
+  await countViewTransitions(page);
+  await page.getByRole('radio', { name: 'Match system', exact: true }).check();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(html).toHaveAttribute('data-mantine-color-scheme', 'dark');
+  expect(await viewTransitions(page), 'the system turning dark').toBe(1);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(html).toHaveAttribute('data-mantine-color-scheme', 'light');
+  expect(await viewTransitions(page), 'the system turning light').toBe(2);
+});
+
+test('under reduced motion appearance changes are instant, without a view transition', async ({ page }) => {
+  await story(page, 'screens-experiments--home');
+  await countViewTransitions(page);
+  await page.getByRole('button', { name: 'Use dark appearance', exact: true }).click();
+  expect(await page.locator('html').getAttribute('data-mantine-color-scheme'), 'applied by the time the click returns').toBe('dark');
+  expect(await viewTransitions(page)).toBe(0);
+});
+
 test('routine steps reorder without dragging and unsaveable steps block saving', async ({ page }) => {
   // The story's play test edits the routine on load, so only check what follows from these actions.
   await story(page, 'components-routineeditor--saved');
