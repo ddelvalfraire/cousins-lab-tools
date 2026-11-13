@@ -106,8 +106,8 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
   const clear = () => { onClearQuery(); setAnnouncement('Showing all experiments.'); };
 
   const actions = <>
-    <HeaderButton icon={<ReviewIcon name="upload" />} onClick={onImport}>Import recordings</HeaderButton>
-    <HeaderButton variant="primary" icon={<ReviewIcon name="plus" />} onClick={onNewExperiment}>New experiment</HeaderButton>
+    <HeaderButton icon={<ReviewIcon name="upload" />} onClick={onImport}>Import recordings…</HeaderButton>
+    <HeaderButton variant="primary" icon={<ReviewIcon name="plus" />} onClick={onNewExperiment}>New experiment…</HeaderButton>
   </>;
 
   const header = (key: SortKey, title: string) => {

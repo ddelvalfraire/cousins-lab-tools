@@ -80,9 +80,9 @@ export const RecentExperiments: Story = {
     await expect(args.onOpen).toHaveBeenLastCalledWith('exp-026');
     await userEvent.click(canvas.getByRole('button', { name: 'Enzyme assay · Extract 08' }));
     await expect(args.onOpen).toHaveBeenLastCalledWith('enz-08');
-    await userEvent.click(canvas.getByRole('button', { name: 'Import recordings' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Import recordings…' }));
     await expect(args.onImport).toHaveBeenCalledOnce();
-    await userEvent.click(canvas.getByRole('button', { name: 'New experiment' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'New experiment…' }));
     await expect(args.onNewExperiment).toHaveBeenCalledOnce();
 
     // Back to the default order, newest first, as the page opens.
@@ -99,10 +99,10 @@ export const FirstUse: Story = {
     await expect(canvas.getByRole('heading', { name: 'No experiments yet' })).toBeVisible();
     await expect(canvasElement.querySelector('table')).toBeNull();
     await expect(canvasElement.querySelectorAll('.dv-page-actions button')).toHaveLength(0);
-    await expect(canvas.getAllByRole('button', { name: 'New experiment' })).toHaveLength(1);
-    await userEvent.click(canvas.getByRole('button', { name: 'New experiment' }));
+    await expect(canvas.getAllByRole('button', { name: 'New experiment…' })).toHaveLength(1);
+    await userEvent.click(canvas.getByRole('button', { name: 'New experiment…' }));
     await expect(args.onNewExperiment).toHaveBeenCalledOnce();
-    await userEvent.click(canvas.getByRole('button', { name: 'Import recordings' }));
+    await userEvent.click(canvas.getByRole('button', { name: 'Import recordings…' }));
     await expect(args.onImport).toHaveBeenCalledOnce();
   },
 };

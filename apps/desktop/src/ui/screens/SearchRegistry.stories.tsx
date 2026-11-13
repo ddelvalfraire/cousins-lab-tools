@@ -60,14 +60,15 @@ export const PageTitlesMatchTheRegistry:Story={
   },
 };
 
-/** Actions say what the buttons, page and dialog they open say, apart from the ellipsis that marks further input. */
+/** Actions say what their buttons say, ellipsis included; the page and dialog they open drop the ellipsis that marks further input. */
 export const ActionTitlesMatchTheScreens:Story={
   args:{initialPage:'experiments'},
   play:async({canvasElement})=>{
     const canvas=within(canvasElement), body=within(canvasElement.ownerDocument.body);
-    const newExperiment=withoutEllipsis(titleOf(command('new-experiment'),{dark:false})), importRecordings=withoutEllipsis(titleOf(command('import-recordings'),{dark:false}));
-    await expect(canvas.getByRole('button',{name:newExperiment}),`The Experiments page button should read “${newExperiment}”, as the command does`).toBeVisible();
-    await expect(canvas.getByRole('button',{name:importRecordings}),`The Experiments page button should read “${importRecordings}”, as the command does`).toBeVisible();
+    const newTitle=titleOf(command('new-experiment'),{dark:false}), importTitle=titleOf(command('import-recordings'),{dark:false});
+    const newExperiment=withoutEllipsis(newTitle), importRecordings=withoutEllipsis(importTitle);
+    await expect(canvas.getByRole('button',{name:newTitle}),`The Experiments page button should read “${newTitle}”, as the command does`).toBeVisible();
+    await expect(canvas.getByRole('button',{name:importTitle}),`The Experiments page button should read “${importTitle}”, as the command does`).toBeVisible();
     await expect(canvas.getByRole('button',{name:appearanceTitle({dark:false})}),'The window bar appearance button and its command share a title').toBeVisible();
     await expect(canvas.getByRole('button',{name:titleOf(command('shortcuts'),{dark:false})}),'The window bar shortcuts button and its command share a title').toBeVisible();
     await expect(within(canvas.getByRole('search')).getByRole('button',{name:new RegExp(`^${titleOf(command('command-center'),{dark:false})}`)})).toBeVisible();

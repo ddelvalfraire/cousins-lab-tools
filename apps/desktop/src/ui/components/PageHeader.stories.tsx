@@ -18,7 +18,7 @@ const header = (canvasElement: HTMLElement) => canvasElement.querySelector<HTMLE
 /** Experiments · catalog: count beside the title, two header buttons. */
 export const Collection: Story = {
   args: {
-    actions: <><HeaderButton icon={<IconUpload aria-hidden />}>Import recordings</HeaderButton><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>New experiment</HeaderButton></>,
+    actions: <><HeaderButton icon={<IconUpload aria-hidden />}>Import recordings…</HeaderButton><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>New experiment…</HeaderButton></>,
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);

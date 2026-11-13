@@ -130,7 +130,7 @@ test('scientific quantity conversion keeps the stored value and rejects values i
 
 test('screen navigation preserves preparation settings and stopping opens recorded mode', async ({ page }) => {
   await story(page, 'screens-experiments--home');
-  await page.getByRole('button',{ name:'New experiment',exact:true }).click();
+  await page.getByRole('button',{ name:'New experiment…',exact:true }).click();
   await page.getByLabel('Experiment name',{exact:true}).fill('Prepared specimen');
   await page.locator('label').filter({hasText:'Instrument stream'}).click();
   await expect(page.getByRole('radio',{name:'Instrument stream'})).toBeChecked();
