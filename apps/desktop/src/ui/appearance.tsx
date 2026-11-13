@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { flushSync } from 'react-dom';
 import { localStorageColorSchemeManager, MantineProvider, useComputedColorScheme, useMantineColorScheme, type MantineColorScheme, type MantineProviderProps } from '@mantine/core';
 import { switchColorScheme, type RevealOrigin } from './colorSchemeTransition';
+import { applyTextSize, readTextSize, TEXT_SIZE_KEY, isTextSize, writeTextSize, type TextSize } from './textSize';
 
 export type AppearancePreference = 'system' | 'light' | 'dark';
 export type ColorScheme = 'light' | 'dark';
@@ -15,6 +16,9 @@ export interface Appearance {
   setPreference: (preference: AppearancePreference, origin?: AppearanceOrigin) => void;
   /** Switches to the opposite of the scheme on screen. */
   toggle: (origin?: AppearanceOrigin) => void;
+  /** The Text size setting, applied as the root font size. */
+  textSize: TextSize;
+  setTextSize: (size: TextSize) => void;
 }
 
 export const STORAGE_KEY = 'dvdash-color-scheme';
@@ -35,6 +39,9 @@ export interface AppearanceProviderProps extends Omit<MantineProviderProps, 'for
   onPreferenceChange?: (preference: AppearancePreference) => void;
   /** Uncontrolled starting preference when nothing is saved. */
   defaultPreference?: AppearancePreference;
+  /** Controlled text size. Without it the provider keeps its own and saves it in local storage. */
+  textSize?: TextSize;
+  onTextSizeChange?: (size: TextSize) => void;
   children?: ReactNode;
 }
 
@@ -42,8 +49,10 @@ export interface AppearanceProviderProps extends Omit<MantineProviderProps, 'for
  * Owns the colour scheme: the saved or controlled preference, the system scheme and the scheme on screen. Every change,
  * whether a control, another window or the system, reaches the screen through one effect that runs the reveal.
  * Mantine only ever sees the result, through forceColorScheme, because its own "auto" mode repaints outside React.
+
+ * It also owns the text size, which it writes to the root element as data-dv-text-size (textSize.ts).
  */
-export function AppearanceProvider({ preference: controlled, onPreferenceChange, defaultPreference = 'system', children, ...mantine }: AppearanceProviderProps) {
+export function AppearanceProvider({ preference: controlled, onPreferenceChange, defaultPreference = 'system', textSize: controlledTextSize, onTextSizeChange, children, ...mantine }: AppearanceProviderProps) {
   const [manager] = useState(() => localStorageColorSchemeManager({ key: STORAGE_KEY }));
   const [stored, setStored] = useState(() => fromMantine(manager.get(toMantine(defaultPreference))));
   const [os, setOs] = useState(systemScheme);
@@ -55,6 +64,8 @@ export function AppearanceProvider({ preference: controlled, onPreferenceChange,
   const pending = useRef<{ target: ColorScheme; origin: RevealOrigin | null } | null>(null);
   const pointer = useRef<{ x: number; y: number; at: number } | null>(null);
   const inEffect = useRef(false);
+  const [storedTextSize, setStoredTextSize] = useState(() => readTextSize());
+  const textSize = controlledTextSize ?? storedTextSize;
 
   useEffect(() => {
     if (controlled !== undefined) return;
@@ -91,6 +102,23 @@ export function AppearanceProvider({ preference: controlled, onPreferenceChange,
   }, [target, applied]);
 
   useLayoutEffect(() => { document.documentElement.setAttribute('data-mantine-color-scheme', applied); }, [applied]);
+  // A layout effect, like the scheme above, so the saved size is on the root before the first paint.
+  useLayoutEffect(() => { applyTextSize(textSize); }, [textSize]);
+
+  useEffect(() => {
+    if (controlledTextSize !== undefined) return;
+    const changed = (event: StorageEvent) => { if (event.key === TEXT_SIZE_KEY) setStoredTextSize(isTextSize(event.newValue) ? event.newValue : 'default'); };
+    window.addEventListener('storage', changed);
+    return () => window.removeEventListener('storage', changed);
+  }, [controlledTextSize]);
+
+  const textSizeChange = useRef(onTextSizeChange);
+  textSizeChange.current = onTextSizeChange;
+  const controlsTextSize = controlledTextSize !== undefined;
+  const setTextSize = useCallback((next: TextSize) => {
+    if (!controlsTextSize) { writeTextSize(next); setStoredTextSize(next); }
+    textSizeChange.current?.(next);
+  }, [controlsTextSize]);
 
   const setPreference = useCallback((next: AppearancePreference, from?: AppearanceOrigin) => {
     const now = latest.current, recent = pointer.current && performance.now() - pointer.current.at < POINTER_ORIGIN_MS ? pointer.current : null;
@@ -106,12 +134,16 @@ export function AppearanceProvider({ preference: controlled, onPreferenceChange,
   const value = useMemo<Appearance>(() => ({
     preference, scheme: applied, setPreference,
     toggle: origin => setPreference(applied === 'dark' ? 'light' : 'dark', origin),
-  }), [preference, applied, setPreference]);
+    textSize, setTextSize,
+  }), [preference, applied, setPreference, textSize, setTextSize]);
 
   return <AppearanceContext.Provider value={value}><MantineProvider {...mantine} forceColorScheme={applied}>{children}</MantineProvider></AppearanceContext.Provider>;
 }
 
-/** The app's colour scheme. Outside an AppearanceProvider it falls back to Mantine's own scheme, without the reveal. */
+/**
+ * The app's colour scheme and text size. Outside an AppearanceProvider it falls back to Mantine's own scheme, without
+ * the reveal, and to the Default text size.
+ */
 export function useAppearance(): Appearance {
   const context = useContext(AppearanceContext);
   const computed = useComputedColorScheme('light'), { colorScheme, setColorScheme } = useMantineColorScheme();
@@ -119,6 +151,7 @@ export function useAppearance(): Appearance {
     preference: fromMantine(colorScheme), scheme: computed,
     setPreference: preference => setColorScheme(toMantine(preference)),
     toggle: () => setColorScheme(computed === 'dark' ? 'light' : 'dark'),
+    textSize: 'default', setTextSize: () => {},
   }), [colorScheme, computed, setColorScheme]);
   return context ?? fallback;
 }

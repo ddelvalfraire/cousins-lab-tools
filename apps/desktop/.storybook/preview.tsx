@@ -5,29 +5,41 @@ import '@mantine/core/styles.css';
 import 'uplot/dist/uPlot.min.css';
 import { dvdashTheme } from '../src/ui/theme';
 import { AppearanceProvider, type AppearancePreference } from '../src/ui/appearance';
+import { isTextSize, type TextSize } from '../src/ui/textSize';
 import '../src/ui/dvdash.css';
 import '../src/ui/screens/screens.css';
 import { StoryFrame } from './StoryFrame';
 import './preview.css';
 
 const asPreference = (value: unknown): AppearancePreference => value === 'dark' || value === 'system' ? value : 'light';
+const asTextSize = (value: unknown): TextSize => isTextSize(value) ? value : 'default';
+
+/** A value a global drives, which a story may change and write back. */
+function useGlobalCopy<T>(global: T) {
+  const [value, setValue] = useState(global), [seen, setSeen] = useState(global);
+  if (seen !== global) { setSeen(global); setValue(global); }
+  return [value, setValue] as const;
+}
 
 /**
- * The appearance global drives the preference, and changes made in a story write it back. The story keeps its own copy
- * too, because portable story tests have no manager to answer a globals update.
+ * The appearance and textSize globals drive the preference and the text size, and changes made in a story write them
+ * back. The story keeps its own copy too, because portable story tests have no manager to answer a globals update.
  */
-function StoryAppearance({ global, onChange, children }: { global: AppearancePreference; onChange: (preference: AppearancePreference) => void; children: ReactNode }) {
-  const [preference, setPreference] = useState(global), [seen, setSeen] = useState(global);
-  if (seen !== global) { setSeen(global); setPreference(global); }
-  return <AppearanceProvider theme={dvdashTheme} preference={preference} onPreferenceChange={next => { setPreference(next); onChange(next); }}>{children}</AppearanceProvider>;
+function StoryAppearance({ global, textSize: globalTextSize, onChange, children }: { global: AppearancePreference; textSize: TextSize; onChange: (globals: { appearance?: AppearancePreference; textSize?: TextSize }) => void; children: ReactNode }) {
+  const [preference, setPreference] = useGlobalCopy(global), [textSize, setTextSize] = useGlobalCopy(globalTextSize);
+  return <AppearanceProvider theme={dvdashTheme} preference={preference} onPreferenceChange={next => { setPreference(next); onChange({ appearance: next }); }}
+    textSize={textSize} onTextSizeChange={next => { setTextSize(next); onChange({ textSize: next }); }}>{children}</AppearanceProvider>;
 }
 
 const preview: Preview = {
-  initialGlobals: { appearance: 'light' },
-  globalTypes: { appearance: { description: 'Application appearance', toolbar: { icon: 'circlehollow', items: ['light', 'dark', 'system'], dynamicTitle: true } } },
+  initialGlobals: { appearance: 'light', textSize: 'default' },
+  globalTypes: {
+    appearance: { description: 'Application appearance', toolbar: { icon: 'circlehollow', items: ['light', 'dark', 'system'], dynamicTitle: true } },
+    textSize: { description: 'Text size setting', toolbar: { icon: 'paragraph', items: ['default', 'large', 'larger', 'largest'], dynamicTitle: true } },
+  },
   decorators: [(Story, context) => {
     const [, updateGlobals] = useGlobals();
-    return <StoryAppearance global={asPreference(context.globals.appearance)} onChange={appearance => updateGlobals({ appearance })}>
+    return <StoryAppearance global={asPreference(context.globals.appearance)} textSize={asTextSize(context.globals.textSize)} onChange={updateGlobals}>
       <StoryFrame width={context.parameters.previewWidth}><div className="dvdash"><Story /></div></StoryFrame>
     </StoryAppearance>;
   }],

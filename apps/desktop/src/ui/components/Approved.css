@@ -59,6 +59,11 @@
   --dv-motion-fast: 120ms; --dv-motion-base: 180ms; --dv-motion-slow: 240ms; --dv-motion-reveal: 420ms;
   --dv-ease-out: cubic-bezier(.22, 1, .36, 1); --dv-ease-in-out: cubic-bezier(.4, 0, .2, 1);
 }
+/* Text size setting (textSize.ts): the root font size every rem follows. Default leaves the browser's 16 px. These are
+   on html, not .dvdash, so Mantine's portalled lists, dialogs and tooltips scale too. */
+html[data-dv-text-size='large'] { font-size: 112.5%; }
+html[data-dv-text-size='larger'] { font-size: 125%; }
+html[data-dv-text-size='largest'] { font-size: 150%; }
 /* Colour scheme reveal (colorSchemeTransition.ts): the new scheme grows over the old one as a circle, without the default cross-fade. */
 html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 /* Presence (Motion.tsx): a collapsing wrapper keeps its children's margins, so its measured height is its real height. */
