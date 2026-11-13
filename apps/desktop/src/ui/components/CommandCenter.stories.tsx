@@ -11,7 +11,7 @@ const items: CommandItem[] = [
   { id: 'import', kind: 'actions', title: 'Import recordings…', icon: <CommandGlyph name="import" />, keys: ['I'], featured: true, keywords: 'open file csv import recording data' },
   { id: 'go-presets', kind: 'actions', title: 'Go to Presets', icon: <CommandGlyph name="preset" />, keys: ['G', 'P'], sequence: true, keywords: 'go navigation' },
   { id: 'shortcuts', kind: 'actions', title: 'Show keyboard shortcuts', icon: <CommandGlyph name="keyboard" />, keys: ['?'], keywords: 'help keyboard shortcuts hotkeys commands' },
-  { id: 'theme', kind: 'settings', title: 'Theme', meta: 'Settings · Appearance', icon: <CommandGlyph name="sun" />, end: 'Light', keywords: 'preferences display light dark mode appearance' },
+  { id: 'theme', kind: 'settings', title: 'Theme', meta: 'Settings · Appearance', icon: <CommandGlyph name="sun" />, end: 'Light', featured: true, keywords: 'preferences display light dark mode appearance' },
   { id: 'exp025', kind: 'experiments', title: 'Leaf respiration', meta: 'Sample 025 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, end: <StatusWord tone="accent" icon={<ReviewIcon name="signals" />}>Running</StatusWord>, keywords: 'mass 44 mass 45 MS-01', recent: true },
   { id: 'exp021', kind: 'experiments', title: 'Réponse du dioxyde de carbone pendant la variation de température', meta: 'Échantillon 021 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, keywords: 'carbon dioxide mass 44' },
   { id: 'preco2', kind: 'presets', title: 'CO₂ & O₂ analysis', meta: '10 panels · Gas signals and derived values', icon: <CommandGlyph name="preset" />, end: <><CommandGlyph name="history" />R3</>, keywords: 'mass 44 mass 45 leaf respiration' },
@@ -38,7 +38,7 @@ type Story = StoryObj<typeof meta>;
 
 const groupNames = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('[role=listbox] [role=group]')].map(group => group.getAttribute('aria-label'));
 
-/** Nothing typed: suggested actions, every setting and recent records. */
+/** Nothing typed: suggested actions and settings, and recent records. */
 export const Suggested: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);

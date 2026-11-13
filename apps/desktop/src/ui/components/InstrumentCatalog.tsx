@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { pages } from '../search-registry';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
 import {
@@ -149,7 +150,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'channels', label: 'Channels', icon: <SidebarIcon name="signals" /> }, { id: 'connect', label: 'Connect', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Instruments">
-    <PageHeader title="Instruments" breadcrumbs={breadcrumbs} count={rows.length} />
+    <PageHeader title={pages.instruments.title} breadcrumbs={breadcrumbs} count={rows.length} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)} />

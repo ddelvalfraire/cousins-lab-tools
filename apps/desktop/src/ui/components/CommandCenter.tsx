@@ -28,7 +28,7 @@ export interface CommandItem {
   keys?: readonly string[];
   /** The keys are pressed one after the other (G then E). */
   sequence?: boolean;
-  /** An action listed before anything is typed. Settings are always listed. */
+  /** An action or setting listed before anything is typed. Every one is listed under its own result type. */
   featured?: boolean;
   /** A catalog record listed under Recent before anything is typed. */
   recent?: boolean;
@@ -49,13 +49,13 @@ export function matchesSearch(item: Pick<CommandItem, 'title' | 'meta' | 'keywor
 }
 
 /**
- * Groups to show for a query and result type. Before anything is typed: suggested actions, settings and recent
+ * Groups to show for a query and result type. Before anything is typed: suggested actions and settings, and recent
  * records. Once typed, the group holding the closest title match comes first.
  */
 export function findCommands<T extends CommandItem>(items: readonly T[], query: string, category: CommandCategory = 'all'): CommandGroup<T>[] {
   const q = normalizeSearch(query).trim();
   let found = items.filter(item => (category === 'all' || item.kind === category) && matchesSearch(item, query));
-  if (!q) found = found.filter(item => item.kind === 'actions' || item.kind === 'settings' ? category !== 'all' || item.kind === 'settings' || !!item.featured : !!item.recent);
+  if (!q) found = found.filter(item => item.kind === 'actions' || item.kind === 'settings' ? category !== 'all' || !!item.featured : !!item.recent);
   const closeness = (item: CommandItem) => {
     const title = normalizeSearch(item.title);
     return title === q ? 0 : title.startsWith(q) ? 1 : title.includes(q) ? 2 : normalizeSearch(item.meta ?? '').includes(q) ? 3 : 4;

@@ -10,6 +10,7 @@ import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import type { StatusTone } from './Chip';
 import './ExperimentsList.css';
 import { ScrollFrame } from './ScrollFrame';
+import { pages } from '../search-registry';
 
 export type ExperimentStatus = 'running' | 'recorded' | 'interrupted';
 
@@ -185,7 +186,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
   }
 
   return <section className="dv-exp" aria-labelledby={hideHeader ? undefined : titleId} aria-label={hideHeader ? 'Experiments' : undefined}>
-    {!hideHeader && <PageHeader title="Experiments" titleId={titleId} breadcrumbs={breadcrumbs} count={experiments.length ? noun(experiments.length) : undefined} actions={experiments.length > 0 ? actions : undefined} />}
+    {!hideHeader && <PageHeader title={pages.experiments.title} titleId={titleId} breadcrumbs={breadcrumbs} count={experiments.length ? noun(experiments.length) : undefined} actions={experiments.length > 0 ? actions : undefined} />}
     <div className="dv-exp-body">{content}</div>
     <div className="dv-exp-sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
   </section>;

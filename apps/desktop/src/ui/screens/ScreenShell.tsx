@@ -9,7 +9,7 @@ import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellS
 import './screens.css';
 import { ScrollFrame } from '../components/ScrollFrame';
 import { useAppearance } from '../appearance';
-import { appearanceTitle, commands as registryCommands, glyphOf, matchShortcut, sequenceHint, shortcutSectionsFor, titleOf, type CommandId, type SequenceStart } from '../search-registry';
+import { appearanceTitle, commands as registryCommands, glyphOf, matchShortcut, sequenceHint, settingsRecords, shortcutSectionsFor, titleOf, type CommandId, type SequenceStart } from '../search-registry';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
 export type Navigate = (page:ScreenRoute, id?:string) => void;
@@ -65,7 +65,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
-  const context = { dark };
+  const context = { dark, appearance:appearance.preference };
   /** What each command does in this window. A command without a handler is left out of search, the shortcuts dialog and the keys. */
   const handlers:Record<CommandId,(()=>void)|undefined> = {
     'new-experiment':onNewExperiment, 'import-recordings':onImportRecordings,
@@ -79,8 +79,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const commands:ShellCommand[] = [
     ...available.filter(entry => entry.inSearch!==false).map((entry):ShellCommand => ({ id:entry.id, kind:'actions', title:titleOf(entry, context), icon:<CommandGlyph name={glyphOf(entry, context)}/>,
       keys:entry.keys, sequence:entry.sequence, keywords:entry.keywords, featured:entry.featured, run:handlers[entry.id]! })),
-    { id:'theme', kind:'settings', title:'Theme', meta:'Settings · Appearance', icon:<CommandGlyph name="sun"/>, end:dark?'Dark':'Light', keywords:'preferences display light dark mode appearance', run:()=>go('settings') },
-    { id:'folder', kind:'settings', title:'Recordings folder', meta:'Settings · Recordings', icon:<CommandGlyph name="storage"/>, keywords:'preferences recordings results storage files folder local device', run:()=>go('settings') },
+    ...settingsRecords(context).map(({ glyph, page:to, target, ...record }):ShellCommand => ({ ...record, kind:'settings', icon:<CommandGlyph name={glyph}/>, run:()=>go(to) })),
     ...searchRecords.map(record => ({ ...record, run:()=>go(record.page, record.pageId) })),
   ];
 

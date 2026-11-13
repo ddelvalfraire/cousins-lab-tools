@@ -7,15 +7,19 @@
  * - A page: add it to `pages`. Its title is the page heading, and its "Go to" command comes from `pageCommands`.
  * - An action: add it to `commands`, then give it a handler in ScreenShell (the handler map is typed by command id, so
  *   a missing one fails the type check). Keys put it in the shortcuts dialog and the key handler as well.
+ * - A setting: add a field to its section in `settings`, then render the field on the Settings page with
+ *   `data-search-target={settingTarget(section, field)}` on its box and its label from here. It is then searchable,
+ *   and choosing it scrolls to the field, focuses it and highlights it. A new section works the same way.
  * - Catalog records (experiments, presets, routines, instruments) come from data, not from here.
  *
  * search-registry.test.ts and the Screens/Search registry stories fail with what to add when the lists and the pages
  * drift apart.
  */
 import type { CommandGlyphName } from './components/CommandCenter';
+import type { AppearancePreference } from './appearance';
 
 /** What a title or detail may depend on. */
-export interface SearchContext { dark: boolean }
+export interface SearchContext { dark: boolean; appearance?: AppearancePreference }
 
 export type PageId = 'experiments' | 'presets' | 'routines' | 'instruments' | 'settings';
 export interface PageEntry { title: string; glyph: CommandGlyphName; keys: readonly string[]; sequence?: boolean; keywords?: string }
@@ -131,4 +135,57 @@ export function matchShortcut(entries: readonly CommandEntry[], press: KeyPress,
 export function sequenceHint(entries: readonly CommandEntry[], first: string) {
   const next = entries.filter(entry => entry.sequence && entry.keys && same(entry.keys[0], first));
   return `Go to: ${next.map(entry => `${entry.keys![1]} ${entry.page ? pages[entry.page].title : titleOf(entry, { dark: false })}`).join(', ')}.`;
+}
+
+/** The Settings page's theme choices, also the Theme result's current value. */
+export const themeOptions: readonly { value: AppearancePreference; label: string }[] = [{ value: 'system', label: 'Match system' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
+
+export interface SettingField {
+  /** The field's label on the page. */
+  label: string;
+  keywords?: string;
+  /** Listed under Settings before anything is typed. */
+  featured?: boolean;
+  /** The setting's current value, shown at the end of its row. */
+  value?: (context: SearchContext) => string | undefined;
+}
+export interface SettingsSectionEntry { label: string; description: string; glyph: CommandGlyphName; keywords?: string; fields: Readonly<Record<string, SettingField>> }
+
+/** The Settings page's sections, in page order, and the fields in each. The page renders its headings and labels from here. */
+export const settings = {
+  appearance: { label: 'Appearance', description: 'How DVDash looks.', glyph: 'sun', keywords: 'display look', fields: {
+    theme: { label: 'Theme', keywords: 'light dark mode match system colours colors', featured: true, value: ({ appearance }) => themeOptions.find(option => option.value === appearance)?.label },
+  } },
+  numbers: { label: 'Numbers', description: 'How values are shown on screen and written to exported files.', glyph: 'settings', keywords: 'number format', fields: {
+    decimal: { label: 'Decimal separator', keywords: 'decimal marker point comma locale' },
+  } },
+  recordings: { label: 'Recordings', description: 'Where new recordings are saved.', glyph: 'storage', keywords: 'data storage files local device', fields: {
+    folder: { label: 'Recordings folder', keywords: 'folder location path directory save storage files', featured: true },
+  } },
+  export: { label: 'Export', description: 'Defaults for exported data files. You can still change them when exporting.', glyph: 'settings', keywords: 'csv spreadsheet data files', fields: {
+    delimiter: { label: 'Column separator in CSV files', keywords: 'csv delimiter comma semicolon tab spreadsheet' },
+  } },
+  about: { label: 'About', description: 'Include these details when reporting a problem.', glyph: 'settings', keywords: 'version commit release build platform runtime logs settings file', fields: {
+    report: { label: 'Report a problem', keywords: 'bug issue feedback github' },
+  } },
+} as const satisfies Record<string, SettingsSectionEntry>;
+
+export type SettingsSectionId = keyof typeof settings;
+export type SettingFieldId<S extends SettingsSectionId> = keyof (typeof settings)[S]['fields'] & string;
+
+/** The id of a section or field on the Settings page: its `data-search-target` and its search result's target. */
+export const settingTarget = <S extends SettingsSectionId>(section: S, field?: SettingFieldId<S>) => field ? `settings.${section}.${field}` : `settings.${section}`;
+
+/** A search result that opens a page at a place on it. */
+export interface TargetRecord { id: string; title: string; meta: string; keywords?: string; glyph: CommandGlyphName; featured?: boolean; end?: string; page: PageId; target: string }
+
+/** Settings results: each section ("Numbers", under "Settings") and each field ("Decimal separator", under "Settings · Numbers"). */
+export function settingsRecords(context: SearchContext): TargetRecord[] {
+  return (Object.entries(settings) as [SettingsSectionId, SettingsSectionEntry][]).flatMap(([id, section]) => [
+    { id: settingTarget(id), title: section.label, meta: pages.settings.title, keywords: `${section.description} ${section.keywords ?? ''}`.trim(), glyph: section.glyph, page: 'settings' as const, target: settingTarget(id) },
+    ...Object.entries(section.fields).map(([field, entry]) => ({
+      id: `settings.${id}.${field}`, title: entry.label, meta: `${pages.settings.title} · ${section.label}`, keywords: entry.keywords, glyph: section.glyph,
+      featured: entry.featured, end: entry.value?.(context), page: 'settings' as const, target: `settings.${id}.${field}`,
+    })),
+  ]);
 }

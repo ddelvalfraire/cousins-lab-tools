@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { formatClockTime } from '../time';
+import { pages } from '../search-registry';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
 import {
@@ -173,7 +174,7 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
   </>;
 
   return <CatalogRoot label="Presets">
-    <PageHeader title="Presets" breadcrumbs={breadcrumbs} count={rows.length} actions={actions || undefined} />
+    <PageHeader title={pages.presets.title} breadcrumbs={breadcrumbs} count={rows.length} actions={actions || undefined} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)}>

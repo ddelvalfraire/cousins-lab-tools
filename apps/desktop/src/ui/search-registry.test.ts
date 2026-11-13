@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commands, matchShortcut, pages, sequenceHint, shortcutSectionsFor, titleOf, SEQUENCE_MS, type KeyPress, type PageId } from './search-registry';
+import { commands, matchShortcut, pages, sequenceHint, settings, settingsRecords, shortcutSectionsFor, titleOf, SEQUENCE_MS, type KeyPress, type PageId } from './search-registry';
 
 const press = (key: string, extra: Partial<KeyPress> = {}): KeyPress => ({ key, mod: false, otherModifier: false, inTextField: false, ...extra });
 const keyed = commands.filter(entry => entry.keys);
@@ -64,5 +64,26 @@ describe('search registry: shortcuts', () => {
       expect(command && titleOf(command, { dark: false }), `pages.${id} needs a "Go to" command`).toBe(`Go to ${page.title}`);
     }
     expect(sequenceHint(commands, 'g')).toBe('Go to: E Experiments, P Presets, R Routines, I Instruments.');
+  });
+});
+
+describe('search registry: settings', () => {
+  const records = settingsRecords({ dark: false, appearance: 'system' });
+
+  it('makes every declared section and field a result titled with its label, under its section', () => {
+    for (const [id, section] of Object.entries(settings)) {
+      expect(records.find(record => record.id === `settings.${id}`), `settings.${id}`).toMatchObject({ title: section.label, meta: 'Settings', target: `settings.${id}` });
+      for (const [field, entry] of Object.entries(section.fields)) expect(records.find(record => record.id === `settings.${id}.${field}`), `settings.${id}.${field}`).toMatchObject({ title: entry.label, meta: `Settings · ${section.label}`, page: 'settings' });
+    }
+  });
+
+  it('gives every result its own id', () => {
+    const ids = [...records.map(record => record.id), ...commands.map(entry => entry.id)];
+    expect(ids.filter((id, i) => ids.indexOf(id) !== i), 'Rename these registry entries so each id is unique').toEqual([]);
+  });
+
+  it('shows the current theme preference on the Theme result', () => {
+    expect(records.find(record => record.id === 'settings.appearance.theme')?.end).toBe('Match system');
+    expect(settingsRecords({ dark: true, appearance: 'dark' }).find(record => record.id === 'settings.appearance.theme')?.end).toBe('Dark');
   });
 });

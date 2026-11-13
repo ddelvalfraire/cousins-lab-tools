@@ -5,6 +5,7 @@ import { Presence } from './Motion';
 import { chosen, selectAria } from './select';
 import { ReviewIcon } from './ReviewIcons';
 import type { AppearancePreference } from '../appearance';
+import { settings as declared, settingTarget, themeOptions, type SettingsSectionId } from '../search-registry';
 import './Approved.css';
 import './SettingsPage.css';
 
@@ -57,8 +58,8 @@ export interface SettingsPageProps {
 }
 
 export const REPOSITORY_URL = 'https://github.com/ddelvalfraire/cousins-lab-tools';
-const LABELS: Record<SettingKey, string> = { theme: 'Theme', decimal: 'Decimal separator', folder: 'Recordings folder', delimiter: 'Column separator' };
-const THEMES: { value: ThemePreference; label: string }[] = [{ value: 'system', label: 'Match system' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
+/** Field labels from the search registry, which also makes them searchable. */
+const LABELS: Record<SettingKey, string> = { theme: declared.appearance.fields.theme.label, decimal: declared.numbers.fields.decimal.label, folder: declared.recordings.fields.folder.label, delimiter: declared.export.fields.delimiter.label };
 const MARK_MS = 2400;
 
 export function formatReading(value: number, separator: 'point' | 'comma') {
@@ -90,7 +91,6 @@ export function reportProblemUrl(build: BuildInfo) {
 }
 
 /** Application preferences. Each change saves immediately and shows a Saved mark. */
-const FIELD = { decimal: 'Decimal separator', delimiter: 'Column separator in CSV files' };
 const SEPARATORS = [{ value: 'comma', label: 'Comma' }, { value: 'semicolon', label: 'Semicolon' }, { value: 'tab', label: 'Tab' }];
 
 export function SettingsPage({ settings, build, folderState, systemDecimal = 'point', onChange, onChooseFolder, onCopyCommit, hideHeader = false }: SettingsPageProps) {
@@ -156,6 +156,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
   const releaseUrl = build.tag ? `${REPOSITORY_URL}/releases/tag/${build.tag}` : null;
   const ids = { title: `${id}-title`, folder: `${id}-folder`, folderHint: `${id}-folder-hint`, decimal: `${id}-decimal`, decimalHint: `${id}-decimal-hint`, delimiter: `${id}-delimiter`, delimiterHint: `${id}-delimiter-hint`, exportMessage: `${id}-export-message` };
   const section = (key: string) => `${id}-s-${key}`;
+  /** A section's heading and lead from the registry. The heading takes focus when search opens the section. */
+  const heading = (key: SettingsSectionId) => <div><h3 id={section(key)} data-search-focus="">{declared[key].label}</h3><p className="dv-settings-lead">{declared[key].description}</p></div>;
 
   return (
     <section className="dv-settings" data-header={hideHeader ? 'hidden' : undefined} aria-labelledby={hideHeader ? undefined : ids.title} aria-label={hideHeader ? 'Settings' : undefined}>
@@ -169,13 +171,13 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           <span className="dv-settings-saved" aria-hidden="true"><Presence show={saved} variant="fade" className="dv-settings-saved-mark"><ReviewIcon name="check" />Saved</Presence></span>
         </header>}
       <div className="dv-settings-content">
-        <section className="dv-settings-section" aria-labelledby={section('appearance')}>
-          <div><h3 id={section('appearance')}>Appearance</h3><p className="dv-settings-lead">How DVDash looks.</p></div>
+        <section className="dv-settings-section" aria-labelledby={section('appearance')} data-search-target={settingTarget('appearance')}>
+          {heading('appearance')}
           <div className="dv-settings-fields">
-            <fieldset>
-              <legend>Theme</legend>
+            <fieldset data-search-target={settingTarget('appearance', 'theme')}>
+              <legend>{LABELS.theme}</legend>
               <div className="dv-settings-segmented">
-                {THEMES.map(theme => (
+                {themeOptions.map(theme => (
                   <label key={theme.value}>
                     <input type="radio" name={`${id}-theme`} value={theme.value} checked={settings.theme === theme.value} onChange={() => onChange('theme', theme.value)} />
                     {theme.label}
@@ -186,12 +188,12 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           </div>
         </section>
 
-        <section className="dv-settings-section" aria-labelledby={section('numbers')}>
-          <div><h3 id={section('numbers')}>Numbers</h3><p className="dv-settings-lead">How values are shown on screen and written to exported files.</p></div>
+        <section className="dv-settings-section" aria-labelledby={section('numbers')} data-search-target={settingTarget('numbers')}>
+          {heading('numbers')}
           <div className="dv-settings-fields">
-            <div className="dv-settings-field">
-              <label htmlFor={ids.decimal}>{FIELD.decimal}</label>
-              <Select id={ids.decimal} aria-label={FIELD.decimal} {...selectAria({ describedBy: ids.decimalHint })} value={settings.decimal} onChange={chosen(value => onChange('decimal', value as DecimalPreference))}
+            <div className="dv-settings-field" data-search-target={settingTarget('numbers', 'decimal')}>
+              <label htmlFor={ids.decimal}>{LABELS.decimal}</label>
+              <Select id={ids.decimal} aria-label={LABELS.decimal} {...selectAria({ describedBy: ids.decimalHint })} value={settings.decimal} onChange={chosen(value => onChange('decimal', value as DecimalPreference))}
                 data={[{ value: 'system', label: `Match system (${systemDecimal})` }, { value: 'point', label: 'Point · 1,234.56' }, { value: 'comma', label: 'Comma · 1 234,56' }]} />
               <span className="dv-settings-hint" id={ids.decimalHint}>Number fields accept both a point and a comma, whatever is chosen here.</span>
             </div>
@@ -202,11 +204,11 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           </div>
         </section>
 
-        <section className="dv-settings-section" aria-labelledby={section('recordings')}>
-          <div><h3 id={section('recordings')}>Recordings</h3><p className="dv-settings-lead">Where new recordings are saved.</p></div>
+        <section className="dv-settings-section" aria-labelledby={section('recordings')} data-search-target={settingTarget('recordings')}>
+          {heading('recordings')}
           <div className="dv-settings-fields">
-            <div className="dv-settings-field">
-              <span id={ids.folder}>Recordings folder</span>
+            <div className="dv-settings-field" data-search-target={settingTarget('recordings', 'folder')}>
+              <span id={ids.folder}>{LABELS.folder}</span>
               <div className="dv-settings-folder">
                 <div className="dv-settings-path" role="group" aria-labelledby={ids.folder} data-testid="folder-path">
                   <ReviewIcon name="folder" /><span>{settings.folder}</span>
@@ -226,12 +228,12 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           </div>
         </section>
 
-        <section className="dv-settings-section" aria-labelledby={section('export')}>
-          <div><h3 id={section('export')}>Export</h3><p className="dv-settings-lead">Defaults for exported data files. You can still change them when exporting.</p></div>
+        <section className="dv-settings-section" aria-labelledby={section('export')} data-search-target={settingTarget('export')}>
+          {heading('export')}
           <div className="dv-settings-fields">
-            <div className="dv-settings-field">
-              <label htmlFor={ids.delimiter}>{FIELD.delimiter}</label>
-              <Select id={ids.delimiter} aria-label={FIELD.delimiter} ref={delimiterSelect} {...selectAria({ describedBy: `${ids.delimiterHint} ${ids.exportMessage}`, invalid: conflict })} value={settings.delimiter}
+            <div className="dv-settings-field" data-search-target={settingTarget('export', 'delimiter')}>
+              <label htmlFor={ids.delimiter}>{LABELS.delimiter}</label>
+              <Select id={ids.delimiter} aria-label={LABELS.delimiter} ref={delimiterSelect} {...selectAria({ describedBy: `${ids.delimiterHint} ${ids.exportMessage}`, invalid: conflict })} value={settings.delimiter}
                 data={SEPARATORS} onChange={chosen(value => onChange('delimiter', value as ColumnSeparator))} />
               <span className="dv-settings-hint" id={ids.delimiterHint}>Spreadsheets in regions that use a decimal comma usually expect semicolons.</span>
             </div>
@@ -246,8 +248,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
           </div>
         </section>
 
-        <section className="dv-settings-section" aria-labelledby={section('about')}>
-          <div><h3 id={section('about')}>About</h3><p className="dv-settings-lead">Include these details when reporting a problem.</p></div>
+        <section className="dv-settings-section" aria-labelledby={section('about')} data-search-target={settingTarget('about')}>
+          {heading('about')}
           <div className="dv-settings-fields">
             <dl className="dv-settings-about" data-testid="about">
               <dt>Version</dt>
@@ -273,8 +275,8 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
               <dt>Settings file</dt><dd><code>{build.settingsFile}</code></dd>
               <dt>Logs</dt><dd><code>{build.logs}</code></dd>
             </dl>
-            <div className="dv-settings-actions">
-              <a className="dv-settings-button" href={reportProblemUrl(build)} target="_blank" rel="noreferrer"><ReviewIcon name="external" />Report a problem</a>
+            <div className="dv-settings-actions" data-search-target={settingTarget('about', 'report')}>
+              <a className="dv-settings-button" href={reportProblemUrl(build)} target="_blank" rel="noreferrer"><ReviewIcon name="external" />{declared.about.fields.report.label}</a>
             </div>
           </div>
         </section>

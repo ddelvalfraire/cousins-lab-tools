@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { pages } from '../search-registry';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
 import { ScrollFrame } from './ScrollFrame';
@@ -165,7 +166,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'steps', label: 'Steps', icon: <SidebarIcon name="panels" /> }, { id: 'inputs', label: 'Inputs', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Routines">
-    <PageHeader title="Routines" breadcrumbs={breadcrumbs} count={rows.length} />
+    <PageHeader title={pages.routines.title} breadcrumbs={breadcrumbs} count={rows.length} />
     <WorkspaceBody sidebar={sidebar}>
       {search && <CatalogFilter query={search} onClear={clearSearch} />}
       <CatalogToolbar count={noun(rows.length)} />
