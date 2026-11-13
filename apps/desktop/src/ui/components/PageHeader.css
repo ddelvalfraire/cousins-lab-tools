@@ -17,6 +17,12 @@
 .dv-page-title:focus { outline: none; }
 .dv-page-count { flex: none; color: var(--dv-ink-muted); font-size: .6875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* Buttons on the title line (list pages with buttons and no meta): breadcrumbs across, then the title and the buttons. */
+.dv-page-header[data-actions='title'] .dv-page-header-title > .dv-page-header-width { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'crumbs crumbs' 'title actions'; align-items: center; column-gap: 12px; }
+.dv-page-header[data-actions='title'] .dv-page-breadcrumbs { grid-area: crumbs; }
+.dv-page-header[data-actions='title'] .dv-page-title-line { grid-area: title; }
+.dv-page-header[data-actions='title'] .dv-page-header-title .dv-page-actions { grid-area: actions; }
+
 /* 48 px action bar */
 .dv-page-actionbar { height: 48px; min-height: 48px; max-height: 48px; padding: 0 var(--dv-page-gutter); background: var(--dv-bg); }
 .dv-page-actionbar-inner { height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
@@ -61,6 +67,10 @@ button.dv-header-button svg { flex: none; width: 14px; height: 14px; pointer-eve
   .dv-page-actions { flex-wrap: wrap; max-width: 100%; }
   /* Status chips wrap the same way, so no status word is cut. */
   .dv-page-meta { flex-wrap: wrap; row-gap: 6px; overflow: visible; }
+  /* Title-line buttons drop to their own row, placed as the action bar would be: the title keeps the 88 px band's position. */
+  .dv-page-header[data-actions='title'] .dv-page-header-title { --dv-title-inset: calc((5.5rem - 1rem - 39px) / 2); height: auto; max-height: none; padding-top: var(--dv-title-inset); }
+  .dv-page-header[data-actions='title'] .dv-page-header-title > .dv-page-header-width { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'crumbs' 'title' 'actions'; }
+  .dv-page-header[data-actions='title'] .dv-page-header-title .dv-page-actions { justify-content: flex-end; min-height: 48px; margin-top: var(--dv-title-inset); padding-block: 8px; }
 }
 @container dv-page-header (max-width: 380px) {
   .dv-page-header-title, .dv-page-actionbar, .dv-page-navigation { padding-inline: 12px; }

@@ -15,19 +15,73 @@ type Story = StoryObj<typeof meta>;
 
 const header = (canvasElement: HTMLElement) => canvasElement.querySelector<HTMLElement>('.dv-page-header')!;
 
-/** Experiments · catalog: count beside the title, two header buttons. */
+const rect = (root: HTMLElement, selector: string) => header(root).querySelector(selector)!.getBoundingClientRect();
+const overlaps = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+/** Nothing in the header runs past its box, and the title line and the buttons do not overlap. */
+const expectFits = async (root: HTMLElement) => {
+  for (const el of header(root).querySelectorAll<HTMLElement>('.dv-page-crumbs, .dv-page-title, .dv-page-actions')) await expect(el.scrollWidth, el.className).toBeLessThanOrEqual(el.clientWidth);
+  const width = rect(root, '.dv-page-header-title .dv-page-header-width');
+  await expect(rect(root, '.dv-page-actions').right).toBeLessThanOrEqual(width.right + .5);
+  await expect(overlaps(rect(root, '.dv-page-title-line'), rect(root, '.dv-page-actions'))).toBe(false);
+  await expect(overlaps(rect(root, '.dv-page-crumbs'), rect(root, '.dv-page-actions'))).toBe(false);
+};
+const collectionActions = <><HeaderButton icon={<IconUpload aria-hidden />}>Import recordings…</HeaderButton><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>New experiment…</HeaderButton></>;
+
+/** Experiments · catalog: a list page with buttons and no meta puts them on the title line, so there is no action bar. */
 export const Collection: Story = {
-  args: {
-    actions: <><HeaderButton icon={<IconUpload aria-hidden />}>Import recordings…</HeaderButton><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>New experiment…</HeaderButton></>,
-  },
+  args: { actions: collectionActions },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('heading', { level: 1, name: 'Experiments' })).toBeVisible();
-    await expect(header(canvasElement).querySelector('.dv-page-header-title')!.getBoundingClientRect().height).toBe(88);
-    await expect(header(canvasElement).querySelector('.dv-page-actionbar')!.getBoundingClientRect().height).toBe(48);
+    await expect(rect(canvasElement, '.dv-page-header-title').height).toBe(88);
+    await expect(header(canvasElement).querySelector('.dv-page-actionbar')).toBeNull();
+    // The buttons sit on the title line, centred on it, and end at the content edge.
+    const line = rect(canvasElement, '.dv-page-title-line'), actions = rect(canvasElement, '.dv-page-actions');
+    await expect(Math.abs((actions.top + actions.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThanOrEqual(1);
+    await expect(Math.round(actions.right)).toBe(Math.round(rect(canvasElement, '.dv-page-header-title .dv-page-header-width').right));
+    await expectFits(canvasElement);
     await expect(canvas.getByText('Experiments', { selector: '[aria-current="page"]' })).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Workspace' }));
     await expect(args.breadcrumbs![0].onClick).toHaveBeenCalled();
+  },
+};
+
+/** Below 600 px the buttons drop to their own row, where the action bar would be: 88 px for the title, 48 px for the buttons. */
+export const CollectionNarrow: Story = {
+  args: { actions: collectionActions },
+  parameters: { previewWidth: 390 },
+  play: async ({ canvasElement }) => {
+    const title = rect(canvasElement, '.dv-page-header-title'), actions = rect(canvasElement, '.dv-page-actions'), button = rect(canvasElement, '.dv-page-actions button');
+    await expect(title.height).toBe(136);
+    // Centred in the 48 px row as in the action bar: 8.5 px under the 31 px buttons.
+    await expect(title.bottom - button.bottom).toBeCloseTo(8.5, 0);
+    await expect(actions.top).toBeGreaterThanOrEqual(rect(canvasElement, '.dv-page-title-line').bottom);
+    await expect(Math.round(rect(canvasElement, '.dv-page-title').top - title.top)).toBe(Math.round(16.5 + 16 + 9));
+    await expectFits(canvasElement);
+  },
+};
+
+/** Largest text, wide: the buttons stay on the title line and nothing overflows or overlaps. */
+export const CollectionLargestText: Story = {
+  args: { actions: collectionActions },
+  globals: { textSize: 'largest' },
+  play: async ({ canvasElement }) => {
+    await expect(header(canvasElement).querySelector('.dv-page-actionbar')).toBeNull();
+    await expect(rect(canvasElement, '.dv-page-actions').top).toBeLessThan(rect(canvasElement, '.dv-page-title-line').bottom);
+    await expectFits(canvasElement);
+  },
+};
+
+/** Largest text at 390 px: the buttons keep their own row, and the breadcrumb and title fit the window. */
+export const CollectionNarrowLargestText: Story = {
+  args: { actions: collectionActions },
+  globals: { textSize: 'largest' },
+  parameters: { previewWidth: 390 },
+  play: async ({ canvasElement }) => {
+    await expect(rect(canvasElement, '.dv-page-actions').top).toBeGreaterThanOrEqual(rect(canvasElement, '.dv-page-title-line').bottom);
+    await expect(header(canvasElement).getBoundingClientRect().width).toBeLessThanOrEqual(390);
+    await expect(header(canvasElement).scrollWidth).toBeLessThanOrEqual(header(canvasElement).clientWidth);
+    await expectFits(canvasElement);
   },
 };
 

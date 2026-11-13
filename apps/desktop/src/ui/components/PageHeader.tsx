@@ -43,13 +43,17 @@ const ChevronSeparator = <IconChevronRight size={11} stroke={1.7} aria-hidden />
 /**
  * Shared page header: an 88 px title area (breadcrumbs, then the title and its count)
  * and a 48 px action bar (meta on the left, header buttons on the right), shown when it has content.
+ * A collection header with buttons and no meta shows the buttons on the title line instead,
+ * and below 600 px in a row under the title, like the action bar.
  * Values from design/dvdash-field-review/shared-header-review.html.
  */
 export function PageHeader({ title, breadcrumbs, count, meta, actions, navigation, status, metadata, description, parent, onBack, variant, titleId }: PageHeaderProps) {
   const trail = breadcrumbs ?? (parent ? [{ label: parent, onClick: onBack }, { label: title }] : []);
   const detail = variant === 'detail' || !!parent || trail.length > 2;
   const hasMeta = meta || status || metadata || description;
-  return <div className="dv-page-header" data-variant={detail ? 'detail' : 'collection'}>
+  // A list page with buttons and nothing else for the action bar puts the buttons beside its title instead.
+  const titleActions = !!actions && !hasMeta && !detail;
+  return <div className="dv-page-header" data-variant={detail ? 'detail' : 'collection'} data-actions={titleActions ? 'title' : undefined}>
     <header className="dv-page-header-title"><div className="dv-page-header-width">
       <nav className="dv-page-breadcrumbs" aria-label="Breadcrumb">
         {trail.length > 0 && <Breadcrumbs separator={ChevronSeparator} separatorMargin={7} className="dv-page-crumbs">
@@ -62,14 +66,15 @@ export function PageHeader({ title, breadcrumbs, count, meta, actions, navigatio
         <h1 className="dv-page-title" id={titleId} tabIndex={-1} title={title}>{title}</h1>
         {count !== undefined && <span className="dv-page-count">{count}</span>}
       </div>
+      {titleActions && <div className="dv-page-actions">{actions}</div>}
     </div></header>
-    {(hasMeta || actions) && <div className="dv-page-actionbar"><div className="dv-page-header-width dv-page-actionbar-inner">
+    {(hasMeta || (actions && !titleActions)) && <div className="dv-page-actionbar"><div className="dv-page-header-width dv-page-actionbar-inner">
       <div className="dv-page-meta">{hasMeta && <>
         {meta}{status}
         {metadata && <span className="dv-page-metadata">{metadata}</span>}
         {description && <span className="dv-page-description">{description}</span>}
       </>}</div>
-      {actions && <div className="dv-page-actions">{actions}</div>}
+      {actions && !titleActions && <div className="dv-page-actions">{actions}</div>}
     </div></div>}
     {navigation && <div className="dv-page-navigation"><div className="dv-page-header-width">{navigation}</div></div>}
   </div>;
