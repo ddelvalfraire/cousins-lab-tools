@@ -36,7 +36,8 @@ export const SearchScope:Story={play:async({canvasElement})=>{
 export const SearchNoMatch:Story={play:async({canvasElement})=>{
   const canvas=within(canvasElement);
   await userEvent.type(canvas.getByRole('searchbox',{name:'Search experiments'}),'argon');
-  await expect(canvas.getByRole('heading',{name:'No experiments match “argon”'})).toBeVisible();
+  // The empty state replaces the table with a fade (Swap), so it starts at opacity 0.
+  await waitFor(()=>expect(canvas.getByRole('heading',{name:'No experiments match “argon”'})).toBeVisible());
   await userEvent.click(canvas.getAllByRole('button',{name:'Clear filter'})[0]);
   await expect(canvas.getByRole('searchbox',{name:'Search experiments'})).toHaveValue('');
 }};
