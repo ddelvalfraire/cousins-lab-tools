@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { RecordingExportDialog, type RecordingExportDialogProps } from './RecordingExport';
 import { exportDefaults, exportRecording, exportRows, exportSignals } from './exchange-fixtures';
 import { chooseOption } from './chooseOption';
+import { settleMotion } from './settleMotion';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
 const dialog = (canvasElement: HTMLElement) => within(within(canvasElement.ownerDocument.body).getByRole('dialog'));
@@ -63,6 +64,8 @@ export const IntervalProblem: Story = {
     await expect(body.getByRole('status')).toHaveTextContent('End must be after start.');
     await expect(body.getByRole('textbox', { name: 'End time in seconds' })).toHaveAttribute('aria-invalid', 'true');
     await expect(args.onExport).not.toHaveBeenCalled();
+    // The error banner fades in; the accessibility scan after play reads its colours, so wait for the fade to end.
+    await settleMotion();
   },
 };
 
