@@ -189,3 +189,9 @@ export function settingsRecords(context: SearchContext): TargetRecord[] {
     })),
   ]);
 }
+
+/** What the live region says when search opens a place: "Decimal separator, Settings, Numbers." */
+export function describeTarget(target: string) {
+  const record = settingsRecords({ dark: false }).find(item => item.target === target);
+  return record ? `${record.title}, ${record.meta.split(' · ').join(', ')}.` : '';
+}

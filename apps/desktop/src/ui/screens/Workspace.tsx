@@ -24,13 +24,13 @@ import './screens.css';
 import './screen-layouts.css';
 import { pages } from '../search-registry';
 
-export interface WorkspaceProps { initialPage?:ScreenRoute; initialPreset?:string; initialExperiment?:string; empty?:boolean; unavailable?:boolean; onAppearanceChange?:()=>void; /** Starting state of the experiment page, for frozen review stories. */ experimentView?:ExperimentViewOptions }
+export interface WorkspaceProps { initialPage?:ScreenRoute; /** A place on the first page to open, as a search result does. */ initialTarget?:string; initialPreset?:string; initialExperiment?:string; empty?:boolean; unavailable?:boolean; onAppearanceChange?:()=>void; /** Starting state of the experiment page, for frozen review stories. */ experimentView?:ExperimentViewOptions }
 /** Fixed review time, so "Today" in the Experiments list is stable. */
 const REVIEW_NOW=new Date('2026-10-30T18:00:00');
 /** Pages whose list the search box can filter. */
 const filterablePages:ReadonlySet<ScreenRoute>=new Set(['experiments','presets','routines','instruments']);
 /** A navigable UI fixture. No Tauri calls, acquisition or persistent catalog writes. */
-export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',initialExperiment='sample-024',empty=false,unavailable=false,onAppearanceChange,experimentView}:WorkspaceProps){
+export function DVDashWorkspace({initialPage='experiments',initialTarget,initialPreset='gas',initialExperiment='sample-024',empty=false,unavailable=false,onAppearanceChange,experimentView}:WorkspaceProps){
   const [routineId,setRoutineId]=useState('measure'),[historyRevision,setHistoryRevision]=useState<number|undefined>();
   const [page,setPage]=useState(initialPage),[presetId,setPresetId]=useState(initialPreset),[experimentId,setExperimentId]=useState(initialExperiment);
   const [rows,setRows]=useState<ExperimentSummary[]>(empty?[]:experiments),[results,setResults]=useState<Record<string,IntervalResult[]>>({'sample-024':savedResults});
@@ -59,7 +59,7 @@ export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',i
   const home={label:'Workspace',onClick:()=>navigate('experiments')};
   const presetsCrumb={label:'Presets',onClick:()=>navigate('presets')};
   const clearQuery=()=>setPageQuery('');
-  return <ScreenShell page={page} navigate={navigate} recents={toRecents(rows)} acquisition={toAcquisition(rows)} onAppearanceChange={onAppearanceChange}
+  return <ScreenShell page={page} navigate={navigate} initialTarget={initialTarget} recents={toRecents(rows)} acquisition={toAcquisition(rows)} onAppearanceChange={onAppearanceChange}
     searchRecords={searchRecords(rows)} pageQuery={pageQuery} onPageQueryChange={filterablePages.has(page)?setPageQuery:undefined}
     onNewExperiment={()=>navigate('prepare','gas')} onImportRecordings={()=>setDialog('recording')}>
     {page==='experiments'&&<ExperimentsList experiments={rows.map(toListExperiment)} now={REVIEW_NOW} breadcrumbs={[home,{label:'Experiments'}]} onOpen={id=>navigate('experiment',id)} onNewExperiment={()=>navigate('prepare','gas')} onImport={()=>setDialog('recording')} query={pageQuery} onClearQuery={clearQuery}/>}

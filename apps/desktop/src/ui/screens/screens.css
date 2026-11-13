@@ -183,3 +183,12 @@
 /* Each Review tab fills the page, so the new tab fades in over nothing instead of over the old one (Approved.css swap). */
 .dv-review-page[data-motion='swap'] > [role='tabpanel'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
 .dv-review-notice { margin-bottom: var(--dv-gap); }
+
+/* Search targets (revealTarget.ts): a box that a search result opens. It is always positioned, so the highlight never
+   changes what its children are positioned against; the highlight sits behind its content, so nothing moves. */
+.dvdash [data-search-target] { position: relative; isolation: isolate; }
+.dvdash [data-search-reveal]::after { content: ''; position: absolute; inset: -6px -10px; z-index: -1; border-radius: 10px; background: var(--dv-accent-soft); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--dv-accent), transparent 35%); pointer-events: none; }
+.dvdash [data-search-reveal='pulse']::after { animation: dv-reveal-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
+.dvdash [data-search-reveal='leave']::after { animation: dv-reveal-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards; }
+@keyframes dv-reveal-in { from { opacity: 0; box-shadow: 0 0 0 7px color-mix(in srgb, var(--dv-accent), transparent 75%); } }
+@keyframes dv-reveal-out { to { opacity: 0; } }

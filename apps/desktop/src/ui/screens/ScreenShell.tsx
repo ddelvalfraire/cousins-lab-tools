@@ -9,10 +9,12 @@ import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellS
 import './screens.css';
 import { ScrollFrame } from '../components/ScrollFrame';
 import { useAppearance } from '../appearance';
-import { appearanceTitle, commands as registryCommands, glyphOf, matchShortcut, sequenceHint, settingsRecords, shortcutSectionsFor, titleOf, type CommandId, type SequenceStart } from '../search-registry';
+import { revealTarget } from './revealTarget';
+import { appearanceTitle, commands as registryCommands, describeTarget, glyphOf, matchShortcut, sequenceHint, settingsRecords, shortcutSectionsFor, titleOf, type CommandId, type SequenceStart } from '../search-registry';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
-export type Navigate = (page:ScreenRoute, id?:string) => void;
+/** Opens a page. `target` is a place on it (a `data-search-target`, such as a settings field) that a search result opens. */
+export type Navigate = (page:ScreenRoute, id?:string, target?:string) => void;
 
 /** Lists and dense pages use the wide content width, so their tables fill the card; forms and editors keep the standard width (Approved.css). */
 const widePages:ReadonlySet<ScreenRoute> = new Set(['experiments','presets','routines','instruments','preset-edit','experiment','review']);
@@ -45,6 +47,8 @@ export interface ScreenShellProps {
   /** "New experiment…" and "Import recordings…" commands, also N and I. Hidden without a handler. */
   onNewExperiment?:()=>void;
   onImportRecordings?:()=>void;
+  /** A place on the first page to scroll to, focus and highlight, as a search result does (a deep link). */
+  initialTarget?:string;
   children:ReactNode;
 }
 
@@ -56,7 +60,7 @@ export type SearchRecord = CommandItem & { page:ScreenRoute; pageId?:string };
  * colour, the main sidebar and the page as a bordered, rounded card.
  * Values from design/dvdash-field-review/main-sidebar-review.html and right-sidebar-review.html (top bar).
  */
-export function ScreenShell({ page, navigate, recents, acquisition, defaultCollapsed=false, onAppearanceChange, searchRecords=[], pageQuery, onPageQueryChange, onNewExperiment, onImportRecordings, children }:ScreenShellProps) {
+export function ScreenShell({ page, navigate, recents, acquisition, defaultCollapsed=false, onAppearanceChange, searchRecords=[], pageQuery, onPageQueryChange, onNewExperiment, onImportRecordings, initialTarget, children }:ScreenShellProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed), [drawer, setDrawer] = useState(false);
   const [shortcuts, setShortcuts] = useState(false), [announcement, setAnnouncement] = useState('');
   const appearance = useAppearance(), dark = appearance.scheme==='dark';
@@ -64,7 +68,29 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), sequenceStart = useRef<SequenceStart|null>(null);
   const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
-  const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
+  const reveal = useRef<{ frame:number; stop?:()=>void }>({ frame:0 });
+  /** Says it again even when the text is unchanged, so choosing the same place twice is announced twice. */
+  const announce = (text:string) => { setAnnouncement(''); requestAnimationFrame(()=>setAnnouncement(text)); };
+  /**
+   * Waits until the place is on the page (after a navigation it renders on a later frame), then scrolls the page to it,
+   * focuses it and highlights it. If it never appears, focus goes to the page as for any navigation.
+   */
+  const revealOnPage = (target:string) => {
+    cancelAnimationFrame(reveal.current.frame); reveal.current.stop?.();
+    let frames = 0;
+    const attempt = () => {
+      const viewport = main.current, box = viewport?.querySelector<HTMLElement>(`[data-search-target="${CSS.escape(target)}"]`);
+      if (viewport && box) { reveal.current.stop = revealTarget(viewport, box); announce(describeTarget(target)); }
+      else if (++frames < 30) reveal.current.frame = requestAnimationFrame(attempt);
+      else viewport?.focus();
+    };
+    reveal.current.frame = requestAnimationFrame(attempt);
+  };
+  /** Navigate from search or a shortcut, then move focus to the new page, or to the place on it. */
+  const go = (to:ScreenRoute, id?:string, target?:string) => {
+    if (!target) { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); return; }
+    navigate(to, id, target); revealOnPage(target);
+  };
   const context = { dark, appearance:appearance.preference };
   /** What each command does in this window. A command without a handler is left out of search, the shortcuts dialog and the keys. */
   const handlers:Record<CommandId,(()=>void)|undefined> = {
@@ -79,7 +105,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const commands:ShellCommand[] = [
     ...available.filter(entry => entry.inSearch!==false).map((entry):ShellCommand => ({ id:entry.id, kind:'actions', title:titleOf(entry, context), icon:<CommandGlyph name={glyphOf(entry, context)}/>,
       keys:entry.keys, sequence:entry.sequence, keywords:entry.keywords, featured:entry.featured, run:handlers[entry.id]! })),
-    ...settingsRecords(context).map(({ glyph, page:to, target, ...record }):ShellCommand => ({ ...record, kind:'settings', icon:<CommandGlyph name={glyph}/>, run:()=>go(to) })),
+    ...settingsRecords(context).map(({ glyph, page:to, target, ...record }):ShellCommand => ({ ...record, kind:'settings', icon:<CommandGlyph name={glyph}/>, run:()=>go(to, undefined, target) })),
     ...searchRecords.map(record => ({ ...record, run:()=>go(record.page, record.pageId) })),
   ];
 
@@ -99,6 +125,10 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
     event.preventDefault();
     handlers[match.command as CommandId]?.();
   };
+  useEffect(() => {
+    if (initialTarget) revealOnPage(initialTarget);
+    return () => { cancelAnimationFrame(reveal.current.frame); reveal.current.stop?.(); };
+  }, []);
   const keyHandler = useRef(onKey);
   useEffect(() => { keyHandler.current = onKey; });
   useEffect(() => {
