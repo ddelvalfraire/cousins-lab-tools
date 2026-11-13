@@ -119,7 +119,7 @@ export const PreviewDiscardAndApply: Story = {
     await expect(canvas.getByDisplayValue('102')).toBeVisible();
     await expect(chart(canvasElement, /Time from valve opened \(s\)/)).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Discard' }));
-    await expect(method(canvasElement)).toHaveValue('elapsed');
+    await expect(method(canvasElement)).toHaveValue('Elapsed since each start');
     await expect(method(canvasElement)).toHaveFocus();
     await expect(canvas.queryByText('Preview')).toBeNull();
     await chooseOption(method(canvasElement), 'clock');

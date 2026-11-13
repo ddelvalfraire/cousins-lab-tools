@@ -58,7 +58,7 @@ export const Expanded:Story={
     // The logo is in the window bar, not the sidebar.
     await expect(canvasElement.querySelector('.dv-side-navigation .dv-brand-concept')).toBeNull();
     await expect(canvas.getByRole('button',{name:'DVDash experiments home'})).toBeVisible();
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('Experiments');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('Experiments');
   },
 };
 
@@ -71,10 +71,10 @@ export const Navigation:Story={
     await userEvent.click(canvas.getByRole('button',{name:'Presets'}));
     await expect(canvas.getByRole('heading',{level:1,name:'Presets'})).toBeVisible();
     await expect(args.navigate).toHaveBeenLastCalledWith('presets',undefined);
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('Presets');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('Presets');
     await userEvent.click(canvas.getAllByRole('button',{name:/Sample 025/})[0]);
     await expect(canvas.getByRole('heading',{level:1,name:'Leaf respiration · Sample 025'})).toBeVisible();
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('This experiment');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('This experiment');
   },
 };
 
@@ -152,7 +152,7 @@ export const CommandCenterShortcut:Story={
     await userEvent.keyboard('{Control>}k{/Control}');
     await waitFor(()=>expect(commandCenter(canvasElement)).toHaveFocus());
     await expect(commandCenter(canvasElement)).toHaveAttribute('aria-expanded','true');
-    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('All DVDash');
+    await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('All DVDash');
     await expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible();
     await expect(canvas.getByRole('group',{name:'Recent · Experiments'})).toBeVisible();
     await userEvent.keyboard('{Escape}');

@@ -70,7 +70,7 @@ export const StepUsingAParameter: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole('heading', { name: 'Step 4 · Capture' })).toBeVisible();
     await expect(canvas.getByRole('radio', { name: 'Parameter' })).toBeChecked();
-    await expect(canvas.getByRole('combobox', { name: 'Parameter' })).toHaveTextContent('Sample · 30 s');
+    await expect(canvas.getByRole('combobox', { name: 'Parameter' })).toHaveValue('Sample · 30 s');
     await expect(chip(canvasElement, 's4')).toHaveTextContent('30 s · Sample');
     await expect(canvas.getByText('5 steps · 50 s total')).toBeVisible();
   },

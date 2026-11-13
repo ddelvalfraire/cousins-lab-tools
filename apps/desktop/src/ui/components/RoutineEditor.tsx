@@ -6,7 +6,8 @@ import {
   IconPlus, IconTrash, IconX,
 } from '@tabler/icons-react';
 import { Chip, StatusWord } from './Chip';
-import { DvSelect } from './DvSelect';
+import { Select } from '@mantine/core';
+import { chosen, selectAria } from './select';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { Banner } from './Banner';
@@ -401,8 +402,8 @@ function RoutineEditorDraft({
     const durationError = issues.find(e => e.includes('duration') || e.includes('parameter'));
     return <>
       <div className="dv-re-field"><label htmlFor={id('kind')}>Type</label>
-        <DvSelect id={id('kind')} data-field="kind" value={current.kind} options={(Object.keys(KIND) as RoutineStepKind[]).map(k => ({ value: k, label: KIND[k] }))}
-          onChange={value => changeKind(current, value as RoutineStepKind)} />
+        <Select id={id('kind')} data-field="kind" value={current.kind} data={(Object.keys(KIND) as RoutineStepKind[]).map(k => ({ value: k, label: KIND[k] }))}
+          onChange={chosen(value => changeKind(current, value as RoutineStepKind))} />
       </div>
       {current.kind !== 'wait' && <div className="dv-re-field"><label htmlFor={id('name')}>{current.kind === 'capture' ? 'What it captures' : 'Note text'}</label>
         <input id={id('name')} data-field="name" value={current.name} autoComplete="off" aria-invalid={nameError} aria-describedby={nameError ? id('name-error') : undefined}
@@ -426,10 +427,10 @@ function RoutineEditorDraft({
               onChange={e => { const text = e.currentTarget.value; setRawValue(`fixed:${current.id}`, text); update(r => { r.steps.find(s => s.id === current.id)!.duration = { fixed: parseSeconds(text) }; }); }} /><span>s</span></div>
           </div>
           : <div className="dv-re-field"><label htmlFor={id('param')}>Parameter</label>
-            <DvSelect id={id('param')} data-field="param" value={duration.param} aria-invalid={!!durationError}
-              aria-describedby={`${id('param-hint')}${durationError ? ` ${id('duration-error')}` : ''}`}
-              options={[{ value: '', label: 'Choose a parameter' }, ...draft.parameters.map(p => ({ value: p.id, label: `${p.name || 'Unnamed'} · ${fmt(p.seconds)}` }))]}
-              onChange={value => update(r => { r.steps.find(s => s.id === current.id)!.duration = { param: value }; })} />
+            <Select id={id('param')} data-field="param" value={duration.param}
+              {...selectAria({ invalid: !!durationError, describedBy: `${id('param-hint')}${durationError ? ` ${id('duration-error')}` : ''}` })}
+              data={[{ value: '', label: 'Choose a parameter' }, ...draft.parameters.map(p => ({ value: p.id, label: `${p.name || 'Unnamed'} · ${fmt(p.seconds)}` }))]}
+              onChange={chosen(value => update(r => { r.steps.find(s => s.id === current.id)!.duration = { param: value }; }))} />
             <span className="dv-re-hint" id={id('param-hint')}>Change the value under Parameters. Every step using it updates.</span>
           </div>}
         {durationError && <p className="dv-re-field-error dv-re-duration-error" id={id('duration-error')}><IconCircleX {...ICON} />{durationError}</p>}

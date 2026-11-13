@@ -13,7 +13,7 @@ export const NewExperimentFlow:Story={play:async({canvasElement})=>{const canvas
 /** The page scope filters the Experiments list; All DVDash searches every catalog instead. */
 export const SearchScope:Story={play:async({canvasElement})=>{
   const canvas=within(canvasElement),scope=canvas.getByRole('combobox',{name:'Search scope'});
-  await expect(scope).toHaveTextContent('Experiments');
+  await expect(scope).toHaveValue('Experiments');
   await userEvent.type(canvas.getByRole('searchbox',{name:'Search experiments'}),'enzyme');
   await expect(canvas.getByText('Filtered by “enzyme”')).toBeVisible();
   await expect(canvasElement.querySelectorAll('tbody tr')).toHaveLength(1);
@@ -24,7 +24,7 @@ export const SearchScope:Story={play:async({canvasElement})=>{
   await userEvent.type(canvas.getByRole('combobox',{name:'Search all DVDash'}),'{Enter}');
   await expect(canvas.getByRole('heading',{level:1,name:'Enzyme assay · Extract 08'})).toBeVisible();
   // The experiment page has no filter yet, so its scope option is offered but disabled.
-  await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveTextContent('All DVDash');
+  await expect(canvas.getByRole('combobox',{name:'Search scope'})).toHaveValue('All DVDash');
   await userEvent.click(canvas.getByRole('combobox',{name:'Search scope'}));
   await expect(await within(document.body).findByRole('option',{name:'This experiment'})).toHaveAttribute('aria-disabled','true');
   await userEvent.keyboard('{Escape}');

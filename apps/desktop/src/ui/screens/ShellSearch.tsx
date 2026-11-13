@@ -1,7 +1,7 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { flushSync } from 'react-dom';
-import { Overlay, useMantineTheme, type OverlayProps } from '@mantine/core';
-import { DvSelect } from '../components/DvSelect';
+import { Overlay, Select, useMantineTheme, type OverlayProps } from '@mantine/core';
+import { chosen } from '../components/select';
 import { CommandCenter, KeyCaps, commandOptionId, findCommands, type CommandCategory, type CommandItem } from '../components/CommandCenter';
 
 /** A command center row and what choosing it does. */
@@ -116,8 +116,8 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
     {all && open && <Overlay {...dialogDim} fixed zIndex={-1} className="dv-shell-search-backdrop" aria-hidden="true" />}
     <div className="dv-shell-searchbox" role="search" aria-label="DVDash search">
       {glyph(<><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>)}
-      <DvSelect aria-label="Search scope" value={scope} options={[{ value: 'page', label: pageLabel, disabled: !filterable }, { value: 'all', label: 'All DVDash' }]}
-        onChange={value => changeScope(value as Scope)} />
+      <Select aria-label="Search scope" value={scope} data={[{ value: 'page', label: pageLabel, disabled: !filterable }, { value: 'all', label: 'All DVDash' }]}
+        onChange={chosen(value => changeScope(value as Scope))} />
       <input ref={inputRef} type="search" autoComplete="off" spellCheck={false} value={value} {...combobox}
         aria-label={all ? 'Search all DVDash' : `Search ${pageLabel.toLowerCase()}`} placeholder={all ? 'Search DVDash…' : pagePlaceholder}
         onChange={event => change(event.currentTarget.value)} onFocus={() => { if (all && !quietFocus.current) setOpen(true); }} onKeyDown={onKeyDown} />

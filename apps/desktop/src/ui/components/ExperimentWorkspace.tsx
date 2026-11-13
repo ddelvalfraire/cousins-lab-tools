@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
-import { Kbd } from '@mantine/core';
+import { Kbd, Select } from '@mantine/core';
 import { Chip } from './Chip';
-import { DvSelect } from './DvSelect';
+import { chosen } from './select';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, type RightSidebarTab } from './RightSidebar';
 import { SignalTrace } from './SignalChart';
 import { AffectedPanelFlag, ProblemsPanel, problemFlag, problemsSummary, type ProblemsPanelProps } from './ProblemsPanel';
@@ -122,7 +122,7 @@ export function PlaybackTransport({ position, duration, playing, speed, sampleIn
       </div>
       <span className="dv-xw-total">{timecode(duration)}</span>
       <label className="dv-xw-speed"><span className="dv-xw-sr">Speed</span>
-        <DvSelect aria-label="Playback speed" value={String(speed)} options={SPEEDS} onChange={value => onSpeedChange(Number(value))} />
+        <Select aria-label="Playback speed" value={String(speed)} data={SPEEDS} onChange={chosen(value => onSpeedChange(Number(value)))} />
       </label>
     </div>
   </section>;
@@ -253,12 +253,12 @@ export function DisplayPane({ signal, settings, onChange, axes, children }: {
   const auto = settings.scale === 'auto';
   return <>
     <SidebarSection title={signal}>
-      <SideField label="Scale">{id => <DvSelect id={id} value={settings.scale} options={SCALES} onChange={value => onChange({ ...settings, scale: value as DisplaySettings['scale'] })} />}</SideField>
+      <SideField label="Scale">{id => <Select id={id} value={settings.scale} data={SCALES} onChange={chosen(value => onChange({ ...settings, scale: value as DisplaySettings['scale'] }))} />}</SideField>
       <div className="dv-xw-field-pair">
         <SideField label="Minimum Y">{id => <input id={id} inputMode="decimal" value={settings.min} disabled={auto} onChange={event => onChange({ ...settings, min: event.currentTarget.value })} />}</SideField>
         <SideField label="Maximum Y">{id => <input id={id} inputMode="decimal" value={settings.max} disabled={auto} onChange={event => onChange({ ...settings, max: event.currentTarget.value })} />}</SideField>
       </div>
-      <SideField label="Decimal places">{id => <DvSelect id={id} value={String(settings.precision)} options={PRECISIONS} onChange={value => onChange({ ...settings, precision: Number(value) })} />}</SideField>
+      <SideField label="Decimal places">{id => <Select id={id} value={String(settings.precision)} data={PRECISIONS} onChange={chosen(value => onChange({ ...settings, precision: Number(value) }))} />}</SideField>
       <span className="dv-sidebar-save" role="status"><SidebarIcon name="check" />Saved</span>
     </SidebarSection>
     <SidebarSection title="Axis units"><SidebarFacts items={axes} /></SidebarSection>

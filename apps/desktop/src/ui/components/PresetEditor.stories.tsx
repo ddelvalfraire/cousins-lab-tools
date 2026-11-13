@@ -357,7 +357,7 @@ export const SettingsSelected: Story = {
     await expect(canvas.getByRole('tab', { name: 'Panel' })).toHaveAttribute('aria-selected', 'true');
     await expect(canvas.getByRole('tab', { name: 'Signals' })).toBeDisabled();
     await expect(canvas.getByLabelText('Panel name')).toHaveValue('CO₂ calibration settings');
-    await expect(canvas.getByLabelText('Shows')).toHaveValue('inputs');
+    await expect(canvas.getByLabelText('Shows')).toHaveValue('Settings');
     await expect(canvas.getByRole('group', { name: 'Settings shown' })).toBeVisible();
     await expect(canvas.getByRole('checkbox', { name: /Zero offset/ })).toBeChecked();
     await expect(canvas.getByRole('checkbox', { name: /Noise floor/ })).not.toBeChecked();
@@ -372,8 +372,8 @@ export const ControlsSelected: Story = {
     const canvas = within(canvasElement);
     await expect(panel(canvasElement, 'k3')).toHaveAttribute('data-selected', 'true');
     await expect(canvas.getByRole('tab', { name: 'Signals' })).toBeDisabled();
-    await expect(canvas.getByLabelText('Shows')).toHaveValue('controls');
-    await expect(canvas.getByLabelText('Width')).toHaveValue('12');
+    await expect(canvas.getByLabelText('Shows')).toHaveValue('Recording controls');
+    await expect(canvas.getByLabelText('Width')).toHaveValue('Full');
     await expect(canvas.getByRole('group', { name: 'Controls shown' })).toBeVisible();
     for (const name of ['Start and stop', 'Instrument connection', 'Sample count', 'Elapsed time']) await expect(canvas.getByRole('checkbox', { name })).toBeChecked();
   },

@@ -2,7 +2,8 @@ import { useEffect, useId, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Chip } from './Chip';
-import { DvSelect, type DvSelectOption } from './DvSelect';
+import { Select, type ComboboxItem } from '@mantine/core';
+import { chosen } from './select';
 import { PageHeader } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody, type RightSidebarProps, type RightSidebarTab } from './RightSidebar';
 
@@ -12,9 +13,9 @@ const tabs: RightSidebarTab[] = [
   { id: 'display', label: 'Display', icon: <SidebarIcon name="display" /> },
 ];
 
-function SampleSelect({ label, initial, options }: { label: string; initial: string; options: DvSelectOption[] }) {
+function SampleSelect({ label, initial, options }: { label: string; initial: string; options: ComboboxItem[] }) {
   const [value, setValue] = useState(initial), id = useId();
-  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label><DvSelect id={id} value={value} options={options} onChange={setValue} /></div>;
+  return <div className="dv-sidebar-field"><label htmlFor={id}>{label}</label><Select id={id} value={value} data={options} onChange={chosen(setValue)} /></div>;
 }
 
 /** Sample settings for each tab, as in right-sidebar-review.html. */

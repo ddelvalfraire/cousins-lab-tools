@@ -48,9 +48,10 @@
 .dv-sidebar-section { padding: 16px 0; border-top: 1px solid var(--dv-line); }
 .dv-sidebar-section h3 { margin: 0 0 12px; font-size: 11px; font-weight: 650; }
 .dv-sidebar-field { display: block; margin-bottom: 13px; font-size: 11px; font-weight: 500; line-height: 1.5; }
-.dv-sidebar-field :is(input, .dv-select) { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 33px; margin-top: 6px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
-.dv-sidebar-field :is(input, .dv-select):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
-.dv-sidebar-field :is(input, .dv-select):disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
+.dv-sidebar-field .dv-select { --dv-select-height: 33px; --dv-select-font: 11px; --dv-select-pad: 9px; --dv-select-radius: 5px; --dv-select-border: var(--dv-line); margin-top: 6px; }
+.dv-sidebar-field input:not(.dv-select-input) { display: block; box-sizing: border-box; width: 100%; min-width: 0; height: 33px; margin-top: 6px; padding: 6px 9px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-sidebar-field input:not(.dv-select-input):focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
+.dv-sidebar-field input:not(.dv-select-input):disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
 .dv-sidebar-field small { display: block; margin-top: 5px; color: var(--dv-ink-muted); font-size: 10px; font-weight: 400; }
 .dv-sidebar-facts { display: grid; gap: 11px; margin: 0; }
 .dv-sidebar-facts > div { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
