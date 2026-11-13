@@ -127,8 +127,8 @@ export const Results:Story={...page,play:async({canvasElement})=>{
 /** Export recording opens the export dialog (recording-export-review.html). */
 export const Export:Story={...page,play:async({canvasElement})=>{
   await userEvent.click(within(canvasElement).getByRole('button',{name:'Export recording'}));
-  const dialog=within(canvasElement.ownerDocument.body).getByRole('dialog');
-  // The dialog fades in.
+  const dialog=await within(canvasElement.ownerDocument.body).findByRole('dialog');
+  // The dialog mounts after the click and fades in.
   await waitFor(()=>expect(within(dialog).getByText('601 rows · 4 signals')).toBeVisible());
   await expect(within(dialog).getByRole('button',{name:'Export CSV'})).toBeEnabled();
 }};
