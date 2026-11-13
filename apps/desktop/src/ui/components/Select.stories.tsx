@@ -51,6 +51,9 @@ export const Default: Story = {
     await expect(args.onChange).toHaveBeenCalledWith('semicolon');
     await expect(control).toHaveValue('Semicolon');
     await expect(control).toHaveFocus();
+    // The list fades out, then leaves the accessibility tree.
+    await expect(control).toHaveAttribute('aria-expanded', 'false');
+    await waitFor(() => expect(within(canvasElement.ownerDocument.body).queryByRole('listbox')).toBeNull());
     // Choosing the current option again keeps it; the theme turns off Mantine's deselect.
     await chooseOption(control, 'semicolon');
     await expect(control).toHaveValue('Semicolon');

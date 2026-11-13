@@ -118,6 +118,8 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
 
 /* The open list: the command centre's popup look, with the highlighted row in the accent. */
 .dvdash.dv-select-dropdown { max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 12px 30px #09261920; font-size: 13px; line-height: 1.4; }
+@media (prefers-reduced-motion: no-preference) { .dvdash.dv-select-dropdown { animation: dv-select-in var(--dv-motion-fast) var(--dv-ease-out); } }
+@keyframes dv-select-in { from { opacity: 0; } }
 .dvdash .dv-select-option { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 6px 6px; border-radius: 5px; font-size: 13px; overflow-wrap: anywhere; }
 .dvdash .dv-select-option > svg, .dvdash .dv-select-option > div:first-child { flex: none; opacity: 1; width: 14px; height: 14px; margin-top: 2px; }
 .dvdash .dv-select-option[data-checked] { font-weight: 600; }

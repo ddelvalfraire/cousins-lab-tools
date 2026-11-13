@@ -21,7 +21,10 @@ const select = Select.extend({
     scrollAreaProps: { scrollbarSize: 8, offsetScrollbars: false, viewportProps: { tabIndex: 0, role: 'group' } },
     comboboxProps: {
       // Portalled at Mantine's popover layer (300), above modals and drawers (200); opening it moves nothing on the page.
-      withinPortal: true, position: 'bottom-start', offset: 4, width: 'max-content', resetSelectionOnOptionHover: true, transitionProps: { duration: 0 },
+      // Mantine scrolls the chosen option into view as the list opens, which needs the list in the page at once, so it
+      // opens without a Mantine transition and fades in by CSS (Approved.css). It fades out on Mantine's transition.
+      withinPortal: true, position: 'bottom-start', offset: 4, width: 'max-content', resetSelectionOnOptionHover: true,
+      transitionProps: { transition: 'fade', duration: 0, exitDuration: motion.fast, timingFunction: motion.easeOut },
       // At least as wide as the field, so a narrow field still shows whole option names; Approved.css caps it at the window.
       middlewares: { flip: true, shift: { padding: 8 }, size: { apply: ({ rects, elements }) => { elements.floating.style.minWidth = `${rects.reference.width}px`; } } },
     },
