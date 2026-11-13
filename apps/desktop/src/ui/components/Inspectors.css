@@ -60,6 +60,7 @@
 .dv-insp-card { min-width: 0; padding: 16px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
 .dv-insp-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
 .dv-insp-card-heading h2 { font-size: 14px; font-weight: 650; }
+.dv-insp-card-heading > [data-presence] { display: flex; }
 .dv-insp-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--dv-ink-muted); font-size: 11px; line-height: 1.5; }
 .dv-insp-legend span { display: flex; align-items: center; gap: 6px; }
 .dv-insp-legend i { width: 16px; border-top: 2px solid var(--dv-blue); }

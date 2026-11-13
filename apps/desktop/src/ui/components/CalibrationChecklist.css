@@ -54,7 +54,10 @@
 .dv-cal-actions { display: flex; align-items: center; justify-content: start; gap: 2px; width: 118px; }
 .dv-cal .dv-cal-actions > .dv-insp-button:first-child { min-width: 86px; padding-inline: 7px; }
 .dv-cal .dv-cal-icon-button { width: 30px; min-width: 30px; padding: 5px; }
-.dv-cal-replacement { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; border-radius: 6px; background: var(--dv-soft); font-size: 12px; line-height: 1.5; }
+/* The confirmation's collapsing wrapper carries the row gap above it, so the gap opens and closes with it. */
+.dv-cal-replacement-slot { grid-column: 2 / -1; margin-top: -12px; }
+.dv-cal-replacement-slot > .dv-cal-replacement { margin-top: 12px; }
+.dv-cal-replacement { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; border-radius: 6px; background: var(--dv-soft); font-size: 12px; line-height: 1.5; }
 .dv-cal-replacement > div { display: flex; gap: 5px; }
 .dv-cal-spinner { animation: dv-cal-spin 900ms linear infinite; }
 @keyframes dv-cal-spin { to { transform: rotate(360deg); } }
@@ -80,6 +83,8 @@
   .dv-cal-notice { padding: 12px 16px 0; }
   .dv-cal-footer { padding: 12px 16px 15px; }
   .dv-cal-replacement { flex-wrap: wrap; }
+  .dv-cal-replacement-slot { margin-top: -8px; }
+  .dv-cal-replacement-slot > .dv-cal-replacement { margin-top: 8px; }
   .dv-cal-form { gap: 8px; }
   .dv-cal-form .dv-insp-button { padding-inline: 8px; }
 }

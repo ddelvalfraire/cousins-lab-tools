@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { SettingsPage, type AppSettings, type BuildInfo, type FolderState, type SettingsPageProps } from './SettingsPage';
 import { chooseOption } from './chooseOption';
+import { settleMotion } from './settleMotion';
 
 const COMMIT_RELEASE = 'fdba48e6d504efa8b66f04b0dd8ea7f892fd4a6b';
 const COMMIT_LOCAL = 'a63f1dcebf65218c1c6a34257327a9c426903f73';
@@ -81,7 +82,7 @@ export const SavingChanges: Story = {
     await step('Each change saves immediately and is announced', async () => {
       await userEvent.click(canvas.getByRole('radio', { name: 'Dark' }));
       await expect(args.onChange).toHaveBeenCalledWith('theme', 'dark');
-      await expect(canvas.getByText('Saved')).toBeVisible();
+      await waitFor(() => expect(canvas.getByText('Saved')).toBeVisible());
       await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Theme saved.'));
       await chooseOption(canvas.getByLabelText('Decimal separator'), 'comma');
       await expect(canvas.getByTestId('number-preview')).toHaveTextContent('-1 234,56 mV');
@@ -99,7 +100,7 @@ export const SavingChanges: Story = {
       await expect(canvas.getByRole('link', { name: 'desktop-v0.1.0-rc.2 on GitHub' })).toHaveAttribute('href', 'https://github.com/ddelvalfraire/cousins-lab-tools/releases/tag/desktop-v0.1.0-rc.2');
       await userEvent.click(canvas.getByRole('button', { name: 'Copy full commit hash' }));
       await expect(args.onCopyCommit).toHaveBeenCalledWith(COMMIT_RELEASE);
-      await expect(canvas.getByText('Copied')).toBeVisible();
+      await waitFor(() => expect(canvas.getByText('Copied')).toBeVisible());
     });
     await step('Report a problem prefills a GitHub issue', async () => {
       const { href, body } = reportBody(canvasElement);
@@ -107,6 +108,7 @@ export const SavingChanges: Story = {
       for (const part of ['## What happened', '## What you expected', '## Steps to reproduce', '## Environment', `Commit ${COMMIT_RELEASE}`, 'Release desktop-v0.1.0-rc.2', 'Platform macOS']) await expect(body).toContain(part);
       await expect(canvas.queryByRole('button', { name: 'Copy details' })).toBeNull();
     });
+    await settleMotion();
   },
 };
 
@@ -130,9 +132,12 @@ export const UseSemicolons: Story = {
     const canvas = within(canvasElement);
     const message = canvas.getByTestId('export-message');
     const select = canvas.getByLabelText('Column separator in CSV files');
+    const warning = within(message).getByText('Commas would separate both decimals and columns, so spreadsheets can misread values.');
     await userEvent.click(canvas.getByRole('button', { name: 'Use semicolons' }));
     await expect(args.onChange).toHaveBeenCalledWith('delimiter', 'semicolon');
-    await expect(message).not.toBeVisible();
+    await expect(canvas.queryByRole('button', { name: 'Use semicolons' })).toBeNull();
+    await waitFor(() => expect(warning).not.toBeInTheDocument());
+    await waitFor(() => expect(message).not.toBeVisible());
     await expect(select).toHaveFocus();
     await expect(select).not.toHaveAttribute('aria-invalid');
   },
@@ -158,6 +163,7 @@ export const FolderUnwritable: Story = {
     await expect(args.onChooseFolder).toHaveBeenCalledOnce();
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Choose another folder' })).toHaveFocus());
     await expect(canvas.getByTestId('folder-path')).toHaveTextContent(defaults.folder);
+    await settleMotion();
   },
 };
 

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { formatClockTime } from '../time';
+import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { InspectorButton, InspectorIcon, InspectorPane } from './InspectorParts';
@@ -83,7 +84,7 @@ export function SavedResultsTable({ results, quantity, selectedId, expanded = tr
         <div className="dv-res-pager-actions">{pager.map(([label, icon, target, disabled]) => <button key={label} type="button" aria-label={label} disabled={disabled} onClick={() => go(target)}><InspectorIcon name={icon} /></button>)}</div>
       </nav>}
     </section>
-    <div className="dv-insp-summary">{notice && <StatusBanner severity="info">{notice}</StatusBanner>}</div>
+    <div className="dv-insp-summary"><Presence show={!!notice}><StatusBanner severity="info">{notice}</StatusBanner></Presence></div>
   </div>;
 }
 
@@ -145,7 +146,7 @@ export function SavedResultInspector({ result, phase = 'ready', quantity, tab: c
     title={tab === 'details' ? 'Result details' : 'Saved context'} label="Saved result inspector" tabsLabel="Result tools">
     <InspectorPane label={tab === 'details' ? 'Result details' : 'Saved context'} actions={<>
       <InspectorButton className="dv-res-export" disabled={!result || phase !== 'ready'} onClick={exportResult}><InspectorIcon name="download" />Export result</InspectorButton>
-      {status && <p className="dv-res-download" role="status">{status}</p>}
+      <Presence show={!!status}><p className="dv-res-download" role="status">{status}</p></Presence>
     </>}>
       {!result ? <div className="dv-res-placeholder"><h3>No result selected</h3><p>Open a saved result to review its calculation and source.</p></div>
         : phase === 'loading' ? <div className="dv-res-placeholder" aria-busy="true"><h3>Loading result details…</h3><div className="dv-res-skeleton" data-size="big" /><div className="dv-res-skeleton" /><div className="dv-res-skeleton" /><div className="dv-res-skeleton" /></div>
@@ -164,11 +165,11 @@ function ResultDetails({ result: r, quantity }: { result: SavedResult; quantity:
     <p className="dv-res-meta">Saved {savedDate(r.savedAt)}</p>
     <dl className="dv-res-facts"><dt>Selected interval</dt><dd>{r.start}–{r.end} s</dd><dt>Samples</dt><dd>{r.sampleCount ?? 'Not stored'}</dd><dt>Mean signal</dt><dd>{r.mean === null ? 'Not stored' : `${fmt(r.mean)} ${r.signalUnit}`}</dd></dl>
     <h3 className="dv-res-group">Saved calculation</h3>
-    {c && r.mean !== null ? <>
+    <Swap swapKey={c && r.mean !== null ? 'stored' : 'missing'}>{c && r.mean !== null ? <>
       <div className="dv-res-formula"><strong>{quantity.symbol} = ({r.signal} − zero) × scale</strong>({fmt(r.mean)} − {fmt(c.zero)}) × {c.scale} = {fmt(r.value)}</div>
       <dl className="dv-res-facts"><dt>Zero offset</dt><dd>{fmt(c.zero)} {r.signalUnit}</dd><dt>Scale factor</dt><dd>{c.scale}</dd></dl>
       <p className="dv-insp-help">Scale unit: {quantity.unit} per {r.signalUnit}</p>
-    </> : <StatusBanner severity="warning">Calibration settings were not stored with this result. Its saved value is retained.</StatusBanner>}
+    </> : <StatusBanner severity="warning">Calibration settings were not stored with this result. Its saved value is retained.</StatusBanner>}</Swap>
   </>;
 }
 

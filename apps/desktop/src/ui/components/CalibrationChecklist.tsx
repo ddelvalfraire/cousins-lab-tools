@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Chip } from './Chip';
+import { Presence } from './Motion';
 import { StatusBanner, type Severity } from './Primitives';
 import { Announcer, InspectorButton, InspectorIcon, UnitInput, parseNumber } from './InspectorParts';
 import './CalibrationChecklist.css';
@@ -68,7 +69,8 @@ export function CalibrationChecklist({ title = 'Calibration readings', steps, si
   // A layout effect moves focus in the same commit that renders the target, before the screen updates.
   useLayoutEffect(() => {
     if (!focusNext.current) return;
-    root.current?.querySelector<HTMLElement>(focusNext.current)?.focus();
+    // A message or confirmation that is still leaving keeps its buttons but is inert, so it is skipped.
+    root.current?.querySelector<HTMLElement>(`${focusNext.current}:not([inert] *)`)?.focus();
     focusNext.current = null;
   });
 
@@ -149,9 +151,9 @@ export function CalibrationChecklist({ title = 'Calibration readings', steps, si
         <InspectorButton variant="quiet" title="Restore the suggested interval" disabled={pending !== null || readOnly} onClick={() => edit(String(defaultInterval[0]), String(defaultInterval[1]))}>Reset</InspectorButton>
       </div>
       <p id={helpId} className="dv-cal-range-help">Recording: {recording[0]}–{recording[1]} s <span aria-hidden="true">·</span> <span>{'count' in summary ? `${summary.count} samples selected` : 'No complete selection'}</span></p>
-      <div id={messageId} className="dv-cal-banner-wrap" hidden={!problem}>{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</div>
+      <div id={messageId}><Presence show={!!problem}><div className="dv-cal-banner-wrap">{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</div></Presence></div>
     </div>
-    {message && <div className="dv-cal-notice">{message}</div>}
+    <Presence show={!!message}><div className="dv-cal-notice">{message}</div></Presence>
     <ol className="dv-cal-list" aria-label={title}>
       {steps.map(step => {
         const reading = readings[step.id], busy = pending === step.id, name = step.label.toLowerCase();
@@ -168,13 +170,13 @@ export function CalibrationChecklist({ title = 'Calibration readings', steps, si
             </InspectorButton>
             {reading && <InspectorButton variant="quiet" className="dv-cal-icon-button" data-action="remove" disabled={pending !== null || readOnly} aria-label={`Remove ${name}`} title={`Remove ${name}`} onClick={() => remove(step.id)}><InspectorIcon name="trash" /></InspectorButton>}
           </div>
-          {confirm === step.id && reading && <div className="dv-cal-replacement">
+          <Presence show={confirm === step.id && !!reading} className="dv-cal-replacement-slot">{reading && <div className="dv-cal-replacement">
             <span>Replace {fmt(reading.mean)} {unit} with {mean === null ? 'an unavailable value' : `${fmt(mean)} ${unit}`}?</span>
             <div>
               <InspectorButton small data-action="cancel" onClick={() => { setConfirm(null); focusNext.current = `[data-action="capture"][data-step="${step.id}"]`; }}>Cancel</InspectorButton>
               <InspectorButton small variant="primary" disabled={blocked} onClick={() => capture(step.id, true)}>Replace reading</InspectorButton>
             </div>
-          </div>}
+          </div>}</Presence>
         </li>;
       })}
     </ol>

@@ -3,6 +3,7 @@ import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type uPlot from 'uplot';
 import { Chip } from './Chip';
+import { Presence } from './Motion';
 import { chosen } from './select';
 import { StatusBanner, type Severity } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
@@ -160,17 +161,17 @@ function AlignmentPane({ editor, recordings, events }: { editor: AlignmentEditor
       <InspectorButton variant="primary" disabled={!!problem || saving || !dirty} onClick={editor.apply}>{saving ? 'Applying…' : 'Apply alignment'}</InspectorButton>
       <InspectorButton variant="quiet" disabled={saving || !dirty} onClick={discard}>Discard</InspectorButton>
     </div>
-    {status === 'failed' && <div className="dv-insp-status"><StatusBanner severity="error">Could not save the alignment. Your preview is retained. <button type="button" className="dv-insp-link" data-action="retry" onClick={editor.apply}>Retry</button></StatusBanner></div>}
-    {status === 'saved' && <div className="dv-insp-status"><StatusBanner severity="info">Alignment saved.</StatusBanner></div>}
+    <Presence show={status === 'failed'}><div className="dv-insp-status"><StatusBanner severity="error">Could not save the alignment. Your preview is retained. <button type="button" className="dv-insp-link" data-action="retry" onClick={editor.apply}>Retry</button></StatusBanner></div></Presence>
+    <Presence show={status === 'saved'}><div className="dv-insp-status"><StatusBanner severity="info">Alignment saved.</StatusBanner></div></Presence>
     <Announcer message={editor.announcement} />
   </>}>
     <div className="dv-insp-field"><label htmlFor={`${id}-method`}>{FIELD.method}</label>
       <Select id={`${id}-method`} aria-label={FIELD.method} value={settings.method} disabled={saving} data={methods} onChange={chosen(value => editor.setMethod(value as AlignmentMethod))} />
     </div>
     <p className="dv-insp-help">{methods.find(m => m.value === settings.method)!.help}</p>
-    {event && <div className="dv-align-section"><div className="dv-insp-field"><label htmlFor={`${id}-event`}>{FIELD.event}</label>
+    <Presence show={event}><div className="dv-align-section"><div className="dv-insp-field"><label htmlFor={`${id}-event`}>{FIELD.event}</label>
       <Select id={`${id}-event`} aria-label={FIELD.event} value={settings.event} disabled={saving} data={events.map(e => ({ value: e.id, label: e.label }))} onChange={chosen(editor.setEvent)} />
-    </div></div>}
+    </div></div></Presence>
     <section className="dv-align-section" aria-label="Recording origins">
       <h3>{event ? 'Event time in each recording' : settings.method === 'clock' ? 'Recording start times' : 'Recording origins'}</h3>
       {recordings.map((r, i) => {
@@ -179,15 +180,15 @@ function AlignmentPane({ editor, recordings, events }: { editor: AlignmentEditor
         return <div key={r.id} className="dv-align-source" data-line={r.line}>
           <div className="dv-align-source-name"><i className="dv-align-swatch" />{r.name}</div>
           <p className="dv-align-source-meta">{r.file}</p>
-          {event && <div><label className="dv-align-input-label" htmlFor={`${id}-${r.id}`}>Time since recording start</label>
-            <UnitInput id={`${id}-${r.id}`} unit="s" value={text} invalid={invalid} disabled={saving} aria-describedby={`${zeroId} ${messageId}`} onChange={e => editor.setOrigin(r.id, e.currentTarget.value)} /></div>}
+          <Presence show={event}><label className="dv-align-input-label" htmlFor={`${id}-${r.id}`}>Time since recording start</label>
+            <UnitInput id={`${id}-${r.id}`} unit="s" value={text} invalid={invalid} disabled={saving} aria-describedby={`${zeroId} ${messageId}`} onChange={e => editor.setOrigin(r.id, e.currentTarget.value)} /></Presence>
           <div className="dv-align-zero" id={zeroId}>{event ? <><span>Display shift</span><strong>{invalid ? '—' : `${shift === 0 ? '0' : `−${shift}`} s`}</strong></>
             : settings.method === 'elapsed' ? <><span>Recording start</span><strong>0 s</strong></>
             : <><span>UTC start</span><strong>{r.clockStart ?? 'Unavailable'}</strong></>}</div>
         </div>;
       })}
     </section>
-    <div id={messageId} className="dv-insp-status" hidden={!problem}>{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</div>
+    <div id={messageId}><Presence show={!!problem}><div className="dv-insp-status">{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</div></Presence></div>
     <p className="dv-insp-lock"><InspectorIcon name="lock" />Only the display time changes. Raw samples and timestamps stay unchanged.</p>
   </InspectorPane>;
 }
@@ -233,7 +234,7 @@ export function AlignmentPreviewChart({ editor, recordings, events, title, clock
   const clock = settings.method !== 'clock' ? undefined : clockMissing ? null : Math.min(...recordings.map(r => clockSeconds(r.clockStart!)));
   return <div className="dv-insp dv-align-main">
     <section className="dv-insp-card" aria-label={`${title} comparison`}>
-      <div className="dv-insp-card-heading"><h2>{title}</h2>{dirty && <Chip icon={<InspectorIcon name="align" />}>Preview</Chip>}</div>
+      <div className="dv-insp-card-heading"><h2>{title}</h2><Presence show={dirty} variant="fade"><Chip icon={<InspectorIcon name="align" />}>Preview</Chip></Presence></div>
       <div className="dv-insp-legend">{recordings.map(r => <span key={r.id}><i data-line={r.line} />{r.name}</span>)}</div>
       <div className="dv-insp-plot">
         <ScientificPlot data={data} range={range} limits={yLimits} xLabel={xLabel} yLabel={`Signal (${recordings[0]?.unit ?? ''})`} height={narrow ? 210 : 252} minimumWidth={240}
@@ -241,8 +242,8 @@ export function AlignmentPreviewChart({ editor, recordings, events, title, clock
           series={recordings.map(r => ({ label: r.name, unit: r.unit, color: lineColors[scheme][r.line], dash: r.line }))} />
       </div>
     </section>
-    <div className="dv-insp-summary">{problem ? <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>
-      : settings.method === 'elapsed' ? <StatusBanner severity="info">Each recording starts at 0 s. This does not imply simultaneous acquisition.</StatusBanner> : null}</div>
+    <div className="dv-insp-summary"><Presence show={!!problem || settings.method === 'elapsed'}>{problem ? <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>
+      : settings.method === 'elapsed' ? <StatusBanner severity="info">Each recording starts at 0 s. This does not imply simultaneous acquisition.</StatusBanner> : null}</Presence></div>
   </div>;
 }
 

@@ -101,7 +101,7 @@ export const CaptureAndUndo: Story = {
     await expect(canvas.getByRole('button', { name: 'Capturing… standard 100' })).toBeDisabled();
     await expect(canvas.getByRole('button', { name: 'Capture standard 200' })).toBeDisabled();
     await expect(canvas.getByLabelText('Start')).toBeDisabled();
-    await expect(await canvas.findByText('Standard 100 captured.', { ignore: visibleOnly }, { timeout: 2000 })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Standard 100 captured.', { ignore: visibleOnly })).toBeVisible(), { timeout: 2000 });
     await expect(args.onCapture).toHaveBeenLastCalledWith('std100', { start: 120, end: 140, mean: expect.closeTo(1.508, 6) });
     await expect(canvas.getByText('2 of 4')).toBeVisible();
     const row = within(canvasElement.querySelector<HTMLElement>('[data-row="std100"]')!);
@@ -115,7 +115,7 @@ export const CaptureAndUndo: Story = {
     await expect(row.getByText('1.508')).toBeVisible();
     await userEvent.click(capture(canvasElement, 'standard 200'));
     await userEvent.click(await canvas.findByRole('button', { name: 'Undo' }, { timeout: 2000 }));
-    await expect(canvas.getByText('Previous readings restored.', { ignore: visibleOnly })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Previous readings restored.', { ignore: visibleOnly })).toBeVisible());
     await expect(canvas.getByText('2 of 4')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Capture standard 200' })).toBeVisible();
   },
@@ -126,14 +126,14 @@ export const ReplaceAndRemove: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Replace zero offset' }));
-    await expect(canvas.getByText('Replace 0.303 mV with 1.508 mV?')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Replace 0.303 mV with 1.508 mV?')).toBeVisible());
     await expect(canvas.getByRole('button', { name: 'Cancel' })).toHaveFocus();
     await expect(args.onCapture).not.toHaveBeenCalled();
     await userEvent.click(canvas.getByRole('button', { name: 'Cancel' }));
-    await expect(canvas.queryByText('Replace 0.303 mV with 1.508 mV?')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Replace 0.303 mV with 1.508 mV?')).toBeNull());
     await expect(canvas.getByRole('button', { name: 'Replace zero offset' })).toHaveFocus();
     await userEvent.click(canvas.getByRole('button', { name: 'Remove zero offset' }));
-    await expect(canvas.getByText('Zero offset removed.', { ignore: visibleOnly })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Zero offset removed.', { ignore: visibleOnly })).toBeVisible());
     await expect(canvas.getByText('0 of 4')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Capture zero offset' })).toHaveFocus();
     await userEvent.click(canvas.getByRole('button', { name: 'Undo' }));
@@ -147,7 +147,7 @@ export const InvalidInterval: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.clear(canvas.getByLabelText('End')); await userEvent.type(canvas.getByLabelText('End'), '400');
-    await expect(canvas.getByText('Use a start before the end, between 0 and 300 s.')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Use a start before the end, between 0 and 300 s.')).toBeVisible());
     await expect(canvas.getByLabelText('Start')).toHaveAttribute('aria-invalid', 'true');
     await expect(canvas.getByText('No complete selection')).toBeVisible();
     for (const button of captureButtons(canvasElement)) await expect(button).toBeDisabled();
@@ -163,7 +163,7 @@ export const ChooseInterval: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByLabelText('Start'), '{Backspace}5');
-    await expect(canvas.queryByText('Choose a start and end time to capture a reading.')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Choose a start and end time to capture a reading.')).toBeNull());
     await expect(capture(canvasElement, 'standard 100')).toBeEnabled();
   },
 };
@@ -175,11 +175,11 @@ export const RetryAfterFailure: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(capture(canvasElement, 'standard 100'));
     const retry = await canvas.findByRole('button', { name: 'Retry' });
-    await expect(canvas.getByText('Could not capture standard 100. Saved readings are retained.')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Could not capture standard 100. Saved readings are retained.')).toBeVisible());
     await waitFor(() => expect(retry).toHaveFocus());
     await expect(canvas.getByText('1 of 4')).toBeVisible();
     await userEvent.click(retry);
-    await expect(await canvas.findByText('Standard 100 captured.', { ignore: visibleOnly }, { timeout: 2000 })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Standard 100 captured.', { ignore: visibleOnly })).toBeVisible(), { timeout: 2000 });
     await expect(args.onCapture).toHaveBeenCalledTimes(2);
     await expect(canvas.getByText('2 of 4')).toBeVisible();
   },

@@ -6,6 +6,7 @@ import { PageHeader } from './PageHeader';
 import { AlignmentPreviewChart, RecordingAlignmentInspector, useAlignmentEditor, type AlignmentEvent, type AlignmentRecording, type AlignmentSettings, type AlignmentStatus } from './RecordingAlignment';
 import { WorkspaceBody } from './RightSidebar';
 import { chooseOption } from './chooseOption';
+import { settleMotion } from './settleMotion';
 
 /** Synthetic recordings from alignment-inspector-review.html: the same response, 15 s apart. */
 const trace = (origin: number) => Array.from({ length: 301 }, (_, t) => ({ t, y: .303 + .85 * Math.exp(-(((t - origin - 18) / 13) ** 2)) + .14 * Math.exp(-(((t - origin - 55) / 18) ** 2)) }));
@@ -111,7 +112,7 @@ export const PreviewDiscardAndApply: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await chooseOption(method(canvasElement), 'event');
-    await expect(canvas.getByText('Preview')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Preview')).toBeVisible());
     await expect(canvas.getByText('Set the same event to 0 s in both recordings.')).toBeVisible();
     await expect(chart(canvasElement, /Time from sample introduced \(s\)/)).toBeVisible();
     await chooseOption(canvas.getByLabelText('Event'), 'valve');
@@ -121,16 +122,17 @@ export const PreviewDiscardAndApply: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Discard' }));
     await expect(method(canvasElement)).toHaveValue('Elapsed since each start');
     await expect(method(canvasElement)).toHaveFocus();
-    await expect(canvas.queryByText('Preview')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Preview')).toBeNull());
     await chooseOption(method(canvasElement), 'clock');
     await expect(canvas.getByRole('heading', { name: 'Recording start times' })).toBeVisible();
     await userEvent.click(apply(canvasElement));
     await expect(apply(canvasElement)).toHaveTextContent('Applying…');
     await expect(method(canvasElement)).toBeDisabled();
-    await expect(await canvas.findByText('Alignment saved.', { ignore: visibleOnly }, { timeout: 2000 })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Alignment saved.', { ignore: visibleOnly })).toBeVisible(), { timeout: 2000 });
     await expect(args.onSave).toHaveBeenLastCalledWith({ method: 'clock', event: 'sample', origins: { sample: '120', reference: '135' } });
-    await expect(canvas.queryByText('Preview')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Preview')).toBeNull());
     await expect(apply(canvasElement)).toBeDisabled();
+    await settleMotion();
   },
 };
 
@@ -144,7 +146,7 @@ export const EventTimeGuard: Story = {
     await expect(field).toHaveAttribute('aria-invalid', 'true');
     await expect(apply(canvasElement)).toBeDisabled();
     await userEvent.type(field, '140');
-    await expect(canvas.queryByText('Enter each event time between 0 and 300 s.')).toBeNull();
+    await waitFor(() => expect(canvas.queryByText('Enter each event time between 0 and 300 s.')).toBeNull());
     await expect(canvas.getByText('−140 s')).toBeVisible();
     await expect(apply(canvasElement)).toBeEnabled();
   },
@@ -157,12 +159,13 @@ export const RetryAfterFailedSave: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(apply(canvasElement));
     const retry = await canvas.findByRole('button', { name: 'Retry' }, { timeout: 2000 });
-    await expect(canvas.getByText(/Could not save the alignment\. Your preview is retained\./)).toBeVisible();
+    await waitFor(() => expect(canvas.getByText(/Could not save the alignment\. Your preview is retained\./)).toBeVisible());
     await waitFor(() => expect(retry).toHaveFocus());
     await expect(canvas.getByText('Preview')).toBeVisible();
     await userEvent.click(retry);
-    await expect(await canvas.findByText('Alignment saved.', { ignore: visibleOnly }, { timeout: 2000 })).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Alignment saved.', { ignore: visibleOnly })).toBeVisible(), { timeout: 2000 });
     await expect(args.onSave).toHaveBeenCalledTimes(2);
+    await settleMotion();
   },
 };
 

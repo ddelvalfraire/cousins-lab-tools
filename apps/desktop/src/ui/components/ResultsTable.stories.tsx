@@ -5,6 +5,7 @@ import { formatClockTime } from '../time';
 import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';
 import { WorkspaceBody } from './RightSidebar';
+import { settleMotion } from './settleMotion';
 import { SavedResultInspector, SavedResultsTable, useSavedResultInspector, type ResultQuantity, type SavedResult, type SavedResultPhase } from './SavedResults';
 
 /** Synthetic saved results from saved-result-inspector-review.html. */
@@ -160,5 +161,6 @@ export const ExportResult: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Export result' }));
     await expect(args.onExport).toHaveBeenCalledWith(results[0]);
     await waitFor(() => expect(canvas.getByText('Result exported.')).toBeVisible());
+    await settleMotion();
   },
 };

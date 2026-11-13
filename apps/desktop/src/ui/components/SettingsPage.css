@@ -12,12 +12,17 @@
 .dv-settings-title p { font-size: 12px; color: var(--dv-ink-muted); margin-top: 5px; line-height: 1.6; }
 .dv-settings-saved { display: inline-flex; align-items: center; gap: 5px; min-height: 22px; font-size: 11px; color: var(--dv-ink-muted); white-space: nowrap; }
 .dv-settings-saved svg { width: 13px; height: 13px; }
+.dv-settings-saved-mark { display: inline-flex; align-items: center; gap: 5px; }
 
 .dv-settings-content { padding: 0 24px 24px; }
 .dv-settings-section { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px 28px; padding: 22px 0; border-top: 1px solid var(--dv-line); }
 .dv-settings-section h3 { font-size: 14px; font-weight: 600; line-height: normal; }
 .dv-settings-lead { font-size: 12px; color: var(--dv-ink-muted); line-height: 1.6; margin-top: 5px; }
 .dv-settings-fields { display: grid; gap: 18px; min-width: 0; }
+/* A message in the fields' grid carries the grid gap inside its collapsing wrapper, so the gap opens and closes with it. */
+.dv-settings-message, .dv-settings-message-slot { margin-top: -18px; }
+.dv-settings-message > *, .dv-settings-message-slot > * > * { margin-top: 18px; }
+.dv-settings-message-slot:empty { display: none; }
 .dv-settings-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: 12px; font-weight: 550; }
 .dv-settings-hint { font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); font-weight: 400; }
 
@@ -53,6 +58,7 @@
 .dv-settings-icon-button:hover { background: var(--dv-soft); color: var(--dv-ink); }
 .dv-settings-icon-button svg { width: 14px; height: 14px; }
 .dv-settings-copied { margin-left: 4px; font-size: 11px; color: var(--dv-ink-muted); }
+.dv-settings-copied-mark { display: inline-block; }
 .dv-settings-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .dv-settings-announcer { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }

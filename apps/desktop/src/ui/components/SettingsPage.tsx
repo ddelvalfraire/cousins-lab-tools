@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Banner } from './Banner';
 import { Select } from '@mantine/core';
+import { Presence } from './Motion';
 import { chosen, selectAria } from './select';
 import { ReviewIcon } from './ReviewIcons';
 import type { AppearancePreference } from '../appearance';
@@ -159,13 +160,13 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
   return (
     <section className="dv-settings" data-header={hideHeader ? 'hidden' : undefined} aria-labelledby={hideHeader ? undefined : ids.title} aria-label={hideHeader ? 'Settings' : undefined}>
       {hideHeader
-        ? <><h2 className="dv-settings-sr">Settings on this computer</h2><span className="dv-settings-saved dv-settings-saved-corner" aria-hidden="true">{saved && <><ReviewIcon name="check" />Saved</>}</span></>
+        ? <><h2 className="dv-settings-sr">Settings on this computer</h2><span className="dv-settings-saved dv-settings-saved-corner" aria-hidden="true"><Presence show={saved} variant="fade" className="dv-settings-saved-mark"><ReviewIcon name="check" />Saved</Presence></span></>
         : <header className="dv-settings-title">
           <div>
             <h2 id={ids.title}>Settings</h2>
             <p>Applies to everyone using DVDash on this computer.</p>
           </div>
-          <span className="dv-settings-saved" aria-hidden="true">{saved && <><ReviewIcon name="check" />Saved</>}</span>
+          <span className="dv-settings-saved" aria-hidden="true"><Presence show={saved} variant="fade" className="dv-settings-saved-mark"><ReviewIcon name="check" />Saved</Presence></span>
         </header>}
       <div className="dv-settings-content">
         <section className="dv-settings-section" aria-labelledby={section('appearance')}>
@@ -216,12 +217,12 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
               </div>
               <span className="dv-settings-hint" id={ids.folderHint}>Existing recordings stay where they are. Only new recordings use the new folder.</span>
             </div>
-            {folderState.status === 'error' && (
-              <Banner
+            <Presence show={folderState.status === 'error'} className="dv-settings-message">
+              {folderState.status === 'error' && <Banner
                 severity="error" messages={[`DVDash can’t save recordings in ${folderState.path}. Still using ${settings.folder}.`]}
                 action={<button type="button" ref={chooseAgain} className="dv-settings-fix" onClick={onChooseFolder}>Choose another folder</button>}
-              />
-            )}
+              />}
+            </Presence>
           </div>
         </section>
 
@@ -234,13 +235,13 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
                 data={SEPARATORS} onChange={chosen(value => onChange('delimiter', value as ColumnSeparator))} />
               <span className="dv-settings-hint" id={ids.delimiterHint}>Spreadsheets in regions that use a decimal comma usually expect semicolons.</span>
             </div>
-            <div id={ids.exportMessage} hidden={!conflict} data-testid="export-message">
-              {conflict && (
+            <div id={ids.exportMessage} className="dv-settings-message-slot" data-testid="export-message">
+              <Presence show={conflict}>
                 <Banner
                   severity="warning" messages={['Commas would separate both decimals and columns, so spreadsheets can misread values.']}
                   action={<button type="button" className="dv-settings-fix" onClick={() => { delimiterSelect.current?.focus(); onChange('delimiter', 'semicolon'); }}>Use semicolons</button>}
                 />
-              )}
+              </Presence>
             </div>
           </div>
         </section>
@@ -259,7 +260,7 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
               <dd>
                 <code title={build.commit}>{build.commit.slice(0, 12)}</code>
                 <button type="button" className="dv-settings-icon-button" aria-label="Copy full commit hash" onClick={copyCommit}><ReviewIcon name="copy" /></button>
-                <span className="dv-settings-copied" aria-hidden="true">{copied ? 'Copied' : ''}</span>
+                <span className="dv-settings-copied" aria-hidden="true"><Presence show={copied} variant="fade" className="dv-settings-copied-mark">Copied</Presence></span>
                 {build.dirty
                   ? <span className="dv-settings-muted"> · uncommitted changes</span>
                   : <> · <a href={`${REPOSITORY_URL}/commit/${build.commit}`} target="_blank" rel="noreferrer">View commit</a></>}
