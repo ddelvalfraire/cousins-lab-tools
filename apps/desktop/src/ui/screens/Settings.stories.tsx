@@ -106,6 +106,32 @@ export const HighlightEndsWhenTheUserMoves:Story={
   },
 };
 
+/**
+ * Search finds Text size by the words people use for it. Choosing Largest scales the whole page at once, announces the
+ * save, and the page still fits its width. The story puts the size back afterwards.
+ */
+export const TextSizeFromSearch:Story={
+  parameters:{previewWidth:390},
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement), box=target(canvasElement,'settings.appearance.textSize'), root=document.documentElement;
+    await pick(canvasElement,'font size',/^Text size/);
+    await waitFor(()=>expect(highlight(box)).toBe('pulse'));
+    await expect(canvas.getByRole('radio',{name:'Default'})).toHaveFocus();
+    const heading=canvas.getByRole('heading',{level:1}), before=parseFloat(getComputedStyle(heading).fontSize);
+    await userEvent.click(canvas.getByRole('radio',{name:'Largest'}));
+    try {
+      await expect(root).toHaveAttribute('data-dv-text-size','largest');
+      await expect(parseFloat(getComputedStyle(heading).fontSize)).toBeCloseTo(before*1.5,1);
+      await waitFor(()=>expect(canvasElement.querySelector('.dv-settings-announcer')).toHaveTextContent('Text size saved.'));
+      const scroller=page(canvasElement);
+      await expect(scroller.scrollWidth,'Settings fits its width at Largest').toBeLessThanOrEqual(scroller.clientWidth);
+    } finally {
+      await userEvent.click(canvas.getByRole('radio',{name:'Default'}));
+    }
+    await expect(root).toHaveAttribute('data-dv-text-size','default');
+  },
+};
+
 /** A deep link to a section on a cold start scrolls to it and highlights it once the page is laid out. */
 export const DeepLinkToSection:Story={
   parameters:{previewWidth:390},

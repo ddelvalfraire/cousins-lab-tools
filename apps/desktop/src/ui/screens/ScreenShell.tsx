@@ -91,7 +91,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
     if (!target) { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); return; }
     navigate(to, id, target); revealOnPage(target);
   };
-  const context = { dark, appearance:appearance.preference };
+  const context = { dark, appearance:appearance.preference, textSize:appearance.textSize };
   /** What each command does in this window. A command without a handler is left out of search, the shortcuts dialog and the keys. */
   const handlers:Record<CommandId,(()=>void)|undefined> = {
     'new-experiment':onNewExperiment, 'import-recordings':onImportRecordings,

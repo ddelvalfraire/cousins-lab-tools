@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { isTextSize, readTextSize, TEXT_SIZE_ATTRIBUTE, TEXT_SIZE_KEY, textScales, writeTextSize, type TextSize } from './textSize';
+import { textSizeOptions } from './search-registry';
 
 const css = readFileSync(new URL('./components/Approved.css', import.meta.url), 'utf8');
 const rootRule = (size: TextSize) => css.match(new RegExp(`html\\[${TEXT_SIZE_ATTRIBUTE}='${size}'\\]\\s*\\{\\s*font-size:\\s*([\\d.]+)%`))?.[1];
@@ -13,6 +14,13 @@ describe('text size steps', () => {
   test('the stylesheet sets the root to the same scale as textSize.ts, and Default leaves it alone', () => {
     expect(rootRule('default')).toBeUndefined();
     for (const size of ['large', 'larger', 'largest'] as const) expect(Number(rootRule(size)) / 100, size).toBe(textScales[size]);
+  });
+
+  test('Settings offers every step once, smallest first, ending at Largest', () => {
+    expect(textSizeOptions.map(option => option.value)).toEqual(Object.keys(textScales));
+    expect(textSizeOptions.map(option => option.label)).toEqual(['Default', 'Large', 'Larger', 'Largest']);
+    const scales = textSizeOptions.map(option => textScales[option.value]);
+    expect([...scales].sort((a, b) => a - b)).toEqual(scales);
   });
 
   test('every step makes a 16 px root a whole number of px', () => {

@@ -14,7 +14,7 @@ const builds = {
   local: { version: '0.1.0', commit: COMMIT_LOCAL, tag: null, dirty: false, built: '2026-11-06 14:12 PST', ...environment },
   dirty: { version: '0.1.0', commit: COMMIT_LOCAL, tag: null, dirty: true, built: '2026-11-06 14:12 PST', ...environment },
 } satisfies Record<string, BuildInfo>;
-const defaults: AppSettings = { theme: 'system', decimal: 'system', folder: '~/Documents/DVDash/Recordings', delimiter: 'comma' };
+const defaults: AppSettings = { theme: 'system', textSize: 'default', decimal: 'system', folder: '~/Documents/DVDash/Recordings', delimiter: 'comma' };
 const CHOSEN_FOLDER = '~/Lab data/DVDash recordings';
 const UNWRITABLE_FOLDER = '/Volumes/Instrument Share';
 
@@ -84,6 +84,12 @@ export const SavingChanges: Story = {
       await expect(args.onChange).toHaveBeenCalledWith('theme', 'dark');
       await waitFor(() => expect(canvas.getByText('Saved')).toBeVisible());
       await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Theme saved.'));
+      await expect(canvas.getByRole('radio', { name: 'Default' })).toBeChecked();
+      await userEvent.click(canvas.getByRole('radio', { name: 'Larger' }));
+      await expect(args.onChange).toHaveBeenCalledWith('textSize', 'larger');
+      await expect(canvas.getByRole('radio', { name: 'Larger' })).toBeChecked();
+      await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Text size saved.'));
+      await expect(canvas.getByTestId('text-size-preview')).toHaveTextContent('-1,234.56 mV');
       await chooseOption(canvas.getByLabelText('Decimal separator'), 'comma');
       await expect(canvas.getByTestId('number-preview')).toHaveTextContent('-1 234,56 mV');
     });

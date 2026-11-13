@@ -17,9 +17,10 @@
  */
 import type { CommandGlyphName } from './components/CommandCenter';
 import type { AppearancePreference } from './appearance';
+import type { TextSize } from './textSize';
 
 /** What a title or detail may depend on. */
-export interface SearchContext { dark: boolean; appearance?: AppearancePreference }
+export interface SearchContext { dark: boolean; appearance?: AppearancePreference; textSize?: TextSize }
 
 export type PageId = 'experiments' | 'presets' | 'routines' | 'instruments' | 'settings';
 export interface PageEntry { title: string; glyph: CommandGlyphName; keys: readonly string[]; sequence?: boolean; keywords?: string }
@@ -139,6 +140,8 @@ export function sequenceHint(entries: readonly CommandEntry[], first: string) {
 
 /** The Settings page's theme choices, also the Theme result's current value. */
 export const themeOptions: readonly { value: AppearancePreference; label: string }[] = [{ value: 'system', label: 'Match system' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
+/** The Settings page's text size steps, smallest first, also the Text size result's current value. */
+export const textSizeOptions: readonly { value: TextSize; label: string }[] = [{ value: 'default', label: 'Default' }, { value: 'large', label: 'Large' }, { value: 'larger', label: 'Larger' }, { value: 'largest', label: 'Largest' }];
 
 export interface SettingField {
   /** The field's label on the page. */
@@ -155,6 +158,7 @@ export interface SettingsSectionEntry { label: string; description: string; glyp
 export const settings = {
   appearance: { label: 'Appearance', description: 'How DVDash looks.', glyph: 'sun', keywords: 'display look', fields: {
     theme: { label: 'Theme', keywords: 'light dark mode match system colours colors', featured: true, value: ({ appearance }) => themeOptions.find(option => option.value === appearance)?.label },
+    textSize: { label: 'Text size', keywords: 'font size larger text bigger smaller zoom scale type readability accessibility', value: ({ textSize }) => textSizeOptions.find(option => option.value === textSize)?.label },
   } },
   numbers: { label: 'Numbers', description: 'How values are shown on screen and written to exported files.', glyph: 'settings', keywords: 'number format', fields: {
     decimal: { label: 'Decimal separator', keywords: 'decimal marker point comma locale' },

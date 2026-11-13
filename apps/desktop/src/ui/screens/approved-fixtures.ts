@@ -62,7 +62,7 @@ export const setupRoutines: SetupRoutine[] = [
   ] },
 ];
 
-export const defaultSettings: AppSettings = { theme: 'system', decimal: 'system', folder: '~/Documents/DVDash/Recordings', delimiter: 'comma' };
+export const defaultSettings: AppSettings = { theme: 'system', textSize: 'default', decimal: 'system', folder: '~/Documents/DVDash/Recordings', delimiter: 'comma' };
 /** Real release from this repository. */
 export const buildInfo: BuildInfo = {
   version: '0.1.0-rc.2', commit: 'fdba48e6d504efa8b66f04b0dd8ea7f892fd4a6b', tag: 'desktop-v0.1.0-rc.2', dirty: false,

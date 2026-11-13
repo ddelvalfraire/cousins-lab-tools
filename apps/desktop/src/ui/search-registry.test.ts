@@ -86,4 +86,11 @@ describe('search registry: settings', () => {
     expect(records.find(record => record.id === 'settings.appearance.theme')?.end).toBe('Match system');
     expect(settingsRecords({ dark: true, appearance: 'dark' }).find(record => record.id === 'settings.appearance.theme')?.end).toBe('Dark');
   });
+
+  it('lists Text size under Appearance with the current step, findable by the words people use for it', () => {
+    const record = settingsRecords({ dark: false, textSize: 'larger' }).find(item => item.id === 'settings.appearance.textSize');
+    expect(record).toMatchObject({ title: 'Text size', meta: 'Settings · Appearance', end: 'Larger', target: 'settings.appearance.textSize' });
+    const words = `${record!.title} ${record!.keywords}`.toLowerCase().split(/\s+/);
+    for (const query of ['text size', 'font size', 'zoom', 'larger text']) expect(query.split(' ').every(word => words.includes(word)), query).toBe(true);
+  });
 });

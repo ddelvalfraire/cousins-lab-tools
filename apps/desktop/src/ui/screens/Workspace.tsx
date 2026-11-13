@@ -51,6 +51,7 @@ export function DVDashWorkspace({initialPage='experiments',initialTarget,initial
   };
   const changeSetting=<K extends keyof AppSettings>(key:K,value:AppSettings[K])=>{
     if(key==='theme')appearance.setPreference(value as AppSettings['theme']);
+    else if(key==='textSize')appearance.setTextSize(value as AppSettings['textSize']);
     else setSettings(current=>({...current,[key]:value}));
   };
   const chooseFolder=()=>{setFolderState({status:'choosing'});window.setTimeout(()=>{setSettings(current=>({...current,folder:'~/Lab data/DVDash recordings'}));setFolderState({status:'ready'});},700);};
@@ -72,7 +73,7 @@ export function DVDashWorkspace({initialPage='experiments',initialTarget,initial
     {page==='routines'&&<RoutinesPage key={catalogSelection??''} initialSelected={catalogSelection} query={pageQuery} onClearQuery={clearQuery} navigate={navigate} onUseRoutine={id=>{setRoutineId(id);navigate('prepare','gas');}} onEditRoutine={id=>navigate('routine-edit',id)}/>}
     {page==='routine-edit'&&<RoutineEditor key={routine.id} name={routine.name} revision={routine.revision} routine={routineDefinitions[routine.id]??catalogRoutineDefinitions[routine.id]} breadcrumbs={[home,{label:'Routines',onClick:()=>navigate('routines')},{label:routine.name}]} onDiscard={()=>navigate('routines')}/>}
     {page==='instruments'&&<InstrumentsPage key={catalogSelection??''} initialSelected={catalogSelection} query={pageQuery} onClearQuery={clearQuery} navigate={navigate}/>}
-    {page==='settings'&&<><PageHeader title={pages.settings.title} breadcrumbs={[home,{label:pages.settings.title}]} description="Applies to everyone using DVDash on this computer."/><ScreenBody><SettingsPage hideHeader settings={{...settings,theme:appearance.preference}} build={buildInfo} folderState={folderState} onChange={changeSetting} onChooseFolder={chooseFolder} onCopyCommit={commit=>navigator.clipboard?.writeText(commit)}/></ScreenBody></>}
+    {page==='settings'&&<><PageHeader title={pages.settings.title} breadcrumbs={[home,{label:pages.settings.title}]} description="Applies to everyone using DVDash on this computer."/><ScreenBody><SettingsPage hideHeader settings={{...settings,theme:appearance.preference,textSize:appearance.textSize}} build={buildInfo} folderState={folderState} onChange={changeSetting} onChooseFolder={chooseFolder} onCopyCommit={commit=>navigator.clipboard?.writeText(commit)}/></ScreenBody></>}
     <RecordingImport opened={dialog==='recording'} onClose={()=>setDialog(null)} presets={recordingPresetOptions} readFile={readRecordingFile}
       importFile={async(file,name,importPreset)=>{setRows(current=>[{id:`import-${file.id}`,name,presetId:importPreset,status:'Recorded',date:REVIEW_NOW.toISOString(),samples:0,input:'Recorded file'},...current.filter(row=>row.id!==`import-${file.id}`)]);}}/>
     {/* Fixture: the preset catalog is static, so a checked definition is accepted without being added to it. */}

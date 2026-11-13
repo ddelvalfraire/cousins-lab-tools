@@ -5,7 +5,8 @@ import { Presence } from './Motion';
 import { chosen, selectAria } from './select';
 import { ReviewIcon } from './ReviewIcons';
 import type { AppearancePreference } from '../appearance';
-import { settings as declared, settingTarget, themeOptions, type SettingsSectionId } from '../search-registry';
+import type { TextSize } from '../textSize';
+import { settings as declared, settingTarget, textSizeOptions, themeOptions, type SettingsSectionId } from '../search-registry';
 import './Approved.css';
 import './SettingsPage.css';
 
@@ -15,6 +16,8 @@ export type ColumnSeparator = 'comma' | 'semicolon' | 'tab';
 
 export interface AppSettings {
   theme: ThemePreference;
+  /** Size of all text, applied by the host as the root font size. */
+  textSize: TextSize;
   decimal: DecimalPreference;
   /** Folder new recordings are saved in. */
   folder: string;
@@ -59,7 +62,7 @@ export interface SettingsPageProps {
 
 export const REPOSITORY_URL = 'https://github.com/ddelvalfraire/cousins-lab-tools';
 /** Field labels from the search registry, which also makes them searchable. */
-const LABELS: Record<SettingKey, string> = { theme: declared.appearance.fields.theme.label, decimal: declared.numbers.fields.decimal.label, folder: declared.recordings.fields.folder.label, delimiter: declared.export.fields.delimiter.label };
+const LABELS: Record<SettingKey, string> = { theme: declared.appearance.fields.theme.label, textSize: declared.appearance.fields.textSize.label, decimal: declared.numbers.fields.decimal.label, folder: declared.recordings.fields.folder.label, delimiter: declared.export.fields.delimiter.label };
 const MARK_MS = 2400;
 
 export function formatReading(value: number, separator: 'point' | 'comma') {
@@ -154,7 +157,7 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
   const conflict = decimal === 'comma' && settings.delimiter === 'comma';
   const choosing = folderState.status === 'choosing';
   const releaseUrl = build.tag ? `${REPOSITORY_URL}/releases/tag/${build.tag}` : null;
-  const ids = { title: `${id}-title`, folder: `${id}-folder`, folderHint: `${id}-folder-hint`, decimal: `${id}-decimal`, decimalHint: `${id}-decimal-hint`, delimiter: `${id}-delimiter`, delimiterHint: `${id}-delimiter-hint`, exportMessage: `${id}-export-message` };
+  const ids = { title: `${id}-title`, textSizeHint: `${id}-text-size-hint`, folder: `${id}-folder`, folderHint: `${id}-folder-hint`, decimal: `${id}-decimal`, decimalHint: `${id}-decimal-hint`, delimiter: `${id}-delimiter`, delimiterHint: `${id}-delimiter-hint`, exportMessage: `${id}-export-message` };
   const section = (key: string) => `${id}-s-${key}`;
   /** A section's heading and lead from the registry. The heading takes focus when search opens the section. */
   const heading = (key: SettingsSectionId) => <div><h3 id={section(key)} data-search-focus="">{declared[key].label}</h3><p className="dv-settings-lead">{declared[key].description}</p></div>;
@@ -184,6 +187,21 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
                   </label>
                 ))}
               </div>
+            </fieldset>
+            <fieldset data-search-target={settingTarget('appearance', 'textSize')} aria-describedby={ids.textSizeHint}>
+              <legend>{LABELS.textSize}</legend>
+              <div className="dv-settings-segmented dv-settings-text-size">
+                {textSizeOptions.map(size => (
+                  <label key={size.value}>
+                    <input type="radio" name={`${id}-text-size`} value={size.value} checked={settings.textSize === size.value} onChange={() => onChange('textSize', size.value)} />
+                    {size.label}
+                  </label>
+                ))}
+              </div>
+              <p className="dv-settings-preview dv-settings-text-preview" data-testid="text-size-preview" aria-live="off">
+                <span>Example</span><strong>Leaf respiration · Sample 024 · {formatReading(-1234.56, decimal)} mV</strong>
+              </p>
+              <span className="dv-settings-hint" id={ids.textSizeHint}>Changes the size of all text in DVDash.</span>
             </fieldset>
           </div>
         </section>
