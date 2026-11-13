@@ -45,8 +45,24 @@
   --dv-gap: 16px;          /* between components, and between cards in a grid */
   /* Right sidebar: open width, the rail it collapses to, and its slide. */
   --dv-side-open: 332px; --dv-side-rail: 52px;
-  --dv-side-duration: 240ms; --dv-side-motion: var(--dv-side-duration) cubic-bezier(.22, 1, .36, 1);
+  --dv-side-duration: var(--dv-motion-slow); --dv-side-motion: var(--dv-side-duration) var(--dv-ease-out);
 }
+
+/*
+ * Motion: every state change that adds, removes or replaces something uses these (src/ui/motion.ts holds the same
+ * values for Mantine transitions). Under prefers-reduced-motion dvdash.css turns every transition and animation off,
+ * and the theme's respectReducedMotion makes Mantine's instant, so each change is immediate.
+ */
+:root, .dvdash {
+  --dv-motion-fast: 120ms; --dv-motion-base: 180ms; --dv-motion-slow: 240ms; --dv-motion-reveal: 420ms;
+  --dv-ease-out: cubic-bezier(.22, 1, .36, 1); --dv-ease-in-out: cubic-bezier(.4, 0, .2, 1);
+}
+/* Swap (Motion.tsx): the new content keeps the layout; the old one sits over it, clipped to its box, while it fades. */
+.dv-swap { position: relative; min-width: 0; }
+.dv-swap-item[data-motion='enter'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) both; }
+.dv-swap-item[data-motion='leave'] { position: absolute; inset: 0; overflow: hidden; pointer-events: none; animation: dv-swap-out var(--dv-motion-fast) var(--dv-ease-in-out) both; }
+@keyframes dv-swap-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes dv-swap-out { to { opacity: 0; } }
 
 /* Chip: small labelled state with an icon (approved catalog "side-chip"). */
 .dv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: 10px; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }

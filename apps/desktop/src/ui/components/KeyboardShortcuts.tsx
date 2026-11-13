@@ -38,7 +38,7 @@ export interface KeyboardShortcutsProps {
 export function KeyboardShortcuts({ opened, onClose, mac, sections = shortcutSections }: KeyboardShortcutsProps) {
   // Compound parts so the header is not a second page banner beside the window bar's <header>.
   return <Modal.Root
-    opened={opened} onClose={onClose} centered size={450} padding={0} xOffset={16} transitionProps={{ duration: 120 }}
+    opened={opened} onClose={onClose} centered size={450} padding={0} xOffset={16}
     classNames={{ root: 'dvdash', inner: 'dv-shortcuts-inner', content: 'dv-shortcuts', header: 'dv-shortcuts-header', title: 'dv-shortcuts-title', body: 'dv-shortcuts-body', close: 'dv-shortcuts-close' }}
   >
     <Modal.Overlay />

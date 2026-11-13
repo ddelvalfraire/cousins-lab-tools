@@ -12,7 +12,7 @@ export function GuardDialog({ opened, title, busy, onKeep, keepLabel, keepRef, a
   // Compound parts so the header is not a second page banner beside the window bar's <header> (as KeyboardShortcuts).
   return <Modal.Root
     opened={opened} onClose={() => { if (!busy) onKeep(); }} centered size={460} padding={0} xOffset={16}
-    closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
+    closeOnClickOutside={false} closeOnEscape={!busy}
     classNames={{ root: 'dvdash', inner: 'dv-guard-inner', content: 'dv-guard', header: 'dv-guard-header', title: 'dv-guard-title', body: 'dv-guard-body' }}
   >
     <Modal.Overlay />

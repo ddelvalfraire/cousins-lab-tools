@@ -61,7 +61,7 @@ export interface ImportDialogProps {
 export function ImportDialog({ opened, onClose, title, description, steps, step = 0, busy = false, closeLabel = 'Close dialog', footerStart, actions, bodyMaxHeight = 540, className, children }: ImportDialogProps) {
   const close = () => { if (!busy) onClose(); };
   const id = useId();
-  return <Modal.Root id={id} opened={opened} onClose={close} centered size={580} xOffset={10} closeOnClickOutside={false} closeOnEscape={!busy} transitionProps={{ duration: 120 }}
+  return <Modal.Root id={id} opened={opened} onClose={close} centered size={580} xOffset={10} closeOnClickOutside={false} closeOnEscape={!busy}
     classNames={{ root: 'dvdash', inner: 'dv-import-inner', content: className ? `dv-import-dialog ${className}` : 'dv-import-dialog' }}>
     <Modal.Overlay />
     <Modal.Content>

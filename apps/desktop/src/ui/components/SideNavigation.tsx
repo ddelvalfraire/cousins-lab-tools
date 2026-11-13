@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Drawer } from '@mantine/core';
-import { useReducedMotion } from '@mantine/hooks';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { StatusWord } from './Chip';
 import { ScrollFrame } from './ScrollFrame';
@@ -226,15 +225,14 @@ export function NavigationDrawer({ onNavigate, onOpenExperiment, opened: openedP
   const [ownOpened, setOwnOpened] = useState(false);
   const opened = openedProp ?? ownOpened;
   const setOpened = (value: boolean) => { setOwnOpened(value); onOpenedChange?.(value); };
-  const reducedMotion = useReducedMotion();
   const close = () => setOpened(false);
   return <>
     {withBar && <header className="dv-mobile-navigation">
       <button type="button" className="dv-navigation-icon-button dv-navigation-menu" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={opened} onClick={() => setOpened(true)}><MenuGlyph /></button>
       <Brand />
     </header>}
-    <Drawer.Root opened={opened} onClose={close} size={280} position="left" transitionProps={{ duration: reducedMotion ? 0 : 220, timingFunction: 'cubic-bezier(.22,1,.36,1)' }}>
-      <Drawer.Overlay transitionProps={{ duration: reducedMotion ? 0 : 180 }} />
+    <Drawer.Root opened={opened} onClose={close} size={280} position="left">
+      <Drawer.Overlay />
       <Drawer.Content aria-label="Navigation" className="dvdash dv-navigation-drawer">
         <div className="dv-navigation-drawer-head">
           <Brand />
