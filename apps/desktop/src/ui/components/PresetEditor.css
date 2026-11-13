@@ -25,7 +25,8 @@
 .dv-preset-editor .pe-button[data-variant='quiet'] { border-color: transparent; background: none; color: var(--dv-ink-muted); }
 
 /* Body: builder and right sidebar (WorkspaceBody, RightSidebar). */
-.pe-messages { margin-bottom: 12px; }
+.pe-messages:empty { display: none; }
+.pe-messages-body { margin-bottom: 12px; }
 .pe-requires { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--dv-ink-muted); margin-bottom: 12px; }
 .pe-add-row { position: relative; margin-top: 12px; }
 /* Add panel menu: the approved header menu (shared-header-review.html .header-menu), opening below its button. */
@@ -122,6 +123,9 @@
 
 /* Right sidebar. */
 .pe-side-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 550; margin-top: 16px; min-width: 0; }
+/* A field's collapsing error carries the column gap above it, so the gap opens and closes with the error. */
+.pe-side-field > [data-presence] { margin-top: -7px; }
+.pe-side-field > [data-presence] > * { margin-top: 7px; }
 .pe-side-field .dv-select { --dv-select-height: 32px; --dv-select-font: 12px; --dv-select-pad: 9px; }
 .pe-side-field input:not(.dv-select-input) { width: 100%; border: 1px solid var(--dv-control); border-radius: 6px; padding: 8px 9px; background: var(--dv-paper); color: var(--dv-ink); font-size: 12px; font-weight: 400; }
 .pe-side-field [aria-invalid='true'] { border-color: var(--dv-error); }

@@ -3,6 +3,7 @@ import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/tes
 import { RoutineEditor } from './RoutineEditor';
 import type { RoutineDefinition } from './RoutineEditor';
 import { chooseOption } from './chooseOption';
+import { settleMotion } from './settleMotion';
 
 const savedRoutine: RoutineDefinition = {
   parameters: [{ id: 'q1', name: 'Reference', seconds: 10 }, { id: 'q2', name: 'Settle', seconds: 5 }, { id: 'q3', name: 'Sample', seconds: 20 }],
@@ -118,7 +119,7 @@ export const ChangeStepType: Story = {
     const note = () => canvasElement.querySelector('.dv-re-side-note');
     // Changing a capture to a wait removes its name and says so.
     await userEvent.click(canvas.getByRole('button', { name: 'Edit step 4, Capture sample' }));
-    await expect(note()).toBeNull();
+    await waitFor(() => expect(note()).toBeNull());
     await chooseOption(canvas.getByRole('combobox', { name: 'Type' }), 'wait');
     await expect(note()).toHaveTextContent(/^Wait steps don’t have a name, so “Sample” was removed\.$/);
     await expect(canvas.queryByRole('textbox', { name: 'What it captures' })).toBeNull();
@@ -127,6 +128,7 @@ export const ChangeStepType: Story = {
     await chooseOption(canvas.getByRole('combobox', { name: 'Type' }), 'annotate');
     await expect(note()).toHaveTextContent(/^Notes don’t take time, so this step’s duration was removed\.$/);
     await expect(chip(canvasElement, 's4')).toBeNull();
+    await settleMotion();
   },
 };
 
@@ -189,7 +191,7 @@ export const FixAndSave: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Edit step 6, Wait' }));
     const seconds = canvas.getByRole('textbox', { name: 'Seconds' });
     await userEvent.clear(seconds); await userEvent.type(seconds, '3');
-    await expect(canvasElement.querySelector('.dv-re-messages')).toBeNull();
+    await waitFor(() => expect(canvasElement.querySelector('.dv-re-messages')).toBeNull());
     await userEvent.click(save);
     await expect(args.onSave).toHaveBeenCalledWith(expect.objectContaining({ name: 'Reference and sample', revision: 4 }));
     await expect(canvas.getByText('R4')).toBeVisible();
@@ -214,8 +216,9 @@ export const AddFirstStep: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Add capture' }));
     await waitFor(() => expect(canvas.getByRole('textbox', { name: 'What it captures' })).toHaveFocus());
-    await expect(canvas.getByText('Step 1: Name what this step captures.')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Step 1: Name what this step captures.')).toBeVisible());
     await expect(canvas.getByRole('button', { name: 'Save as R1' })).toBeDisabled();
+    await settleMotion();
   },
 };
 

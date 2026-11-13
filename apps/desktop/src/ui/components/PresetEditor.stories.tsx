@@ -129,7 +129,7 @@ export const NewPanelWithoutSignals: Story = {
     await userEvent.click(panel(canvasElement, 'p6').querySelector('h3')!);
     await userEvent.click(canvas.getByRole('tab', { name: 'Signals' }));
     await userEvent.click(canvas.getByRole('checkbox', { name: /Mass 49/ }));
-    await expect(messages).not.toBeVisible();
+    await waitFor(() => expect(messages).not.toBeVisible());
     await expect(panel(canvasElement, 'p6').querySelectorAll('polyline')).toHaveLength(1);
     await userEvent.click(canvas.getByRole('button', { name: 'Save as R4' }));
     await expect(args.onSave).toHaveBeenCalledWith(expect.objectContaining({ revision: 4, panels: expect.arrayContaining([expect.objectContaining({ id: 'p6', signals: ['Mass 49'] })]) }));
@@ -499,9 +499,11 @@ export const AddPanelMenu: Story = {
     await expect(canvas.getByRole('menuitem', { name: 'Time series' })).toHaveFocus();
     await userEvent.keyboard('{ArrowUp}');
     await expect(canvas.getByRole('menuitem', { name: 'Recording controls' })).toHaveFocus();
+    const menu = canvas.getByRole('menu');
     await userEvent.keyboard('{Escape}');
     await expect(canvas.queryByRole('menu')).toBeNull();
     await expect(add).toHaveFocus();
+    await waitFor(() => expect(menu).not.toBeInTheDocument());
 
     await userEvent.click(add);
     await userEvent.click(canvas.getByRole('menuitem', { name: 'Settings' }));
@@ -521,5 +523,6 @@ export const AddPanelMenu: Story = {
     await userEvent.click(add);
     await userEvent.click(canvasElement.querySelector('.pe-requires')!);
     await expect(canvas.queryByRole('menu')).toBeNull();
+    await waitFor(() => expect(canvasElement.querySelector('.pe-add-menu')).toBeNull());
   },
 };

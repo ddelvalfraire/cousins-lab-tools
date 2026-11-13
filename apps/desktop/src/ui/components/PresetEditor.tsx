@@ -6,6 +6,7 @@ import { Select } from '@mantine/core';
 import { chosen, selectAria } from './select';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
+import { Presence } from './Motion';
 import { StatusMessages } from './Primitives';
 import { DEFAULT_SIGNALS, MIN_SPAN, MIN_WORD, PANEL_KINDS, PanelCard, RECORDING_CONTROLS, SETTING_FIELDS, SNAPS, WIDTH_NAMES, panelName, panelProblems, seriesColor, showsSignals, signalProblem, snapSpan } from './PresetEditorPanels';
 import type { PanelSpan, PresetPanel, PresetPanelKind } from './PresetEditorPanels';
@@ -415,7 +416,7 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
               : shownTab === 'panel' ? <>
                 <div className="pe-side-field"><label htmlFor={ids.field('title')}>Panel name</label>
                   <input id={ids.field('title')} value={current.title} autoComplete="off" aria-invalid={!current.title.trim()} aria-describedby={!current.title.trim() ? ids.field('title-err') : undefined} onChange={event => update(current.id, { title: event.currentTarget.value })} />
-                  {!current.title.trim() && <span className="pe-field-error" id={ids.field('title-err')}><IconCircleX aria-hidden />Enter a panel name.</span>}
+                  <Presence show={!current.title.trim()}><span className="pe-field-error" id={ids.field('title-err')}><IconCircleX aria-hidden />Enter a panel name.</span></Presence>
                 </div>
                 <div className="pe-side-field"><label htmlFor={ids.field('kind')}>{FIELD.kind}</label>
                   <Select id={ids.field('kind')} aria-label={FIELD.kind} value={current.kind} data={Object.entries(PANEL_KINDS).map(([kind, label]) => ({ value: kind, label }))}
@@ -438,7 +439,7 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
                     </>}
                   </fieldset>
                   <p className="pe-side-hint pe-side-note">{current.kind === 'inputs' ? 'Shown as fields during an experiment. The editor shows sample values.' : 'The status word is always shown. The editor shows a sample acquisition.'}</p>
-                  {sigError && <p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p>}
+                  <Presence show={!!sigError}><p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p></Presence>
                 </>}
               </>
               : current.kind === 'scatter' ? <>
@@ -447,25 +448,25 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
                     data={[{ value: '', label: 'Choose a signal' }, ...signals.map(signal => ({ value: signal, label: signal }))]}
                     onChange={chosen(value => update(current.id, axis === 'x' ? { x: value || null } : { signals: value ? [value] : [] }))} />
                 </div>)}
-                {sigError && <p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p>}
+                <Presence show={!!sigError}><p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p></Presence>
               </>
               : <>
                 <fieldset className="pe-fieldset" aria-describedby={sigError ? ids.field('sig-err') : undefined}>
                   <legend>Signals shown</legend>
                   {signals.map(signal => <label key={signal} className="pe-signal-option"><input type="checkbox" data-signal={signal} checked={current.signals.includes(signal)} onChange={event => toggleSignal(current, signal, event.currentTarget.checked)} /><i style={{ borderColor: seriesColor(signals, signal) }} aria-hidden="true" />{signal}<small>mV</small></label>)}
                 </fieldset>
-                {sigError && <p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p>}
+                <Presence show={!!sigError}><p className="pe-field-error pe-sig-error" id={ids.field('sig-err')}><IconCircleX aria-hidden />{sigError}</p></Presence>
               </>}
     </RightSidebar>}>
-        <div className="pe-messages" id={ids.messages} hidden={!messages.length}><StatusMessages messages={messages} /></div>
+        <div className="pe-messages" id={ids.messages}><Presence show={messages.length > 0}><div className="pe-messages-body"><StatusMessages messages={messages} /></div></Presence></div>
         <div className="pe-requires">{required.length > 0 && <>Requires {required.map(signal => <Chip key={signal} icon={<IconActivity aria-hidden />}>{signal}</Chip>)}<span className="pe-requires-note"><span className="pe-requires-dot" aria-hidden="true">· </span>worked out from the panels</span></>}</div>
         <h2 className="pe-sr-only">Panels</h2>
         <div ref={canvasRef} className="pe-canvas" aria-label="Preset layout" data-mode={drag ? (drag.valid ? 'drag' : 'nodrop') : kb ? 'drag' : undefined} onBlur={canvasBlur}>{canvasContent()}</div>
         <div className="pe-add-row" ref={addRowRef}>
           <button type="button" className="pe-button" data-add="" aria-haspopup="menu" aria-expanded={menuOpen} aria-controls={menuOpen ? ids.field('add-menu') : undefined} onClick={() => menuOpen ? closeMenu() : openMenu()}><IconPlus aria-hidden />Add panel</button>
-          {menuOpen && <div className="pe-add-menu" id={ids.field('add-menu')} role="menu" aria-label="Add panel" onKeyDown={menuKey}>
+          <Presence show={menuOpen} variant="fade"><div className="pe-add-menu" id={ids.field('add-menu')} role="menu" aria-label="Add panel" onKeyDown={menuKey}>
             {(Object.keys(PANEL_KINDS) as PresetPanelKind[]).map(kind => { const Icon = NEW_PANEL[kind].icon; return <button key={kind} type="button" role="menuitem" tabIndex={-1} data-add-kind={kind} onClick={() => add(kind)}><Icon aria-hidden />{PANEL_KINDS[kind]}</button>; })}
-          </div>}
+          </div></Presence>
         </div>
         <p className="pe-sr-only" id={ids.help}>Press Space to pick up. Use the arrow keys to move, Space to drop, Escape to cancel.</p>
     </WorkspaceBody>

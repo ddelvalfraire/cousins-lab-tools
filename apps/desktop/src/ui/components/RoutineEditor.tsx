@@ -11,6 +11,7 @@ import { chosen, selectAria } from './select';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { Banner } from './Banner';
+import { Presence } from './Motion';
 import './RoutineEditor.css';
 
 export type RoutineStepKind = 'capture' | 'wait' | 'annotate';
@@ -409,7 +410,7 @@ function RoutineEditorDraft({
       {current.kind !== 'wait' && <div className="dv-re-field"><label htmlFor={id('name')}>{current.kind === 'capture' ? 'What it captures' : 'Note text'}</label>
         <input id={id('name')} data-field="name" value={current.name} autoComplete="off" aria-invalid={nameError} aria-describedby={nameError ? id('name-error') : undefined}
           onChange={e => { const value = e.currentTarget.value; update(r => { r.steps.find(s => s.id === current.id)!.name = value; }); }} />
-        {nameError && <span className="dv-re-field-error" id={id('name-error')}><IconCircleX {...ICON} />{issues[0]}</span>}
+        <Presence show={nameError}><span className="dv-re-field-error" id={id('name-error')}><IconCircleX {...ICON} />{issues[0]}</span></Presence>
       </div>}
       {duration && <>
         <fieldset className="dv-re-fieldset"><legend>Duration</legend>
@@ -434,9 +435,9 @@ function RoutineEditorDraft({
               onChange={chosen(value => update(r => { r.steps.find(s => s.id === current.id)!.duration = { param: value }; }))} />
             <span className="dv-re-hint" id={id('param-hint')}>Change the value under Parameters. Every step using it updates.</span>
           </div>}
-        {durationError && <p className="dv-re-field-error dv-re-duration-error" id={id('duration-error')}><IconCircleX {...ICON} />{durationError}</p>}
+        <Presence show={!!durationError}><p className="dv-re-field-error dv-re-duration-error" id={id('duration-error')}><IconCircleX {...ICON} />{durationError}</p></Presence>
       </>}
-      {notice?.stepId === current.id && <p className="dv-re-side-note" role="status"><IconInfoCircle {...ICON} />{notice.text}</p>}
+      <Presence show={notice?.stepId === current.id}><p className="dv-re-side-note" role="status"><IconInfoCircle {...ICON} />{notice?.text}</p></Presence>
     </>;
   }
 
@@ -460,7 +461,7 @@ function RoutineEditorDraft({
             <button type="button" className="dv-re-tool" data-param-remove={p.id} aria-label={`Remove parameter ${p.name || 'without a name'}`}
               aria-describedby={blocked === p.id && used.length ? id(`blocked-${p.id}`) : undefined} onClick={() => removeParameter(p.id)}><IconTrash {...ICON} /></button>
           </div>
-          {error && <p className="dv-re-field-error dv-re-param-error"><IconCircleX {...ICON} />{error}</p>}
+          <Presence show={!!error}><p className="dv-re-field-error dv-re-param-error"><IconCircleX {...ICON} />{error}</p></Presence>
           {blocked === p.id && used.length
             ? <p className="dv-re-param-blocked" id={id(`blocked-${p.id}`)}><IconAlertTriangle {...ICON} />Used by step{plural ? 's' : ''} {used.join(' and ')}. Change {plural ? 'those steps' : 'that step'} first.</p>
             : <p className="dv-re-param-used">{used.length ? `Used by step${plural ? 's' : ''} ${used.join(', ')}` : 'Not used yet'}</p>}
@@ -489,7 +490,7 @@ function RoutineEditorDraft({
       tabs={sidebarTabs} activeTab={tab} onTabChange={next => switchTab(next as 'step' | 'parameters')}>
       {tab === 'parameters' ? renderParameters() : renderStepSettings()}
     </RightSidebar>}>
-        {bad.length > 0 && <div className="dv-re-messages" id={id('messages')}><Banner severity="warning" messages={bad} /></div>}
+        <Presence show={bad.length > 0}><div className="dv-re-messages" id={id('messages')}><Banner severity="warning" messages={bad} /></div></Presence>
         {draft.steps.length > 0 && <div className="dv-re-timeline-card">
           <div className="dv-re-timeline-head">Timeline<span>{steps(draft.steps.length)} · {fmt(totalSeconds)} total</span></div>
           <div className="dv-re-timeline" role="img" aria-label={timelineLabel}>
