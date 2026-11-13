@@ -761,6 +761,39 @@ test('the sidebar overlay scroll bar takes no width, stays hidden until the poin
   } finally { await browser.close(); }
 });
 
+test('a settings result chosen on the Experiments page scrolls Settings to the section, focuses it and highlights it without moving anything', async ({ page }) => {
+  for (const dark of [false, true]) for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+    const at = `${dark ? 'dark' : 'light'}, ${reducedMotion} motion`;
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await page.emulateMedia({ reducedMotion });
+    await story(page, 'screens-experiments--home', dark);
+    await page.keyboard.press('Control+k');
+    await page.keyboard.type('export');
+    await page.getByRole('option', { name: /^Export Settings$/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' }), at).toBeVisible();
+    const box = page.locator('[data-search-target="settings.export"]'), main = page.locator('#dvdash-screen-main');
+    await expect(page.getByRole('heading', { level: 3, name: 'Export' }), `${at}: focus moves to the section heading`).toBeFocused();
+    await expect(box, at).toHaveAttribute('data-search-reveal', reducedMotion === 'reduce' ? 'static' : 'pulse');
+    await expect(page.locator('.dv-shell-sr[role=status]'), at).toHaveText('Export, Settings.');
+    const inView = () => box.evaluate((el: HTMLElement) => { const view = document.getElementById('dvdash-screen-main')!.getBoundingClientRect(), r = el.getBoundingClientRect(); return r.top >= view.top - 1 && r.bottom <= view.bottom + 1; });
+    if (reducedMotion === 'reduce') expect(await inView(), `${at}: the page jumps to the section`).toBe(true);
+    await expect.poll(inView, { message: `${at}: the section is in the page's view` }).toBe(true);
+    expect(await main.evaluate(el => el.scrollTop), `${at}: the page's scroller moved`).toBeGreaterThan(0);
+    expect(await page.evaluate(() => [scrollX, scrollY]), `${at}: the window did not scroll`).toEqual([0, 0]);
+    const tint = await box.evaluate(el => getComputedStyle(el, '::after').backgroundColor);
+    expect(tint, `${at}: the highlight shows`).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+    const animation = await box.evaluate(el => getComputedStyle(el, '::after').animationName);
+    expect(animation, `${at}: the highlight fades in, or is static under reduced motion`).toBe(reducedMotion === 'reduce' ? 'none' : 'dv-reveal-in');
+    // Measured in the page's content, so the scroll still settling does not count as movement.
+    const scroller = await main.elementHandle();
+    const layout = () => page.locator('.dv-settings').evaluate((settings, scroller) => [...settings.querySelectorAll('section, .dv-settings-field')].map(el => { const r = el.getBoundingClientRect(), view = scroller!.getBoundingClientRect(); return [Math.round(r.top - view.top + scroller!.scrollTop), Math.round(r.left), Math.round(r.width), Math.round(r.height)].join(' '); }), scroller);
+    const during = await layout();
+    await expect(box, `${at}: the highlight goes after about 1.6 s`).not.toHaveAttribute('data-search-reveal', { timeout: 3000 });
+    expect(await layout(), `${at}: the highlight moved nothing`).toEqual(during);
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+});
+
 test('opening a page from the command menu focuses the page without outlining it, and keyboard focus keeps its ring', async ({ page }) => {
   const targets = [['go to settings', /^Go to Settings/, 'Settings'], ['go to presets', /^Go to Presets/, 'Presets'], ['sample 024', /Sample 024/, 'Leaf respiration · Sample 024']] as const;
   for (const [width, height, dark] of [[1440, 900, false], [390, 844, true]] as const) for (const [query, option, heading] of targets) {
