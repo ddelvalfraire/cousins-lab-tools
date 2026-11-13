@@ -47,7 +47,7 @@
 
 .dv-export-field-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 14px; align-items: start; }
 .dv-export-field { display: block; min-width: 0; font-size: 12px; font-weight: 550; }
-.dv-export-field .dv-select { width: 100%; height: 34px; margin-top: 7px; padding: 5px 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font: inherit; font-weight: 400; }
+.dv-export-field .dv-select { --dv-select-height: 34px; --dv-select-font: 12px; --dv-select-pad: 8px; --dv-select-radius: 5px; --dv-select-border: var(--dv-line); margin-top: 7px; }
 .dv-export-filename { display: flex; align-items: center; gap: 5px; min-width: 0; margin-top: 7px; padding: 0 8px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); }
 .dv-export-filename[data-invalid='true'] { border-color: var(--dv-import-red); }
 .dv-export-filename input { width: 100%; min-width: 0; height: 32px; padding: 5px 0; border: 0; background: transparent; color: var(--dv-ink); font: inherit; font-weight: 400; }

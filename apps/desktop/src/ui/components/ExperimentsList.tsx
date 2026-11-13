@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ReviewIcon } from './ReviewIcons';
 import { Chip, StatusWord } from './Chip';
-import { DvSelect } from './DvSelect';
+import { Select } from '@mantine/core';
+import { chosen } from './select';
 import { formatClockTime } from '../time';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import type { StatusTone } from './Chip';
@@ -171,7 +172,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
       {filtered.length > 0 && <div className="dv-exp-pagination">
         <span>{first + 1}–{first + visible.length} of {noun(filtered.length)}</span>
         <div className="dv-exp-pagination-controls">
-          <label>Rows <DvSelect aria-label="Rows per page" value={String(pageSize)} options={PAGE_SIZES.map(size => ({ value: String(size), label: String(size) }))} onChange={value => setPageSize(Number(value))} /></label>
+          <label>Rows <Select aria-label="Rows per page" value={String(pageSize)} data={PAGE_SIZES.map(String)} onChange={chosen(value => setPageSize(Number(value)))} /></label>
           <button type="button" aria-label="First page" disabled={current === 0} onClick={() => setPage(0)}>«</button>
           <button type="button" aria-label="Previous page" disabled={current === 0} onClick={() => setPage(current - 1)}>‹</button>
           <span>{current + 1} / {pageCount}</span>

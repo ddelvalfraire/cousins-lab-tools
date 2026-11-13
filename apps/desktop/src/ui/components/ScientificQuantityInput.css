@@ -9,9 +9,11 @@
 .dv-qty:focus-within { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
 .dv-qty:has([aria-invalid='true']) { border-color: var(--dv-error); }
 .dv-qty :where(input, button) { font: inherit; }
-.dv-qty input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--dv-ink); padding: 9px 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
-.dv-qty .dv-select { border: 0; border-left: 1px solid var(--dv-line); background: var(--dv-bg); color: var(--dv-ink); padding: 0 10px; font-size: 13px; border-radius: 0 5px 5px 0; outline: none; cursor: pointer; touch-action: manipulation; }
-.dv-qty .dv-select:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: -2px; }
+.dv-qty input:not(.dv-select-input) { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--dv-ink); padding: 9px 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.dv-qty .dv-select { --dv-select-height: 100%; --dv-select-font: 13px; --dv-select-radius: 0 5px 5px 0; --dv-select-border: transparent; --dv-select-bg: var(--dv-bg); --dv-select-section: 24px; flex: none; width: 68px; }
+.dv-qty .dv-select-wrapper { height: 100%; }
+.dvdash .dv-qty .dv-select-input { border-left-color: var(--dv-line); touch-action: manipulation; }
+.dvdash .dv-qty .dv-select-input:focus-visible { outline-offset: -2px; }
 .dv-qty :disabled { cursor: default; opacity: .5; }
 .dv-qty-hint { font-size: 11px; line-height: 1.6; color: var(--dv-ink-muted); font-weight: 400; }
 .dv-qty-messages { margin-top: 12px; }

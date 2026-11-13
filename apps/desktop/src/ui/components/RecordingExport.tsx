@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { Chip } from './Chip';
-import { DvSelect } from './DvSelect';
+import { Select } from '@mantine/core';
+import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { formatDuration, ImportButton, ImportDialog, ImportFooterNote, ImportIcon, ImportProgressNote } from './ImportDialog';
 import './RecordingExport.css';
@@ -182,7 +183,7 @@ export function RecordingExportDialog({ opened, phase, recording, signals, value
           <input value={value.fileName} title={value.fileName} aria-invalid={(attempted && !!nameProblem) || undefined} aria-describedby={attempted && nameProblem ? 'dv-export-name-error' : undefined} onChange={event => set({ fileName: event.currentTarget.value })} />
           <span className="dv-export-extension">.{value.format}</span>
         </span></label>
-        <label className="dv-export-field"><span id={formatLabel}>Format</span><DvSelect aria-labelledby={formatLabel} value={value.format} options={FORMATS} onChange={format => set({ format: format as ExportFormat })} /></label>
+        <label className="dv-export-field"><span id={formatLabel}>Format</span><Select aria-labelledby={formatLabel} value={value.format} data={FORMATS} onChange={chosen(format => set({ format: format as ExportFormat }))} /></label>
       </div>
       {attempted && nameProblem && <div className="dv-export-name-feedback" id="dv-export-name-error"><StatusBanner severity="error" announce>{nameProblem}</StatusBanner></div>}
       <label className="dv-export-context" data-disabled={value.format !== 'json'}>

@@ -3,13 +3,13 @@ import AxeBuilder from '@axe-core/playwright';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-/** Opens a DvSelect and picks an option by its value, as `selectOption` does for a native select. */
+/** Opens a Select and picks an option by its value, as `selectOption` does for a native select. */
 async function choose(select: Locator, value: string) {
-  // Hold the button itself: once open, the list carries the same label.
-  const trigger = (await select.elementHandle())!;
-  await trigger.click();
-  const list = select.page().locator(`[id="${await trigger.getAttribute('aria-controls')}"]`);
-  await list.locator(`[role=option][data-value="${value}"]`).click();
+  // Hold the field itself: once open, a list named by the field's aria-label carries the same label.
+  const field = (await select.elementHandle())!;
+  await field.click();
+  const list = select.page().locator(`[id="${await field.getAttribute('aria-controls')}"]`);
+  await list.locator(`[role=option][value="${value}"]`).click();
 }
 
 async function story(page: Page, id: string, dark = false) {

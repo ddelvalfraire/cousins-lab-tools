@@ -134,7 +134,7 @@ export const UseSemicolons: Story = {
     await expect(args.onChange).toHaveBeenCalledWith('delimiter', 'semicolon');
     await expect(message).not.toBeVisible();
     await expect(select).toHaveFocus();
-    await expect(select).toHaveAttribute('aria-invalid', 'false');
+    await expect(select).not.toHaveAttribute('aria-invalid');
   },
 };
 

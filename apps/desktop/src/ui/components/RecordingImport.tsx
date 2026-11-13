@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
-import { DvSelect } from './DvSelect';
+import { Select } from '@mantine/core';
+import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { formatDuration, formatFileSize, ImportButton, ImportChooseButton, ImportDialog, ImportDropzone, ImportFooterNote, ImportIcon, ImportProgress, ImportStatus } from './ImportDialog';
 import './RecordingImport.css';
@@ -115,7 +116,7 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
       </ul>}
     {phase === 'select' && files.length > 0 && <ImportChooseButton label="Add files" accept={accept} multiple onFiles={onChooseFiles} />}
     {phase === 'review' && <label className="dv-recording-import-preset"><span id={presetLabel}>Open with preset</span>
-      <DvSelect aria-labelledby={presetLabel} value={presetId} options={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={onPresetChange} />
+      <Select aria-labelledby={presetLabel} value={presetId} data={presets.map(preset => ({ value: preset.id, label: preset.label }))} onChange={chosen(onPresetChange)} />
       <small>Each recording becomes a separate experiment.</small>
     </label>}
   </ImportDialog>;

@@ -126,7 +126,7 @@ export const PrepareInstrumentStream: Story = {
 export const WithReference: Story = {
   args: { initialValues: { ...base, mode: 'recorded', sourceId: 'sample025', includeReference: true } },
   play: async ({ canvasElement }) => {
-    await expect(select(canvasElement, 'Reference recording')).toHaveValue('reference023');
+    await expect(select(canvasElement, 'Reference recording')).toHaveValue('Reference 023');
     await expect(validation(canvasElement)).toBeUndefined();
     await expect(openButton(canvasElement)).toBeEnabled();
   },
@@ -185,7 +185,7 @@ export const FixInputErrors: Story = {
     await expect(openButton(canvasElement)).toBeEnabled();
     // Changing the preset selects its latest revision and its requirements.
     await chooseOption(select(canvasElement, 'Preset'), 'isotope');
-    await expect(select(canvasElement, 'Revision')).toHaveValue('1');
+    await expect(select(canvasElement, 'Revision')).toHaveValue('R1 · Latest');
     await expect(canvas.getByText(/Needs Mass 45/)).toBeVisible();
   },
 };
