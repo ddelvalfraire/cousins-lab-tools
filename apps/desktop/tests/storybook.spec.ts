@@ -773,6 +773,7 @@ test('a settings result chosen on the Experiments page scrolls Settings to the s
     await expect(page.getByRole('heading', { level: 1, name: 'Settings' }), at).toBeVisible();
     const box = page.locator('[data-search-target="settings.export"]'), main = page.locator('#dvdash-screen-main');
     await expect(page.getByRole('heading', { level: 3, name: 'Export' }), `${at}: focus moves to the section heading`).toBeFocused();
+    await expect.poll(() => page.getByRole('heading', { level: 3, name: 'Export' }).evaluate(h => getComputedStyle(h).outlineStyle), `${at}: the heading is not a control, so it shows no focus ring`).toBe('none');
     await expect(box, at).toHaveAttribute('data-search-reveal', reducedMotion === 'reduce' ? 'static' : 'pulse');
     await expect(page.locator('.dv-shell-sr[role=status]'), at).toHaveText('Export, Settings.');
     const inView = () => box.evaluate((el: HTMLElement) => { const view = document.getElementById('dvdash-screen-main')!.getBoundingClientRect(), r = el.getBoundingClientRect(); return r.top >= view.top - 1 && r.bottom <= view.bottom + 1; });

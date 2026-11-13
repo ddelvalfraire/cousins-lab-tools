@@ -14,6 +14,8 @@ const target=(canvasElement:HTMLElement,id:string)=>canvasElement.querySelector<
 /** The box lies inside the page's scroller, which is where search scrolls, not the window. */
 const inView=(canvasElement:HTMLElement,box:HTMLElement)=>{ const view=page(canvasElement).getBoundingClientRect(), rect=box.getBoundingClientRect(); return rect.top>=view.top-1&&rect.bottom<=view.bottom+1; };
 const highlight=(box:HTMLElement)=>box.dataset.searchReveal;
+/** Whether the browser would draw a focus ring: it treats the element as keyboard focused and gives it an outline. */
+const ringShown=(element:Element)=>element.matches(':focus-visible')&&getComputedStyle(element).outlineStyle!=='none';
 const highlightAnimations=(box:HTMLElement)=>document.getAnimations().filter(animation=>(animation.effect as KeyframeEffect|null)?.target===box);
 async function pick(canvasElement:HTMLElement,query:string,option:RegExp){
   const canvas=within(canvasElement);
@@ -41,6 +43,7 @@ export const SearchScrollsToSetting:Story={
     await pick(canvasElement,'decimal',/^Decimal separator/);
     await waitFor(()=>expect(highlight(box)).toBe('pulse'));
     await expect(canvas.getByRole('combobox',{name:'Decimal separator'})).toHaveFocus();
+    await expect(ringShown(canvas.getByRole('combobox',{name:'Decimal separator'})),'A field opened from search keeps its focus ring').toBe(true);
     await waitFor(()=>expect(inView(canvasElement,box)).toBe(true));
     await expect(window.scrollY).toBe(0);
     await expect(canvasElement.querySelector('.dv-shell-sr[role=status]')).toHaveTextContent('Decimal separator, Settings, Numbers.');
@@ -64,6 +67,8 @@ export const SearchScrollsToSectionReducedMotion:Story={
     // Already there in the frame the highlight appears: no smooth scroll.
     await expect(inView(canvasElement,box)).toBe(true);
     await expect(canvas.getByRole('heading',{level:3,name:'Export'})).toHaveFocus();
+    await expect(canvas.getByRole('heading',{level:3,name:'Export'})).toSatisfy((heading:Element)=>heading.matches(':focus-visible'));
+    await expect(ringShown(canvas.getByRole('heading',{level:3,name:'Export'})),'A heading opened from search is not a control and shows no focus ring').toBe(false);
     await expect(highlightAnimations(box)).toEqual([]);
     await waitFor(()=>expect(highlight(box)).toBeUndefined(),{timeout:REVEAL_MS+1000});
     // The heading took focus from code only; once focus leaves it, it is not a tab stop.

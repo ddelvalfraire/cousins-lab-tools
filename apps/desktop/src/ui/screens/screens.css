@@ -192,3 +192,6 @@
 .dvdash [data-search-reveal='leave']::after { animation: dv-reveal-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards; }
 @keyframes dv-reveal-in { from { opacity: 0; box-shadow: 0 0 0 7px color-mix(in srgb, var(--dv-accent), transparent 75%); } }
 @keyframes dv-reveal-out { to { opacity: 0; } }
+/* A heading that takes focus for a search result is not a control, so it shows the highlight but no focus ring, as the
+   page card does; fields and buttons keep their ring. */
+.dvdash :is(h1, h2, h3, h4, h5, h6)[data-search-focus]:focus-visible { outline: none; }
