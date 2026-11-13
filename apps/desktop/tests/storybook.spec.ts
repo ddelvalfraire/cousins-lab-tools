@@ -595,16 +595,18 @@ test('forms and editors use the standard content width and lists and dense pages
   }
 });
 
-test('no page header shows an empty action bar, so lists without header actions start as far under the title as the new experiment form', async ({ page }) => {
+test('no page header shows an empty action bar, so lists without header actions start as far under the title as the new experiment form, and list buttons sit on the title line', async ({ page }) => {
   const layout = () => page.evaluate(() => {
     const shown = (e: Element) => (e as HTMLElement).offsetParent !== null && !e.closest('[hidden]');
     const header = [...document.querySelectorAll('.dv-shell-page .dv-page-header')].find(shown)!;
     const bar = header.querySelector('.dv-page-actionbar');
     const title = header.querySelector('.dv-page-title-line')!.getBoundingClientRect().bottom;
-    const body = header.nextElementSibling!.querySelector('.dv-workspace-main, .dv-exp-body') ?? header.nextElementSibling!;
+    const actions = header.querySelector('.dv-page-actions')?.getBoundingClientRect();
+    const buttons = !actions ? 'none' : actions.top >= title ? 'below' : 'title';
+    const body = header.nextElementSibling!.querySelector('.dv-workspace-main') ?? header.nextElementSibling!;
     const first = [...body.children].find(shown)!.getBoundingClientRect().top;
     const list = document.querySelector('.dv-shell-page :is(.dv-cat-frame, .dv-cat-routines, .dv-exp-frame, .dv-setup)')?.getBoundingClientRect().top ?? NaN;
-    return { emptyBar: !!bar && !bar.textContent!.trim() && !bar.querySelector('button'), headerToFirst: first - header.getBoundingClientRect().bottom, titleToList: list - title };
+    return { emptyBar: !!bar && !bar.textContent!.trim() && !bar.querySelector('button'), buttons, headerToFirst: first - header.getBoundingClientRect().bottom, titleToList: list - title };
   });
   for (const [width, height] of [[1440, 900], [2560, 1200], [390, 844]]) {
     await page.setViewportSize({ width, height });
@@ -618,6 +620,8 @@ test('no page header shows an empty action bar, so lists without header actions 
       expect(m.emptyBar, `${args} at ${width}: empty action bar`).toBe(false);
       expect(m.headerToFirst, `${args} at ${width}: header to first content`).toBe(16);
       if (args === 'initialPage:routines' || args === 'initialPage:instruments') expect(m.titleToList, `${args} at ${width}: title to list, as on New experiment`).toBe(reference.titleToList);
+      // Buttons with no meta go on the title line, and below 600 px on their own row so the breadcrumb and title keep the width.
+      if (args === 'initialPage:experiments' || args === 'initialPage:presets') expect(m.buttons, `${args} at ${width}: header buttons`).toBe(width < 600 ? 'below' : 'title');
     }
   }
 });
