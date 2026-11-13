@@ -175,7 +175,7 @@ export const SourcesTab: Story = {
     await expect(canvas.getByRole('heading', { level: 2, name: 'Sources' })).toBeVisible();
     await expect(canvas.queryByRole('button', { name: 'Apply alignment' })).toBeNull();
     const detail = within(canvas.getByRole('region', { name: 'Reference 024' }));
-    await expect(detail.getByText('Unavailable')).toBeVisible();
+    await waitFor(() => expect(detail.getByText('Unavailable')).toBeVisible());
     await expect(detail.getByText('leaf-reference-024.csv')).toBeVisible();
   },
 };

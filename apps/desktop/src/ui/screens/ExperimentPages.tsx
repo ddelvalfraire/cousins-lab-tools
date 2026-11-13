@@ -231,7 +231,7 @@ export function ReviewPage({ experiment, preset, navigate, rows, onDownload, ini
   /** Start with the export dialog open, for review stories. */
   initialExport?: boolean;
 }) {
-  const [tab, setTab] = useState<ReviewTab>(initialTab);
+  const [tab, setTab] = useState<ReviewTab>(initialTab), [tabChanged, setTabChanged] = useState(false);
   const [overviewTab, setOverviewTab] = useState('details');
   const shortName = experiment.name.split(' · ').pop() ?? experiment.name;
 
@@ -289,7 +289,7 @@ export function ReviewPage({ experiment, preset, navigate, rows, onDownload, ini
       </>}
   </RightSidebar>;
 
-  return <Tabs className="dv-review-page" value={tab} onChange={value => value && setTab(value as ReviewTab)} keepMounted={false}>
+  return <Tabs className="dv-review-page" value={tab} onChange={value => { if (value) { setTab(value as ReviewTab); setTabChanged(true); } }} keepMounted={false} data-motion={tabChanged ? 'swap' : undefined}>
     <PageHeader title={experiment.name} titleId="dv-review-title"
       breadcrumbs={[{ label: 'Workspace', onClick: () => navigate('experiments') }, { label: 'Experiments', onClick: () => navigate('experiments') }, { label: shortName }]}
       meta={<><StatusWord tone={status.tone} icon={<ReviewIcon name={status.icon} />}>{experiment.status}</StatusWord>

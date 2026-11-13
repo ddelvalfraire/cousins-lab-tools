@@ -61,5 +61,5 @@ export const Connect:Story={render:()=><FrozenInstruments connectDelay={300}/>,p
   await expect(canvas.getByRole('button',{name:'Connecting…'})).toBeDisabled();
   await waitFor(()=>expect(canvas.getAllByText('Connected · not acquiring')).toHaveLength(2),{timeout:2000});
   await userEvent.click(canvas.getByRole('button',{name:'2 channels: Reference spectrometer'}));
-  await expect(canvas.getByRole('heading',{name:'2 channels'})).toBeVisible();
+  await waitFor(()=>expect(canvas.getByRole('heading',{name:'2 channels'})).toBeVisible());
 }};

@@ -74,7 +74,7 @@ export const IncompleteSavedContext: Story = {
     await expect(canvas.getAllByText('Not stored')).toHaveLength(2);
     await expect(canvas.getByText('Calibration settings were not stored with this result. Its saved value is retained.')).toBeVisible();
     await userEvent.click(canvas.getByRole('tab', { name: 'Context' }));
-    await expect(canvas.getByText('Recording identifier not stored')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Recording identifier not stored')).toBeVisible());
     await expect(canvas.getByText('c2 · settings not stored')).toBeVisible();
     await userEvent.click(canvas.getByRole('tab', { name: 'Details' }));
   },
@@ -111,7 +111,7 @@ export const OpenAnotherResult: Story = {
     await expect(open(canvasElement, 'sample 026').closest('tr')).toHaveAttribute('data-selected', 'true');
     await userEvent.click(canvas.getByRole('tab', { name: 'Context' }));
     await expect(canvas.getByRole('heading', { level: 2, name: 'Saved context' })).toBeVisible();
-    await expect(canvas.getByText('leaf-respiration-026.csv')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('leaf-respiration-026.csv')).toBeVisible());
     await expect(canvas.getByText('Mass 44 · 130–150 s')).toBeVisible();
   },
 };

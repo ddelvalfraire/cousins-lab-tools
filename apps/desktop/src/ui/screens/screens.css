@@ -180,4 +180,6 @@
 
 /* Review & export page: shared header, then each tab's content beside its inspector. */
 .dv-review-page { min-height: 100%; background: var(--dv-bg); color: var(--dv-ink); }
+/* Each Review tab fills the page, so the new tab fades in over nothing instead of over the old one (Approved.css swap). */
+.dv-review-page[data-motion='swap'] > [role='tabpanel'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
 .dv-review-notice { margin-bottom: var(--dv-gap); }

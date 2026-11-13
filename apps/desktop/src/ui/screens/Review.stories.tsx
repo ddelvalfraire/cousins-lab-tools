@@ -112,14 +112,14 @@ export const RecordingOverview:Story={...page,play:async({canvasElement})=>{
 export const Alignment:Story={...page,play:async({canvasElement})=>{
   const canvas=within(canvasElement);
   await userEvent.click(canvas.getByRole('tab',{name:'Align & compare'}));
-  await expect(canvas.getByRole('heading',{level:2,name:'Alignment'})).toBeVisible();
+  await waitFor(()=>expect(canvas.getByRole('heading',{level:2,name:'Alignment'})).toBeVisible());
   await expect(canvas.getByText('Each recording starts at 0 s. This does not imply simultaneous acquisition.')).toBeVisible();
 }};
 /** Saved interval results with the selected result's details (saved-result-inspector-review.html). */
 export const Results:Story={...page,play:async({canvasElement})=>{
   const canvas=within(canvasElement);
   await userEvent.click(canvas.getByRole('tab',{name:'Results'}));
-  await expect(canvas.getByRole('heading',{level:2,name:'Saved results'})).toBeVisible();
+  await waitFor(()=>expect(canvas.getByRole('heading',{level:2,name:'Saved results'})).toBeVisible());
   await expect(canvas.getByRole('heading',{level:2,name:'Result details'})).toBeVisible();
   await expect(canvas.getByText('(1.508 − 0.303) × 83 = 100.015')).toBeVisible();
   await expect(canvas.getByText('1–3 of 6')).toBeVisible();

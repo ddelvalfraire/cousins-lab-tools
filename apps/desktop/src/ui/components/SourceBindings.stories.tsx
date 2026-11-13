@@ -141,7 +141,7 @@ export const SwitchResetsInterval: Story = {
     await expect(apply(canvasElement)).toBeDisabled();
     await userEvent.click(canvas.getByRole('tab', { name: 'Source' }));
     await expect(canvas.getByRole('heading', { level: 2, name: 'Applied source' })).toBeVisible();
-    await expect(canvas.getByText('Not selected')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Not selected')).toBeVisible());
     await expect(canvas.queryByRole('button', { name: 'Apply to panel' })).toBeNull();
   },
 };

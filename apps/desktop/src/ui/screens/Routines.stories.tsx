@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { ScreenShell } from './ScreenShell';
@@ -61,9 +61,9 @@ export const SidebarCollapsed:Story={render:()=><FrozenRoutines initialSelected=
 export const InspectStep:Story={render:()=><FrozenRoutines/>,play:async({canvasElement})=>{
   const canvas=within(canvasElement);
   await userEvent.click(canvas.getByRole('button',{name:/^Step 3 Annotate/}));
-  await expect(canvas.getByRole('heading',{name:'Sample added'})).toBeVisible();
+  await waitFor(()=>expect(canvas.getByRole('heading',{name:'Sample added'})).toBeVisible());
   await userEvent.click(canvas.getByRole('button',{name:'All 4 steps'}));
-  await expect(canvas.getByRole('heading',{name:'4 ordered steps'})).toBeVisible();
+  await waitFor(()=>expect(canvas.getByRole('heading',{name:'4 ordered steps'})).toBeVisible());
   await userEvent.click(canvas.getByRole('button',{name:/Routine, sorted A to Z/}));
   await expect(rows(canvasElement)[0]).toHaveTextContent('Repeated sampling');
 }};

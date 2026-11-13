@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import './Approved.css';
 import './RightSidebar.css';
+import { Swap } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
 
 export interface RightSidebarTab {
@@ -148,7 +149,7 @@ export function RightSidebar({ tabs, activeTab, defaultTab, onTabChange, collaps
         <div><h2>{title ?? current?.label}</h2>{subtitle && <small>{subtitle}</small>}</div>
         {collapsible && <button type="button" className="dv-right-sidebar-collapse" aria-label="Collapse right sidebar" title="Collapse sidebar" onClick={collapse}><CollapseGlyph /></button>}
       </div>
-      <ScrollFrame axes="y" overscroll="contain" rootClassName="dv-right-sidebar-content-root" className="dv-right-sidebar-content">{children}</ScrollFrame>
+      <ScrollFrame axes="y" overscroll="contain" rootClassName="dv-right-sidebar-content-root" className="dv-right-sidebar-content"><Swap swapKey={selected ?? ''}>{children}</Swap></ScrollFrame>
     </section>
     <ScrollFrame axes="y" rootClassName="dv-right-sidebar-tabs-root" contentClassName="dv-right-sidebar-tabs-list" className="dv-right-sidebar-tabs" role="tablist" aria-label={tabsLabel ?? label} aria-orientation="vertical" onKeyDown={onKeyDown}>
       {tabs.map(tab => {
