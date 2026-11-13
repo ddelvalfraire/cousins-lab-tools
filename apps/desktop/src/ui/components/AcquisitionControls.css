@@ -7,13 +7,13 @@
 /* Header action bar: status tag and chips on the left, Start/Stop on the right. */
 .dv-acq-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; min-height: 48px; color: var(--dv-ink); }
 .dv-acq-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
-.dv-acq-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 4px; font-size: 10px; line-height: 1.4; white-space: nowrap; background: var(--dv-accent-soft); color: var(--dv-accent); }
+.dv-acq-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 4px; font-size: .625rem; line-height: 1.4; white-space: nowrap; background: var(--dv-accent-soft); color: var(--dv-accent); }
 .dv-acq-tag > svg { width: 12px; height: 12px; flex: none; }
 .dv-acq-tag[data-state='ready'], .dv-acq-tag[data-state='recorded'] { background: var(--dv-soft); color: var(--dv-ink); }
 .dv-acq-tag[data-state='starting'] { background: var(--dv-info-bg); color: var(--dv-info); }
 .dv-acq-tag[data-state='disconnected'] { background: var(--dv-warn-bg); color: var(--dv-warn); }
 
-.dv-acq-button { display: inline-flex; align-items: center; gap: 6px; min-height: 31px; padding: 7px 10px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font-size: 11px; font-weight: 500; line-height: 1.4; white-space: nowrap; }
+.dv-acq-button { display: inline-flex; align-items: center; gap: 6px; min-height: 31px; padding: 7px 10px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font-size: .6875rem; font-weight: 500; line-height: 1.4; white-space: nowrap; }
 .dv-acq-button > svg { width: 14px; height: 14px; flex: none; }
 .dv-acq-button:hover:not(:disabled) { background: var(--dv-soft); }
 .dv-acq-button[data-variant='primary'] { background: var(--dv-accent); border-color: var(--dv-accent); color: var(--dv-on-accent); font-weight: 550; }
@@ -22,4 +22,4 @@
 
 .dv-acq-status { margin-top: 16px; }
 .dv-acq-status:focus { outline: none; }
-.dv-acq-link { color: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.dv-acq-link { color: inherit; font-size: .75rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

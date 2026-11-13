@@ -1,25 +1,25 @@
 /* Panel source inspector and chart. Values from design/dvdash-field-review/source-binding-review.html. */
 .dv-src-main { min-width: 0; }
-.dv-src-check-heading { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 4px; font-size: 12px; font-weight: 600; }
-.dv-src-check-heading small { color: var(--dv-ink-muted); font-size: 11px; font-weight: 400; }
-.dv-src-signal { display: flex; align-items: center; gap: 9px; padding: 13px 0; border-bottom: 1px solid var(--dv-line); font-size: 12px; cursor: pointer; }
+.dv-src-check-heading { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 4px; font-size: .75rem; font-weight: 600; }
+.dv-src-check-heading small { color: var(--dv-ink-muted); font-size: .6875rem; font-weight: 400; }
+.dv-src-signal { display: flex; align-items: center; gap: 9px; padding: 13px 0; border-bottom: 1px solid var(--dv-line); font-size: .75rem; cursor: pointer; }
 .dv-src-signal input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--dv-accent); }
 .dv-src-signal-label { flex: 1; font-weight: 550; }
-.dv-src-signal-unit { color: var(--dv-ink-muted); font-size: 11px; }
-.dv-src-missing { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 12px; background: var(--dv-error-bg); color: var(--dv-error); font-size: 10px; font-weight: 550; }
+.dv-src-signal-unit { color: var(--dv-ink-muted); font-size: .6875rem; }
+.dv-src-missing { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 12px; background: var(--dv-error-bg); color: var(--dv-error); font-size: .625rem; font-weight: 550; }
 .dv-insp .dv-src-missing .dv-insp-ico { width: 11px; height: 11px; }
-.dv-src-identity { display: flex; align-items: center; gap: 7px; margin-top: 13px; font-size: 12px; font-weight: 550; line-height: 1.5; }
-.dv-insp .dv-src-description { margin-top: 5px; color: var(--dv-ink-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.dv-src-identity { display: flex; align-items: center; gap: 7px; margin-top: 13px; font-size: .75rem; font-weight: 550; line-height: 1.5; }
+.dv-insp .dv-src-description { margin-top: 5px; color: var(--dv-ink-muted); font-size: .6875rem; line-height: 1.7; overflow-wrap: anywhere; }
 .dv-src-status { margin-top: 16px; }
 .dv-insp .dv-src-apply { flex: 1; white-space: nowrap; }
-.dv-insp .dv-src-facts { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin: 18px 0; font-size: 12px; line-height: 1.5; }
+.dv-insp .dv-src-facts { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin: 18px 0; font-size: .75rem; line-height: 1.5; }
 .dv-src-facts dt { color: var(--dv-ink-muted); }
 .dv-src-facts dd { max-width: 150px; margin: 0; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
-.dv-insp .dv-src-meta-file { margin-top: 10px; font-size: 12px; font-weight: 550; line-height: 1.6; overflow-wrap: anywhere; }
-.dv-insp .dv-src-section-title { margin-top: 18px; font-size: 12px; font-weight: 600; }
-.dv-insp .dv-src-current { margin-bottom: 14px; color: var(--dv-ink-muted); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.dv-insp .dv-src-meta-file { margin-top: 10px; font-size: .75rem; font-weight: 550; line-height: 1.6; overflow-wrap: anywhere; }
+.dv-insp .dv-src-section-title { margin-top: 18px; font-size: .75rem; font-weight: 600; }
+.dv-insp .dv-src-current { margin-bottom: 14px; color: var(--dv-ink-muted); font-size: .6875rem; line-height: 1.7; overflow-wrap: anywhere; }
 .dv-src-current strong { color: var(--dv-ink); font-weight: 550; }
-.dv-insp .dv-src-chart-meta { margin-top: 12px; color: var(--dv-ink-muted); font-size: 11px; line-height: 1.6; }
+.dv-insp .dv-src-chart-meta { margin-top: 12px; color: var(--dv-ink-muted); font-size: .6875rem; line-height: 1.6; }
 /* The mockup's 50 px left offset sits on uPlot's wider y-axis (58 px plus its label), so start past it. */
-.dv-insp .dv-src-empty-trace { position: absolute; top: 45px; left: 50px; right: 16px; padding: 8px; border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: 12px; line-height: 1.5; }
+.dv-insp .dv-src-empty-trace { position: absolute; top: 45px; left: 50px; right: 16px; padding: 8px; border-radius: 4px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: .75rem; line-height: 1.5; }
 .dv-src-main .dv-insp-button:active:not(:disabled), .dv-insp .dv-src-apply:active:not(:disabled) { transform: translateY(1px); }
