@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AffectedPanelFlag, ProblemsPanel, ProblemsTrigger, problemFlag } from './ProblemsPanel';
 import type { Problem, ResolvedProblem } from './ProblemsPanel';
+import { settleMotion } from './settleMotion';
 
 const SIGNALS = { id: 'p1', title: 'CO₂ and O₂ signals' };
 const READINGS = { id: 'p2', title: 'Current readings' };
@@ -108,6 +109,7 @@ export const SeveralProblems: Story = {
     canvas.getByRole('button', { name: 'Dismiss' }).focus();
     await userEvent.keyboard('{Enter}');
     await expect(args.onDismiss).toHaveBeenCalledWith('i4');
+    await settleMotion();
   },
 };
 
