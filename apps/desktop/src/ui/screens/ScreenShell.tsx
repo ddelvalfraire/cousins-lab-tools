@@ -9,6 +9,7 @@ import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellS
 import './screens.css';
 import { ScrollFrame } from '../components/ScrollFrame';
 import { useAppearance } from '../appearance';
+import { appearanceTitle, commands as registryCommands, glyphOf, matchShortcut, sequenceHint, shortcutSectionsFor, titleOf, type CommandId, type SequenceStart } from '../search-registry';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
 export type Navigate = (page:ScreenRoute, id?:string) => void;
@@ -50,10 +51,6 @@ export interface ScreenShellProps {
 /** A catalog record in the command center and the page it opens. */
 export type SearchRecord = CommandItem & { page:ScreenRoute; pageId?:string };
 
-const goShortcuts = { e:'experiments', p:'presets', r:'routines', i:'instruments' } as const;
-const goGlyph = { experiments:'experiment', presets:'preset', routines:'routine', instruments:'instrument' } as const;
-const pageTitle = { experiments:'Experiments', presets:'Presets', routines:'Routines', instruments:'Instruments' } as const;
-
 /**
  * The application frame: a window bar (wordmark, search, tools) across the top; below it, on the frame
  * colour, the main sidebar and the page as a bordered, rounded card.
@@ -64,19 +61,24 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const [shortcuts, setShortcuts] = useState(false), [announcement, setAnnouncement] = useState('');
   const appearance = useAppearance(), dark = appearance.scheme==='dark';
   const os = useOs(), mac = os==='macos' || os==='ios';
-  const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), goPrefix = useRef(0);
+  const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), sequenceStart = useRef<SequenceStart|null>(null);
   const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
-  const goTo = (to:keyof typeof goGlyph, key:string):ShellCommand => ({ id:`go-${to}`, kind:'actions', title:`Go to ${pageTitle[to]}`, icon:<CommandGlyph name={goGlyph[to]}/>, keys:['G',key], sequence:true, keywords:'go navigation', run:()=>go(to) });
+  const context = { dark };
+  /** What each command does in this window. A command without a handler is left out of search, the shortcuts dialog and the keys. */
+  const handlers:Record<CommandId,(()=>void)|undefined> = {
+    'new-experiment':onNewExperiment, 'import-recordings':onImportRecordings,
+    'command-center':()=>search.current?.openCommandCenter(), 'filter-page':()=>search.current?.focusPageSearch(),
+    'go-settings':()=>go('settings'), shortcuts:()=>setShortcuts(true),
+    appearance:()=>{ toggleAppearance(); setAnnouncement(`${dark?'Light':'Dark'} appearance applied.`); },
+    'go-experiments':()=>go('experiments'), 'go-presets':()=>go('presets'), 'go-routines':()=>go('routines'), 'go-instruments':()=>go('instruments'),
+  };
+  const available = registryCommands.filter(entry => handlers[entry.id]);
   /* Commands and settings from command-center-review.html. Stop acquisition stays on the experiment page. */
   const commands:ShellCommand[] = [
-    ...(onNewExperiment ? [{ id:'new', kind:'actions', title:'New experiment…', icon:<CommandGlyph name="experiment"/>, keys:['N'], featured:true, keywords:'create new experiment setup', run:onNewExperiment } as const] : []),
-    ...(onImportRecordings ? [{ id:'import', kind:'actions', title:'Import recordings…', icon:<CommandGlyph name="import"/>, keys:['I'], featured:true, keywords:'open file csv import recording data', run:onImportRecordings } as const] : []),
-    { id:'settings', kind:'actions', title:'Go to Settings', icon:<CommandGlyph name="settings"/>, keys:['Mod',','], keywords:'preferences settings configuration', run:()=>go('settings') },
-    { id:'appearance', kind:'actions', title:`Use ${dark?'light':'dark'} appearance`, icon:<CommandGlyph name={dark?'sun':'moon'}/>, keywords:'light dark mode theme appearance colors', run:()=>{ toggleAppearance(); setAnnouncement(`${dark?'Light':'Dark'} appearance applied.`); } },
-    goTo('experiments','E'), goTo('presets','P'), goTo('routines','R'), goTo('instruments','I'),
-    { id:'shortcuts', kind:'actions', title:'Show keyboard shortcuts', icon:<CommandGlyph name="keyboard"/>, keys:['?'], keywords:'help keyboard shortcuts hotkeys commands', run:()=>setShortcuts(true) },
+    ...available.filter(entry => entry.inSearch!==false).map((entry):ShellCommand => ({ id:entry.id, kind:'actions', title:titleOf(entry, context), icon:<CommandGlyph name={glyphOf(entry, context)}/>,
+      keys:entry.keys, sequence:entry.sequence, keywords:entry.keywords, featured:entry.featured, run:handlers[entry.id]! })),
     { id:'theme', kind:'settings', title:'Theme', meta:'Settings · Appearance', icon:<CommandGlyph name="sun"/>, end:dark?'Dark':'Light', keywords:'preferences display light dark mode appearance', run:()=>go('settings') },
     { id:'folder', kind:'settings', title:'Recordings folder', meta:'Settings · Recordings', icon:<CommandGlyph name="storage"/>, keywords:'preferences recordings results storage files folder local device', run:()=>go('settings') },
     ...searchRecords.map(record => ({ ...record, run:()=>go(record.page, record.pageId) })),
@@ -88,20 +90,15 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('[role="dialog"]')) return;
     const mod = (event.metaKey || event.ctrlKey) && !event.altKey;
-    if (mod && event.key.toLowerCase()==='k') { event.preventDefault(); search.current?.openCommandCenter(); return; }
-    if (mod && event.key===',') { event.preventDefault(); go('settings'); return; }
-    if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') || event.altKey || event.metaKey || event.ctrlKey || event.getModifierState('AltGraph')) { goPrefix.current = 0; return; }
-    const key = event.key.toLowerCase(), now = performance.now();
-    if (goPrefix.current && now-goPrefix.current < 1200) {
-      goPrefix.current = 0;
-      const to = goShortcuts[key as keyof typeof goShortcuts];
-      if (to) { event.preventDefault(); go(to); return; }
-    }
-    if (key==='g') { goPrefix.current = now; setAnnouncement('Go to: E Experiments, P Presets, R Routines, I Instruments.'); }
-    else if (key==='n' && onNewExperiment) { event.preventDefault(); onNewExperiment(); }
-    else if (key==='i' && onImportRecordings) { event.preventDefault(); onImportRecordings(); }
-    else if (event.key==='?') { event.preventDefault(); setShortcuts(true); }
-    else if (event.key==='/') { event.preventDefault(); search.current?.focusPageSearch(); }
+    const match = matchShortcut(available, {
+      key:event.key, mod, otherModifier:event.altKey || event.metaKey || event.ctrlKey || event.getModifierState('AltGraph'),
+      inTextField:!!target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'),
+    }, sequenceStart.current, performance.now());
+    if (!mod) sequenceStart.current = match && 'sequence' in match ? match.sequence : null;
+    if (!match) return;
+    if ('sequence' in match) { setAnnouncement(sequenceHint(available, match.sequence.key)); return; }
+    event.preventDefault();
+    handlers[match.command as CommandId]?.();
   };
   const keyHandler = useRef(onKey);
   useEffect(() => { keyHandler.current = onKey; });
@@ -123,7 +120,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
       <ShellSearch key={page} ref={search} pageLabel={pageScope[page]} pagePlaceholder={pageScope[page]==='This experiment' ? 'Find a panel, signal or setting…' : 'Search…'}
         pageQuery={pageQuery} onPageQueryChange={onPageQueryChange} commands={commands} mac={mac} onShortcuts={()=>setShortcuts(true)} onAnnounce={setAnnouncement}/>
       <div className="dv-shell-tools">
-        <button type="button" className="dv-shell-icon-button" aria-label={`Use ${dark?'light':'dark'} appearance`} title={`Use ${dark?'light':'dark'} appearance`} onClick={event=>toggleAppearance(event.currentTarget)}>{dark?icons.sun:icons.moon}</button>
+        <button type="button" className="dv-shell-icon-button" aria-label={appearanceTitle(context)} title={appearanceTitle(context)} onClick={event=>toggleAppearance(event.currentTarget)}>{dark?icons.sun:icons.moon}</button>
         <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Show keyboard shortcuts" title="Show keyboard shortcuts · ?" onClick={()=>setShortcuts(true)}>{icons.keyboard}</button>
       </div>
     </header>
@@ -133,7 +130,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
         rootClassName="dv-shell-page-root" contentClassName="dv-shell-page-content">{children}</ScrollFrame></div>
     </div>
     <NavigationDrawer withBar={false} opened={drawer} onOpenedChange={setDrawer} active={active} detail={detail} onNavigate={navigate} recents={recents} acquisition={acquisition} onOpenExperiment={openExperiment}/>
-    <KeyboardShortcuts opened={shortcuts} onClose={()=>setShortcuts(false)} mac={mac}/>
+    <KeyboardShortcuts opened={shortcuts} onClose={()=>setShortcuts(false)} mac={mac} sections={shortcutSectionsFor(available, context)}/>
     <span className="dv-shell-sr" role="status" aria-atomic="true">{announcement}</span>
   </div>;
 }

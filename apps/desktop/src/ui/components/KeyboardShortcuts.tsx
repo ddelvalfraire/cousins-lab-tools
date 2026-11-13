@@ -1,36 +1,20 @@
 import { Modal } from '@mantine/core';
 import { KeyCaps } from './CommandCenter';
+import { commands, shortcutSectionsFor, type ShortcutSection } from '../search-registry';
 import './Approved.css';
 import './KeyboardShortcuts.css';
 
-export interface ShortcutRow { label: string; keys: readonly string[]; sequence?: boolean }
-export interface ShortcutSection { title: string; rows: readonly ShortcutRow[] }
+export type { ShortcutRow, ShortcutSection } from '../search-registry';
 
-/** The approved reference list (command-center-review.html, "Keyboard reference"). `Mod` is ⌘ or Ctrl. */
-export const shortcutSections: readonly ShortcutSection[] = [
-  { title: 'Search and settings', rows: [
-    { label: 'Open command center', keys: ['Mod', 'K'] },
-    { label: 'Filter this page', keys: ['/'] },
-    { label: 'Go to Settings', keys: ['Mod', ','] },
-    { label: 'Show keyboard shortcuts', keys: ['?'] },
-  ] },
-  { title: 'Common actions', rows: [
-    { label: 'New experiment…', keys: ['N'] },
-    { label: 'Import recordings…', keys: ['I'] },
-  ] },
-  { title: 'Go to a page', rows: [
-    { label: 'Go to Experiments', keys: ['G', 'E'], sequence: true },
-    { label: 'Go to Presets', keys: ['G', 'P'], sequence: true },
-    { label: 'Go to Routines', keys: ['G', 'R'], sequence: true },
-    { label: 'Go to Instruments', keys: ['G', 'I'], sequence: true },
-  ] },
-];
+/** Every shortcut (command-center-review.html, "Keyboard reference"), from the search registry. `Mod` is ⌘ or Ctrl. */
+export const shortcutSections: readonly ShortcutSection[] = shortcutSectionsFor(commands);
 
 export interface KeyboardShortcutsProps {
   opened: boolean;
   onClose: () => void;
   /** Show ⌘ (macOS) rather than Ctrl. */
   mac: boolean;
+  /** Defaults to every shortcut. The window shows only the commands it can run. */
   sections?: readonly ShortcutSection[];
 }
 
