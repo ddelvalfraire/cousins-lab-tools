@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { useOs } from '@mantine/hooks';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 export { PageHeader as ScreenHeading } from '../components/PageHeader';
@@ -9,6 +8,7 @@ import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import { ShellSearch, type ShellCommand, type ShellSearchHandle } from './ShellSearch';
 import './screens.css';
 import { ScrollFrame } from '../components/ScrollFrame';
+import { useAppearance } from '../appearance';
 
 export type ScreenRoute = 'experiments'|'presets'|'preset'|'preset-edit'|'preset-history'|'prepare'|'experiment'|'review'|'routines'|'routine-edit'|'instruments'|'settings';
 export type Navigate = (page:ScreenRoute, id?:string) => void;
@@ -34,7 +34,7 @@ export interface ScreenShellProps {
   acquisition?:CurrentAcquisition|null;
   /** Start with the sidebar collapsed to its rail. The collapsed state then belongs to the shell. */
   defaultCollapsed?:boolean;
-  /** Switch appearance from the window bar. Defaults to Mantine's colour-scheme toggle. */
+  /** Switch appearance from the window bar and the command center. Defaults to the app's appearance toggle. */
   onAppearanceChange?:()=>void;
   /** Catalog records the command center finds. Choosing one navigates to its page. */
   searchRecords?:readonly SearchRecord[];
@@ -61,10 +61,10 @@ const goGlyph = { experiments:'experiment', presets:'preset', routines:'routine'
 export function ScreenShell({ page, navigate, recents, acquisition, defaultCollapsed=false, onAppearanceChange, searchRecords=[], pageQuery, onPageQueryChange, onNewExperiment, onImportRecordings, children }:ScreenShellProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed), [drawer, setDrawer] = useState(false);
   const [shortcuts, setShortcuts] = useState(false), [announcement, setAnnouncement] = useState('');
-  const dark = useComputedColorScheme('light')==='dark', { toggleColorScheme } = useMantineColorScheme();
+  const appearance = useAppearance(), dark = appearance.scheme==='dark';
   const os = useOs(), mac = os==='macos' || os==='ios';
   const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), goPrefix = useRef(0);
-  const toggleAppearance = onAppearanceChange ?? toggleColorScheme;
+  const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const go = (to:ScreenRoute, id?:string) => { navigate(to, id); requestAnimationFrame(()=>main.current?.focus()); };
   const goTo = (to:keyof typeof goGlyph, key:string):ShellCommand => ({ id:`go-${to}`, kind:'actions', title:`Go to ${to}`, icon:<CommandGlyph name={goGlyph[to]}/>, keys:['G',key], sequence:true, keywords:'go navigation', run:()=>go(to) });
@@ -122,7 +122,7 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
       <ShellSearch key={page} ref={search} pageLabel={pageScope[page]} pagePlaceholder={pageScope[page]==='This experiment' ? 'Find a panel, signal or setting…' : 'Search…'}
         pageQuery={pageQuery} onPageQueryChange={onPageQueryChange} commands={commands} mac={mac} onShortcuts={()=>setShortcuts(true)} onAnnounce={setAnnouncement}/>
       <div className="dv-shell-tools">
-        <button type="button" className="dv-shell-icon-button" aria-label={`Use ${dark?'light':'dark'} appearance`} title={`Use ${dark?'light':'dark'} appearance`} onClick={onAppearanceChange??toggleColorScheme}>{dark?icons.sun:icons.moon}</button>
+        <button type="button" className="dv-shell-icon-button" aria-label={`Use ${dark?'light':'dark'} appearance`} title={`Use ${dark?'light':'dark'} appearance`} onClick={event=>toggleAppearance(event.currentTarget)}>{dark?icons.sun:icons.moon}</button>
         <button type="button" className="dv-shell-icon-button dv-shell-shortcuts" aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?" onClick={()=>setShortcuts(true)}>{icons.keyboard}</button>
       </div>
     </header>

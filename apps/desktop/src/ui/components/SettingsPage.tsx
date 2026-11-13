@@ -3,10 +3,11 @@ import { Banner } from './Banner';
 import { Select } from '@mantine/core';
 import { chosen, selectAria } from './select';
 import { ReviewIcon } from './ReviewIcons';
+import type { AppearancePreference } from '../appearance';
 import './Approved.css';
 import './SettingsPage.css';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = AppearancePreference;
 export type DecimalPreference = 'system' | 'point' | 'comma';
 export type ColumnSeparator = 'comma' | 'semicolon' | 'tab';
 

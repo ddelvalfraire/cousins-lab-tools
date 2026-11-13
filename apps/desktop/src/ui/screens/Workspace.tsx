@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 import { ScreenBody, ScreenShell, type ScreenRoute } from './ScreenShell';
 import { PageHeader } from '../components/PageHeader';
 import { Chip } from '../components/Chip';
@@ -20,6 +19,7 @@ import { ExperimentSetupForm, type PreparedExperiment } from '../components/Expe
 import { SettingsPage, type AppSettings, type FolderState } from '../components/SettingsPage';
 import { PresetEditor } from '../components/PresetEditor';
 import { RoutineEditor } from '../components/RoutineEditor';
+import { useAppearance } from '../appearance';
 import './screens.css';
 import './screen-layouts.css';
 
@@ -36,8 +36,7 @@ export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',i
   const [dialog,setDialog]=useState<'recording'|'definition'|null>(null);
   const [pageQuery,setPageQuery]=useState(''),[catalogSelection,setCatalogSelection]=useState<string|null>(null);
   const [settings,setSettings]=useState<AppSettings>(defaultSettings),[folderState,setFolderState]=useState<FolderState>({status:'ready'});
-  const dark=useComputedColorScheme('light')==='dark',{toggleColorScheme}=useMantineColorScheme();
-  const toggleAppearance=onAppearanceChange??toggleColorScheme;
+  const appearance=useAppearance();
   const preset=presets.find(p=>p.id===presetId)??catalogPresetSpec(presetId)??presets[0];
   const experiment=rows.find(row=>row.id===experimentId)??experiments.find(row=>row.id===experimentId)??experiments[0];
   const experimentPreset=presets.find(p=>p.id===experiment.presetId)??preset;
@@ -50,8 +49,8 @@ export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',i
     setResults(current=>({...current,[id]:[]}));setExperimentId(id);setPage('experiment');
   };
   const changeSetting=<K extends keyof AppSettings>(key:K,value:AppSettings[K])=>{
-    setSettings(current=>({...current,[key]:value}));
-    if(key==='theme'&&value!=='system'&&(value==='dark')!==dark)toggleAppearance();
+    if(key==='theme')appearance.setPreference(value as AppSettings['theme']);
+    else setSettings(current=>({...current,[key]:value}));
   };
   const chooseFolder=()=>{setFolderState({status:'choosing'});window.setTimeout(()=>{setSettings(current=>({...current,folder:'~/Lab data/DVDash recordings'}));setFolderState({status:'ready'});},700);};
   const download=(name:string,text:string,type:string)=>{const url=URL.createObjectURL(new Blob([text],{type}));const link=document.createElement('a');link.href=url;link.download=name;link.click();URL.revokeObjectURL(url);};
@@ -59,7 +58,7 @@ export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',i
   const home={label:'Workspace',onClick:()=>navigate('experiments')};
   const presetsCrumb={label:'Presets',onClick:()=>navigate('presets')};
   const clearQuery=()=>setPageQuery('');
-  return <ScreenShell page={page} navigate={navigate} recents={toRecents(rows)} acquisition={toAcquisition(rows)} onAppearanceChange={toggleAppearance}
+  return <ScreenShell page={page} navigate={navigate} recents={toRecents(rows)} acquisition={toAcquisition(rows)} onAppearanceChange={onAppearanceChange}
     searchRecords={searchRecords(rows)} pageQuery={pageQuery} onPageQueryChange={filterablePages.has(page)?setPageQuery:undefined}
     onNewExperiment={()=>navigate('prepare','gas')} onImportRecordings={()=>setDialog('recording')}>
     {page==='experiments'&&<ExperimentsList experiments={rows.map(toListExperiment)} now={REVIEW_NOW} breadcrumbs={[home,{label:'Experiments'}]} onOpen={id=>navigate('experiment',id)} onNewExperiment={()=>navigate('prepare','gas')} onImport={()=>setDialog('recording')} query={pageQuery} onClearQuery={clearQuery}/>}
@@ -72,7 +71,7 @@ export function DVDashWorkspace({initialPage='experiments',initialPreset='gas',i
     {page==='routines'&&<RoutinesPage key={catalogSelection??''} initialSelected={catalogSelection} query={pageQuery} onClearQuery={clearQuery} navigate={navigate} onUseRoutine={id=>{setRoutineId(id);navigate('prepare','gas');}} onEditRoutine={id=>navigate('routine-edit',id)}/>}
     {page==='routine-edit'&&<RoutineEditor key={routine.id} name={routine.name} revision={routine.revision} routine={routineDefinitions[routine.id]??catalogRoutineDefinitions[routine.id]} breadcrumbs={[home,{label:'Routines',onClick:()=>navigate('routines')},{label:routine.name}]} onDiscard={()=>navigate('routines')}/>}
     {page==='instruments'&&<InstrumentsPage key={catalogSelection??''} initialSelected={catalogSelection} query={pageQuery} onClearQuery={clearQuery} navigate={navigate}/>}
-    {page==='settings'&&<><PageHeader title="Settings" breadcrumbs={[home,{label:'Settings'}]} description="Applies to everyone using DVDash on this computer."/><ScreenBody><SettingsPage hideHeader settings={settings} build={buildInfo} folderState={folderState} onChange={changeSetting} onChooseFolder={chooseFolder} onCopyCommit={commit=>navigator.clipboard?.writeText(commit)}/></ScreenBody></>}
+    {page==='settings'&&<><PageHeader title="Settings" breadcrumbs={[home,{label:'Settings'}]} description="Applies to everyone using DVDash on this computer."/><ScreenBody><SettingsPage hideHeader settings={{...settings,theme:appearance.preference}} build={buildInfo} folderState={folderState} onChange={changeSetting} onChooseFolder={chooseFolder} onCopyCommit={commit=>navigator.clipboard?.writeText(commit)}/></ScreenBody></>}
     <RecordingImport opened={dialog==='recording'} onClose={()=>setDialog(null)} presets={recordingPresetOptions} readFile={readRecordingFile}
       importFile={async(file,name,importPreset)=>{setRows(current=>[{id:`import-${file.id}`,name,presetId:importPreset,status:'Recorded',date:REVIEW_NOW.toISOString(),samples:0,input:'Recorded file'},...current.filter(row=>row.id!==`import-${file.id}`)]);}}/>
     {/* Fixture: the preset catalog is static, so a checked definition is accepted without being added to it. */}
