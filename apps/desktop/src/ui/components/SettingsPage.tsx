@@ -198,9 +198,9 @@ export function SettingsPage({ settings, build, folderState, systemDecimal = 'po
                   </label>
                 ))}
               </div>
-              <p className="dv-settings-preview dv-settings-text-preview" data-testid="text-size-preview" aria-live="off">
+              <div className="dv-settings-preview dv-settings-text-preview" data-testid="text-size-preview" aria-live="off">
                 <span>Example</span><strong>Leaf respiration · Sample 024 · {formatReading(-1234.56, decimal)} mV</strong>
-              </p>
+              </div>
               <span className="dv-settings-hint" id={ids.textSizeHint}>Changes the size of all text in DVDash.</span>
             </fieldset>
           </div>

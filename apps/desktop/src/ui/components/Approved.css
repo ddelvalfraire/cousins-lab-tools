@@ -46,7 +46,7 @@
   --dv-page-bottom: 24px;
   --dv-gap: 16px;          /* between components, and between cards in a grid */
   /* Right sidebar: open width, the rail it collapses to, and its slide. */
-  --dv-side-open: 332px; --dv-side-rail: 52px;
+  --dv-side-rail: 3.25rem; --dv-side-open: calc(280px + var(--dv-side-rail));
   --dv-side-duration: var(--dv-motion-slow); --dv-side-motion: var(--dv-side-duration) var(--dv-ease-out);
 }
 

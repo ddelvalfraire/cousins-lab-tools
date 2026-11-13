@@ -43,7 +43,7 @@
 
 /* Destinations */
 .dv-navigation-section { display: grid; gap: 4px; }
-.dv-navigation-eyebrow { font-size: .5625rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--dv-nav-muted); padding: 0 10px; margin-bottom: 7px; white-space: nowrap; }
+.dv-navigation-eyebrow { font-size: .5625rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; color: var(--dv-nav-muted); padding: 0 10px; margin-bottom: 7px; }
 .dv-navigation-item { position: relative; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 10px; border: 0; border-radius: 7px; background: none; color: var(--dv-nav-text); font-size: .75rem; text-align: start; }
 .dv-navigation-item:hover { background: var(--dv-nav-hover); color: var(--dv-nav-strong); }
 .dv-navigation-item[aria-current='page'] { background: var(--dv-nav-active); color: var(--dv-nav-strong); font-weight: 600; }

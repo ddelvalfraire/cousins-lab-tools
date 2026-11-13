@@ -37,7 +37,7 @@
 /* Text size: the four steps wrap onto two rows rather than squeeze their names when the text is large or the page narrow. */
 .dv-settings-text-size { flex-wrap: wrap; }
 .dv-settings-text-size label { flex: 1 0 auto; padding-inline: 10px; }
-.dv-settings-text-preview { margin: 8px 0 0; }
+.dv-settings-text-preview { flex-wrap: wrap; margin: 8px 0 0; }
 fieldset > .dv-settings-hint { display: block; margin-top: 7px; }
 
 .dv-settings-preview { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 6px; background: var(--dv-bg); font-size: .75rem; font-variant-numeric: tabular-nums; }
