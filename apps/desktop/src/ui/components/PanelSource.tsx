@@ -3,6 +3,7 @@ import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type uPlot from 'uplot';
 import { Chip } from './Chip';
+import { Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
@@ -152,14 +153,14 @@ export function PanelSourceBindingPane({ editor, sources, channels }: { editor: 
       <InspectorButton variant="primary" className="dv-src-apply" disabled={pending || !!problem || !dirty} onClick={editor.apply}>{pending ? 'Switching…' : 'Apply to panel'}</InspectorButton>
       <InspectorButton variant="quiet" disabled={pending || !dirty} onClick={discard}>Discard</InspectorButton>
     </div>
-    {status === 'failed' && <div className="dv-insp-status"><StatusBanner severity="error">Could not switch the panel source. The previous source is still shown. <button type="button" className="dv-insp-link" data-action="retry" onClick={editor.apply}>Retry</button></StatusBanner></div>}
+    <Presence show={status === 'failed'}><div className="dv-insp-status"><StatusBanner severity="error">Could not switch the panel source. The previous source is still shown. <button type="button" className="dv-insp-link" data-action="retry" onClick={editor.apply}>Retry</button></StatusBanner></div></Presence>
     <Announcer message={editor.announcement} />
   </>}>
     <div className="dv-insp-field"><label htmlFor={`${id}-source`}>{SOURCE_LABEL}</label>
       <Select id={`${id}-source`} aria-label={SOURCE_LABEL} value={draft.source} disabled={pending} data={sourceOptions} onChange={chosen(editor.setSource)} />
     </div>
-    {s && <><div className="dv-src-identity"><InspectorIcon name={s.kind === 'Live' ? 'device' : 'file'} />{s.name}</div>
-      <p className="dv-src-description">{s.file}<br />{s.kind} · {s.channels.length} {s.channels.length === 1 ? 'signal' : 'signals'} · {s.unit}</p></>}
+    <Swap swapKey={draft.source}>{s && <><div className="dv-src-identity"><InspectorIcon name={s.kind === 'Live' ? 'device' : 'file'} />{s.name}</div>
+      <p className="dv-src-description">{s.file}<br />{s.kind} · {s.channels.length} {s.channels.length === 1 ? 'signal' : 'signals'} · {s.unit}</p></>}</Swap>
     <div className="dv-src-check-heading"><span id={`${id}-signals`}>Visible signals</span><small>{draft.signals.length} selected</small></div>
     <div role="group" aria-labelledby={`${id}-signals`}>{channels.map(channel => {
       const available = !!s && s.channels.includes(channel.id), checked = draft.signals.includes(channel.id);
@@ -169,8 +170,8 @@ export function PanelSourceBindingPane({ editor, sources, channels }: { editor: 
         {available ? <span className="dv-src-signal-unit">{s.unit}</span> : s ? <span className="dv-src-missing"><InspectorIcon name="error" />Unavailable</span> : null}
       </label>;
     })}</div>
-    <div id={messageId} className="dv-src-status">{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</div>
-    {dirty && draft.source !== applied.source && <div className="dv-src-status"><StatusBanner severity="info">Switching source clears this panel’s selected interval. Saved results are retained.</StatusBanner></div>}
+    <div id={messageId} className="dv-src-status"><Presence show={!!problem}>{problem && <StatusBanner severity={problem.severity}>{problem.text}</StatusBanner>}</Presence></div>
+    <Presence show={dirty && draft.source !== applied.source}><div className="dv-src-status"><StatusBanner severity="info">Switching source clears this panel’s selected interval. Saved results are retained.</StatusBanner></div></Presence>
   </InspectorPane>;
 }
 
@@ -212,17 +213,19 @@ export function PanelSourceChart({ editor, sources, channels, title, stream, sta
   return <div className="dv-insp dv-src-main">
     <section className="dv-insp-card" aria-label={title}>
       <div className="dv-insp-card-heading"><h2>{title}</h2><Chip icon={<InspectorIcon name={live ? 'signal' : 'file'} />}>{s.kind}</Chip></div>
+      <Swap swapKey={s.id}>
       <p className="dv-src-current"><strong>{s.name}</strong> · {s.file}</p>
       <div className="dv-insp-legend">{shown.map(c => <span key={c.id}><i data-line={c.line} />{c.label}</span>)}</div>
       <div className="dv-insp-plot">
         <ScientificPlot data={data} range={[0, s.duration]} limits={yLimits} selection={interval && !waiting ? [interval[0], interval[1]] : undefined} xLabel="Time since source start (s)" yLabel={`Signal (${s.unit})`}
           height={narrow ? 210 : 252} minimumWidth={240} sparse={{ left: 38, bottom: 34 }} unit={s.unit}
           series={shown.map(c => ({ label: c.label, unit: s.unit, color: lineColors[scheme][c.line], dash: c.line }))} />
-        {waiting && <p className="dv-src-empty-trace">Waiting for the first sample</p>}
+        <Presence show={waiting} variant="fade"><p className="dv-src-empty-trace">Waiting for the first sample</p></Presence>
       </div>
+      </Swap>
       <p className="dv-src-chart-meta">{interval ? `Selected interval: ${interval[0]}–${interval[1]} s` : `Full source · ${s.duration} s`}</p>
     </section>
-    <div className="dv-insp-summary">{live && stream === 'stale' ? <StatusBanner severity="warning">Stale · last received {staleFor} ago. Last samples remain visible.</StatusBanner>
-      : waiting ? <StatusBanner severity="info">The stream is connected. No samples received yet.</StatusBanner> : null}</div>
+    <div className="dv-insp-summary"><Presence show={(live && stream === 'stale') || waiting}>{live && stream === 'stale' ? <StatusBanner severity="warning">Stale · last received {staleFor} ago. Last samples remain visible.</StatusBanner>
+      : waiting ? <StatusBanner severity="info">The stream is connected. No samples received yet.</StatusBanner> : null}</Presence></div>
   </div>;
 }
