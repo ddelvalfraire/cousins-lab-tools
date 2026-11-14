@@ -54,6 +54,25 @@ export const ClearSearch:Story={render:()=><FrozenInstruments query="argon"/>,pl
 }};
 export const Empty:Story={render:()=><FrozenInstruments instruments={[]}/>,play:async({canvasElement})=>{await expect(within(canvasElement).getByRole('heading',{name:'No instruments configured'})).toBeVisible();}};
 export const SidebarCollapsed:Story={render:()=><FrozenInstruments initialSelected="MS-01" initialCollapsed/>,play:async({canvasElement})=>{await expect(canvasElement.querySelector('.dv-right-sidebar')).toHaveAttribute('data-collapsed','true');}};
+/** At 390 px the pane is a sheet over the list: each name opens it, the same name again too, and Escape closes it. */
+export const NarrowSheet:Story={render:()=><FrozenInstruments/>,parameters:{previewWidth:390},play:async({canvasElement})=>{
+  const canvas=within(canvasElement);
+  const side=canvasElement.querySelector<HTMLElement>('.dv-right-sidebar')!;
+  const choose=async(name:string)=>{
+    await userEvent.click(canvas.getByRole('button',{name}));
+    await expect(side).toHaveAttribute('data-collapsed','false');
+    await waitFor(()=>expect(side.querySelector('.dv-cat-detail-identity strong')?.textContent).toBe(name));
+    await waitFor(()=>expect(side.querySelector('[role=tabpanel]')).toHaveFocus());
+  };
+  const close=async()=>{await userEvent.keyboard('{Escape}');await expect(side).toHaveAttribute('data-collapsed','true');};
+  await expect(side).toHaveAttribute('data-mode','sheet');
+  await expect(side).toHaveAttribute('data-collapsed','true');
+  await choose('Mass spectrometer');
+  await close();
+  await choose('Reference spectrometer');
+  await close();
+  await choose('Reference spectrometer');
+}};
 /** Connect is simulated: Connecting…, then Connected. Acquisition does not start. */
 export const Connect:Story={render:()=><FrozenInstruments connectDelay={300}/>,play:async({canvasElement})=>{
   const canvas=within(canvasElement);

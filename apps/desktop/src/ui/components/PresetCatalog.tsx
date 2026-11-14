@@ -101,6 +101,7 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
   const [selectedId, setSelectedId] = useState(initialSelected);
   const [tab, setTab] = useState<string>(initialTab);
   const [collapsed, setCollapsed] = useState(initialCollapsed ?? !initialSelected);
+  const [reveal, setReveal] = useState(0);
 
   const rows = useMemo(() => presets
     .filter(p => !search || normalize(`${p.name} ${p.description}`).includes(normalize(search)))
@@ -109,7 +110,7 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
   const visible = rows.slice(pager.start, pager.end);
   const selected = presets.find(p => p.id === selectedId) ?? null;
 
-  const open = (id: string) => { setSelectedId(id); setTab('details'); setCollapsed(false); focusPane(sidebarId); };
+  const open = (id: string) => { setSelectedId(id); setTab('details'); setCollapsed(false); setReveal(n => n + 1); focusPane(sidebarId); };
   const use = (p: CatalogPreset) => <CatalogAction label={`Use preset: ${p.name}`} onClick={() => onUse(p.id)}>Use preset</CatalogAction>;
   const name = (p: CatalogPreset) => <button type="button" className="dv-cat-name" data-preset-open={p.id} onClick={() => open(p.id)}>{p.name}</button>;
 
@@ -165,7 +166,7 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
     <SidebarSection title="Definition"><SidebarFacts items={[['Updated', <>{fullDay(selected.updated)}<br />{time(selected.updated)}</>], ['Scope', 'This installation']]} /></SidebarSection>
   </>;
 
-  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Preset tools" activeTab={tab} onTabChange={setTab} collapsed={collapsed} onCollapsedChange={setCollapsed} subtitle={selected?.name ?? 'Presets'}
+  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Preset tools" activeTab={tab} onTabChange={setTab} collapsed={collapsed} onCollapsedChange={setCollapsed} revealKey={reveal} subtitle={selected?.name ?? 'Presets'}
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'panels', label: 'Panels', icon: <SidebarIcon name="panels" /> }, { id: 'revisions', label: 'Revisions', icon: <SidebarIcon name="revisions" /> }]}>{pane}</RightSidebar>;
 
   const actions = (onImport || onNewPreset) && <>

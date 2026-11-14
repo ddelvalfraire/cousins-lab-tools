@@ -61,6 +61,25 @@ export const SidebarCollapsed:Story={render:()=><FrozenPresets initialSelected="
   await expect(rows(canvasElement)[1]).toHaveAttribute('data-selected','true');
 }};
 export const Grid:Story={render:()=><FrozenPresets initialView="grid"/>,play:async({canvasElement})=>{await expect(canvasElement.querySelectorAll('.dv-cat-tile-card')).toHaveLength(5);}};
+/** At 390 px the pane is a sheet over the list: each name opens it, the same name again too, and Escape closes it. */
+export const NarrowSheet:Story={render:()=><FrozenPresets/>,parameters:{previewWidth:390},play:async({canvasElement})=>{
+  const canvas=within(canvasElement);
+  const side=canvasElement.querySelector<HTMLElement>('.dv-right-sidebar')!;
+  const choose=async(name:string)=>{
+    await userEvent.click(canvas.getByRole('button',{name}));
+    await expect(side).toHaveAttribute('data-collapsed','false');
+    await waitFor(()=>expect(side.querySelector('.dv-cat-side-heading')?.textContent).toBe(name));
+    await waitFor(()=>expect(side.querySelector('[role=tabpanel]')).toHaveFocus());
+  };
+  const close=async()=>{await userEvent.keyboard('{Escape}');await expect(side).toHaveAttribute('data-collapsed','true');};
+  await expect(side).toHaveAttribute('data-mode','sheet');
+  await expect(side).toHaveAttribute('data-collapsed','true');
+  await choose('Baseline stability');
+  await close();
+  await choose('CO₂ & O₂ analysis');
+  await close();
+  await choose('CO₂ & O₂ analysis');
+}};
 /** Sorting, paging and opening a name in the sidebar, then collapsing it. */
 export const BrowseCatalog:Story={render:()=><FrozenPresets/>,play:async({canvasElement})=>{
   const canvas=within(canvasElement);

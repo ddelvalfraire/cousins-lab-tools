@@ -57,6 +57,25 @@ export const ClearSearch:Story={render:()=><FrozenRoutines query="argon"/>,play:
 }};
 export const Empty:Story={render:()=><FrozenRoutines routines={[]}/>,play:async({canvasElement})=>{await expect(within(canvasElement).getByRole('heading',{name:'No routines yet'})).toBeVisible();}};
 export const SidebarCollapsed:Story={render:()=><FrozenRoutines initialSelected="baseline" initialCollapsed/>,play:async({canvasElement})=>{await expect(canvasElement.querySelector('.dv-right-sidebar')).toHaveAttribute('data-collapsed','true');}};
+/** At 390 px the pane is a sheet over the list: each name opens it, the same name again too, and Escape closes it. */
+export const NarrowSheet:Story={render:()=><FrozenRoutines/>,parameters:{previewWidth:390},play:async({canvasElement})=>{
+  const canvas=within(canvasElement);
+  const side=canvasElement.querySelector<HTMLElement>('.dv-right-sidebar')!;
+  const choose=async(name:string)=>{
+    await userEvent.click(canvas.getByRole('button',{name}));
+    await expect(side).toHaveAttribute('data-collapsed','false');
+    await waitFor(()=>expect(side.querySelector('.dv-cat-side-heading')?.textContent).toBe(name));
+    await waitFor(()=>expect(side.querySelector('[role=tabpanel]')).toHaveFocus());
+  };
+  const close=async()=>{await userEvent.keyboard('{Escape}');await expect(side).toHaveAttribute('data-collapsed','true');};
+  await expect(side).toHaveAttribute('data-mode','sheet');
+  await expect(side).toHaveAttribute('data-collapsed','true');
+  await choose('Baseline then sample');
+  await close();
+  await choose('Reference and sample');
+  await close();
+  await choose('Reference and sample');
+}};
 /** Selecting a step in a row opens it in the Steps tab; back returns to the full list. */
 export const InspectStep:Story={render:()=><FrozenRoutines/>,play:async({canvasElement})=>{
   const canvas=within(canvasElement);

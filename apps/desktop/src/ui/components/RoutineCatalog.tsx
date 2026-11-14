@@ -90,6 +90,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
   const [step, setStep] = useState(initialStep);
   const [tab, setTab] = useState<string>(initialTab);
   const [collapsed, setCollapsed] = useState(initialCollapsed ?? !initialSelected);
+  const [reveal, setReveal] = useState(0);
 
   const rows = useMemo(() => routines
     .filter(r => !search || normalize(`${r.name} ${r.role}`).includes(normalize(search)))
@@ -97,7 +98,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
   const pager = useCatalogPage(rows.length);
   const selected = routines.find(r => r.id === selectedId) ?? null;
 
-  const open = (id: string, next: RoutineSidebarTab = 'details', index: number | null = null) => { setSelectedId(id); setStep(index); setTab(next); setCollapsed(false); focusPane(sidebarId); };
+  const open = (id: string, next: RoutineSidebarTab = 'details', index: number | null = null) => { setSelectedId(id); setStep(index); setTab(next); setCollapsed(false); setReveal(n => n + 1); focusPane(sidebarId); };
   const duration = (r: CatalogRoutine) => r.steps.reduce((sum, s) => sum + (s.duration ?? 0), 0);
 
   let body;
@@ -162,7 +163,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
     <SidebarSection title="Sequence"><CatalogAction onClick={() => open(selected.id, 'steps')}>View all steps</CatalogAction></SidebarSection>
   </>;
 
-  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Routine tools" activeTab={tab} onTabChange={next => { setTab(next); if (next === 'steps') setStep(null); }} collapsed={collapsed} onCollapsedChange={setCollapsed} subtitle={selected?.name ?? 'Routines'}
+  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Routine tools" activeTab={tab} onTabChange={next => { setTab(next); if (next === 'steps') setStep(null); }} collapsed={collapsed} onCollapsedChange={setCollapsed} revealKey={reveal} subtitle={selected?.name ?? 'Routines'}
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'steps', label: 'Steps', icon: <SidebarIcon name="panels" /> }, { id: 'inputs', label: 'Inputs', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Routines">

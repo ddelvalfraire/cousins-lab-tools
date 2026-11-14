@@ -71,6 +71,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
   const [selectedId, setSelectedId] = useState(initialSelected);
   const [tab, setTab] = useState<string>(initialTab);
   const [collapsed, setCollapsed] = useState(initialCollapsed ?? !initialSelected);
+  const [reveal, setReveal] = useState(0);
   const [announcement, setAnnouncement] = useState('');
   const timers = useRef<number[]>([]);
   useEffect(() => { setItems(instruments); }, [instruments]);
@@ -82,7 +83,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
   const pager = useCatalogPage(rows.length);
   const selected = items.find(i => i.id === selectedId) ?? null;
 
-  const open = (id: string, next: InstrumentSidebarTab = 'details') => { setSelectedId(id); setTab(next); setCollapsed(false); focusPane(sidebarId); };
+  const open = (id: string, next: InstrumentSidebarTab = 'details') => { setSelectedId(id); setTab(next); setCollapsed(false); setReveal(n => n + 1); focusPane(sidebarId); };
   const update = (id: string, patch: Partial<CatalogInstrument>) => setItems(current => current.map(i => i.id === id ? { ...i, ...patch } : i));
   const connect = (i: CatalogInstrument) => {
     update(i.id, { state: 'connecting' });
@@ -146,7 +147,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
     </SidebarSection>
   </>;
 
-  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Instrument tools" activeTab={tab} onTabChange={setTab} collapsed={collapsed} onCollapsedChange={setCollapsed} subtitle={selected?.id ?? 'Instruments'}
+  const sidebar = <RightSidebar id={sidebarId} tabsLabel="Instrument tools" activeTab={tab} onTabChange={setTab} collapsed={collapsed} onCollapsedChange={setCollapsed} revealKey={reveal} subtitle={selected?.id ?? 'Instruments'}
     tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'channels', label: 'Channels', icon: <SidebarIcon name="signals" /> }, { id: 'connect', label: 'Connect', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
 
   return <CatalogRoot label="Instruments">
