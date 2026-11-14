@@ -125,7 +125,7 @@ export function ShellSearch({ ref, pageLabel, pagePlaceholder, pageQuery = '', o
         onChange={chosen(value => changeScope(value as Scope))} />
       <input ref={inputRef} type="search" autoComplete="off" spellCheck={false} value={value} {...combobox}
         aria-label={all ? 'Search all DVDash' : `Search ${pageLabel.toLowerCase()}`} placeholder={all ? 'Search DVDash…' : pagePlaceholder}
-        onChange={event => change(event.currentTarget.value)} onFocus={() => { if (all && !quietFocus.current) setOpen(true); }} onKeyDown={onKeyDown} />
+        onChange={event => change(event.currentTarget.value)} onFocus={() => { if (all && !quietFocus.current) setOpen(true); }} onClick={() => { if (all) setOpen(true); }} onKeyDown={onKeyDown} />
       {value && <button type="button" className="dv-shell-clear" aria-label="Clear search" onMouseDown={keepInputFocus} onClick={clear}>{glyph(<path d="m6 6 12 12M6 18 18 6" />)}</button>}
       <button type="button" className="dv-shell-shortcut" title={`Open command center · ${mac ? '⌘' : 'Ctrl'} K`} onMouseDown={keepInputFocus} onClick={openCommandCenter}>
         <span className="dv-shell-sr">Open command center</span><KeyCaps keys={['Mod', 'K']} mac={mac} size="xs" />

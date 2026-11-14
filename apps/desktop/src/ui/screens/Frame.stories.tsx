@@ -163,6 +163,24 @@ export const CommandCenterShortcut:Story={
   },
 };
 
+/** Escape closes the results and leaves the caret in the box; a click in the box shows them again. */
+export const ClickReopensResults:Story={
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement);
+    await chooseOption(canvas.getByRole('combobox',{name:'Search scope'}),'All DVDash');
+    const input=commandCenter(canvasElement);
+    await userEvent.click(input);
+    await expect(input).toHaveAttribute('aria-expanded','true');
+    await userEvent.keyboard('{Escape}');
+    await expect(input).toHaveAttribute('aria-expanded','false');
+    await expect(input).toHaveFocus();
+    await userEvent.click(input);
+    await expect(input).toHaveAttribute('aria-expanded','true');
+    await waitFor(()=>expect(canvas.getByRole('listbox')).toBeVisible());
+    await settleMotion();
+  },
+};
+
 /** Arrow keys move the highlight, wrapping at both ends; Enter runs it. */
 export const ArrowKeysAndEnter:Story={
   play:async({canvasElement,args})=>{
