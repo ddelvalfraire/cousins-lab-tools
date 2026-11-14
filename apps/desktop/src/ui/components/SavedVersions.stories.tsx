@@ -188,5 +188,26 @@ export const WidePreview: Story = {
     await expect(plots.length).toBeGreaterThan(0);
     for (const plot of plots) await waitFor(() => expect(plot.viewBox.baseVal.width).toBe(Math.round(plot.getBoundingClientRect().width)));
     for (const plot of plots) await expect(plot.viewBox.baseVal.width).toBeGreaterThan(600);
+    for (const plot of plots) await expect(plot.getScreenCTM()!.a).toBeCloseTo(1, 3);
+    for (const plot of plots) await expect(plot.getBoundingClientRect().height).toBe(150);
+  },
+};
+/** Largest text: each plot scales by 1.5 as a whole, so its labels grow without running into each other. */
+export const WidePreviewLargestText: Story = {
+  ...WidePreview,
+  globals: { textSize: 'largest' },
+  play: async ({ canvasElement }) => {
+    const plots = [...canvasElement.querySelectorAll<SVGSVGElement>('.dv-saved-plot')];
+    await expect(plots.length).toBeGreaterThan(0);
+    for (const plot of plots) await waitFor(() => expect(plot.viewBox.baseVal.width).toBeCloseTo(plot.getBoundingClientRect().width / 1.5, 0));
+    for (const plot of plots) {
+      await expect(Math.abs(plot.getScreenCTM()!.a - 1.5)).toBeLessThanOrEqual(0.02);
+      await expect(plot.getBoundingClientRect().height).toBe(225);
+      const boxes = [...plot.querySelectorAll('text')].map(t => ({ text: t.textContent, box: t.getBoundingClientRect() }));
+      for (const [i, a] of boxes.entries()) for (const b of boxes.slice(i + 1)) {
+        const apart = a.box.right <= b.box.left || b.box.right <= a.box.left || a.box.bottom <= b.box.top || b.box.bottom <= a.box.top;
+        await expect(apart, `${a.text} and ${b.text}`).toBe(true);
+      }
+    }
   },
 };

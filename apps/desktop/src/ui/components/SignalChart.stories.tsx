@@ -151,22 +151,50 @@ export const VeryWideRange: Story = {
 
 const tracePoints = Array.from({ length: 61 }, (_, i) => ({ time: i * 5, value: 2.35 + 0.4 * Math.sin(i / 3) }));
 const viewWidth = (svg: SVGSVGElement) => svg.viewBox.baseVal.width;
+/** CSS pixels per SVG user unit. */
+const drawScale = (svg: SVGSVGElement) => svg.getScreenCTM()!.a;
+const overlaps = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+const labelsApart = async (svg: SVGSVGElement) => {
+  const boxes = [...svg.querySelectorAll('text')].map(t => ({ text: t.textContent, box: t.getBoundingClientRect() }));
+  for (const [i, a] of boxes.entries()) for (const b of boxes.slice(i + 1)) await expect(overlaps(a.box, b.box), `${a.text} and ${b.text}`).toBe(false);
+};
+const traceCard = <div data-testid="trace-card" style={{ width: 720 }}>
+  <SignalTrace variant="live" points={tracePoints.slice(-7).map(p => ({ time: p.time - 300, value: p.value }))} from={-30} to={0} min={1.8} max={2.9} unit="mV" label="Live trace" />
+  <SignalTrace variant="playback" points={tracePoints} from={0} to={300} cursor={42} min={1.8} max={2.9} unit="mV" label="Playback trace" />
+</div>;
+const traceSvgs = (canvasElement: HTMLElement) => [within(canvasElement).getByRole('img', { name: 'Live trace' }), within(canvasElement).getByRole('img', { name: 'Playback trace' })] as unknown as SVGSVGElement[];
 
 /** Compact traces fill a wide card and redraw at the new width when the card resizes. */
 export const TracesFillCard: Story = {
-  render: () => <div data-testid="trace-card" style={{ width: 720 }}>
-    <SignalTrace variant="live" points={tracePoints.slice(-7).map(p => ({ time: p.time - 300, value: p.value }))} from={-30} to={0} min={1.8} max={2.9} unit="mV" label="Live trace" />
-    <SignalTrace variant="playback" points={tracePoints} from={0} to={300} cursor={42} min={1.8} max={2.9} unit="mV" label="Playback trace" />
-  </div>,
+  render: () => traceCard,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const card = canvas.getByTestId('trace-card');
-    const traces = [canvas.getByRole('img', { name: 'Live trace' }), canvas.getByRole('img', { name: 'Playback trace' })] as unknown as SVGSVGElement[];
+    const traces = traceSvgs(canvasElement);
     for (const svg of traces) await waitFor(() => expect(viewWidth(svg)).toBe(720));
+    for (const svg of traces) await expect(drawScale(svg)).toBeCloseTo(1, 3);
+    await expect(traces.map(svg => svg.getBoundingClientRect().height)).toEqual([100, 145]);
     const lastTick = [...traces[1].querySelectorAll('text')].find(t => t.textContent === '300')!;
     await expect(Number(lastTick.getAttribute('x'))).toBe(720 - 12);
     card.style.width = '480px';
     for (const svg of traces) await waitFor(() => expect(viewWidth(svg)).toBe(480));
     await expect(Number(lastTick.getAttribute('x'))).toBe(480 - 12);
+  },
+};
+/** Largest text: the whole trace scales by 1.5, so the labels grow with the text and keep their places. */
+export const TracesLargestText: Story = {
+  globals: { textSize: 'largest' },
+  render: () => traceCard,
+  play: async ({ canvasElement }) => {
+    const traces = traceSvgs(canvasElement);
+    for (const svg of traces) await waitFor(() => expect(viewWidth(svg)).toBe(480));
+    for (const svg of traces) await expect(Math.abs(drawScale(svg) - 1.5)).toBeLessThanOrEqual(0.02);
+    await expect(traces.map(svg => svg.getBoundingClientRect().height)).toEqual([150, 217.5]);
+    for (const svg of traces) await labelsApart(svg);
+    // A card as narrow as the playback mockup still scales by 1.5 instead of letterboxing the trace.
+    within(canvasElement).getByTestId('trace-card').style.width = '260px';
+    for (const svg of traces) await waitFor(() => expect(viewWidth(svg)).toBeCloseTo(260 / 1.5, 3));
+    for (const svg of traces) await expect(Math.abs(drawScale(svg) - 1.5)).toBeLessThanOrEqual(0.02);
+    for (const svg of traces) await labelsApart(svg);
   },
 };

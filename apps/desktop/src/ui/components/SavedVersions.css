@@ -26,8 +26,8 @@
 .dv-saved-reading small { margin-left: 5px; font-size: .6875rem; font-weight: 400; letter-spacing: 0; color: var(--dv-ink-muted); }
 .dv-saved-legend { display: flex; align-items: center; gap: 5px; margin-top: 9px; font-size: .625rem; color: var(--dv-ink-muted); }
 .dv-saved-legend span { width: 12px; height: 2px; background: var(--dv-blue); }
-.dv-saved-plot { display: block; width: 100%; height: 150px; margin-top: 8px; }
-/* Labels sit at fixed coordinates in the plot, so they keep their px size at every text size (see SignalChart.css). */
+.dv-saved-plot { display: block; width: 100%; height: 9.375rem; margin-top: 8px; }
+/* 9px is in SVG user units, which scale with the text size (see SignalChart.css). */
 .dv-saved-plot text { font-family: inherit; font-size: 9px; fill: var(--dv-ink-muted); }
 .dv-saved-plot-grid { fill: none; stroke: var(--dv-line); stroke-width: .6; }
 .dv-saved-plot-signal { fill: none; stroke: var(--dv-blue); stroke-width: 1.6; stroke-linejoin: round; }

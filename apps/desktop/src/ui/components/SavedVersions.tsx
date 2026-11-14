@@ -1,4 +1,6 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useAppearance } from '../appearance';
+import { textScales } from '../textSize';
 import { Chip } from './Chip';
 import { StatusBanner } from './Primitives';
 import { SidebarIcon } from './RightSidebar';
@@ -24,8 +26,9 @@ export interface SavedReadout { title: string; value: string; unit: string; /** 
 /** Read-only plot of a chart panel (.saved-plot). Drawn at 260 px in the mockup; wider cards stretch the plot area. */
 function SavedPlot({ chart }: { chart: SavedChart }) {
   const { min, max, points, window = 30 } = chart;
+  const { textSize } = useAppearance(), scale = textScales[textSize];
   const [ref, measured] = useElementWidth<SVGSVGElement>(260);
-  const width = Math.max(260, measured), end = width - 12, plotWidth = end - 38, mid = 38 + plotWidth / 2;
+  const width = Math.max(260, measured) / scale, end = width - 12, plotWidth = end - 38, mid = 38 + plotWidth / 2;
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0;
   const path = points.map((value, i) => `${i ? 'L' : 'M'}${(38 + i * step).toFixed(2)} ${(20 + (max - value) / (max - min) * 90).toFixed(2)}`).join(' ');
   return <svg ref={ref} className="dv-saved-plot" viewBox={`0 0 ${width} 150`} role="img" aria-label={`${chart.title} sample signal. Time axis minus ${window} to 0 seconds; signal axis ${min} to ${max} ${chart.unit}.`}>

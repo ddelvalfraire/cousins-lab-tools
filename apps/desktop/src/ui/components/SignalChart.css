@@ -14,10 +14,10 @@
 
 /* Compact traces for workspace cards: right-sidebar-review.html (.live-plot) and sticky-playback-review.html (.playback-plot). */
 .dv-trace { display: block; width: 100%; color: var(--dv-blue); }
-.dv-trace[data-variant='live'] { height: 100px; }
-.dv-trace[data-variant='playback'] { height: 145px; }
-/* Trace labels are placed at fixed coordinates next to a fixed-height plot; larger text would overlap the trace and the
-   other labels, so these stay at 9 px whatever the text size. */
+.dv-trace[data-variant='live'] { height: 6.25rem; }
+.dv-trace[data-variant='playback'] { height: 9.0625rem; }
+/* 9px is in SVG user units: the trace's height is in rem and its viewBox width is divided by the text scale, so the whole
+   drawing, labels included, grows evenly with the text size and the fixed label coordinates never collide. */
 .dv-trace text { fill: var(--dv-ink-muted); font-size: 9px; font-family: inherit; }
 .dv-trace .dv-trace-grid { fill: none; stroke: var(--dv-line); stroke-width: 1; }
 .dv-trace[data-variant='playback'] .dv-trace-grid { stroke-width: .6; }

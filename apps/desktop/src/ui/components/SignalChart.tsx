@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Group, NumberInput, Paper, SegmentedControl, Select, Table, Text, TextInput, Title, useComputedColorScheme } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconChartLine, IconTable } from '@tabler/icons-react';
 import { useAppearance } from '../appearance';
-import { rootTextScale } from '../textSize';
+import { rootTextScale, textScales } from '../textSize';
 import uPlot from 'uplot';
 import type { SignalSample } from '../fixtures';
 import { seriesColors } from '../theme';
@@ -343,9 +343,9 @@ export function SignalTrace({ variant, points, min, max, unit, label, from, to, 
   connectNulls?: ConnectNulls;
   disconnectAfter?: DisconnectAfter;
 }) {
-  const f = traceFrames[variant];
+  const f = traceFrames[variant], { textSize } = useAppearance(), scale = textScales[textSize];
   const [ref, measured] = useElementWidth<SVGSVGElement>(f.width);
-  const width = Math.max(f.width, measured), plotWidth = width - f.left - f.right, end = f.left + plotWidth;
+  const width = Math.max(f.width, measured) / scale, plotWidth = width - f.left - f.right, end = f.left + plotWidth;
   const t0 = from ?? points[0]?.time ?? 0, t1 = to ?? points[points.length - 1]?.time ?? 1, span = t1 - t0 || 1;
   const x = (t: number) => (t - t0) / span * plotWidth, y = (v: number) => (max - v) / (max - min || 1) * f.plotHeight;
   const visible = points.filter(p => p.time >= t0 && p.time <= t1);
