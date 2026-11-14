@@ -25,6 +25,11 @@ const expectFits = async (root: HTMLElement) => {
   await expect(overlaps(rect(root, '.dv-page-title-line'), rect(root, '.dv-page-actions'))).toBe(false);
   await expect(overlaps(rect(root, '.dv-page-crumbs'), rect(root, '.dv-page-actions'))).toBe(false);
 };
+/** The count sits on the title line, inside it. */
+const expectCountOnTitleLine = async (root: HTMLElement) => {
+  const line = rect(root, '.dv-page-title-line'), count = rect(root, '.dv-page-count');
+  await expect(count.top >= line.top && count.bottom <= line.bottom && count.right <= line.right).toBe(true);
+};
 const collectionActions = <><HeaderButton icon={<IconUpload aria-hidden />}>Import recordings…</HeaderButton><HeaderButton variant="primary" icon={<IconFlask aria-hidden />}>New experiment…</HeaderButton></>;
 
 /** Experiments · catalog: a list page with buttons and no meta puts them on the title line, so there is no action bar. */
@@ -39,6 +44,7 @@ export const Collection: Story = {
     const line = rect(canvasElement, '.dv-page-title-line'), actions = rect(canvasElement, '.dv-page-actions');
     await expect(Math.abs((actions.top + actions.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThanOrEqual(1);
     await expect(Math.round(actions.right)).toBe(Math.round(rect(canvasElement, '.dv-page-header-title .dv-page-header-width').right));
+    await expectCountOnTitleLine(canvasElement);
     await expectFits(canvasElement);
     await expect(canvas.getByText('Experiments', { selector: '[aria-current="page"]' })).toBeVisible();
     await userEvent.click(canvas.getByRole('button', { name: 'Workspace' }));
@@ -58,6 +64,7 @@ export const CollectionNarrow: Story = {
     await expect(actions.top).toBeGreaterThanOrEqual(rect(canvasElement, '.dv-page-title-line').bottom);
     await expect(Math.round(rect(canvasElement, '.dv-page-title').top - title.top)).toBe(Math.round(16.5 + 16 + 9));
     await expectFits(canvasElement);
+    await expectCountOnTitleLine(canvasElement);
   },
 };
 
@@ -82,6 +89,10 @@ export const CollectionNarrowLargestText: Story = {
     await expect(header(canvasElement).getBoundingClientRect().width).toBeLessThanOrEqual(390);
     await expect(header(canvasElement).scrollWidth).toBeLessThanOrEqual(header(canvasElement).clientWidth);
     await expectFits(canvasElement);
+    // A bare number fits beside the whole title even here, so it stays on the line.
+    const title = header(canvasElement).querySelector('h1')!;
+    await expect(title.scrollWidth).toBeLessThanOrEqual(title.clientWidth);
+    await expectCountOnTitleLine(canvasElement);
   },
 };
 

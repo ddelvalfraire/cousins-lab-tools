@@ -141,4 +141,10 @@ export const DetailsSidebarLargestText:Story={globals:{textSize:'largest'},play:
   await expect(canvasElement.querySelector('.dv-shell-page .dv-page-actionbar')).toBeNull();
 }};
 /** Largest text at 390 px: the sheet opens on a selection and its facts fit. */
-export const NarrowSheetLargestText:Story={...NarrowSheet,globals:{textSize:'largest'}};
+export const NarrowSheetLargestText:Story={...NarrowSheet,globals:{textSize:'largest'},play:async(context)=>{
+  await NarrowSheet.play!(context);
+  // The title stays whole; the count it has no room for wraps below the title line, which clips it.
+  const header=context.canvasElement.querySelector('.dv-shell-page .dv-page-header')!, title=header.querySelector('h1')!;
+  await waitFor(()=>expect(title.scrollWidth).toBeLessThanOrEqual(title.clientWidth));
+  await expect(header.querySelector('.dv-page-count')!.getBoundingClientRect().top).toBeGreaterThanOrEqual(header.querySelector('.dv-page-title-line')!.getBoundingClientRect().bottom);
+}};

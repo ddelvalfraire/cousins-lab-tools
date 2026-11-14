@@ -16,6 +16,8 @@
 .dvdash .dv-page-title, .dv-page-title { flex: 0 1 auto; min-width: 0; max-width: 100%; margin: 0; overflow: hidden; color: var(--dv-ink); font-size: 1.5625rem; font-weight: 650; line-height: 1.875rem; letter-spacing: -.035em; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
 .dv-page-title:focus { outline: none; }
 .dv-page-count { flex: none; color: var(--dv-ink-muted); font-size: .6875rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* A count that does not fit wraps to a second line, which the fixed height clips, so the title gets the width first. */
+.dv-page-title-line:has(> .dv-page-count) { height: 1.875rem; min-height: 1.875rem; flex-wrap: wrap; align-content: flex-start; overflow: hidden; }
 
 /* Buttons on the title line (list pages with buttons and no meta): breadcrumbs across, then the title and the buttons. */
 .dv-page-header[data-actions='title'] .dv-page-header-title > .dv-page-header-width { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'crumbs crumbs' 'title actions'; align-items: center; column-gap: 12px; }
