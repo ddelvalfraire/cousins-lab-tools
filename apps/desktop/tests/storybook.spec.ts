@@ -204,6 +204,7 @@ test('confirmation dialogs add no second page banner', async ({ page }) => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('dialog').getByRole('heading')).toBeVisible();
     await expect(page.getByRole('dialog').getByRole('banner'), id).toHaveCount(0);
+    await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: 30_000 });
     const result = await new AxeBuilder({ page }).withRules(['landmark-no-duplicate-banner', 'landmark-unique']).analyze();
     expect(result.violations.map(v => v.id), id).toEqual([]);
   }
