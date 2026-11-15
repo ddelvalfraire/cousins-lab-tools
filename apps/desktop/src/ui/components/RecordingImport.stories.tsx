@@ -83,6 +83,7 @@ export const Review: Story = {
     await expect(args.onBack).toHaveBeenCalledTimes(1);
     await userEvent.click(body.getByRole('button', { name: 'Import 2 recordings' }));
     await expect(args.onImport).toHaveBeenCalledTimes(1);
+    await expect(body.getByRole('region', { name: 'Import recordings' })).toHaveFocus();
   },
 };
 
