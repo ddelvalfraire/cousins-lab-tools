@@ -120,6 +120,7 @@ export const OpenRevision:Story={play:async({canvasElement})=>{
   await userEvent.click(canvas.getByRole('tab',{name:'Revisions'}));
   await userEvent.click(within(canvas.getByRole('navigation',{name:'Saved preset versions'})).getByRole('button',{name:/R2/}));
   await expect(canvas.getByRole('heading',{level:1,name:'Revision history'})).toBeVisible();
+  await expect(canvas.getByRole('main')).toHaveFocus();
   await expect(canvas.getByRole('button',{name:'Restore R2'})).toBeVisible();
   await userEvent.click(canvas.getByRole('button',{name:'View current preset'}));
   await expect(canvas.getByRole('heading',{level:1,name:'CO₂ & O₂ analysis'})).toBeVisible();

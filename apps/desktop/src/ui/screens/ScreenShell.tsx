@@ -66,6 +66,11 @@ export function ScreenShell({ page, navigate, recents, acquisition, defaultColla
   const appearance = useAppearance(), dark = appearance.scheme==='dark';
   const os = useOs(), mac = os==='macos' || os==='ios';
   const search = useRef<ShellSearchHandle>(null), main = useRef<HTMLDivElement>(null), sequenceStart = useRef<SequenceStart|null>(null);
+  const previousPage = useRef(page);
+  useEffect(() => {
+    if (previousPage.current !== page && document.activeElement === document.body) main.current?.focus();
+    previousPage.current = page;
+  }, [page]);
   const toggleAppearance = (from?:Element) => onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
   const reveal = useRef<{ frame:number; stop?:()=>void }>({ frame:0 });
