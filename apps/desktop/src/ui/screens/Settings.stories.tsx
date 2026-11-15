@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { REVEAL_MS } from './revealTarget';
-import { REDUCED_MOTION_QUERY } from '../motion';
+import { reduceMotion } from '../components/settleMotion';
 const meta={title:'Screens/Settings',component:DVDashWorkspace,render:renderScreen,parameters:{layout:'fullscreen',previewWidth:'viewport'},args:{initialPage:'settings'}} satisfies Meta<typeof DVDashWorkspace>;
 export default meta;
 type Story=StoryObj<typeof meta>;
@@ -24,14 +24,6 @@ async function pick(canvasElement:HTMLElement,query:string,option:RegExp){
   await userEvent.keyboard('{Control>}k{/Control}');
   await userEvent.type(canvas.getByRole('combobox',{name:'Search all DVDash'}),query);
   await userEvent.click(await canvas.findByRole('option',{name:option}));
-}
-/** Reports reduced motion to scripts, as the OS setting does. The stylesheet's media query is covered in the browser tests. */
-function reduceMotion(){
-  const original=window.matchMedia;
-  window.matchMedia=(query:string)=>query===REDUCED_MOTION_QUERY
-    ? { matches:true, media:query, onchange:null, addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){}, dispatchEvent:()=>false } as MediaQueryList
-    : original.call(window,query);
-  return ()=>{ window.matchMedia=original; };
 }
 
 /** From the bottom of Settings, search finds "Decimal separator": the page scrolls up to it, focuses its field and highlights it, then the highlight fades. */
