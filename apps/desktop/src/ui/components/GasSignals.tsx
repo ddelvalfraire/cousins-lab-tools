@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button, Group, NumberInput, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import type uPlot from 'uplot';
 import { Panel, StatusBanner } from './Primitives';
+import { Presence } from './Motion';
 import { ScientificPlot } from './SignalChart';
 import { seriesColors } from '../theme';
 
@@ -26,9 +27,9 @@ export function GasSignals({ data, interval = [120,180], onIntervalChange, onVal
     <Group gap="xs">{['CO₂','O₂'].map((label,index) => <Button key={label} size="compact-xs" variant="default" aria-pressed={visible[index]} onClick={() => setVisible(current => current.map((value,i) => i === index ? !value : value))}><span className="dv-legend"><span><i style={{ borderColor: index ? colors[2] : colors[0], borderTopStyle: index ? 'dashed' : 'solid' }} />{label} <span className="dv-muted">nmol/mL</span></span></span></Button>)}</Group>
     <ScientificPlot data={presented} xLabel="Time (s)" yLabel="Concentration (nmol/mL)" series={[{ label:'CO₂',unit:'nmol/mL',color:colors[0] },{ label:'O₂',unit:'nmol/mL',color:colors[2] }]} selection={interval} range={zoom && valid ? [Number(start),Number(end)] : undefined} onSelection={pair => update(pair[0],pair[1])} />
     <div className="dv-input-grid"><NumberInput label="Selection start (s)" value={start} onChange={value => update(value,end)} min={min} max={max} /><NumberInput label="Selection end (s)" value={end} onChange={value => update(start,value)} min={min} max={max} /></div>
-    {!valid && <StatusBanner severity="error">Enter an interval within the recording, with its start before its end.</StatusBanner>}
+    <Presence show={!valid}><StatusBanner severity="error">Enter an interval within the recording, with its start before its end.</StatusBanner></Presence>
     <Group><Button variant="default" size="xs" disabled={!valid} onClick={() => { onCaptureReference?.(); setMessage('Reference interval captured for this local example.'); }}>Capture reference interval</Button></Group>
-    {message && <StatusBanner announce>{message}</StatusBanner>}
+    <Presence show={!!message}><StatusBanner announce>{message}</StatusBanner></Presence>
     <Text size="xs" c="dimmed">Selection and display controls do not alter recorded samples.</Text>
   </Stack></Panel>;
 }
