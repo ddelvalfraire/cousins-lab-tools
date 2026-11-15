@@ -64,6 +64,8 @@ export function Presence({ show, variant = 'collapse', className, children }: Pr
 }
 
 export interface SwapProps {
+  /** Let the outgoing copy finish before fading in text that would otherwise overlap. */
+  sequential?: boolean;
   /** Identity of the content, for example the selected tab or data source. A new key fades the new content in. */
   swapKey: string;
   className?: string;
@@ -76,7 +78,7 @@ export interface SwapProps {
  * layout at once and fades in; the old content stays on top only until its quick fade out ends, clipped to the new
  * content's box, inert and hidden from assistive technology, and keeps its own component state while it leaves.
  */
-export function Swap({ swapKey, className, style, children }: SwapProps) {
+export function Swap({ swapKey, className, style, children, sequential = false }: SwapProps) {
   const reduced = useReducedMotion(false, { getInitialValueInEffect: false });
   const [leaving, setLeaving] = useState<{ key: string; node: ReactNode } | null>(null);
   const [entering, setEntering] = useState<string | null>(null);
@@ -95,12 +97,12 @@ export function Swap({ swapKey, className, style, children }: SwapProps) {
   }, [leaving]);
   useEffect(() => {
     if (!entering) return;
-    const timer = window.setTimeout(() => setEntering(null), motion.base);
+    const timer = window.setTimeout(() => setEntering(null), motion.base + (sequential ? motion.fast : 0));
     return () => window.clearTimeout(timer);
-  }, [entering]);
+  }, [entering, sequential]);
   // The leaving copy comes last, so queries and the reading order meet the current content first.
   const items = leaving && leaving.key !== swapKey ? [{ key: swapKey, node: children, out: false }, { ...leaving, out: true }] : [{ key: swapKey, node: children, out: false }];
-  return <div className={className ? `dv-swap ${className}` : 'dv-swap'} style={style}>
+  return <div className={['dv-swap', sequential && 'dv-swap-sequential', className].filter(Boolean).join(' ')} style={style}>
     {items.map(item => item.out
       ? <div key={item.key} className="dv-swap-item" data-motion="leave" inert aria-hidden="true">{item.node}</div>
       : <div key={item.key} className="dv-swap-item" data-motion={entering === item.key ? 'enter' : undefined}>{item.node}</div>)}

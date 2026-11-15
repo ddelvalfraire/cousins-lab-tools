@@ -219,7 +219,15 @@ export const WidePreviewLargestText: Story = {
 export const RevisionMotion: Story = {
   play: async ({ canvasElement }) => {
     const page = within(canvasElement);
-    let animated = false;
+    let animated = false, overlap = false, sampling = true;
+    const sample = () => {
+      for (const swap of canvasElement.querySelectorAll('.dv-swap-sequential')) {
+        const entering = swap.querySelector(':scope > [data-motion="enter"]'), leaving = swap.querySelector(':scope > [data-motion="leave"]');
+        overlap ||= !!entering && !!leaving && Number(getComputedStyle(entering).opacity) > 0 && Number(getComputedStyle(leaving).opacity) > 0;
+      }
+      if (sampling) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
     const observer = new MutationObserver(() => { animated ||= !!canvasElement.querySelector('[data-motion]'); });
     observer.observe(canvasElement, { subtree: true, childList: true, attributes: true });
     await userEvent.click(within(page.getByRole('navigation', { name: 'Saved preset versions' })).getByRole('button', { name: /R2/ }));
@@ -239,7 +247,9 @@ export const RevisionMotion: Story = {
     await settleMotion();
     await expect(canvasElement.querySelector('.dv-saved-version [role="tabpanel"]')).toHaveFocus();
     await waitFor(() => expect(canvasElement.querySelector('[data-motion]')).toBeNull(), { timeout: 10000 });
+    sampling = false;
     observer.disconnect();
+    await expect(overlap).toBe(false);
     await expect(animated).toBe(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     await expect(within(page.getByRole('navigation', { name: 'Saved preset versions' })).getAllByRole('button')).toHaveLength(4);
   },

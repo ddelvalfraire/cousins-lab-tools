@@ -402,8 +402,8 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
     {!hideHeader && <PageHeader title={preset.name} titleId={ids.title}
       breadcrumbs={breadcrumbs ?? [{ label: 'Workspace' }, { label: 'Presets' }, { label: preset.name }]}
       meta={<>
-        <Swap swapKey={String(saved.revision)}><Chip icon={<IconHistory aria-hidden />}>{saved.revision ? `R${saved.revision}` : 'Not saved yet'}</Chip></Swap>
-        <Swap swapKey={String(dirty)}>{dirty ? <StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord> : <StatusWord icon={<IconCheck aria-hidden />}>No unsaved changes</StatusWord>}</Swap>
+        <Swap sequential swapKey={String(saved.revision)}><Chip icon={<IconHistory aria-hidden />}>{saved.revision ? `R${saved.revision}` : 'Not saved yet'}</Chip></Swap>
+        <Swap sequential swapKey={String(dirty)}>{dirty ? <StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord> : <StatusWord icon={<IconCheck aria-hidden />}>No unsaved changes</StatusWord>}</Swap>
       </>}
       actions={<>
         <Presence show={dirty} variant="fade"><HeaderButton variant="quiet" onClick={discard}>Discard changes</HeaderButton></Presence>

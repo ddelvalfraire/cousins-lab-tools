@@ -117,15 +117,15 @@ export function RevisionRestoreConfirm({ phase, selected, next, onCancel, onConf
 }) {
   const busy = phase === 'restoring';
   return <Presence show={phase !== 'idle'} className="dv-revision-restore-slot"><div className="dv-revision-restore">
-    <Swap swapKey={phase === 'restored' ? 'restored' : 'confirmation'}>{phase === 'restored'
+    <Swap sequential swapKey={phase === 'restored' ? 'restored' : 'confirmation'}>{phase === 'restored'
       ? <div role="status"><StatusBanner>R{next} created from R{selected}.</StatusBanner></div>
       : <>
-    <Swap swapKey={phase === 'failed' ? 'failed' : 'confirm'}><StatusBanner severity={phase === 'failed' ? 'error' : 'info'} announce={phase === 'failed'}>
+    <Swap sequential swapKey={phase === 'failed' ? 'failed' : 'confirm'}><StatusBanner severity={phase === 'failed' ? 'error' : 'info'} announce={phase === 'failed'}>
       {phase === 'failed' ? 'Could not create the revision. Try again.' : `Restore R${selected} as R${next}? Existing experiments keep their pinned revisions.`}
     </StatusBanner></Swap>
     <div className="dv-revision-restore-buttons">
       <button type="button" className="dv-revision-text-button" disabled={busy} onClick={onCancel}>Cancel</button>
-      <RevisionButton disabled={busy} onClick={onConfirm} autoFocus><Swap swapKey={phase}>{busy ? `Creating R${next}…` : phase === 'failed' ? 'Try again' : `Create R${next}`}</Swap></RevisionButton>
+      <RevisionButton disabled={busy} onClick={onConfirm} autoFocus><Swap sequential swapKey={phase}>{busy ? `Creating R${next}…` : phase === 'failed' ? 'Try again' : `Create R${next}`}</Swap></RevisionButton>
     </div>
     </>}</Swap>
   </div></Presence>;

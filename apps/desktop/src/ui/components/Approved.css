@@ -71,6 +71,7 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
 /* Swap (Motion.tsx): the new content keeps the layout; the old one sits over it, clipped to its box, while it fades. */
 .dv-swap { position: relative; min-width: 0; }
 .dv-swap-item[data-motion='enter'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
+.dv-swap-sequential > .dv-swap-item[data-motion='enter'] { animation-delay: var(--dv-motion-fast); }
 .dv-swap-item[data-motion='leave'] { position: absolute; inset: 0; overflow: hidden; pointer-events: none; animation: dv-swap-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards; }
 @keyframes dv-swap-in { from { opacity: 0; transform: translateY(4px); } }
 @keyframes dv-swap-out { to { opacity: 0; } }

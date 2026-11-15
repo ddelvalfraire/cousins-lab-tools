@@ -123,7 +123,7 @@ export function SavedVersionView({ title, revision, current, status = 'ready', o
     : changes.length === 0 ? <div className="dv-saved-empty"><strong>No definition changes</strong>This revision matches the previous saved definition.</div>
     : <><p className="dv-saved-caption">Changes saved in R{revision.number} · compared with R{comparedWith}</p><RevisionChanges changes={changes} /></>;
 
-  return <Swap swapKey={status}>{status === 'loading' ? <div className="dv-saved-version"><div role="status" aria-label="Loading saved preset">{[0, 1, 2].map(i => <div key={i} className="dv-saved-skeleton" />)}</div></div>
+  return <Swap sequential swapKey={status}>{status === 'loading' ? <div className="dv-saved-version"><div role="status" aria-label="Loading saved preset">{[0, 1, 2].map(i => <div key={i} className="dv-saved-skeleton" />)}</div></div>
     : status === 'error' ? <div className="dv-saved-version"><StatusBanner severity="error" announce>Saved versions could not be loaded.</StatusBanner><div className="dv-saved-actions"><button type="button" className="dv-revision-text-button" onClick={onRetry}>Try again</button></div></div>
     : <div className="dv-saved-version">
     <RevisionRestoreConfirm phase={restore} selected={restore === 'restored' ? restoredFrom ?? revision.number : revision.number} next={restore === 'restored' ? revision.number : current + 1}
@@ -131,7 +131,7 @@ export function SavedVersionView({ title, revision, current, status = 'ready', o
     <div className="dv-saved-heading">
       <div>
         <h2>{title}</h2>
-        <Swap swapKey={String(revision.number)}><div className="dv-saved-meta">
+        <Swap sequential swapKey={String(revision.number)}><div className="dv-saved-meta">
           <Chip icon={<SidebarIcon name="revisions" />}>R{revision.number}</Chip>
           {isCurrent ? <span className="dv-saved-current">Current</span> : <span>Earlier version</span>}
           <span><time dateTime={revision.savedAt}>{saved.full}</time></span>
@@ -145,6 +145,6 @@ export function SavedVersionView({ title, revision, current, status = 'ready', o
         {name === 'preview' ? 'Preview' : changes.length && comparedWith !== undefined ? `Changes · ${changes.length}` : 'Changes'}
       </button>)}
     </div>
-    <section ref={panel} id={`${id}-panel`} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}><Swap swapKey={`${revision.number}-${tab}`}>{body}</Swap></section>
+    <section ref={panel} id={`${id}-panel`} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}><Swap sequential swapKey={`${revision.number}-${tab}`}>{body}</Swap></section>
   </div>}</Swap>;
 }
