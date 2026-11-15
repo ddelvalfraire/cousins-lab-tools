@@ -78,7 +78,7 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
   return <ImportDialog opened={opened} onClose={onClose} busy={phase === 'importing'} closeLabel="Close import dialog"
     title={phase === 'done' ? 'Recordings imported' : 'Import recordings'} description="Create experiments from saved recordings."
     steps={editable ? ['Files', 'Review'] : undefined} step={phase === 'review' ? 1 : 0} footerStart={footerStart} actions={actions}>
-    <Swap swapKey={editable ? phase : 'working'}>
+    <Swap swapKey={editable ? `${phase}:${files.length ? 'files' : 'empty'}` : 'working'}>
     <Presence show={phase === 'select' && invalid.length > 0}>{invalid.length > 0 && <div className="dv-recording-import-feedback"><StatusBanner severity="error" announce>
       {invalid.length === 1
         ? <><strong>{invalid[0].name}:</strong> {invalid[0].problem}</>
