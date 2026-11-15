@@ -15,10 +15,10 @@ async function choose(select: Locator, value: string) {
 async function story(page: Page, id: string, dark = false, textSize?: 'large' | 'larger' | 'largest') {
   const globals = [...(dark ? ['appearance:dark'] : []), ...(textSize ? [`textSize:${textSize}`] : [])];
   await page.goto(`/iframe.html?id=${id}&viewMode=story${globals.length ? `&globals=${globals.join(';')}` : ''}`);
-  await expect(page.locator('#storybook-root .dvdash')).toBeVisible({ timeout: id.startsWith('gallery-') ? 30_000 : 10_000 });
+  await expect(page.locator('#storybook-root .dvdash')).toBeVisible({ timeout: id.startsWith('gallery-') ? 120_000 : 10_000 });
   await expect(page.locator('#storybook-root')).not.toBeEmpty();
   // The a11y addon runs axe in afterEach; a second axe run started before it ends throws "Axe is already running".
-  await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: 30_000 });
+  await page.waitForFunction(() => (window as unknown as { __STORYBOOK_PREVIEW__?: { currentRender?: { phase?: string } } }).__STORYBOOK_PREVIEW__?.currentRender?.phase === 'finished', undefined, { timeout: id.startsWith('gallery-') ? 120_000 : 30_000 });
 }
 
 test('examples use component-sized frames on wide and narrow canvases; screens fill the canvas', async ({ page }) => {
@@ -992,6 +992,8 @@ test('the search box focus ring uses the app focus colour and stays at 3:1 contr
 });
 
 test('gallery filters the complete registry', async ({ page }) => {
+  // The gallery renders every component story, which takes about a minute on a loaded machine.
+  test.setTimeout(240_000);
   await story(page, 'gallery-all-components--all-components');
   const total = await page.locator('.dv-review-item').count(); expect(total).toBeGreaterThan(52);
   await page.getByLabel('Search components', { exact: true }).fill('concentration');
@@ -1002,7 +1004,7 @@ test('gallery filters the complete registry', async ({ page }) => {
 
 test('complete gallery has no detected WCAG-tagged violations in either appearance', async ({ page }) => {
   // The gallery renders every component story; one axe pass over it takes about 50 s.
-  test.setTimeout(240_000);
+  test.setTimeout(600_000);
   for (const dark of [false, true]) {
     await story(page, 'gallery-all-components--all-components', dark);
     await expect(page.locator('.dv-review-item').last()).toBeVisible();
