@@ -159,6 +159,7 @@ export const NewPreset: Story = {
     await userEvent.click(canvas.getByRole('menuitem', { name: 'Time series' }));
     await expect(canvas.getByRole('checkbox', { name: /Mass 28/ })).toHaveFocus();
     await expect(canvasElement.querySelector('.pe-messages')).toHaveTextContent('New chart: Choose at least one signal.');
+    await settleMotion();
   },
 };
 
