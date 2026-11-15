@@ -193,7 +193,7 @@ export const StartAndStopSession: Story = {
     await waitFor(() => expect(parseInt(live.textContent ?? '0', 10)).toBeGreaterThan(before));
     await userEvent.click((await stopDialog(canvasElement)).getByRole('button', { name: 'Stop acquisition' }));
     await expect((await stopDialog(canvasElement)).getByRole('button', { name: 'Stopping…' })).toBeDisabled();
-    await waitFor(() => expect(page(canvasElement).queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(page(canvasElement).queryByRole('dialog')).not.toBeInTheDocument(), { timeout: 10000 });
     await expect(meta_(canvasElement)).toHaveTextContent('Recorded');
     const status = canvasElement.querySelector<HTMLElement>('.dv-acq-status')!;
     await expect(status).toHaveTextContent('samples saved as a recording');

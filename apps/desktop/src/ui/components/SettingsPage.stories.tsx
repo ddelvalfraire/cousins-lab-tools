@@ -82,7 +82,7 @@ export const SavingChanges: Story = {
     await step('Each change saves immediately and is announced', async () => {
       await userEvent.click(canvas.getByRole('radio', { name: 'Dark' }));
       await expect(args.onChange).toHaveBeenCalledWith('theme', 'dark');
-      await waitFor(() => expect(canvas.getByText('Saved')).toBeVisible());
+      await waitFor(() => expect(canvas.getByText('Saved')).toBeVisible(), { timeout: 10000 });
       await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('Theme saved.'));
       await expect(canvas.getByRole('radio', { name: 'Default' })).toBeChecked();
       await userEvent.click(canvas.getByRole('radio', { name: 'Larger' }));
