@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion } from './settleMotion';
 import { motion } from '../motion';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 
 function MessageDemo({ variant }: { variant: 'collapse' | 'fade' | 'pop' }) {
@@ -84,3 +85,30 @@ export const TabContentSwaps: Story = {
     await waitFor(() => expect(canvasElement.querySelector('[data-motion]')).toBeNull(), { timeout: motion.slow * 4 });
   },
 };
+
+function RowsDemo() {
+  const [filtered, setFiltered] = useState(false);
+  return <><button onClick={() => setFiltered(value => !value)}>Filter rows</button>
+    <table><tbody><MotionList>{(filtered ? ['B'] : ['A', 'B', 'C']).map(name => <tr key={name}><td>{name}</td></tr>)}</MotionList></tbody></table>
+  </>;
+}
+
+export const RowsLeaveAndReturn: Story = {
+  render: () => <RowsDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement), button = canvas.getByRole('button', { name: 'Filter rows' });
+    await expect(canvasElement.querySelector('[data-motion]')).toBeNull();
+    await userEvent.click(button);
+    await expect(canvas.getAllByRole('row')).toHaveLength(1);
+    await waitFor(() => expect(canvasElement.querySelectorAll('tr')).toHaveLength(1));
+    await userEvent.click(button);
+    await expect(canvas.getAllByRole('row')).toHaveLength(3);
+    await userEvent.click(button);
+    await userEvent.click(button);
+    await waitFor(() => expect(canvasElement.querySelector('[data-motion]')).toBeNull());
+    await expect(canvasElement.querySelectorAll('tr')).toHaveLength(3);
+    await expect(button).toHaveFocus();
+  },
+};
+
+export const RowsReducedMotion: Story = { ...RowsLeaveAndReturn, beforeEach: reduceMotion };

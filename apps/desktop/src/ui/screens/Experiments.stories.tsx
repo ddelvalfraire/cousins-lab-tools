@@ -18,7 +18,7 @@ export const SearchScope:Story={play:async({canvasElement})=>{
   await expect(scope).toHaveValue('Experiments');
   await userEvent.type(canvas.getByRole('searchbox',{name:'Search experiments'}),'enzyme');
   await expect(canvas.getByText('Filtered by “enzyme”')).toBeVisible();
-  await expect(canvasElement.querySelectorAll('tbody tr')).toHaveLength(1);
+  await expect(canvasElement.querySelectorAll('tbody tr:not([data-motion=leave])')).toHaveLength(1);
   await expect(canvas.queryByRole('listbox')).toBeNull();
   await chooseOption(scope,'All DVDash');
   await waitFor(()=>expect(canvas.queryByText('Filtered by “enzyme”')).toBeNull());
@@ -57,7 +57,7 @@ export const OpenFromCommandCenter:Story={play:async({canvasElement})=>{
 }};
 
 const side=(root:HTMLElement)=>root.querySelector<HTMLElement>('.dv-right-sidebar')!;
-const listRows=(root:HTMLElement)=>[...root.querySelectorAll('.dv-exp-table tbody tr')];
+const listRows=(root:HTMLElement)=>[...root.querySelectorAll('.dv-exp-table tbody tr:not([data-motion=leave])')];
 /** Waits out the swap's fade so only the new experiment is in the pane. */
 const sidebarShows=(root:HTMLElement,name:string)=>waitFor(()=>expect([...side(root).querySelectorAll('.dv-cat-detail-identity strong')].map(e=>e.textContent)).toEqual([name]));
 const fits=async(root:HTMLElement)=>{for(const el of side(root).querySelectorAll<HTMLElement>('.dv-right-sidebar-content, .dv-sidebar-facts, .dv-cat-detail-identity'))await expect(el.scrollWidth,el.className).toBeLessThanOrEqual(el.clientWidth);};

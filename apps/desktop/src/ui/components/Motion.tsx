@@ -1,5 +1,5 @@
 import { useReducedMotion } from '@mantine/hooks';
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Children, cloneElement, useEffect, useLayoutEffect, useRef, useState, type ReactElement, type CSSProperties, type ReactNode } from 'react';
 import { motion } from '../motion';
 import './Approved.css';
 
@@ -107,4 +107,47 @@ export function Swap({ swapKey, className, style, children, sequential = false }
       ? <div key={item.key} className="dv-swap-item" data-motion="leave" inert aria-hidden="true">{item.node}</div>
       : <div key={item.key} className="dv-swap-item" data-motion={entering === item.key ? 'enter' : undefined}>{item.node}</div>)}
   </div>;
+}
+
+
+type MotionChild = ReactElement<{ ref?: React.Ref<HTMLElement>; inert?: boolean; 'aria-hidden'?: boolean; 'data-motion'?: string }>;
+
+/** Keyed DOM children retain their own geometry during a fade, including table rows. */
+export function MotionList({ children, resetKey = '' }: { children: ReactNode; resetKey?: string | number }) {
+  const reduced = useReducedMotion(false, { getInitialValueInEffect: false });
+  const nodes = Children.toArray(children) as MotionChild[];
+  const keys = nodes.map(node => String(node.key));
+  const signature = JSON.stringify([resetKey, keys]);
+  const [state, setState] = useState({ signature, resetKey, keys, entering: [] as string[], leaving: [] as { node: MotionChild; index: number }[] });
+  const committed = useRef(nodes);
+  useLayoutEffect(() => { committed.current = nodes; });
+  if (signature !== state.signature) {
+    const instant = reduced || resetKey !== state.resetKey;
+    setState({ signature, resetKey, keys,
+      entering: instant ? [] : keys.filter(key => !state.keys.includes(key)),
+      leaving: instant ? [] : [...state.leaving, ...committed.current.flatMap((node, index) => keys.includes(String(node.key)) ? [] : [{ node, index }])].filter(item => !keys.includes(String(item.node.key))),
+    });
+  }
+  const remove = (key: string) => setState(current => ({ ...current, leaving: current.leaving.filter(item => String(item.node.key) !== key) }));
+  const items = nodes.map(node => ({ node, leaving: false }));
+  state.leaving.forEach(({ node, index }) => {
+    items.splice(index < 0 ? items.length : index, 0, { node, leaving: true });
+  });
+  return items.map(({ node, leaving }) => <MotionListItem key={node.key} node={node} leaving={leaving} entering={state.entering.includes(String(node.key))} reduced={reduced} onLeave={() => remove(String(node.key))} />);
+}
+
+function MotionListItem({ node, leaving, entering, reduced, onLeave }: { node: MotionChild; leaving: boolean; entering: boolean; reduced: boolean; onLeave: () => void }) {
+  const ref = useRef<HTMLElement>(null);
+  const done = useRef(onLeave);
+  done.current = onLeave;
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element || reduced) { if (leaving) done.current(); return; }
+    if (!leaving && !entering) return;
+    element.dataset.motion = leaving ? 'leave' : 'enter';
+    const animation = element.animate(frames('fade', !leaving, 0), { duration: leaving ? motion.fast : motion.base, easing: motion.easeOut });
+    animation.onfinish = () => { delete element.dataset.motion; if (leaving) done.current(); };
+    return () => { animation.cancel(); delete element.dataset.motion; };
+  }, [leaving, entering, reduced]);
+  return cloneElement(node, { ref, ...(leaving ? { inert: true, 'aria-hidden': true, 'data-motion': 'leave' } : {}) });
 }

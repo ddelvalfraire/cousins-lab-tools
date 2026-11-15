@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ReviewIcon } from './ReviewIcons';
 import { Chip, StatusWord } from './Chip';
 import { Select } from '@mantine/core';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { formatClockTime } from '../time';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
@@ -151,7 +151,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
               {header('name', 'Experiment')}{header('samples', 'Samples')}{header('status', 'Status')}{header('date', 'Date')}
               <th scope="col"><span className="dv-exp-sr-only">Actions</span></th>
             </tr></thead>
-            <tbody>{visible.map(e => {
+            <tbody><MotionList resetKey={current}>{visible.map(e => {
               const status = STATUS[e.status];
               const when = formatDate(e.startedAt, reference);
               const instrument = e.kind === 'instrument';
@@ -172,7 +172,7 @@ export function ExperimentsList({ experiments, query = '', now, onOpen, onNewExp
                 <td><span className="dv-exp-date">{when.date}<small>{when.time}</small></span></td>
                 <td><button type="button" className="dv-exp-open" aria-label={`${status.action}: ${e.name}`} onClick={() => onOpen(e.id)}>{status.action}<ReviewIcon name="arrow" /></button></td>
               </tr>;
-            })}</tbody>
+            })}</MotionList></tbody>
           </table>
         </ScrollFrame>;
     const first = current * pageSize;

@@ -22,7 +22,7 @@ export default meta;
 type Story=StoryObj<typeof meta>;
 /** Ends on the New experiment page, whose own heading-order violation also fails the Preparation stories; the catalog part passes. */
 const endsOnSetup={a11y:{test:'todo'}} as const;
-const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-table tbody tr')];
+const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-table tbody tr:not([data-motion=leave])')];
 
 /** Navigable catalog in the workspace fixture. */
 export const Catalog:Story={};

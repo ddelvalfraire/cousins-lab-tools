@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { Select } from '@mantine/core';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { chosen } from './select';
 import { StatusBanner } from './Primitives';
 import { formatDuration, formatFileSize, ImportButton, ImportChooseButton, ImportDialog, ImportDropzone, ImportFooterNote, ImportIcon, ImportProgress, ImportStatus } from './ImportDialog';
@@ -94,7 +94,7 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
     {phase === 'select' && files.length === 0
       ? <ImportDropzone title="Drop recordings here" hint="Choose one or more files from your computer." action="Choose files" accept={accept} multiple onFiles={onChooseFiles} />
       : <ul className="dv-recording-import-files">
-        {files.map(file => <li key={file.id} className="dv-recording-import-file" data-removable={editable}>
+        <MotionList>{files.map(file => <li key={file.id} className="dv-recording-import-file" data-removable={editable}>
           <span className="dv-recording-import-file-icon"><ImportIcon name="file" /></span>
           <div>
             <div className="dv-recording-import-file-top">
@@ -114,8 +114,8 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
             </>}
             {file.status === 'failed' && file.problem && <p className="dv-recording-import-note">{file.problem}</p>}
           </div>
-          {editable && <button type="button" className="dv-import-close" aria-label={`Remove ${file.name}`} title="Remove file" onClick={() => onRemoveFile(file.id)}><ImportIcon name="close" /></button>}
-        </li>)}
+          {editable && <button type="button" className="dv-import-close" aria-label={`Remove ${file.name}`} title="Remove file" onClick={event => { event.currentTarget.closest<HTMLElement>('[role="region"]')?.focus({ preventScroll: true }); onRemoveFile(file.id); }}><ImportIcon name="close" /></button>}
+        </li>)}</MotionList>
       </ul>}
     {phase === 'select' && files.length > 0 && <ImportChooseButton label="Add files" accept={accept} multiple onFiles={onChooseFiles} />}
     {phase === 'review' && <label className="dv-recording-import-preset"><span id={presetLabel}>{PRESET_LABEL}</span>

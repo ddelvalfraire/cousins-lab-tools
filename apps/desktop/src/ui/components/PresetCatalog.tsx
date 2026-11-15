@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { formatClockTime } from '../time';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { pages } from '../search-registry';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
@@ -129,22 +129,22 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
         <SortHeader sortKey="updated" label="Updated" sort={sort} onSort={sortBy} />
         <th scope="col"><span className="dv-cat-sr">Actions</span></th>
       </tr></thead>
-      <tbody>{visible.map(p => <tr key={p.id} data-selected={selected?.id === p.id}>
+      <tbody><MotionList resetKey={pager.start}>{visible.map(p => <tr key={p.id} data-selected={selected?.id === p.id}>
         <td><div className="dv-cat-identity"><PresetThumb panels={p.panels} /><div>{name(p)}<p className="dv-cat-description">{p.description}</p></div></div></td>
         <td><CatalogChip icon="panels" title={`${p.panels.length} panels`}>{p.panels.length}</CatalogChip></td>
         <td><CatalogChip icon="revisions" title={`Revision ${p.revision}`}>R{p.revision}</CatalogChip></td>
         <td><span className="dv-cat-date">{day(p.updated)}<small>{time(p.updated)}</small></span></td>
         <td>{use(p)}</td>
-      </tr>)}</tbody>
+      </tr>)}</MotionList></tbody>
     </table>
   </CatalogFrame>;
-  else body = <div className="dv-cat-grid">{visible.map(p => <article key={p.id} className="dv-cat-tile-card">
+  else body = <div className="dv-cat-grid"><MotionList resetKey={pager.start}>{visible.map(p => <article key={p.id} className="dv-cat-tile-card">
     <button type="button" className="dv-cat-tile-preview" aria-label={`Preview ${p.name}`} onClick={() => open(p.id)}><PresetThumb panels={p.panels} /></button>
     <div className="dv-cat-tile-body">{name(p)}<p className="dv-cat-description">{p.description}</p>
       <div className="dv-cat-meta"><CatalogChip icon="panels">{p.panels.length} panels</CatalogChip><CatalogChip icon="revisions">R{p.revision}</CatalogChip></div>
       <div className="dv-cat-tile-bottom"><span className="dv-cat-description">Updated {day(p.updated)}</span>{use(p)}</div>
     </div>
-  </article>)}</div>;
+  </article>)}</MotionList></div>;
 
   let pane;
   if (!selected) pane = <SidebarEmpty icon={<SidebarIcon name="panels" />} title="Select a preset" message="Open a preset name to inspect its layout and definition." />;

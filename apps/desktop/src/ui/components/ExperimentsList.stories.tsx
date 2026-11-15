@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { ExperimentsList } from './ExperimentsList';
 import type { ExperimentSummary, ExperimentsListProps } from './ExperimentsList';
+import { settleMotion } from './settleMotion';
 import { chooseOption } from './chooseOption';
 
 const experiments: ExperimentSummary[] = [
@@ -37,7 +38,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const rows = (canvasElement: HTMLElement) => canvasElement.querySelectorAll('tbody tr');
+const rows = (canvasElement: HTMLElement) => canvasElement.querySelectorAll('tbody tr:not([data-motion=leave])');
 
 export const RecentExperiments: Story = {
   play: async ({ canvasElement, args }) => {
@@ -127,6 +128,7 @@ export const ClearNoMatches: Story = {
     await userEvent.click(within(canvasElement.querySelector('.dv-exp-empty') as HTMLElement).getByRole('button', { name: 'Clear filter' }));
     await expect(args.onClearQuery).toHaveBeenCalledOnce();
     await expect(rows(canvasElement)).toHaveLength(4);
+    await settleMotion();
     await expect(within(canvasElement).queryByRole('button', { name: 'Clear filter' })).toBeNull();
     await waitFor(() => expect(canvasElement.querySelector('.dv-exp-filter')).toBeNull());
     await waitFor(() => expect(canvasElement.querySelector('.dv-exp-empty')).toBeNull());
@@ -144,6 +146,7 @@ export const Filtered: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Clear filter' }));
     await expect(args.onClearQuery).toHaveBeenCalledOnce();
     await expect(rows(canvasElement)).toHaveLength(4);
+    await settleMotion();
   },
 };
 
