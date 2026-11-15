@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { pages } from '../search-registry';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
@@ -89,12 +89,12 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
   const connect = (i: CatalogInstrument) => {
     update(i.id, { state: 'connecting' });
     setAnnouncement(`Connecting to ${i.name}.`);
-    timers.current.push(window.setTimeout(() => { update(i.id, { state: 'ready', note: 'Connected · not acquiring' }); setAnnouncement(`${i.name} connected. Acquisition has not started.`); }, connectDelay));
+    timers.current.push(window.setTimeout(() => { if (document.activeElement?.getAttribute('aria-label') === 'Connecting…' && document.activeElement.closest('.dv-right-sidebar')) focusPane(sidebarId); update(i.id, { state: 'ready', note: 'Connected · not acquiring' }); setAnnouncement(`${i.name} connected. Acquisition has not started.`); }, connectDelay));
   };
   const action = (i: CatalogInstrument) => {
-    if (i.state === 'receiving' || i.state === 'ready') return <CatalogAction label={`View channels: ${i.name}`} onClick={() => open(i.id, 'channels')}>View channels</CatalogAction>;
-    if (i.state === 'connecting') return <CatalogAction disabled arrow={false}>Connecting…</CatalogAction>;
-    return <CatalogAction label={`${i.state === 'error' ? 'Retry' : 'Connect'}: ${i.name}`} onClick={() => connect(i)}>{i.state === 'error' ? 'Retry' : 'Connect'}</CatalogAction>;
+    if (i.state === 'receiving' || i.state === 'ready') return <CatalogAction label={`View channels: ${i.name}`} onClick={() => open(i.id, 'channels')}><Swap sequential swapKey={i.state}>View channels</Swap></CatalogAction>;
+    if (i.state === 'connecting') return <CatalogAction unavailable label="Connecting…" arrow={false}><Swap sequential swapKey={i.state}>Connecting…</Swap></CatalogAction>;
+    return <CatalogAction label={`${i.state === 'error' ? 'Retry' : 'Connect'}: ${i.name}`} onClick={() => connect(i)}><Swap sequential swapKey={i.state}>{i.state === 'error' ? 'Retry' : 'Connect'}</Swap></CatalogAction>;
   };
   const facts = (i: CatalogInstrument, last: [string, string]) => <SidebarFacts items={[['Transport', i.transport], ['Port', <span className="dv-cat-instrument-id">{i.port}</span>], last[0] === 'Identifier' ? ['Identifier', <span className="dv-cat-instrument-id">{last[1]}</span>] : last]} />;
 
@@ -111,7 +111,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
         <SortHeader sortKey="status" label="Connection" sort={sort} onSort={sortBy} />
         <th scope="col"><span className="dv-cat-sr">Actions</span></th>
       </tr></thead>
-      <tbody>{rows.slice(pager.start, pager.end).map(i => <tr key={i.id} data-selected={selected?.id === i.id}>
+      <tbody><MotionList resetKey={pager.start}>{rows.slice(pager.start, pager.end).map(i => <tr key={i.id} data-selected={selected?.id === i.id}>
         <td><div className="dv-cat-identity">
           <span className="dv-cat-mark" data-kind={i.kind}><InstrumentGlyph kind={i.kind} /></span>
           <div>
@@ -120,9 +120,9 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
           </div>
         </div></td>
         <td><button type="button" className="dv-cat-count-button" aria-label={`${i.channels.length} channels: ${i.name}`} onClick={() => open(i.id, 'channels')}><CatalogChip icon="signals">{i.channels.length}</CatalogChip></button></td>
-        <td><InstrumentStatus state={i.state} /><span className="dv-cat-connection-note">{i.state === 'connecting' ? 'Waiting for instrument…' : i.note}</span></td>
+        <td><Swap sequential swapKey={i.state}><InstrumentStatus state={i.state} /><span className="dv-cat-connection-note">{i.state === 'connecting' ? 'Waiting for instrument…' : i.note}</span></Swap></td>
         <td>{action(i)}</td>
-      </tr>)}</tbody>
+      </tr>)}</MotionList></tbody>
     </table>
   </CatalogFrame>;
 
@@ -134,7 +134,7 @@ export function InstrumentCatalog({ instruments, query = '', onClearQuery, bread
   </div>)}</SidebarSection>;
   else if (tab === 'connect') pane = <>
     <SidebarSection><InstrumentStatus state={selected.state} /><p className="dv-cat-note">{selected.note}</p></SidebarSection>
-    {(selected.state === 'offline' || selected.state === 'connecting' || selected.state === 'error') && <SidebarSection><div className="dv-cat-actions">{action(selected)}</div></SidebarSection>}
+    <Presence show={selected.state === 'offline' || selected.state === 'connecting' || selected.state === 'error'}><SidebarSection><div className="dv-cat-actions">{action(selected)}</div></SidebarSection></Presence>
     <SidebarSection title="Connection">{facts(selected, ['Identifier', selected.id])}</SidebarSection>
   </>;
   else pane = <>

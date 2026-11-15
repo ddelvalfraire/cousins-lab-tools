@@ -22,7 +22,7 @@ export default meta;
 type Story=StoryObj<typeof meta>;
 /** Ends on the New experiment page, whose own heading-order violation also fails the Preparation stories; the catalog part passes. */
 const endsOnSetup={a11y:{test:'todo'}} as const;
-const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-routine')];
+const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-routine:not([data-motion=leave])')];
 
 /** Navigable catalog in the workspace fixture. */
 export const Catalog:Story={};
@@ -91,6 +91,8 @@ export const InspectStep:Story={render:()=><FrozenRoutines/>,play:async({canvasE
   await waitFor(()=>expect(canvas.getByRole('heading',{name:'4 ordered steps'})).toBeVisible());
   await userEvent.click(canvas.getByRole('button',{name:/Routine, sorted A to Z/}));
   await expect(rows(canvasElement)[0]).toHaveTextContent('Repeated sampling');
+  await settleMotion();
+  await expect(canvasElement.querySelector('[data-motion]')).toBeNull();
 }};
 /** Use routine opens experiment setup with that routine. */
 export const UseRoutine:Story={parameters:endsOnSetup,play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Reference and sample'}));await userEvent.click(canvas.getByRole('button',{name:'Use routine: Reference and sample'}));await expect(canvas.getByRole('heading',{level:1,name:'New experiment'})).toBeVisible();}};
@@ -115,3 +117,5 @@ export const FilterMotion:Story={play:async({canvasElement})=>{
   await expect(search).toHaveFocus();
 }};
 export const FilterReducedMotion:Story={...FilterMotion,beforeEach:()=>reduceMotion()};
+
+export const InspectStepReducedMotion:Story={...InspectStep,beforeEach:reduceMotion};

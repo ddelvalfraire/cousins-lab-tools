@@ -16,8 +16,8 @@ import { ScrollFrame } from './ScrollFrame';
 export const CatalogArrow = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>;
 
 /** Quiet labelled arrow action (.preset-use): accent text, no border. */
-export function CatalogAction({ children, onClick, label, disabled, arrow = true }: { children: ReactNode; onClick?: () => void; label?: string; disabled?: boolean; arrow?: boolean }) {
-  return <button type="button" className="dv-cat-action" aria-label={label} disabled={disabled} onClick={onClick}>{children}{arrow && <CatalogArrow />}</button>;
+export function CatalogAction({ children, onClick, label, disabled, unavailable, arrow = true }: { children: ReactNode; onClick?: () => void; label?: string; disabled?: boolean; unavailable?: boolean; arrow?: boolean }) {
+  return <button type="button" className="dv-cat-action" aria-label={label} disabled={disabled} aria-disabled={unavailable || undefined} onClick={unavailable ? undefined : onClick}>{children}{arrow && <CatalogArrow />}</button>;
 }
 
 /** A chip with one of the sidebar glyphs (.side-chip). */

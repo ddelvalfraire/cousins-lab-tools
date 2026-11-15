@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Presence, Swap } from './Motion';
+import { MotionList, Presence, Swap } from './Motion';
 import { pages } from '../search-registry';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
@@ -110,7 +110,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
       <button type="button" aria-label={`Routine, sorted ${ascending ? 'A to Z' : 'Z to A'}`} onClick={() => setAscending(!ascending)}>Routine <span aria-hidden="true">{ascending ? '↑' : '↓'}</span></button>
       <span>Revision</span><span className="dv-cat-sr">Actions</span>
     </div>
-    <div role="list" aria-label="Routine definitions">{rows.slice(pager.start, pager.end).map(r => <div key={r.id} className="dv-cat-routine" role="listitem" data-selected={selected?.id === r.id}>
+    <div role="list" aria-label="Routine definitions"><MotionList resetKey={pager.start}>{rows.slice(pager.start, pager.end).map(r => <div key={r.id} className="dv-cat-routine" role="listitem" data-selected={selected?.id === r.id}>
       <div className="dv-cat-routine-top">
         <div className="dv-cat-routine-identity">
           <span className="dv-cat-routine-mark">{routineGlyph}</span>
@@ -126,7 +126,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
         <span className="dv-cat-routine-action"><CatalogAction label={`View steps: ${r.name}`} onClick={() => open(r.id, 'steps')}>View steps</CatalogAction></span>
       </div>
       <StepStrip routine={r} current={selected?.id === r.id ? step : null} onStep={i => open(r.id, 'steps', i)} />
-    </div>)}</div>
+    </div>)}</MotionList></div>
   </div>;
 
   let pane;
@@ -135,13 +135,13 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
     const current = step === null ? undefined : selected.steps[step];
     pane = current
       ? <SidebarSection><div className="dv-cat-step-detail">
-          <button type="button" className="dv-cat-back" onClick={() => setStep(null)}>{backGlyph}All {selected.steps.length} steps</button>
+          <button type="button" className="dv-cat-back" onClick={() => { setStep(null); focusPane(sidebarId); }}>{backGlyph}All {selected.steps.length} steps</button>
           <CatalogChip>Step {step! + 1}</CatalogChip>
           <h3>{stepText(current)}</h3>
           <p className="dv-cat-definition-note">{STEP_NOTE[current.kind]}</p>
           <SidebarFacts items={[['Type', KIND[current.kind]], ...(current.duration ? [['Duration', `${current.duration} s`] as const] : []), ...(current.kind === 'capture' ? [['Input role', selected.role] as const] : [])]} />
         </div></SidebarSection>
-      : <SidebarSection title={`${selected.steps.length} ordered steps`}>{selected.steps.map((s, i) => <button key={i} type="button" className="dv-cat-side-step" onClick={() => setStep(i)}>
+      : <SidebarSection title={`${selected.steps.length} ordered steps`}>{selected.steps.map((s, i) => <button key={i} type="button" className="dv-cat-side-step" onClick={() => { setStep(i); focusPane(sidebarId); }}>
           <span className="dv-cat-step-number">{i + 1}</span><div><strong>{stepText(s)}</strong><p>{s.duration ? `${s.duration} s` : 'Recording event'}</p></div>
         </button>)}</SidebarSection>;
   } else if (tab === 'inputs') pane = <>
@@ -165,7 +165,7 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
   </>;
 
   const sidebar = <RightSidebar id={sidebarId} tabsLabel="Routine tools" activeTab={tab} onTabChange={next => { setTab(next); if (next === 'steps') setStep(null); }} collapsed={collapsed} onCollapsedChange={setCollapsed} revealKey={reveal} subtitle={selected?.name ?? 'Routines'}
-    tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'steps', label: 'Steps', icon: <SidebarIcon name="panels" /> }, { id: 'inputs', label: 'Inputs', icon: <SidebarIcon name="display" /> }]}>{pane}</RightSidebar>;
+    tabs={[{ id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> }, { id: 'steps', label: 'Steps', icon: <SidebarIcon name="panels" /> }, { id: 'inputs', label: 'Inputs', icon: <SidebarIcon name="display" /> }]}><Swap sequential swapKey={`${selected?.id}:${tab}:${step}`}>{pane}</Swap></RightSidebar>;
 
   return <CatalogRoot label="Routines">
     <PageHeader title={pages.routines.title} breadcrumbs={breadcrumbs} count={rows.length} />

@@ -20,7 +20,7 @@ function FrozenInstruments(state:Partial<InstrumentCatalogProps>){
 const meta={title:'Screens/Instruments',component:DVDashWorkspace,render:renderScreen,parameters:{layout:'fullscreen',previewWidth:'viewport'},args:{initialPage:'instruments'}} satisfies Meta<typeof DVDashWorkspace>;
 export default meta;
 type Story=StoryObj<typeof meta>;
-const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-table tbody tr')];
+const rows=(canvasElement:HTMLElement)=>[...canvasElement.querySelectorAll('.dv-cat-table tbody tr:not([data-motion=leave])')];
 
 /** Navigable catalog in the workspace fixture. */
 export const Profiles:Story={};
@@ -83,8 +83,9 @@ export const NarrowSheet:Story={render:()=><FrozenInstruments/>,parameters:{prev
 export const Connect:Story={render:()=><FrozenInstruments connectDelay={300}/>,play:async({canvasElement})=>{
   const canvas=within(canvasElement);
   await userEvent.click(canvas.getByRole('button',{name:'Connect: Reference spectrometer'}));
-  await expect(canvas.getByRole('button',{name:'Connecting…'})).toBeDisabled();
+  await expect(canvas.getByRole('button',{name:'Connecting…'})).toHaveAttribute('aria-disabled','true');
   await waitFor(()=>expect(canvas.getAllByText('Connected · not acquiring')).toHaveLength(2),{timeout:2000});
+  await expect(canvas.getByRole('button',{name:'View channels: Reference spectrometer'})).toHaveFocus();
   await userEvent.click(canvas.getByRole('button',{name:'2 channels: Reference spectrometer'}));
   await waitFor(()=>expect(canvas.getByRole('heading',{name:'2 channels'})).toBeVisible());
 }};
@@ -108,3 +109,5 @@ export const FilterMotion:Story={play:async({canvasElement})=>{
   await expect(search).toHaveFocus();
 }};
 export const FilterReducedMotion:Story={...FilterMotion,beforeEach:()=>reduceMotion()};
+
+export const ConnectReducedMotion:Story={...Connect,beforeEach:reduceMotion};
