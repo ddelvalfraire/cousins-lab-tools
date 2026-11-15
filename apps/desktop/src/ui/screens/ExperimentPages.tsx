@@ -4,6 +4,7 @@ import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { StatusBanner } from '../components/Primitives';
 import type { IntervalResult } from '../components/ExperimentPanels';
 import { useAcquisitionControls } from '../components/AcquisitionControls';
+import { Swap } from '../components/Motion';
 import { HeaderButton, PageHeader } from '../components/PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from '../components/RightSidebar';
 import { Chip, StatusWord } from '../components/Chip';
@@ -172,7 +173,7 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
       meta={<>{acq.meta}<ProblemsTrigger problems={problems} controls="dv-experiment-sidebar-pane" onOpen={openProblems} /></>}
       actions={live ? acq.action : <HeaderButton onClick={() => navigate('review', experiment.id)}>Review & export</HeaderButton>} />
     <WorkspaceBody sidebar={sidebar}>
-      {live
+      <Swap swapKey={live ? 'live' : 'recorded'}>{live
         ? <div className="dv-xw-live">
           <LiveSummary items={[{ label: 'Live acquisition', value: clock(liveSeconds) }, { label: 'Capture duration', value: clock(liveSeconds) }, { label: 'Recorded samples', value: liveSamples }]} />
           <p className="dv-xw-scope">{liveStreams.length} live streams · {liveStreams.filter(s => s.captured).length} selected for capture · Dissolved CO₂ is a derived component.</p>
@@ -203,7 +204,7 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
             onCapture={() => new Promise<void>(resolve => window.setTimeout(resolve, view.frozen ? 0 : 650))} />
           <RecordedSamples key={rows.length} rows={rows} position={position} />
           <PlaybackShortcuts />
-        </div>}
+        </div>}</Swap>
     </WorkspaceBody>
     {acq.dialog}
   </div>;

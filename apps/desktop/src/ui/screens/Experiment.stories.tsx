@@ -3,6 +3,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { chooseOption } from '../components/chooseOption';
+import { reduceMotion, settleMotion } from '../components/settleMotion';
 
 /** The live experiment page (Sample 025 is acquiring). Frozen states for review against the approved mockups. */
 const meta={title:'Screens/Experiment',component:DVDashWorkspace,render:renderScreen,parameters:{layout:'fullscreen',previewWidth:'viewport'},args:{initialPage:'experiment',initialExperiment:'sample-025'}} satisfies Meta<typeof DVDashWorkspace>;
@@ -98,6 +99,42 @@ export const StopToRecorded:Story={parameters:dialogA11y,
     await expect(canvasElement.querySelector('.dv-acq-status')).toHaveTextContent('Acquisition stopped. 87 samples saved as a recording.');
     await expect(canvasElement.querySelector('.dv-page-meta')).toHaveTextContent(/Recorded.*87 samples.*00:43/);
     await expect(canvas.getByRole('button',{name:'Review & export'})).toBeVisible();
+  },
+};
+
+const stopAcquisition=async(canvasElement:HTMLElement)=>{
+  const canvas=within(canvasElement),body=within(canvasElement.ownerDocument.body);
+  await userEvent.click(canvas.getByRole('button',{name:'Stop acquisition'}));
+  await userEvent.click(within(await body.findByRole('dialog')).getByRole('button',{name:'Stop acquisition'}));
+};
+/** Reports, when called, whether anything in the story started an enter or leave animation since this was set up. */
+const watchMotion=(root:HTMLElement)=>{
+  let seen=false;
+  const observer=new MutationObserver(()=>{ seen||=!!root.querySelector('[data-motion]'); });
+  observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['data-motion']});
+  return ()=>{ observer.disconnect(); return seen||!!root.querySelector('[data-motion]'); };
+};
+
+/** Stopping cross-fades the page: the live streams fade out over the recording, inert, then leave the page. */
+export const StopCrossFades:Story={parameters:dialogA11y,
+  play:async({canvasElement})=>{
+    await stopAcquisition(canvasElement);
+    const leaving=await waitFor(()=>{ const node=canvasElement.querySelector('[data-motion=leave]:has(> .dv-xw-live)'); expect(node).not.toBeNull(); return node!; },{timeout:5000});
+    await expect(leaving).toHaveAttribute('inert');
+    await expect(within(canvasElement).getByRole('group',{name:'Recording playback'}).closest('[inert]'),'the recording is usable while it fades in').toBeNull();
+    await settleMotion();
+    await waitFor(()=>expect(canvasElement.querySelector('.dv-xw-live')).toBeNull());
+    await waitFor(()=>expect(canvasElement.querySelector('[data-motion]')).toBeNull());
+  },
+};
+/** Under reduced motion the recording replaces the live streams at once, with nothing fading. */
+export const StopCrossFadesReducedMotion:Story={parameters:dialogA11y,beforeEach:reduceMotion,
+  play:async({canvasElement})=>{
+    const motionSeen=watchMotion(canvasElement);
+    await stopAcquisition(canvasElement);
+    await waitFor(()=>expect(within(canvasElement).getByRole('group',{name:'Recording playback'})).toBeVisible(),{timeout:5000});
+    await expect(canvasElement.querySelector('.dv-xw-live')).toBeNull();
+    await expect(motionSeen(),'nothing entered or left with an animation').toBe(false);
   },
 };
 
