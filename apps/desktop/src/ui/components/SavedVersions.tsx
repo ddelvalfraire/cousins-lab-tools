@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useAppearance } from '../appearance';
 import { textScales } from '../textSize';
 import { Chip } from './Chip';
@@ -6,6 +6,7 @@ import { StatusBanner } from './Primitives';
 import { SidebarIcon } from './RightSidebar';
 import { formatSavedAt, RevisionButton, RevisionChanges, RevisionRestoreConfirm, type PresetRevision, type RestorePhase, type RevisionChange } from './RevisionHistory';
 import { useElementWidth } from './useElementWidth';
+import { Presence, Swap } from './Motion';
 import './SavedVersions.css';
 
 export interface SavedChart {
@@ -102,12 +103,12 @@ export interface SavedVersionViewProps {
  */
 export function SavedVersionView({ title, revision, current, status = 'ready', onRetry, tab, onTabChange, preview, changes, comparedWith, restore = 'idle', restoredFrom, onRestore, onCancelRestore, onConfirmRestore, id = 'dv-saved-version' }: SavedVersionViewProps) {
   const tabs = useRef<Record<SavedVersionTab, HTMLButtonElement | null>>({ preview: null, changes: null });
-  if (status === 'loading') return <div className="dv-saved-version"><div role="status" aria-label="Loading saved preset">{[0, 1, 2].map(i => <div key={i} className="dv-saved-skeleton" />)}</div></div>;
-  if (status === 'error') return <div className="dv-saved-version">
-    <StatusBanner severity="error" announce>Saved versions could not be loaded.</StatusBanner>
-    <div className="dv-saved-actions"><button type="button" className="dv-revision-text-button" onClick={onRetry}>Try again</button></div>
-  </div>;
-
+  const panel = useRef<HTMLElement>(null), restoreButton = useRef<HTMLButtonElement>(null);
+  const previousRestore = useRef(restore);
+  useEffect(() => {
+    if (previousRestore.current === 'restoring' && restore === 'restored') panel.current?.focus({ preventScroll: true });
+    previousRestore.current = restore;
+  }, [restore]);
   const isCurrent = revision.number === current, busy = restore === 'restoring';
   const saved = formatSavedAt(revision.savedAt);
   const choose = (next: SavedVersionTab) => { onTabChange(next); tabs.current[next]?.focus(); };
@@ -122,19 +123,21 @@ export function SavedVersionView({ title, revision, current, status = 'ready', o
     : changes.length === 0 ? <div className="dv-saved-empty"><strong>No definition changes</strong>This revision matches the previous saved definition.</div>
     : <><p className="dv-saved-caption">Changes saved in R{revision.number} · compared with R{comparedWith}</p><RevisionChanges changes={changes} /></>;
 
-  return <div className="dv-saved-version">
+  return <Swap swapKey={status}>{status === 'loading' ? <div className="dv-saved-version"><div role="status" aria-label="Loading saved preset">{[0, 1, 2].map(i => <div key={i} className="dv-saved-skeleton" />)}</div></div>
+    : status === 'error' ? <div className="dv-saved-version"><StatusBanner severity="error" announce>Saved versions could not be loaded.</StatusBanner><div className="dv-saved-actions"><button type="button" className="dv-revision-text-button" onClick={onRetry}>Try again</button></div></div>
+    : <div className="dv-saved-version">
     <RevisionRestoreConfirm phase={restore} selected={restore === 'restored' ? restoredFrom ?? revision.number : revision.number} next={restore === 'restored' ? revision.number : current + 1}
-      onCancel={onCancelRestore} onConfirm={onConfirmRestore} />
+      onCancel={() => { onCancelRestore(); restoreButton.current?.focus(); }} onConfirm={onConfirmRestore} />
     <div className="dv-saved-heading">
       <div>
         <h2>{title}</h2>
-        <div className="dv-saved-meta">
+        <Swap swapKey={String(revision.number)}><div className="dv-saved-meta">
           <Chip icon={<SidebarIcon name="revisions" />}>R{revision.number}</Chip>
           {isCurrent ? <span className="dv-saved-current">Current</span> : <span>Earlier version</span>}
           <span><time dateTime={revision.savedAt}>{saved.full}</time></span>
-        </div>
+        </div></Swap>
       </div>
-      {!isCurrent && <RevisionButton disabled={busy} onClick={onRestore}>Restore R{revision.number}</RevisionButton>}
+      <Presence show={!isCurrent} variant="fade"><RevisionButton ref={restoreButton} disabled={busy} onClick={onRestore}>Restore R{revision.number}</RevisionButton></Presence>
     </div>
     <div className="dv-saved-tabs" role="tablist" aria-label="Saved preset view" onKeyDown={onKeyDown}>
       {(['preview', 'changes'] as const).map(name => <button key={name} ref={node => { tabs.current[name] = node; }} type="button" role="tab" id={tabId(name)}
@@ -142,6 +145,6 @@ export function SavedVersionView({ title, revision, current, status = 'ready', o
         {name === 'preview' ? 'Preview' : changes.length && comparedWith !== undefined ? `Changes · ${changes.length}` : 'Changes'}
       </button>)}
     </div>
-    <section id={`${id}-panel`} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}>{body}</section>
-  </div>;
+    <section ref={panel} id={`${id}-panel`} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={0}><Swap swapKey={`${revision.number}-${tab}`}>{body}</Swap></section>
+  </div>}</Swap>;
 }

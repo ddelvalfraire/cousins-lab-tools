@@ -6,7 +6,7 @@ import { Select } from '@mantine/core';
 import { chosen, selectAria } from './select';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
-import { Presence } from './Motion';
+import { Presence, Swap } from './Motion';
 import { StatusMessages } from './Primitives';
 import { DEFAULT_SIGNALS, MIN_SPAN, MIN_WORD, PANEL_KINDS, PanelCard, RECORDING_CONTROLS, SETTING_FIELDS, SNAPS, WIDTH_NAMES, panelName, panelProblems, seriesColor, showsSignals, signalProblem, snapSpan } from './PresetEditorPanels';
 import type { PanelSpan, PresetPanel, PresetPanelKind } from './PresetEditorPanels';
@@ -402,11 +402,11 @@ export function PresetEditor({ preset, draft, signals = DEFAULT_SIGNALS, onSave,
     {!hideHeader && <PageHeader title={preset.name} titleId={ids.title}
       breadcrumbs={breadcrumbs ?? [{ label: 'Workspace' }, { label: 'Presets' }, { label: preset.name }]}
       meta={<>
-        <Chip icon={<IconHistory aria-hidden />}>{saved.revision ? `R${saved.revision}` : 'Not saved yet'}</Chip>
-        {dirty ? <StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord> : <StatusWord icon={<IconCheck aria-hidden />}>No unsaved changes</StatusWord>}
+        <Swap swapKey={String(saved.revision)}><Chip icon={<IconHistory aria-hidden />}>{saved.revision ? `R${saved.revision}` : 'Not saved yet'}</Chip></Swap>
+        <Swap swapKey={String(dirty)}>{dirty ? <StatusWord tone="warning" icon={<IconAlertTriangle aria-hidden />}>Unsaved changes</StatusWord> : <StatusWord icon={<IconCheck aria-hidden />}>No unsaved changes</StatusWord>}</Swap>
       </>}
       actions={<>
-        {dirty && <HeaderButton variant="quiet" onClick={discard}>Discard changes</HeaderButton>}
+        <Presence show={dirty} variant="fade"><HeaderButton variant="quiet" onClick={discard}>Discard changes</HeaderButton></Presence>
         <HeaderButton variant="primary" data-save="" disabled={!canSave} aria-describedby={ids.messages} icon={<IconDeviceFloppy aria-hidden />} onClick={save}>Save as R{saved.revision + 1}</HeaderButton>
       </>} />}
     <WorkspaceBody sidebar={<RightSidebar id={ids.sidebar} label="Panel settings" tabsLabel="Panel settings"

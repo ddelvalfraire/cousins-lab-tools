@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from './settleMotion';
 import { HeaderButton, PageHeader } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { RevisionHistoryList, type PresetRevision, type RestorePhase } from './RevisionHistory';
@@ -87,7 +88,8 @@ export const ChooseRevision: Story = {
   play: async ({ canvasElement }) => {
     const page = within(canvasElement);
     await userEvent.click(within(page.getByRole('navigation', { name: 'Saved preset versions' })).getByRole('button', { name: /R2/ }));
-    await expect(page.getByRole('button', { name: 'Restore R2' })).toBeVisible();
+    await waitFor(() => expect(page.getByRole('button', { name: 'Restore R2' })).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(page.getByText('Earlier version')).toBeVisible();
   },
 };
@@ -111,6 +113,7 @@ export const TabKeyboard: Story = {
     await userEvent.keyboard('{ArrowLeft}');
     await expect(page.getByRole('tab', { name: 'Preview' })).toHaveFocus();
     await expect(page.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
+    await settleMotion();
   },
 };
 
@@ -141,7 +144,8 @@ export const RestoreFlow: Story = {
     const page = within(canvasElement);
     await userEvent.click(page.getByRole('button', { name: 'Create R4' }));
     await expect(page.getByRole('button', { name: 'Creating R4…' })).toBeDisabled();
-    await expect(await page.findByText('R4 created from R2.', {}, { timeout: 3000 })).toBeVisible();
+    await waitFor(() => expect(page.getByText('R4 created from R2.')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     const list = within(page.getByRole('navigation', { name: 'Saved preset versions' }));
     await expect(list.getAllByRole('button')).toHaveLength(4);
     await expect(list.getAllByRole('button')[0]).toHaveTextContent('Restored from R2');
@@ -211,3 +215,33 @@ export const WidePreviewLargestText: Story = {
     }
   },
 };
+
+export const RevisionMotion: Story = {
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement);
+    let animated = false;
+    const observer = new MutationObserver(() => { animated ||= !!canvasElement.querySelector('[data-motion]'); });
+    observer.observe(canvasElement, { subtree: true, childList: true, attributes: true });
+    await userEvent.click(within(page.getByRole('navigation', { name: 'Saved preset versions' })).getByRole('button', { name: /R2/ }));
+    await settleMotion();
+    await userEvent.click(page.getByRole('tab', { name: /Changes/ }));
+    await settleMotion();
+    await expect(page.getByRole('tab', { name: /Changes/ })).toHaveFocus();
+    await userEvent.click(page.getByRole('button', { name: 'Restore R2' }));
+    await settleMotion();
+    await expect(page.getByRole('button', { name: 'Create R4' })).toHaveFocus();
+    await userEvent.click(page.getByRole('button', { name: 'Cancel' }));
+    await settleMotion();
+    await expect(page.getByRole('button', { name: 'Restore R2' })).toHaveFocus();
+    await userEvent.click(page.getByRole('button', { name: 'Restore R2' }));
+    await userEvent.click(page.getByRole('button', { name: 'Create R4' }));
+    await waitFor(() => expect(page.getByText('R4 created from R2.')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
+    await expect(canvasElement.querySelector('.dv-saved-version [role="tabpanel"]')).toHaveFocus();
+    await waitFor(() => expect(canvasElement.querySelector('[data-motion]')).toBeNull(), { timeout: 10000 });
+    observer.disconnect();
+    await expect(animated).toBe(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    await expect(within(page.getByRole('navigation', { name: 'Saved preset versions' })).getAllByRole('button')).toHaveLength(4);
+  },
+};
+export const RevisionReducedMotion: Story = { ...RevisionMotion, beforeEach: () => reduceMotion() };

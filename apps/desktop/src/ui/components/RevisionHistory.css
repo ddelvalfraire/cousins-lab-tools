@@ -12,10 +12,10 @@
 .dv-revision-entry:hover, .dv-revision-entry[aria-current='true'] { background: var(--dv-soft); }
 .dv-revision-entry:disabled { cursor: wait; }
 .dv-revision-entry:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 1px; }
-.dv-revision-entry:not(:last-child)::after { content: ''; position: absolute; inset-inline: 12px; bottom: -3px; height: 1px; background: var(--dv-line); opacity: .65; pointer-events: none; }
+.dv-revision-entry-slot:not(:last-child) .dv-revision-entry::after { content: ''; position: absolute; inset-inline: 12px; bottom: -3px; height: 1px; background: var(--dv-line); opacity: .65; pointer-events: none; }
 .dv-revision-entry-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
 .dv-revision-entry-top > .dv-chip { min-height: 24px; padding: 4px 8px; border: 0; background: transparent; color: var(--dv-ink); font-size: .6875rem; font-weight: 550; }
-.dv-revision-entry-state { display: inline-flex; align-items: center; gap: 6px; }
+.dv-revision-entry-state, .dv-revision-entry-state > .dv-swap-item { display: inline-flex; align-items: center; gap: 6px; }
 .dv-revision-current { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 7px; border: 1px solid transparent; border-radius: 5px; background: var(--dv-accent-soft); color: var(--dv-accent); font-size: .625rem; font-weight: 500; line-height: 1.4; white-space: nowrap; }
 .dv-revision-check { display: inline-flex; align-items: center; color: var(--dv-ink); }
 .dv-revision-check svg { width: 14px; height: 14px; }
@@ -53,3 +53,5 @@
 @container dv-workspace (max-width: 700px) {
   .dv-revision-diff-row { padding: 14px; }
 }
+
+.dv-revision-entry-slot, .dv-revision-restore-slot { display: flow-root; }

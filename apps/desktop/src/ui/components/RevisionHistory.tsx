@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Presence, Swap } from './Motion';
 import { Chip } from './Chip';
 import { formatClockTime } from '../time';
 import { StatusBanner } from './Primitives';
@@ -42,25 +43,32 @@ export interface RevisionHistoryListProps {
  * Values from design/dvdash-field-review/revision-chips-review.html (.saved-history-*).
  */
 export function RevisionHistoryList({ revisions, current, selected, onSelect, busy = false, label = 'Saved preset versions' }: RevisionHistoryListProps) {
+  const initial = useRef(new Set(revisions.map(revision => revision.number)));
   return <nav className="dv-revision-list" aria-label={label}>
     {revisions.map(revision => {
       const saved = formatSavedAt(revision.savedAt), isSelected = revision.number === selected;
-      return <button key={revision.number} type="button" className="dv-revision-entry" aria-current={isSelected} disabled={busy} onClick={() => onSelect(revision.number)}>
-        <span className="dv-revision-entry-top">
+      return <RevisionEntry key={revision.number} animate={!initial.current.has(revision.number)}><button type="button" className="dv-revision-entry" aria-current={isSelected} disabled={busy} onClick={() => onSelect(revision.number)}>
+        <div className="dv-revision-entry-top">
           <Chip icon={<SidebarIcon name="revisions" />}>R{revision.number}</Chip>
-          <span className="dv-revision-entry-state">
+          <Swap className="dv-revision-entry-state" swapKey={`${revision.number === current}-${isSelected}`}>
             {revision.number === current && <span className="dv-revision-current">Current</span>}
             {isSelected && <span className="dv-revision-check"><SidebarIcon name="check" /><span className="dv-revision-sr">Selected</span></span>}
-          </span>
-        </span>
+          </Swap>
+        </div>
         <span className="dv-revision-entry-title">{revision.note}</span>
         <span className="dv-revision-entry-meta">
           <Chip icon={<ImportIcon name="calendar" />}><time dateTime={revision.savedAt} aria-label={saved.label}>{saved.short}</time></Chip>
           <Chip icon={<SidebarIcon name="panels" />}>{revision.panels} {revision.panels === 1 ? 'panel' : 'panels'}</Chip>
         </span>
-      </button>;
+      </button></RevisionEntry>;
     })}
   </nav>;
+}
+
+function RevisionEntry({ animate, children }: { animate: boolean; children: ReactNode }) {
+  const [shown, setShown] = useState(!animate);
+  useEffect(() => setShown(true), []);
+  return <Presence show={shown} className="dv-revision-entry-slot">{children}</Presence>;
 }
 
 export interface RevisionChange {
@@ -107,21 +115,23 @@ export function RevisionRestoreConfirm({ phase, selected, next, onCancel, onConf
   /** `restored`: `next` was created from `selected`. */
   phase: RestorePhase; selected: number; next: number; onCancel: () => void; onConfirm: () => void;
 }) {
-  if (phase === 'idle') return null;
-  if (phase === 'restored') return <div className="dv-revision-restore" role="status"><StatusBanner>R{next} created from R{selected}.</StatusBanner></div>;
   const busy = phase === 'restoring';
-  return <div className="dv-revision-restore">
-    <StatusBanner severity={phase === 'failed' ? 'error' : 'info'} announce={phase === 'failed'}>
+  return <Presence show={phase !== 'idle'} className="dv-revision-restore-slot"><div className="dv-revision-restore">
+    <Swap swapKey={phase === 'restored' ? 'restored' : 'confirmation'}>{phase === 'restored'
+      ? <div role="status"><StatusBanner>R{next} created from R{selected}.</StatusBanner></div>
+      : <>
+    <Swap swapKey={phase === 'failed' ? 'failed' : 'confirm'}><StatusBanner severity={phase === 'failed' ? 'error' : 'info'} announce={phase === 'failed'}>
       {phase === 'failed' ? 'Could not create the revision. Try again.' : `Restore R${selected} as R${next}? Existing experiments keep their pinned revisions.`}
-    </StatusBanner>
+    </StatusBanner></Swap>
     <div className="dv-revision-restore-buttons">
       <button type="button" className="dv-revision-text-button" disabled={busy} onClick={onCancel}>Cancel</button>
-      <RevisionButton disabled={busy} onClick={onConfirm} autoFocus>{busy ? `Creating R${next}…` : phase === 'failed' ? 'Try again' : `Create R${next}`}</RevisionButton>
+      <RevisionButton disabled={busy} onClick={onConfirm} autoFocus><Swap swapKey={phase}>{busy ? `Creating R${next}…` : phase === 'failed' ? 'Try again' : `Create R${next}`}</Swap></RevisionButton>
     </div>
-  </div>;
+    </>}</Swap>
+  </div></Presence>;
 }
 
 /** Filled accent action used for Restore and Create (.revision-confirm). */
-export function RevisionButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
+export function RevisionButton({ children, ...props }: React.ComponentPropsWithRef<'button'> & { children: ReactNode }) {
   return <button type="button" className="dv-revision-button" {...props}>{children}</button>;
 }
