@@ -70,7 +70,7 @@ export function RecordingImportDialog({ opened, phase, files, names, presets, pr
     : phase === 'importing' ? <ImportFooterNote>Importing recordings…</ImportFooterNote>
     : phase === 'failed' && imported > 0 ? <ImportFooterNote>{imported} already imported</ImportFooterNote> : undefined;
   const actions = phase === 'select' ? <><ImportButton variant="quiet" onClick={onClose}>Cancel</ImportButton><ImportButton disabled={!canReview} onClick={onReview}>Review {ready.length ? plural(ready.length, 'recording') : 'recordings'}</ImportButton></>
-    : phase === 'review' ? <><ImportButton variant="quiet" onClick={onClose}>Cancel</ImportButton><ImportButton disabled={!canReview} onClick={onImport}>Import {plural(ready.length, 'recording')}</ImportButton></>
+    : phase === 'review' ? <><ImportButton variant="quiet" onClick={onClose}>Cancel</ImportButton><ImportButton disabled={!canReview} onClick={event => { event.currentTarget.closest('[role="dialog"]')?.querySelector<HTMLElement>('.dv-import-body')?.focus({ preventScroll: true }); onImport(); }}>Import {plural(ready.length, 'recording')}</ImportButton></>
     : phase === 'importing' ? <ImportButton variant="quiet" onClick={onStop}>Stop import</ImportButton>
     : phase === 'done' ? <ImportButton onClick={onClose}>Done</ImportButton>
     : <><ImportButton variant="quiet" onClick={onClose}>Close</ImportButton><ImportButton onClick={onRetry}>Retry failed {failed === 1 ? 'recording' : 'recordings'}</ImportButton></>;
