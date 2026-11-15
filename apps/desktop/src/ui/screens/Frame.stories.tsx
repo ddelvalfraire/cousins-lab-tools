@@ -273,6 +273,8 @@ export const PageShortcuts:Story={
     canvasElement.querySelector<HTMLElement>('main')!.focus();
     await userEvent.keyboard('gr');
     await expect(canvas.getByRole('heading',{level:1,name:'Routines'})).toBeVisible();
+    // Navigation transfers focus on the next frame before another shortcut can claim it.
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     await userEvent.keyboard('n');
     await expect(args.onNewExperiment).toHaveBeenCalledTimes(1);
     await userEvent.keyboard('/');

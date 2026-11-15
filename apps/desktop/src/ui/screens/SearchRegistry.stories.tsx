@@ -56,6 +56,8 @@ export const PageTitlesMatchTheRegistry:Story={
     for (const id of Object.keys(pages) as PageId[]) {
       await run(canvasElement,`go-${id}`);
       await expect(await canvas.findByRole('heading',{level:1}),`“Go to ${pages[id].title}” should open a page headed ${pages[id].title}. Change pages.${id}.title in ${REGISTRY} or the page heading.`).toHaveTextContent(new RegExp(`^${pages[id].title}`));
+      // Let navigation finish its focus transfer before opening search again.
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     }
   },
 };
