@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from './settleMotion';
 import { CalibrationChecklist, type ChecklistReadings, type ChecklistStep, type IntervalSummary } from './CalibrationChecklist';
 
 /** Steps and synthetic samples from calibration-checklist-review.html. */
@@ -118,6 +119,7 @@ export const CaptureAndUndo: Story = {
     await waitFor(() => expect(canvas.getByText('Previous readings restored.', { ignore: visibleOnly })).toBeVisible());
     await expect(canvas.getByText('2 of 4')).toBeVisible();
     await expect(canvas.getByRole('button', { name: 'Capture standard 200' })).toBeVisible();
+    await settleMotion();
   },
 };
 
