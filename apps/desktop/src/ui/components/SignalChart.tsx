@@ -1,6 +1,9 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Group, NumberInput, Paper, SegmentedControl, Select, Table, Text, TextInput, Title, useComputedColorScheme } from '@mantine/core';
 import { IconAdjustmentsHorizontal, IconChartLine, IconTable } from '@tabler/icons-react';
+import { useReducedMotion } from '@mantine/hooks';
+import { motion } from '../motion';
+import { Presence, Swap } from './Motion';
 import { useAppearance } from '../appearance';
 import { rootTextScale, textScales } from '../textSize';
 import uPlot from 'uplot';
@@ -186,6 +189,29 @@ function SignalPlot({ data, labels, bands, limits, logarithmic, logDecades, poin
   </ScrollFrame>;
 }
 
+/** Keep both surfaces measurable so returning to the chart never reconstructs its canvas. */
+function ChartView({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null), mounted = useRef(false), running = useRef<Animation | null>(null);
+  const reduced = useReducedMotion(false, { getInitialValueInEffect: false });
+  useLayoutEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    const element = ref.current;
+    if (!element) return;
+    const opacity = running.current ? Number(getComputedStyle(element).opacity) : active ? 0 : 1;
+    running.current?.cancel();
+    if (reduced) { delete element.dataset.motion; return; }
+    element.dataset.motion = active ? 'enter' : 'leave';
+    const animation = element.animate([{ opacity }, { opacity: active ? 1 : 0 }], {
+      duration: active ? motion.base : motion.fast, delay: active ? motion.fast : 0,
+      easing: motion.easeOut, fill: 'backwards',
+    });
+    running.current = animation;
+    animation.onfinish = () => { running.current = null; delete element.dataset.motion; };
+  }, [active, reduced]);
+  useEffect(() => () => running.current?.cancel(), []);
+  return <div ref={ref} className="dv-chart-view" data-active={active} inert={!active} aria-hidden={!active || undefined}>{children}</div>;
+}
+
 type ConnectMode = 'never' | 'always' | 'threshold';
 const connectMode = (c: ConnectNulls | DisconnectAfter): ConnectMode => typeof c === 'object' ? 'threshold' : c;
 function ThresholdInput({ prefix, label, value, invalid, describedBy, onChange }: { prefix: string; label: string; value: string; invalid: boolean; describedBy?: string; onChange: (value: string) => void }) {
@@ -248,21 +274,21 @@ export function SignalChart({ state = 'recorded', initialView = 'chart', initial
   const noted = analysis.notes.filter(Boolean).length;
   const tableRows = currentRows.map((row, i) => ({ row, note: analysis.notes[i] })).filter(item => !onlyNotes || item.note);
   return <Paper className="dv-panel dv-scale-card">
-    <div className="dv-panel-head"><div className="dv-scale-heading"><span className="dv-heading-icon"><IconAdjustmentsHorizontal size={20} aria-hidden /></span><div><Title order={2}>{title}</Title>{summary && <Text className="dv-signal-summary">{summary}</Text>}</div></div><SegmentedControl aria-label="Data presentation" value={view} onChange={v => setView(v as 'chart' | 'table')} data={[{ label: <span className="dv-view-label"><IconChartLine size={14} aria-hidden />Chart</span>, value: 'chart' }, { label: <span className="dv-view-label"><IconTable size={14} aria-hidden />Table</span>, value: 'table' }]} /></div>
+    <div className="dv-panel-head"><div className="dv-scale-heading"><span className="dv-heading-icon"><IconAdjustmentsHorizontal size={20} aria-hidden /></span><div><Title order={2}>{title}</Title><Presence show={!!summary} variant="fade"><Text className="dv-signal-summary">{summary}</Text></Presence></div></div><SegmentedControl aria-label="Data presentation" value={view} onChange={v => setView(v as 'chart' | 'table')} data={[{ label: <span className="dv-view-label"><IconChartLine size={14} aria-hidden />Chart</span>, value: 'chart' }, { label: <span className="dv-view-label"><IconTable size={14} aria-hidden />Table</span>, value: 'table' }]} /></div>
     <div className="dv-plot-surface dv-stack">
-      <div className="dv-signal-toolbar">{view === 'chart'
+      <Swap sequential swapKey={view} className="dv-signal-toolbar">{view === 'chart'
         ? <div className="dv-legend">{labels.map((label, i) => <span key={label}><i style={{ borderColor: seriesColors[scheme][i], borderTopStyle: i ? 'dashed' : 'solid' }} />{label} <span className="dv-muted">mV</span>{state === 'missing' && keys[i] === 'mass44' ? ' · missing' : ''}</span>)}{analysis.bands.length > 0 && <span><i className="dv-legend-gap" />No data</span>}{analysis.irregular && <span><i className="dv-legend-sample" style={{ background: seriesColors[scheme][0] }} />Sample</span>}</div>
-        : <Checkbox size="sm" label="Only rows with notes" checked={onlyNotes} onChange={event => setOnlyNotes(event.currentTarget.checked)} />}</div>
-      <StatusMessages announce={!!message} messages={[
+        : <Checkbox size="sm" label="Only rows with notes" checked={onlyNotes} onChange={event => setOnlyNotes(event.currentTarget.checked)} />}</Swap>
+      <Presence show={state === 'stale' || state === 'missing' || unavailable || !!message || (view === 'chart' && (analysis.hidden > 0 || (!log && analysis.orders >= 4)))}><Swap sequential swapKey={`${state}-${message}-${analysis.hidden}-${log}`}><StatusMessages announce={!!message} messages={[
         state === 'stale' && { severity: 'warning', text: 'Connection interrupted. Previously received samples remain visible.' },
         state === 'missing' && { severity: 'error', text: 'Unavailable · Mass 44 is missing. Mass 49 remains available.' },
         unavailable && { severity: 'error', text: `${sourceLabel} · Mass 44 and Mass 49 are unavailable.` },
         !!message && { severity: 'info', text: message },
         view === 'chart' && analysis.hidden > 0 && { severity: 'info', text: `The log scale can’t show ${analysis.hidden} sample${analysis.hidden === 1 ? '' : 's'} at or below 0 mV, so the line breaks there. The table lists them.` },
         view === 'chart' && !log && analysis.orders >= 4 && { severity: 'info', text: `Values span about ${Math.round(analysis.orders)} orders of magnitude. Switch to a log scale to see the low end.` },
-      ]} action={unavailable ? <Group gap="xs"><Button size="compact-xs" variant="default" onClick={() => { onRetry?.(); setMessage('Display retry requested. Acquisition was not restarted.'); }}>Retry</Button><Button size="compact-xs" variant="default" disabled={!rows.length} onClick={() => { setRecorded(true); setMessage('Recorded example selected. The live source remains unavailable.'); }}>Open recorded example</Button></Group> : undefined} />
-      <div hidden={view !== 'chart'} style={{ position: 'relative' }}><SignalPlot data={data} labels={labels} bands={analysis.bands} limits={limits} logarithmic={log} logDecades={log && analysis.logOrders >= 2} points={analysis.irregular} />{(!currentRows.length) && <div className="dv-chart-empty"><Text fw={600}>{unavailable ? 'Signal unavailable' : 'No samples yet'}</Text><Text size="sm" c="dimmed">{unavailable ? `No display samples from ${sourceLabel}.` : 'This recording contains no signal samples.'}</Text></div>}</div>
-      <ScrollFrame hidden={view !== 'table'} className="dv-table-frame" style={{ height: 280 }} tabIndex={0} role="region" aria-label="Signal sample table"><Table striped highlightOnHover><Table.Caption>{onlyNotes ? `${noted} of ` : ''}{currentRows.length} original rows · {caption}</Table.Caption><Table.Thead><Table.Tr><Table.Th>Elapsed (s)</Table.Th>{labels.map(label => <Table.Th key={label}>{label} (mV)</Table.Th>)}<Table.Th className="dv-signal-note">Note</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{tableRows.map(({ row, note }, i) => <Table.Tr key={`${row.time}-${i}`}><Table.Td>{row.time.toFixed(analysis.irregular ? 2 : 1)}</Table.Td>{keys.map(k => <Table.Td key={k}>{formatMeasurement(row[k], Number(precision))}</Table.Td>)}<Table.Td className="dv-signal-note" data-noted={note ? true : undefined}>{note}</Table.Td></Table.Tr>)}{!tableRows.length && <Table.Tr><Table.Td colSpan={keys.length + 2}>{onlyNotes && currentRows.length ? 'No rows have notes.' : 'No samples in this range.'}</Table.Td></Table.Tr>}</Table.Tbody></Table></ScrollFrame>
+      ]} action={unavailable ? <Group gap="xs"><Button size="compact-xs" variant="default" onClick={() => { onRetry?.(); setMessage('Display retry requested. Acquisition was not restarted.'); }}>Retry</Button><Button size="compact-xs" variant="default" disabled={!rows.length} onClick={() => { setRecorded(true); setMessage('Recorded example selected. The live source remains unavailable.'); }}>Open recorded example</Button></Group> : undefined} /></Swap></Presence>
+      <div className="dv-chart-views"><ChartView active={view === 'chart'}><div style={{ position: 'relative' }}><SignalPlot data={data} labels={labels} bands={analysis.bands} limits={limits} logarithmic={log} logDecades={log && analysis.logOrders >= 2} points={analysis.irregular} /><Presence show={!currentRows.length} variant="fade" className="dv-chart-empty"><Text fw={600}>{unavailable ? 'Signal unavailable' : 'No samples yet'}</Text><Text size="sm" c="dimmed">{unavailable ? `No display samples from ${sourceLabel}.` : 'This recording contains no signal samples.'}</Text></Presence></div></ChartView>
+      <ChartView active={view === 'table'}><ScrollFrame className="dv-table-frame" style={{ height: 280 }} tabIndex={0} role="region" aria-label="Signal sample table"><Table striped highlightOnHover><Table.Caption>{onlyNotes ? `${noted} of ` : ''}{currentRows.length} original rows · {caption}</Table.Caption><Table.Thead><Table.Tr><Table.Th>Elapsed (s)</Table.Th>{labels.map(label => <Table.Th key={label}>{label} (mV)</Table.Th>)}<Table.Th className="dv-signal-note">Note</Table.Th></Table.Tr></Table.Thead><Table.Tbody>{tableRows.map(({ row, note }, i) => <Table.Tr key={`${row.time}-${i}`}><Table.Td>{row.time.toFixed(analysis.irregular ? 2 : 1)}</Table.Td>{keys.map(k => <Table.Td key={k}>{formatMeasurement(row[k], Number(precision))}</Table.Td>)}<Table.Td className="dv-signal-note" data-noted={note ? true : undefined}>{note}</Table.Td></Table.Tr>)}{!tableRows.length && <Table.Tr><Table.Td colSpan={keys.length + 2}>{onlyNotes && currentRows.length ? 'No rows have notes.' : 'No samples in this range.'}</Table.Td></Table.Tr>}</Table.Tbody></Table></ScrollFrame></ChartView></div>
     </div>
     <div className="dv-controls"><Group justify="space-between"><Text size="sm" fw={650}>Vertical axis</Text><Text size="xs" c="dimmed">Display only</Text></Group>
       <Select label="Y-axis limits" value={fixed ? 'fixed' : 'auto'} onChange={v => setFixed(v === 'fixed')} allowDeselect={false} data={[{ label: 'Auto scale', value: 'auto' }, { label: 'Fixed limits', value: 'fixed' }]} />
@@ -270,15 +296,15 @@ export function SignalChart({ state = 'recorded', initialView = 'chart', initial
       <Group justify="space-between" align="end"><Checkbox label="Logarithmic Y-axis" checked={log} onChange={event => setLog(event.currentTarget.checked)} /><Select label="Decimal places" w={140} allowDeselect={false} value={precision} onChange={setPrecision} data={['1', '2', '3']} /></Group>
       <div className="dv-gap-settings">
         <Select label="Connect null values" w={170} allowDeselect={false} value={connect} onChange={v => setConnect(v as ConnectMode)} data={[{ label: 'Never', value: 'never' }, { label: 'Always', value: 'always' }, { label: 'Threshold', value: 'threshold' }]} />
-        {connect === 'threshold' && <ThresholdInput prefix="Up to" label="Connect null values threshold" value={connectDraft} invalid={connectInvalid} describedBy={errorId} onChange={text => { setConnectDraft(text); const n = seconds(text); if (n !== null) setConnectSeconds(n); }} />}
+        <Presence show={connect === 'threshold'}><ThresholdInput prefix="Up to" label="Connect null values threshold" value={connectDraft} invalid={connectInvalid} describedBy={errorId} onChange={text => { setConnectDraft(text); const n = seconds(text); if (n !== null) setConnectSeconds(n); }} /></Presence>
         <Select label="Disconnect values" w={170} allowDeselect={false} value={disconnect} onChange={v => setDisconnect(v as ConnectMode)} data={[{ label: 'Never', value: 'never' }, { label: 'Threshold', value: 'threshold' }]} />
-        {disconnect === 'threshold' && <ThresholdInput prefix="Over" label="Disconnect values threshold" value={disconnectDraft} invalid={disconnectInvalid} describedBy={errorId} onChange={text => { setDisconnectDraft(text); const n = seconds(text); if (n !== null) setDisconnectSeconds(n); }} />}
+        <Presence show={disconnect === 'threshold'}><ThresholdInput prefix="Over" label="Disconnect values threshold" value={disconnectDraft} invalid={disconnectInvalid} describedBy={errorId} onChange={text => { setDisconnectDraft(text); const n = seconds(text); if (n !== null) setDisconnectSeconds(n); }} /></Presence>
       </div>
-      {(limitError || connectInvalid || disconnectInvalid) && <div id={errorId}><StatusMessages messages={[
+      <Presence show={!!limitError || connectInvalid || disconnectInvalid}><div id={errorId}><StatusMessages messages={[
         !!limitError && { severity: 'error', text: limitError! },
         connectInvalid && { severity: 'error', text: `Enter a number of seconds above 0 for Connect null values. The chart keeps ${plain(connectSeconds)} s.` },
         disconnectInvalid && { severity: 'error', text: `Enter a number of seconds above 0 for Disconnect values. The chart keeps ${plain(disconnectSeconds)} s.` },
-      ]} /></div>}
+       ]} /></div></Presence>
       <Text size="xs" c="dimmed">A logarithmic axis changes spacing. A logarithm in a formula changes the calculated quantity.</Text>
     </div>
   </Paper>;

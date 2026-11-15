@@ -1,6 +1,9 @@
+import { useState } from 'react';
+import type { ChartState } from './SignalChart';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, within, userEvent, waitFor } from 'storybook/test';
 import { SignalChart, SignalTrace, analyseSignal } from './SignalChart';
+import { settleMotion, reduceMotion } from './settleMotion';
 import { samples, type SignalSample } from '../fixtures';
 
 /** Deterministic synthetic Mass 44 traces from the approved signal edge-case review (same generator and seed). */
@@ -33,7 +36,7 @@ type Story = StoryObj<typeof meta>;
 const body = within(document.body);
 const choose = async (canvasElement: HTMLElement, field: string, option: string) => {
   await userEvent.click(within(canvasElement).getByRole('combobox', { name: field }));
-  await userEvent.click(await body.findByRole('option', { name: option }));
+  await userEvent.click(await body.findByRole('option', { name: option })); await settleMotion();
 };
 const tableRows = (canvasElement: HTMLElement) => within(within(canvasElement).getByRole('region', { name: 'Signal sample table' })).getAllByRole('row').slice(1);
 const gapLabels = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('.dv-gap-band')].map(el => el.textContent);
@@ -51,8 +54,10 @@ export const SmallSignals: Story = { args: { rows: samples.slice(0, 20).map(row 
 export const SwitchViews: Story = { play: async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   await userEvent.click(canvas.getByRole('radio', { name: 'Table' }));
+  await settleMotion();
   await expect(canvas.getByRole('region', { name: 'Signal sample table' })).toBeVisible();
   await userEvent.click(canvas.getByRole('radio', { name: 'Chart' }));
+  await settleMotion();
   await expect(canvas.getByRole('img', { name: 'Mass 44, Mass 49' })).toBeVisible();
 } };
 
@@ -66,11 +71,14 @@ export const GapInRecording: Story = {
     await expect(canvas.getByRole('combobox', { name: 'Connect null values' })).toHaveValue('Never');
     await expect(canvas.getByRole('combobox', { name: 'Disconnect values' })).toHaveValue('Never');
     await userEvent.click(canvas.getByRole('radio', { name: 'Table' }));
+    await settleMotion();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
+    await settleMotion();
     await expect(tableRows(canvasElement)).toHaveLength(14);
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('Missing sample');
     await expect(canvas.getByText('14 of 121 original rows · Mass 44 · Sample 025')).toBeInTheDocument();
     await userEvent.click(canvas.getByRole('radio', { name: 'Chart' }));
+    await settleMotion();
     await choose(canvasElement, 'Connect null values', 'Always');
     await waitFor(() => expect(gapLabels(canvasElement)).toEqual([]));
     await choose(canvasElement, 'Connect null values', 'Threshold');
@@ -99,7 +107,9 @@ export const ImportedNoMarkers: Story = {
     await waitFor(() => expect(gapLabels(canvasElement)).toEqual(['No data · 15.0 s']));
     await expect(canvas.getByText('No data', { selector: '.dv-legend span' })).toBeVisible();
     await userEvent.click(canvas.getByRole('radio', { name: 'Table' }));
+    await settleMotion();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
+    await settleMotion();
     await expect(tableRows(canvasElement)).toHaveLength(1);
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('After a 15.0 s pause');
   },
@@ -128,13 +138,17 @@ export const ValuesAtOrBelowZero: Story = {
     await expect(banner).toHaveTextContent(`The log scale can’t show ${hidden} samples at or below 0 mV, so the line breaks there. The table lists them.`);
     await expect(banner.querySelectorAll('li')).toHaveLength(0);
     await userEvent.click(canvas.getByRole('radio', { name: 'Table' }));
+    await settleMotion();
     await expect(tableRows(canvasElement)).toHaveLength(121);
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
+    await settleMotion();
     await expect(tableRows(canvasElement)).toHaveLength(hidden);
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('Not shown on log scale');
     await userEvent.click(canvas.getByRole('radio', { name: 'Chart' }));
+    await settleMotion();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Logarithmic Y-axis' }));
-    await expect(canvas.queryByText(/The log scale can’t show/)).toBeNull();
+    await settleMotion();
+    await waitFor(() => expect(canvas.queryByText(/The log scale can’t show/)).toBeNull());
   },
 };
 
@@ -145,7 +159,8 @@ export const VeryWideRange: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(/Values span about 6 orders of magnitude\. Switch to a log scale to see the low end\./)).toBeVisible();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Logarithmic Y-axis' }));
-    await expect(canvas.queryByText(/orders of magnitude/)).toBeNull();
+    await settleMotion();
+    await waitFor(() => expect(canvas.queryByText(/orders of magnitude/)).toBeNull());
   },
 };
 
@@ -196,5 +211,34 @@ export const TracesLargestText: Story = {
     for (const svg of traces) await waitFor(() => expect(viewWidth(svg)).toBeCloseTo(260 / 1.5, 3));
     for (const svg of traces) await expect(Math.abs(drawScale(svg) - 1.5)).toBeLessThanOrEqual(0.02);
     for (const svg of traces) await labelsApart(svg);
+  },
+};
+
+export const ViewMotion: Story = { play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement), plot = canvasElement.querySelector('canvas');
+  const surface = canvasElement.querySelector('.dv-chart-views')!;
+  const height = surface.getBoundingClientRect().height;
+  for (const name of ['Table', 'Chart', 'Table', 'Chart']) {
+    await userEvent.click(canvas.getByRole('radio', { name }));
+    await settleMotion();
+    await settleMotion();
+    await expect(surface.getBoundingClientRect().height).toBe(height);
+    await expect(canvasElement.querySelector('canvas')).toBe(plot);
+    await expect(canvas.getByRole('radio', { name })).toHaveFocus();
+    await waitFor(() => expect(surface.querySelectorAll('[data-motion]')).toHaveLength(0));
+    await expect(surface.querySelectorAll('[data-active="true"]')).toHaveLength(1);
+  }
+} };
+export const ViewMotionReduced: Story = { ...ViewMotion, beforeEach: reduceMotion };
+
+/** Manual controls keep state changes separate from automatic story interactions. */
+export const MotionStates: Story = {
+  args: { ...edge, rows: edgeCase('nonpositive') },
+  render: function States(args) {
+    const [state, setState] = useState<ChartState>('recorded');
+    return <><div role="group" aria-label="Example source state">
+      {(['recorded', 'stale', 'missing', 'empty', 'unavailable'] as const).map(value =>
+        <button key={value} type="button" onClick={() => setState(value)}>{value}</button>)}
+    </div><SignalChart {...args} state={state} /></>;
   },
 };

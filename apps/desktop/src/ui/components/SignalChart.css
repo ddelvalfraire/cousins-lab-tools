@@ -25,3 +25,9 @@
 .dv-trace[data-variant='playback'] .dv-trace-line { stroke-width: 1.5; stroke-linejoin: round; vector-effect: none; }
 .dv-trace .dv-trace-playhead { stroke: var(--dv-ink); stroke-width: 1; opacity: .65; }
 .dv-trace .dv-trace-dot { fill: currentColor; stroke: var(--dv-paper); stroke-width: 1.5; }
+
+/* Both views keep their width and height while only the selected view accepts interaction. */
+.dv-chart-views { display: grid; }
+.dv-chart-view { grid-area: 1 / 1; min-width: 0; }
+.dv-chart-view[data-active='false'] { opacity: 0; pointer-events: none; }
+.dv-chart-view[data-active='true'] { opacity: 1; }
