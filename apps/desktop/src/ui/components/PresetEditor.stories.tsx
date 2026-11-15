@@ -474,6 +474,7 @@ export const ResizeControlsBelowMinimum: Story = {
     await userEvent.keyboard('{ArrowLeft}');
     await expect(panel(canvasElement, 'k3')).toHaveAttribute('data-span', '4');
     await waitFor(() => expect(announcer(canvasElement)).toHaveTextContent('Minimum width for recording controls.'));
+    await settleMotion();
   },
 };
 
