@@ -112,3 +112,26 @@ export const RowsLeaveAndReturn: Story = {
 };
 
 export const RowsReducedMotion: Story = { ...RowsLeaveAndReturn, beforeEach: reduceMotion };
+
+function SuccessiveRowsDemo() {
+  const [count, setCount] = useState(0);
+  return <><button onClick={() => setCount(value => value + 1)}>Remove first row</button>
+    <table><tbody><MotionList>{['A', 'B', 'C'].slice(count).map(name => <tr key={name}><td>{name}</td></tr>)}</MotionList></tbody></table>
+  </>;
+}
+
+export const SuccessiveRowsKeepOrder: Story = {
+  render: () => <SuccessiveRowsDemo />,
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button', { name: 'Remove first row' });
+    button.click();
+    await waitFor(() => expect(within(canvasElement).getAllByRole('row')).toHaveLength(2));
+    canvasElement.querySelectorAll('tr').forEach(row => row.getAnimations().forEach(animation => animation.pause()));
+    button.click();
+    await waitFor(() => expect(within(canvasElement).getAllByRole('row')).toHaveLength(1));
+    const rows = [...canvasElement.querySelectorAll('tr')];
+    await expect(rows.map(row => row.textContent)).toEqual(['A', 'B', 'C']);
+    rows.forEach(row => row.getAnimations().forEach(animation => animation.finish()));
+    await waitFor(() => expect(canvasElement.querySelectorAll('tr')).toHaveLength(1));
+  },
+};
