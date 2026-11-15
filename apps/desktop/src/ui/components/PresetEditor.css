@@ -14,6 +14,7 @@
 .pe-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 /* Header and action bar: the shared PageHeader. Status words in its meta are 10 px, as in the mockup. */
+.dv-preset-editor .dv-page-meta :is(.dv-swap, .dv-swap-item) { display: flex; align-items: center; }
 .dv-preset-editor .dv-page-meta .dv-status-word { font-size: .625rem; gap: 4px; }
 .pe-button { border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink); font-size: .6875rem; font-weight: 500; min-height: 31px; padding: 7px 10px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .dv-preset-editor .pe-button { color: var(--dv-ink); }

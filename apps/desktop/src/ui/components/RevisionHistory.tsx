@@ -50,10 +50,10 @@ export function RevisionHistoryList({ revisions, current, selected, onSelect, bu
       return <RevisionEntry key={revision.number} animate={!initial.current.has(revision.number)}><button type="button" className="dv-revision-entry" aria-current={isSelected} disabled={busy} onClick={() => onSelect(revision.number)}>
         <div className="dv-revision-entry-top">
           <Chip icon={<SidebarIcon name="revisions" />}>R{revision.number}</Chip>
-          <Swap className="dv-revision-entry-state" swapKey={`${revision.number === current}-${isSelected}`}>
-            {revision.number === current && <span className="dv-revision-current">Current</span>}
-            {isSelected && <span className="dv-revision-check"><SidebarIcon name="check" /><span className="dv-revision-sr">Selected</span></span>}
-          </Swap>
+          <div className="dv-revision-entry-state">
+            <Presence show={revision.number === current} variant="fade"><span className="dv-revision-current">Current</span></Presence>
+            <Presence show={isSelected} variant="fade"><span className="dv-revision-check"><SidebarIcon name="check" /><span className="dv-revision-sr">Selected</span></span></Presence>
+          </div>
         </div>
         <span className="dv-revision-entry-title">{revision.note}</span>
         <span className="dv-revision-entry-meta">
