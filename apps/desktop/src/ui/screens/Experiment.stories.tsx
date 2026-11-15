@@ -98,7 +98,7 @@ export const StopToRecorded:Story={parameters:dialogA11y,
     await waitFor(()=>expect(body.queryByRole('dialog')).not.toBeInTheDocument());
     await expect(canvasElement.querySelector('.dv-acq-status')).toHaveTextContent('Acquisition stopped. 87 samples saved as a recording.');
     await expect(canvasElement.querySelector('.dv-page-meta')).toHaveTextContent(/Recorded.*87 samples.*00:43/);
-    await expect(canvas.getByRole('button',{name:'Review & export'})).toBeVisible();
+    await waitFor(()=>expect(canvas.getByRole('button',{name:'Review & export'})).toBeVisible());
   },
 };
 
@@ -115,16 +115,27 @@ const watchMotion=(root:HTMLElement)=>{
   return ()=>{ observer.disconnect(); return seen||!!root.querySelector('[data-motion]'); };
 };
 
-/** Stopping cross-fades the page: the live streams fade out over the recording, inert, then leave the page. */
+/**
+ * Stopping cross-fades the page: the live streams fade out over the recording, inert, then leave the page. In the
+ * header the Acquiring tag and Stop give way to Recorded and Review & export the same way, and the header keeps its height.
+ */
 export const StopCrossFades:Story={parameters:dialogA11y,
   play:async({canvasElement})=>{
+    const header=box(canvasElement,'.dv-page-header').height;
     await stopAcquisition(canvasElement);
     const leaving=await waitFor(()=>{ const node=canvasElement.querySelector('[data-motion=leave]:has(> .dv-xw-live)'); expect(node).not.toBeNull(); return node!; },{timeout:5000});
     await expect(leaving).toHaveAttribute('inert');
+    const stop=[...canvasElement.querySelectorAll('.dv-page-actions [data-motion=leave] button')].find(button=>button.textContent==='Stop acquisition');
+    await expect(stop?.closest('[inert]'),'Stop fades out, inert').toBeTruthy();
+    await expect(canvasElement.querySelector('.dv-page-meta [data-motion=leave]')).toHaveTextContent('Acquiring');
+    await expect(box(canvasElement,'.dv-page-header').height,'the header keeps its height during the swap').toBe(header);
+    await expect(box(canvasElement,'.dv-page-actionbar').height).toBe(48);
     await expect(within(canvasElement).getByRole('group',{name:'Recording playback'}).closest('[inert]'),'the recording is usable while it fades in').toBeNull();
     await settleMotion();
     await waitFor(()=>expect(canvasElement.querySelector('.dv-xw-live')).toBeNull());
     await waitFor(()=>expect(canvasElement.querySelector('[data-motion]')).toBeNull());
+    await expect(box(canvasElement,'.dv-page-header').height).toBe(header);
+    await expect(within(canvasElement).queryByRole('button',{name:'Stop acquisition'})).not.toBeInTheDocument();
   },
 };
 /** Under reduced motion the recording replaces the live streams at once, with nothing fading. */

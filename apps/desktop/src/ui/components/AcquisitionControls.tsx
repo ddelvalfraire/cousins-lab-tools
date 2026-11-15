@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { UnstyledButton, VisuallyHidden } from '@mantine/core';
 import { IconActivity, IconCheck, IconClock, IconDeviceAnalytics, IconHistory, IconPlayerPlay, IconPlayerStop, IconPlugConnectedX } from '@tabler/icons-react';
 import { Chip } from './Chip';
+import { Presence, Swap } from './Motion';
 import { StatusBanner, StatusMessages } from './Primitives';
 import { GuardDialog, useFocusWhen } from './UnsavedChangesDialog';
 import './Approved.css';
@@ -60,6 +61,8 @@ export interface AcquisitionControlsProps {
   stopFailed?: boolean;
   /** Opens the stop dialog on first render (for frozen review states). */
   defaultStopDialogOpen?: boolean;
+  /** Takes Start/Stop's place once recorded, for example a link to review the recording. */
+  recordedAction?: ReactNode;
   onStart: () => void;
   onStop: () => void;
   onConnect: () => void;
@@ -74,9 +77,9 @@ const tags = {
 export interface AcquisitionControlParts {
   /** Status tag and chips, for the header's meta slot. */
   meta: ReactNode;
-  /** Start or Stop button, for the header's actions slot. `null` once recorded. */
+  /** Start or Stop button, for the header's actions slot; once recorded, `recordedAction` or nothing. */
   action: ReactNode;
-  /** One-sentence status under the header (disconnected, failed start, stopped). `null` when there is none. */
+  /** One-sentence status under the header (disconnected, failed start, stopped). Renders nothing when there is none. */
   status: ReactNode;
   /** Stop dialog and the live announcement. Render once anywhere on the page. */
   dialog: ReactNode;
@@ -85,14 +88,16 @@ export interface AcquisitionControlParts {
 /**
  * Acquisition status and Start/Stop as separate parts, so a page can put them in `PageHeader`'s meta and actions.
  * The instrument chip shows until acquisition starts (start-acquisition-review.html); while acquiring and once recorded
- * the meta shows samples and elapsed time only (stop-confirmation-review.html).
+ * the meta shows samples and elapsed time only (stop-confirmation-review.html). The meta and action cross-fade between
+ * setting up, acquiring and recorded, and the status line collapses in and out.
  */
-export function useAcquisitionControls({ state, experimentName, instrument, samples = 0, elapsedSeconds = 0, routine, startFailed = false, stopFailed = false, defaultStopDialogOpen = false, onStart, onStop, onConnect }: AcquisitionControlsProps): AcquisitionControlParts {
+export function useAcquisitionControls({ state, experimentName, instrument, samples = 0, elapsedSeconds = 0, routine, startFailed = false, stopFailed = false, defaultStopDialogOpen = false, recordedAction, onStart, onStop, onConnect }: AcquisitionControlsProps): AcquisitionControlParts {
   const statusId = useId();
   const startRef = useRef<HTMLButtonElement>(null), stopRef = useRef<HTMLButtonElement>(null), statusRef = useRef<HTMLDivElement>(null);
   const [confirming, setConfirming] = useState(defaultStopDialogOpen || state === 'stopping');
   const previous = useRef(state);
   const running = state === 'acquiring' || state === 'stopping';
+  const phase = running ? 'running' : state === 'recorded' ? 'recorded' : 'setup';
 
   useEffect(() => {
     const before = previous.current;
@@ -108,22 +113,27 @@ export function useAcquisitionControls({ state, experimentName, instrument, samp
   const announcement = state === 'starting' ? 'Starting acquisition…' : state === 'acquiring' ? 'Acquiring.' : state === 'stopping' ? 'Stopping acquisition…'
     : state === 'recorded' ? `Acquisition stopped. ${samples} samples saved.` : startFailed ? 'The instrument didn’t start. Nothing was recorded.' : '';
 
-  const meta = <>
+  const meta = <Swap swapKey={phase} className="dv-acq-swap">
     <span className="dv-acq-tag" data-state={state === 'stopping' ? 'acquiring' : state}><TagIcon aria-hidden />{tagLabel}</span>
     {running || state === 'recorded'
       ? <><Chip icon={<IconActivity aria-hidden />}>{samples} samples</Chip><Chip icon={<IconClock aria-hidden />}>{formatTime(elapsedSeconds)}</Chip></>
       : <Chip icon={<IconDeviceAnalytics aria-hidden />}>{instrument} · {state === 'disconnected' ? 'Disconnected' : 'Connected'}</Chip>}
-  </>;
-  const action = running
+  </Swap>;
+  const button = running
     ? <UnstyledButton ref={stopRef} className="dv-acq-button" onClick={() => setConfirming(true)}><IconPlayerStop aria-hidden />Stop acquisition</UnstyledButton>
     : state !== 'recorded' ? <UnstyledButton ref={startRef} className="dv-acq-button" data-variant="primary" disabled={state === 'starting' || state === 'disconnected'} aria-describedby={state === 'disconnected' ? statusId : undefined} onClick={onStart}>
       {state === 'starting' ? <><IconHistory aria-hidden />Starting…</> : <><IconPlayerPlay aria-hidden />{startFailed ? 'Try again' : 'Start acquisition'}</>}
-    </UnstyledButton> : null;
-  const status = state === 'disconnected'
+    </UnstyledButton> : recordedAction ?? null;
+  // Presence fades the button out when nothing replaces it; Swap's leaving copy would be clipped to the empty slot.
+  const action = <Presence show={button !== null} variant="fade" className="dv-acq-swap">
+    <Swap swapKey={phase} className="dv-acq-swap">{button}</Swap>
+  </Presence>;
+  const line = state === 'disconnected'
     ? <div className="dv-acq-status" id={statusId}><StatusBanner severity="warning">{instrument} is disconnected. Connect it to start acquiring. <UnstyledButton className="dv-acq-link" onClick={onConnect}>Connect {instrument}</UnstyledButton></StatusBanner></div>
     : state === 'ready' && startFailed
       ? <div className="dv-acq-status" id={statusId}><StatusMessages messages={[{ severity: 'error', text: `${instrument} didn’t start, so nothing was recorded. Check that it’s ready, then try again.` }]} /></div>
       : state === 'recorded' ? <div className="dv-acq-status" id={statusId} ref={statusRef} tabIndex={-1}><StatusMessages messages={[{ severity: 'info', text: `Acquisition stopped. ${samples} samples saved as a recording.` }]} /></div> : null;
+  const status = <Presence show={line !== null}>{line}</Presence>;
   const dialog = <>
     <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">{announcement}</VisuallyHidden>
     <StopAcquisitionDialog

@@ -18,7 +18,7 @@
 .dv-xw-number { display: inline-block; min-width: 8ch; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .dv-xw-number small { font-size: .625rem; font-weight: 400; color: var(--dv-ink-muted); }
 .dv-xw-scope { margin: 0; font-size: .6875rem; line-height: 1.65; color: var(--dv-ink-muted); }
-.dv-xw-live > .dv-acq-status, .dv-xw-recorded > .dv-acq-status { margin: 0; }
+.dv-xw-live > [data-presence] > .dv-acq-status, .dv-xw-recorded > [data-presence] > .dv-acq-status { margin: 0; }
 
 /* Stream cards */
 .dv-xw-streams { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--dv-gap); }

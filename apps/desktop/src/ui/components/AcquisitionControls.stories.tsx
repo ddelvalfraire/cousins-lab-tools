@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AcquisitionControls, type AcquisitionControlsProps, type AcquisitionState } from './AcquisitionControls';
+import { reduceMotion, settleMotion } from './settleMotion';
 
 /** Dialogs render in a portal, so dialog queries run against the whole document. */
 const page = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body);
@@ -226,5 +227,33 @@ export const RecoverySession: Story = {
     await waitFor(() => expect(meta_(canvasElement)).toHaveTextContent('Recorded'));
     await expect(args.onStart).toHaveBeenCalledTimes(2);
     await expect(args.onStop).toHaveBeenCalledTimes(2);
+  },
+};
+
+/** Connecting collapses the disconnected warning away (inert while it goes) and Start takes focus at once. */
+export const ConnectCollapsesWarning: Story = {
+  args: { state: 'disconnected' },
+  render: args => <Session {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect MS-01' }));
+    const warning = canvasElement.querySelector('.dv-acq-status')!;
+    await expect(warning.closest('[data-motion=leave]')).toHaveAttribute('inert');
+    await expect(canvas.getByRole('button', { name: 'Start acquisition' })).toHaveFocus();
+    await settleMotion();
+    await waitFor(() => expect(canvasElement.querySelector('.dv-acq-status')).toBeNull());
+  },
+};
+
+/** Under reduced motion the warning goes in the same frame, with nothing animating. */
+export const ConnectCollapsesWarningReducedMotion: Story = {
+  ...ConnectCollapsesWarning,
+  beforeEach: reduceMotion,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect MS-01' }));
+    await expect(canvasElement.querySelector('.dv-acq-status')).toBeNull();
+    await expect(canvasElement.querySelector('[data-motion]')).toBeNull();
+    await expect(canvas.getByRole('button', { name: 'Start acquisition' })).toHaveFocus();
   },
 };

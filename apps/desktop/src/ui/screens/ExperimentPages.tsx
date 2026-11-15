@@ -112,6 +112,7 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
     state: acquisition, experimentName: shortName, instrument: 'MS-01',
     samples: live || startedLive ? liveSamples : rows.length, elapsedSeconds: live || startedLive ? liveSeconds : duration,
     defaultStopDialogOpen: view.stopDialogOpen, onStart: () => {}, onConnect: () => {}, onStop: stop,
+    recordedAction: <HeaderButton onClick={() => navigate('review', experiment.id)}>Review & export</HeaderButton>,
   });
 
   const problemProps = {
@@ -171,7 +172,7 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
     <PageHeader title={experiment.name} titleId="dv-experiment-title"
       breadcrumbs={[{ label: 'Workspace', onClick: () => navigate('experiments') }, { label: 'Experiments', onClick: () => navigate('experiments') }, { label: shortName }]}
       meta={<>{acq.meta}<ProblemsTrigger problems={problems} controls="dv-experiment-sidebar-pane" onOpen={openProblems} /></>}
-      actions={live ? acq.action : <HeaderButton onClick={() => navigate('review', experiment.id)}>Review & export</HeaderButton>} />
+      actions={acq.action} />
     <WorkspaceBody sidebar={sidebar}>
       <Swap swapKey={live ? 'live' : 'recorded'}>{live
         ? <div className="dv-xw-live">
