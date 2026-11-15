@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../components/settleMotion';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { ScreenShell } from './ScreenShell';
@@ -51,6 +52,11 @@ export const NoResults:Story={render:()=><FrozenInstruments query="argon"/>,play
 export const ClearSearch:Story={render:()=><FrozenInstruments query="argon"/>,play:async({canvasElement})=>{
   await userEvent.click(within(canvasElement).getByRole('button',{name:'Clear search'}));
   await expect(rows(canvasElement)).toHaveLength(3);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
 }};
 export const Empty:Story={render:()=><FrozenInstruments instruments={[]}/>,play:async({canvasElement})=>{await expect(within(canvasElement).getByRole('heading',{name:'No instruments configured'})).toBeVisible();}};
 export const SidebarCollapsed:Story={render:()=><FrozenInstruments initialSelected="MS-01" initialCollapsed/>,play:async({canvasElement})=>{await expect(canvasElement.querySelector('.dv-right-sidebar')).toHaveAttribute('data-collapsed','true');}};
@@ -82,3 +88,23 @@ export const Connect:Story={render:()=><FrozenInstruments connectDelay={300}/>,p
   await userEvent.click(canvas.getByRole('button',{name:'2 channels: Reference spectrometer'}));
   await waitFor(()=>expect(canvas.getByRole('heading',{name:'2 channels'})).toBeVisible());
 }};
+
+
+export const FilterMotion:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement), search=canvas.getByRole('searchbox',{name:'Search instruments'});
+  await userEvent.type(search,'zzzznomatch');
+  await settleMotion();
+  await waitFor(()=>expect(rows(canvasElement)).toHaveLength(0));
+  await expect(canvas.getByRole('heading',{name:'No matching instruments'})).toBeVisible();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeNull();
+  await expect(search).toHaveFocus();
+  await userEvent.clear(search);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(rows(canvasElement).length).toBeGreaterThan(0);
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
+  await expect(search).toHaveFocus();
+}};
+export const FilterReducedMotion:Story={...FilterMotion,beforeEach:()=>reduceMotion()};

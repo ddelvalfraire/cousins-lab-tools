@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../components/settleMotion';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { ScreenShell } from './ScreenShell';
@@ -54,6 +55,11 @@ export const NoResults:Story={render:()=><FrozenPresets query="argon"/>,play:asy
 export const ClearSearch:Story={render:()=><FrozenPresets query="argon"/>,play:async({canvasElement})=>{
   await userEvent.click(within(canvasElement).getByRole('button',{name:'Clear search'}));
   await expect(rows(canvasElement)).toHaveLength(5);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
 }};
 export const Empty:Story={render:()=><FrozenPresets presets={[]}/>,play:async({canvasElement})=>{await expect(within(canvasElement).getByRole('heading',{name:'No presets yet'})).toBeVisible();}};
 export const SidebarCollapsed:Story={render:()=><FrozenPresets initialSelected="gas" initialCollapsed/>,play:async({canvasElement})=>{
@@ -85,7 +91,9 @@ export const BrowseCatalog:Story={render:()=><FrozenPresets/>,play:async({canvas
   const canvas=within(canvasElement);
   await userEvent.click(canvas.getByRole('button',{name:'Next page'}));
   await expect(rows(canvasElement)).toHaveLength(3);
+  await waitFor(()=>expect(canvas.getByRole('button',{name:'First page'})).toHaveFocus());
   await userEvent.click(canvas.getByRole('button',{name:'First page'}));
+  await waitFor(()=>expect(canvas.getByRole('button',{name:'Next page'})).toHaveFocus());
   await userEvent.click(canvas.getByRole('button',{name:'Revision'}));
   await userEvent.click(canvas.getByRole('button',{name:/Revision/}));
   await expect(rows(canvasElement)[0]).toHaveTextContent('R5');
@@ -126,3 +134,23 @@ export const RevisionHistory:Story={args:{initialPage:'preset-history'},play:asy
 /** Use preset goes straight to setup for a new experiment with that preset. */
 export const UsePreset:Story={parameters:endsOnSetup,play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Use preset: Baseline stability'}));await expect(canvas.getByRole('heading',{level:1,name:'New experiment'})).toBeVisible();await expect(canvas.getByRole('navigation',{name:'Breadcrumb'})).toHaveTextContent('Baseline stability');}};
 export const EditPreset:Story={args:{initialPage:'preset'},play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Edit preset'}));await expect(canvas.getByRole('heading',{name:'CO₂ & O₂ analysis'})).toBeVisible();await expect(canvas.getByRole('button',{name:/^Save as R4/})).toBeDisabled();await expect(canvas.getByRole('button',{name:'Move Raw signals earlier'})).toBeEnabled();await expect(canvas.getByRole('heading',{name:'CO₂ calibration settings'})).toBeVisible();await expect(canvas.getByRole('heading',{name:'Recording controls'})).toBeVisible();}};
+
+
+export const FilterMotion:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement), search=canvas.getByRole('searchbox',{name:'Search presets'});
+  await userEvent.type(search,'zzzznomatch');
+  await settleMotion();
+  await waitFor(()=>expect(rows(canvasElement)).toHaveLength(0));
+  await expect(canvas.getByRole('heading',{name:'No matching presets'})).toBeVisible();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeNull();
+  await expect(search).toHaveFocus();
+  await userEvent.clear(search);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(rows(canvasElement).length).toBeGreaterThan(0);
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
+  await expect(search).toHaveFocus();
+}};
+export const FilterReducedMotion:Story={...FilterMotion,beforeEach:()=>reduceMotion()};

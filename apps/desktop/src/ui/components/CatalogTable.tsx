@@ -76,15 +76,24 @@ export function useCatalogPage(total: number, initialSize: number = PAGE_SIZES[0
 /** "1–5 of 8 presets", rows per page and first/previous/next/last (.preset-pagination). */
 export function CatalogPagination({ noun, total, pager }: { noun: (n: number) => string; total: number; pager: ReturnType<typeof useCatalogPage> }) {
   const { page, count, size, setSize, setPage, start, end } = pager;
+  const changePage = (next: number, button: HTMLButtonElement) => {
+    setPage(next);
+    // A boundary disables the pressed button, so keep keyboard focus in the paging controls.
+    requestAnimationFrame(() => {
+      if (button.isConnected && button.disabled && (document.activeElement === button || document.activeElement === document.body)) {
+        button.parentElement?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+      }
+    });
+  };
   return <div className="dv-cat-pagination">
     <span>{total ? `${start + 1}–${end} of ${noun(total)}` : noun(0)}</span>
     <div className="dv-cat-pagination-controls">
       <label>Rows <Select aria-label="Rows per page" value={String(size)} data={PAGE_SIZES.map(String)} onChange={chosen(value => setSize(Number(value)))} /></label>
-      <button type="button" aria-label="First page" disabled={page === 0} onClick={() => setPage(0)}>«</button>
-      <button type="button" aria-label="Previous page" disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
+      <button type="button" aria-label="First page" disabled={page === 0} onClick={event => changePage(0, event.currentTarget)}>«</button>
+      <button type="button" aria-label="Previous page" disabled={page === 0} onClick={event => changePage(page - 1, event.currentTarget)}>‹</button>
       <span>{page + 1} / {count}</span>
-      <button type="button" aria-label="Next page" disabled={page >= count - 1} onClick={() => setPage(page + 1)}>›</button>
-      <button type="button" aria-label="Last page" disabled={page >= count - 1} onClick={() => setPage(count - 1)}>»</button>
+      <button type="button" aria-label="Next page" disabled={page >= count - 1} onClick={event => changePage(page + 1, event.currentTarget)}>›</button>
+      <button type="button" aria-label="Last page" disabled={page >= count - 1} onClick={event => changePage(count - 1, event.currentTarget)}>»</button>
     </div>
   </div>;
 }

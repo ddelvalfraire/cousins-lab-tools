@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Presence, Swap } from './Motion';
 import { pages } from '../search-registry';
 import { PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
@@ -169,10 +170,10 @@ export function RoutineCatalog({ routines, query = '', onClearQuery, onUse, onEd
   return <CatalogRoot label="Routines">
     <PageHeader title={pages.routines.title} breadcrumbs={breadcrumbs} count={rows.length} />
     <WorkspaceBody sidebar={sidebar}>
-      {search && <CatalogFilter query={search} onClear={clearSearch} />}
+      <Presence show={!!search} className="dv-cat-filter-presence"><CatalogFilter query={search} onClear={clearSearch} /></Presence>
       <CatalogToolbar count={noun(rows.length)} />
-      {body}
-      {rows.length > 0 && <CatalogPagination noun={noun} total={rows.length} pager={pager} />}
+      <Swap swapKey={rows.length ? 'list' : 'empty'}>{body}</Swap>
+      <Presence show={rows.length > 0}><CatalogPagination noun={noun} total={rows.length} pager={pager} /></Presence>
     </WorkspaceBody>
   </CatalogRoot>;
 }

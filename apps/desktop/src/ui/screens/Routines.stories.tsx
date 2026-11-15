@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../components/settleMotion';
 import { DVDashWorkspace } from './Workspace';
 import { renderScreen } from './screen-story';
 import { ScreenShell } from './ScreenShell';
@@ -54,6 +55,11 @@ export const NoResults:Story={render:()=><FrozenRoutines query="argon"/>,play:as
 export const ClearSearch:Story={render:()=><FrozenRoutines query="argon"/>,play:async({canvasElement})=>{
   await userEvent.click(within(canvasElement).getByRole('button',{name:'Clear search'}));
   await expect(rows(canvasElement)).toHaveLength(3);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
 }};
 export const Empty:Story={render:()=><FrozenRoutines routines={[]}/>,play:async({canvasElement})=>{await expect(within(canvasElement).getByRole('heading',{name:'No routines yet'})).toBeVisible();}};
 export const SidebarCollapsed:Story={render:()=><FrozenRoutines initialSelected="baseline" initialCollapsed/>,play:async({canvasElement})=>{await expect(canvasElement.querySelector('.dv-right-sidebar')).toHaveAttribute('data-collapsed','true');}};
@@ -89,3 +95,23 @@ export const InspectStep:Story={render:()=><FrozenRoutines/>,play:async({canvasE
 /** Use routine opens experiment setup with that routine. */
 export const UseRoutine:Story={parameters:endsOnSetup,play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Reference and sample'}));await userEvent.click(canvas.getByRole('button',{name:'Use routine: Reference and sample'}));await expect(canvas.getByRole('heading',{level:1,name:'New experiment'})).toBeVisible();}};
 export const EditRoutine:Story={play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Reference and sample'}));await userEvent.click(canvas.getByRole('button',{name:'Edit routine: Reference and sample'}));await expect(canvas.getByRole('heading',{level:1,name:'Reference and sample'})).toBeVisible();await expect(canvas.getAllByRole('article',{name:/^Step \d of 3:/})).toHaveLength(3);}};
+
+
+export const FilterMotion:Story={play:async({canvasElement})=>{
+  const canvas=within(canvasElement), search=canvas.getByRole('searchbox',{name:'Search routines'});
+  await userEvent.type(search,'zzzznomatch');
+  await settleMotion();
+  await waitFor(()=>expect(rows(canvasElement)).toHaveLength(0));
+  await expect(canvas.getByRole('heading',{name:'No matching routines'})).toBeVisible();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeNull();
+  await expect(search).toHaveFocus();
+  await userEvent.clear(search);
+  await settleMotion();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion="leave"]')).toBeNull());
+  await expect(rows(canvasElement).length).toBeGreaterThan(0);
+  await expect(canvasElement.querySelector('.dv-cat-filter')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-state')).toBeNull();
+  await expect(canvasElement.querySelector('.dv-cat-pagination')).toBeVisible();
+  await expect(search).toHaveFocus();
+}};
+export const FilterReducedMotion:Story={...FilterMotion,beforeEach:()=>reduceMotion()};

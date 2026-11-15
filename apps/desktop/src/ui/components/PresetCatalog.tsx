@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { formatClockTime } from '../time';
+import { Presence, Swap } from './Motion';
 import { pages } from '../search-registry';
 import { HeaderButton, PageHeader, type PageBreadcrumb } from './PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from './RightSidebar';
@@ -177,15 +178,15 @@ export function PresetCatalog({ presets, query = '', onClearQuery, onUse, onOpen
   return <CatalogRoot label="Presets">
     <PageHeader title={pages.presets.title} breadcrumbs={breadcrumbs} count={rows.length} actions={actions || undefined} />
     <WorkspaceBody sidebar={sidebar}>
-      {search && <CatalogFilter query={search} onClear={clearSearch} />}
+      <Presence show={!!search} className="dv-cat-filter-presence"><CatalogFilter query={search} onClear={clearSearch} /></Presence>
       <CatalogToolbar count={noun(rows.length)}>
         <div className="dv-cat-views" role="group" aria-label="Preset view">
           <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}><SidebarIcon name="details" />List</button>
           <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}><SidebarIcon name="panels" />Grid</button>
         </div>
       </CatalogToolbar>
-      {body}
-      {rows.length > 0 && <CatalogPagination noun={noun} total={rows.length} pager={pager} />}
+      <Swap swapKey={rows.length ? 'list' : 'empty'}>{body}</Swap>
+      <Presence show={rows.length > 0}><CatalogPagination noun={noun} total={rows.length} pager={pager} /></Presence>
     </WorkspaceBody>
   </CatalogRoot>;
 }

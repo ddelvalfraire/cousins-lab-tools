@@ -16,6 +16,7 @@
 .dv-cat .dv-chip > span { overflow: visible; }
 
 /* Filter line and toolbar */
+.dv-cat-filter-presence { display: flow-root; }
 .dv-cat-filter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: .6875rem; color: var(--dv-ink-muted); }
 .dv-cat-filter-query { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .dv-cat-filter-query span { overflow-wrap: anywhere; }
