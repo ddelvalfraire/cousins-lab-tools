@@ -74,7 +74,7 @@ export const GapInRecording: Story = {
     await settleMotion();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
     await settleMotion();
-    await expect(tableRows(canvasElement)).toHaveLength(14);
+    await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(14));
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('Missing sample');
     await expect(canvas.getByText('14 of 121 original rows · Mass 44 · Sample 025')).toBeInTheDocument();
     await userEvent.click(canvas.getByRole('radio', { name: 'Chart' }));
@@ -110,7 +110,7 @@ export const ImportedNoMarkers: Story = {
     await settleMotion();
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
     await settleMotion();
-    await expect(tableRows(canvasElement)).toHaveLength(1);
+    await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(1));
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('After a 15.0 s pause');
   },
 };
@@ -139,10 +139,10 @@ export const ValuesAtOrBelowZero: Story = {
     await expect(banner.querySelectorAll('li')).toHaveLength(0);
     await userEvent.click(canvas.getByRole('radio', { name: 'Table' }));
     await settleMotion();
-    await expect(tableRows(canvasElement)).toHaveLength(121);
+    await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(121));
     await userEvent.click(canvas.getByRole('checkbox', { name: 'Only rows with notes' }));
     await settleMotion();
-    await expect(tableRows(canvasElement)).toHaveLength(hidden);
+    await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(hidden));
     await expect(tableRows(canvasElement)[0]).toHaveTextContent('Not shown on log scale');
     await userEvent.click(canvas.getByRole('radio', { name: 'Chart' }));
     await settleMotion();
@@ -242,3 +242,14 @@ export const MotionStates: Story = {
     </div><SignalChart {...args} state={state} /></>;
   },
 };
+
+export const FilteredRowsMotion: Story = { args: { ...edge, rows: edgeCase('gap'), initialView: 'table' }, play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement), filter = canvas.getByRole('checkbox', { name: 'Only rows with notes' });
+  await userEvent.click(filter);
+  await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(14));
+  await userEvent.click(filter);
+  await settleMotion();
+  await waitFor(() => expect(tableRows(canvasElement)).toHaveLength(121));
+  await expect(filter).toHaveFocus();
+  await waitFor(() => expect(canvasElement.querySelectorAll('tr[data-motion]')).toHaveLength(0));
+} };
