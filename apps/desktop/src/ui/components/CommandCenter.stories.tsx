@@ -36,7 +36,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const groupNames = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('[role=listbox] [role=group]')].map(group => group.getAttribute('aria-label'));
+const groupNames = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('[role=listbox] [role=group]:not([data-motion=leave])')].map(group => group.getAttribute('aria-label'));
 
 /** Nothing typed: suggested actions and settings, and recent records. */
 export const Suggested: Story = {

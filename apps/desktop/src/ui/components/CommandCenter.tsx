@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, type ReactNode } from 'react';
 import { Kbd } from '@mantine/core';
 import './Approved.css';
 import './CommandCenter.css';
+import { MotionList } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
 
 /*
@@ -152,8 +153,8 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
         <p>{typed ? 'Try a name, sample, signal or instrument.' : 'Type to search the catalogs on this device.'}</p>
         {typed && <button type="button" className="dv-cmd-plain" onClick={onClearQuery}>Clear search</button>}
       </div>}
-      <div id={listId} role="listbox" aria-label="Search results" hidden={groups.length === 0}>
-        {groups.map(group => <div key={group.kind} role="group" aria-label={group.label} className="dv-cmd-group">
+      <div id={listId} role="listbox" aria-label="Search results" aria-hidden={groups.length === 0 || undefined}>
+        <MotionList>{groups.map(group => <div key={group.kind} role="group" aria-label={group.label} className="dv-cmd-group">
           <div className="dv-cmd-group-label" aria-hidden="true">{group.label}</div>
           {group.items.map(item => {
             const i = index++, command = item.kind === 'actions' || item.kind === 'settings';
@@ -164,7 +165,7 @@ export function CommandCenter({ listId, groups, query, category, onCategoryChang
               {(item.keys || item.end) && <span className="dv-cmd-row-end">{item.keys ? <KeyCaps keys={item.keys} sequence={item.sequence} mac={mac} /> : item.end}</span>}
             </div>;
           })}
-        </div>)}
+        </div>)}</MotionList>
       </div>
     </ScrollFrame>
     <div className="dv-cmd-footer">

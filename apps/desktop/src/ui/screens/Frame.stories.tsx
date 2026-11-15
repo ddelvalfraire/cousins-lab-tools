@@ -261,7 +261,8 @@ export const EmptyAndNoResults:Story={
     await userEvent.click(within(canvasElement.querySelector<HTMLElement>('.dv-cmd-empty')!).getByRole('button',{name:'Clear search'}));
     await expect(commandCenter(canvasElement)).toHaveValue('');
     await expect(commandCenter(canvasElement)).toHaveFocus();
-    await expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible();
+    await waitFor(()=>expect(canvas.getByRole('group',{name:'Suggested actions'})).toBeVisible());
+    await settleMotion();
   },
 };
 
