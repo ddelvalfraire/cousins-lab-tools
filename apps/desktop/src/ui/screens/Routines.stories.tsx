@@ -92,7 +92,7 @@ export const InspectStep:Story={render:()=><FrozenRoutines/>,play:async({canvasE
   await userEvent.click(canvas.getByRole('button',{name:/Routine, sorted A to Z/}));
   await expect(rows(canvasElement)[0]).toHaveTextContent('Repeated sampling');
   await settleMotion();
-  await expect(canvasElement.querySelector('[data-motion]')).toBeNull();
+  await waitFor(()=>expect(canvasElement.querySelector('[data-motion]')).toBeNull());
 }};
 /** Use routine opens experiment setup with that routine. */
 export const UseRoutine:Story={parameters:endsOnSetup,play:async({canvasElement})=>{const canvas=within(canvasElement);await userEvent.click(canvas.getByRole('button',{name:'Reference and sample'}));await userEvent.click(canvas.getByRole('button',{name:'Use routine: Reference and sample'}));await expect(canvas.getByRole('heading',{level:1,name:'New experiment'})).toBeVisible();}};
