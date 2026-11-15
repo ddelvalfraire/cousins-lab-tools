@@ -4,7 +4,7 @@ import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { StatusBanner } from '../components/Primitives';
 import type { IntervalResult } from '../components/ExperimentPanels';
 import { useAcquisitionControls } from '../components/AcquisitionControls';
-import { Swap } from '../components/Motion';
+import { Presence, Swap } from '../components/Motion';
 import { HeaderButton, PageHeader } from '../components/PageHeader';
 import { RightSidebar, SidebarFacts, SidebarIcon, SidebarSection, WorkspaceBody } from '../components/RightSidebar';
 import { Chip, StatusWord } from '../components/Chip';
@@ -179,10 +179,10 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
           <LiveSummary items={[{ label: 'Live acquisition', value: clock(liveSeconds) }, { label: 'Capture duration', value: clock(liveSeconds) }, { label: 'Recorded samples', value: liveSamples }]} />
           <p className="dv-xw-scope">{liveStreams.length} live streams · {liveStreams.filter(s => s.captured).length} selected for capture · Dissolved CO₂ is a derived component.</p>
           <section className="dv-xw-streams" aria-label="Live data streams">
-            {streams.filter(s => !hidden.has(s.id)).map(s => <Flagged key={s.id} panel={s.id} problems={problems} selectedId={selected}>
+            {streams.map(s => <Presence key={s.id} show={!hidden.has(s.id)} variant="fade" className="dv-xw-card-slot"><Flagged panel={s.id} problems={problems} selectedId={selected}>
               <StreamCard stream={s} stale={failing(s.id) || (unavailable && s.id === 'mass44')}
                 {...(s.id === 'mass44' ? { precision: display.precision, ...(fixedRange ? { min: min as number, max: max as number } : {}) } : {})} />
-            </Flagged>)}
+            </Flagged></Presence>)}
           </section>
           <div className="dv-xw-derived-slot"><Flagged panel="derived" problems={problems} selectedId={selected}>
             <DerivedCard title="Dissolved CO₂" description="Derived from Mass 44 · included in the capture while available"
@@ -197,7 +197,9 @@ export function CapturePage({ experiment, preset, navigate, unavailable = false,
             onSeek={setPosition} onPlayingChange={setPlaying} onSpeedChange={setSpeed} />
           <Flagged panel="charts" problems={problems} selectedId={selected}>
             <section className="dv-xw-charts" aria-label="Recorded signals">
-              {recordedChannels.filter(c => !hidden.has(c.id)).map(c => <PlaybackChartCard key={c.id} channel={c} rows={rows} position={position} duration={duration} />)}
+              {recordedChannels.map(c => <Presence key={c.id} show={!hidden.has(c.id)} variant="fade" className="dv-xw-card-slot">
+                <PlaybackChartCard channel={c} rows={rows} position={position} duration={duration} />
+              </Presence>)}
             </section>
           </Flagged>
           <CalibrationChecklist steps={calibrationSteps} signal="Mass 44" file={`${experiment.id}.csv`} recording={[0, duration]}

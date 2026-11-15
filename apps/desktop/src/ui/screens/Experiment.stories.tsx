@@ -166,9 +166,49 @@ export const SignalsTab:Story={args:{experimentView:{tab:'signals'}},
   play:async({canvasElement})=>{
     const canvas=within(canvasElement);
     await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
-    await expect(canvasElement.querySelector('[data-stream=temperature]')).toBeNull();
+    await waitFor(()=>expect(canvasElement.querySelector('[data-stream=temperature]')).toBeNull());
     await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
     await expect(canvasElement.querySelector('[data-stream=temperature]')).not.toBeNull();
+    // The accessibility scan reads colours, so it waits for the returning card to finish fading in.
+    await settleMotion();
+  },
+};
+/** Hiding a signal fades its card out, inert, then the grid closes up; showing it again brings it back at once. */
+export const SignalsToggleFades:Story={args:{experimentView:{tab:'signals'}},
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement),card=()=>canvasElement.querySelector('[data-stream=temperature]');
+    await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
+    await expect(card()?.closest('[data-motion=leave]'),'the card fades out in place').toHaveAttribute('inert');
+    await settleMotion();
+    await waitFor(()=>expect(card()).toBeNull());
+    await expect(canvasElement.querySelectorAll('.dv-xw-stream')).toHaveLength(2);
+    await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
+    await expect(card()?.closest('[inert]'),'the returning card is usable while it fades in').toBeNull();
+    await expect(card()).not.toBeNull();
+    await settleMotion();
+  },
+};
+/** On a recording, hiding a signal fades its chart out the same way. */
+export const SignalsToggleFadesRecorded:Story={args:{initialExperiment:'sample-024',experimentView:{tab:'signals'}},
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement),chart=()=>canvas.queryByRole('article',{name:/Mass 45/});
+    await userEvent.click(canvas.getByRole('switch',{name:'Show Mass 45'}));
+    await expect(canvasElement.querySelector('.dv-xw-charts [data-motion=leave] .dv-xw-chart')).toHaveTextContent('Mass 45');
+    await expect(chart(),'out of the accessibility tree while it fades').toBeNull();
+    await settleMotion();
+    await waitFor(()=>expect(canvasElement.querySelectorAll('.dv-xw-chart')).toHaveLength(1));
+  },
+};
+/** Under reduced motion the card goes in the same frame and the grid closes up at once. */
+export const SignalsToggleFadesReducedMotion:Story={args:{experimentView:{tab:'signals'}},beforeEach:reduceMotion,
+  play:async({canvasElement})=>{
+    const canvas=within(canvasElement),motionSeen=watchMotion(canvasElement);
+    await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
+    await expect(canvasElement.querySelector('[data-stream=temperature]')).toBeNull();
+    await expect(canvasElement.querySelectorAll('.dv-xw-stream')).toHaveLength(2);
+    await userEvent.click(canvas.getByRole('switch',{name:'Show Temperature'}));
+    await expect(canvasElement.querySelector('[data-stream=temperature]')).not.toBeNull();
+    await expect(motionSeen(),'nothing entered or left with an animation').toBe(false);
   },
 };
 export const SignalsTabDark:Story={args:{experimentView:{tab:'signals'}},...dark};
