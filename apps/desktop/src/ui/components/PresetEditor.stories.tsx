@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test';
 import { PresetEditor } from './PresetEditor';
 import type { EditablePreset, PresetPanel } from './PresetEditor';
+import { settleMotion } from './settleMotion';
 import { chooseOption } from './chooseOption';
 
 const savedPanels = (): PresetPanel[] => [
@@ -61,7 +62,8 @@ export const Saved: Story = {
     await expect(panel(canvasElement, 'p3').querySelectorAll('.pe-point').length).toBeGreaterThan(10);
     await expect(panel(canvasElement, 'p3').querySelector('.pe-fit')).toHaveAttribute('stroke-dasharray', '5 4');
     await expect(panel(canvasElement, 'p4').querySelectorAll('tbody tr')).toHaveLength(5);
-    await expect(canvas.getByText('No unsaved changes')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('No unsaved changes')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(canvas.getByRole('button', { name: 'Save as R4' })).toBeDisabled();
     await expect(canvasElement.querySelector('.pe-requires')).toHaveTextContent('Requires Mass 32Mass 44Mass 45· worked out from the panels');
 
@@ -69,7 +71,8 @@ export const Saved: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Move Mass 44 vs Mass 32 earlier' }));
     await expect(order(canvasElement)).toEqual(['p1', 'p3', 'p2', 'p4', 'p5']);
     await expect(canvas.getByRole('button', { name: 'Move Mass 44 vs Mass 32 earlier' })).toHaveFocus();
-    await expect(canvas.getByText('Unsaved changes')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Unsaved changes')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await userEvent.click(canvas.getByRole('button', { name: 'Move Mass 44 vs Mass 32 later' }));
     await expect(order(canvasElement)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
     await expect(canvas.getByRole('button', { name: 'Move CO₂ and O₂ signals earlier' })).toBeDisabled();
@@ -98,13 +101,15 @@ export const Rearranged: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(order(canvasElement)).toEqual(['p1', 'p4', 'p2', 'p3', 'p5']);
-    await expect(canvas.getByText('Unsaved changes')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Unsaved changes')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(canvas.getByRole('button', { name: 'Save as R4' })).toBeEnabled();
     await userEvent.click(canvas.getByRole('button', { name: 'Discard changes' }));
     await expect(args.onDiscard).toHaveBeenCalledOnce();
     await expect(order(canvasElement)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5']);
     await expect(panel(canvasElement, 'p5')).toHaveAttribute('data-span', '6');
-    await expect(canvas.getByText('No unsaved changes')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('No unsaved changes')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(canvas.queryByRole('button', { name: 'Discard changes' })).toBeNull();
   },
 };
@@ -133,7 +138,8 @@ export const NewPanelWithoutSignals: Story = {
     await expect(panel(canvasElement, 'p6').querySelectorAll('polyline')).toHaveLength(1);
     await userEvent.click(canvas.getByRole('button', { name: 'Save as R4' }));
     await expect(args.onSave).toHaveBeenCalledWith(expect.objectContaining({ revision: 4, panels: expect.arrayContaining([expect.objectContaining({ id: 'p6', signals: ['Mass 49'] })]) }));
-    await expect(canvas.getByText('R4')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('R4')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(canvas.getByRole('button', { name: 'Save as R5' })).toBeDisabled();
     await waitFor(() => expect(announcer(canvasElement)).toHaveTextContent('Saved as R4.'));
   },
@@ -173,7 +179,8 @@ export const GripHover: Story = {
     await waitFor(() => expect(order(canvasElement)).toEqual(['p1', 'p5', 'p2', 'p3', 'p4']));
     await expect(canvasElement.querySelectorAll('.pe-ghost')).toHaveLength(0);
     await expect(canvasElement.querySelector('[data-grip="p5"]')).toHaveFocus();
-    await expect(canvas.getByText('Unsaved changes')).toBeVisible();
+    await waitFor(() => expect(canvas.getByText('Unsaved changes')).toBeVisible(), { timeout: 10000 });
+    await settleMotion();
     await expect(args.onChange).toHaveBeenCalledWith(expect.objectContaining({ panels: expect.arrayContaining([expect.objectContaining({ id: 'p5' })]) }));
     await waitFor(() => expect(announcer(canvasElement)).toHaveTextContent('Isotope Mass 45 moved to position 2 of 5.'));
   },
