@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { Preview } from '@storybook/react-vite';
 import { useGlobals } from 'storybook/preview-api';
+import { configure } from 'storybook/test';
 import '@mantine/core/styles.css';
 import 'uplot/dist/uPlot.min.css';
 import { dvdashTheme } from '../src/ui/theme';
@@ -10,6 +11,9 @@ import '../src/ui/dvdash.css';
 import '../src/ui/screens/screens.css';
 import { StoryFrame } from './StoryFrame';
 import './preview.css';
+
+/** Queries give up after one second by default, which loaded machines miss while an animation settles. */
+configure({ asyncUtilTimeout: 5000 });
 
 const asPreference = (value: unknown): AppearancePreference => value === 'dark' || value === 'system' ? value : 'light';
 const asTextSize = (value: unknown): TextSize => isTextSize(value) ? value : 'default';
