@@ -551,6 +551,55 @@ test('with motion on a message that leaves animates out, then leaves the page an
   expect(await page.locator('#storybook-root').ariaSnapshot()).not.toContain('alert');
 });
 
+/**
+ * Clicks `target` and reports what `leaving` matches as the page changes: read when `done` first matches after a DOM
+ * change, before any timer can end a fade, and whether any enter or leave animation ran up to two frames later.
+ */
+async function clickAndLook(page: Page, target: Locator, done: string, leaving: string) {
+  const element = await target.elementHandle();
+  return page.evaluate(async ({ element, done, leaving }) => {
+    const root = document.querySelector('#storybook-root')!;
+    const look: { motion: boolean; seen?: { inPage: boolean; inert: boolean; animating: boolean } } = { motion: false };
+    const observer = new MutationObserver(() => {
+      look.motion ||= !!root.querySelector('[data-motion]');
+      if (look.seen || !root.querySelector(done)) return;
+      const node = root.querySelector(leaving);
+      const animating = document.getAnimations().some(animation => animation.playState === 'running' && animation.effect?.getComputedTiming().endTime !== Infinity);
+      look.seen = { inPage: !!node, inert: !!node?.closest('[inert]'), animating };
+    });
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-motion'] });
+    (element as HTMLElement).click();
+    for (let frame = 0; frame < 600 && !look.seen; frame++) await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame);
+    observer.disconnect();
+    return { ...look.seen, motion: look.motion };
+  }, { element, done, leaving });
+}
+const temperatureSwitch = (page: Page) => page.getByRole('switch', { name: 'Show Temperature', exact: true });
+const confirmStop = (page: Page) => page.getByRole('dialog').getByRole('button', { name: 'Stop acquisition', exact: true });
+
+test('under reduced motion a hidden signal card and the live view on stopping leave the experiment page at once', async ({ page }) => {
+  await story(page, 'screens-experiment--live');
+  await page.getByRole('tab', { name: 'Signals', exact: true }).click();
+  expect(await clickAndLook(page, temperatureSwitch(page), '.dvdash', '[data-stream=temperature]')).toEqual({ inPage: false, inert: false, animating: false, motion: false });
+  await page.getByRole('button', { name: 'Stop acquisition', exact: true }).click();
+  expect(await clickAndLook(page, confirmStop(page), '[aria-label="Recording playback"]', '.dv-xw-live')).toEqual({ inPage: false, inert: false, animating: false, motion: false });
+});
+
+test('with motion on a hidden signal card and the live view on stopping fade out inert, then leave the experiment page', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await story(page, 'screens-experiment--live');
+  await page.getByRole('tab', { name: 'Signals', exact: true }).click();
+  expect(await clickAndLook(page, temperatureSwitch(page), '.dvdash', '[data-stream=temperature]'), 'the card fades out in place, inert').toEqual({ inPage: true, inert: true, animating: true, motion: true });
+  await expect(page.locator('#storybook-root [data-stream=temperature]'), 'removed once the fade ends').toHaveCount(0);
+  await page.getByRole('button', { name: 'Stop acquisition', exact: true }).click();
+  expect(await clickAndLook(page, confirmStop(page), '[aria-label="Recording playback"]', '.dv-xw-live'), 'the live view fades out over the recording, inert').toEqual({ inPage: true, inert: true, animating: true, motion: true });
+  await expect(page.locator('#storybook-root .dv-xw-live'), 'removed once the fade ends').toHaveCount(0);
+  await expect(page.locator('#storybook-root [data-motion]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Review & export', exact: true })).toBeVisible();
+  expect(await page.locator('#storybook-root .dv-page-actions').ariaSnapshot()).not.toContain('Stop acquisition');
+});
+
 test('routine steps reorder without dragging and unsaveable steps block saving', async ({ page }) => {
   // The story's play test edits the routine on load, so only check what follows from these actions.
   await story(page, 'components-routineeditor--saved');
