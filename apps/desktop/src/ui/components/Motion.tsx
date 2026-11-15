@@ -118,19 +118,21 @@ export function MotionList({ children, resetKey = '' }: { children: ReactNode; r
   const nodes = Children.toArray(children) as MotionChild[];
   const keys = nodes.map(node => String(node.key));
   const signature = JSON.stringify([resetKey, keys]);
-  const [state, setState] = useState({ signature, resetKey, keys, entering: [] as string[], leaving: [] as { node: MotionChild; index: number }[] });
+  const [state, setState] = useState({ signature, resetKey, keys, entering: [] as string[], leaving: [] as { node: MotionChild; following: string[] }[] });
   const committed = useRef(nodes);
   useLayoutEffect(() => { committed.current = nodes; });
   if (signature !== state.signature) {
     const instant = reduced || resetKey !== state.resetKey;
     setState({ signature, resetKey, keys,
       entering: instant ? [] : keys.filter(key => !state.keys.includes(key)),
-      leaving: instant ? [] : [...state.leaving, ...committed.current.flatMap((node, index) => keys.includes(String(node.key)) ? [] : [{ node, index }])].filter(item => !keys.includes(String(item.node.key))),
+      leaving: instant ? [] : [...state.leaving, ...committed.current.flatMap((node, index) => keys.includes(String(node.key)) ? [] : [{ node, following: state.keys.slice(index + 1) }])].filter(item => !keys.includes(String(item.node.key))),
     });
   }
   const remove = (key: string) => setState(current => ({ ...current, leaving: current.leaving.filter(item => String(item.node.key) !== key) }));
   const items = nodes.map(node => ({ node, leaving: false }));
-  state.leaving.forEach(({ node, index }) => {
+  [...state.leaving].reverse().forEach(({ node, following }) => {
+    const next = following.find(key => items.some(item => String(item.node.key) === key));
+    const index = items.findIndex(item => String(item.node.key) === next);
     items.splice(index < 0 ? items.length : index, 0, { node, leaving: true });
   });
   return items.map(({ node, leaving }) => <MotionListItem key={node.key} node={node} leaving={leaving} entering={state.entering.includes(String(node.key))} reduced={reduced} onLeave={() => remove(String(node.key))} />);
