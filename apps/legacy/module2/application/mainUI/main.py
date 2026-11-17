@@ -27,6 +27,8 @@ from stopwatch import Stopwatch
 from datetime import datetime
 from math import floor
 from plotAllThread import PlotAllThread
+# Ambit acquisition has its own dialog and worker, separate from mass-spec data.
+from ambit_ui import AmbitDialog
 
 
 #####################################################################
@@ -71,6 +73,10 @@ class LabView(QtWidgets.QMainWindow):
     def stopBackgroundTasks(self):
         self.startBit = False
         self.pauseBit = True
+        # Stop any active Ambit run before waiting for the window's threads.
+        ambit = getattr(self, 'ambitDialog', None)
+        if ambit is not None:
+            ambit.shutdown()
         self.stopwatch.stop()
         if self.delayTimer is not None:
             self.delayTimer.stop()
@@ -493,6 +499,10 @@ class LabView(QtWidgets.QMainWindow):
         self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_file_action)
         self.file_menu.addAction(self.select_ezview_action)
+        # Open the independent Ambit acquisition window from the File menu.
+        self.ambit_action = QAction('Ambit acquisition', self)
+        self.ambit_action.triggered.connect(self.openAmbit)
+        self.file_menu.addAction(self.ambit_action)
 
         ######################## O2 Zero and CO2 cal #############################
 
@@ -819,6 +829,14 @@ class LabView(QtWidgets.QMainWindow):
         # Export Table connect method
         self.exportTableButton.clicked.connect(self.tableFileSave)
 
+    def openAmbit(self):
+        # Reuse the dialog so its selected protocol and output path persist.
+        if not hasattr(self, 'ambitDialog'):
+            self.ambitDialog = AmbitDialog(self)
+        self.ambitDialog.show()
+        self.ambitDialog.raise_()
+        self.ambitDialog.activateWindow()
+
     def select_ezview(self):
         spool_path, _ = QFileDialog.getOpenFileName(
             self, 'Select Spooling File', '', 'Text Files (*.txt);;All Files(*)')
@@ -837,6 +855,10 @@ class LabView(QtWidgets.QMainWindow):
             os.makedirs("../Acquisitions/" + directoryName)
 
         folderPath = os.path.abspath("../Acquisitions/" + directoryName)
+        # Avoid feeding Ambit CSVs into the mass-spectrometer folder watcher.
+        if getattr(self, 'ambitDialog', None) and self.ambitDialog.uses_output_folder(folderPath):
+            QtWidgets.QMessageBox.warning(self, "Ambit", "Choose a different mass-spectrometer acquisition folder.")
+            return
 
         thread = threading.Thread(target=read_from_ezview, daemon=True,args=(folderPath, spool_path))
         thread.start()
@@ -855,6 +877,10 @@ class LabView(QtWidgets.QMainWindow):
         if not folder_path:
             return
 
+        # Keep the two instruments' differently formatted CSV files separate.
+        if getattr(self, 'ambitDialog', None) and self.ambitDialog.uses_output_folder(folder_path):
+            QtWidgets.QMessageBox.warning(self, "Ambit", "Choose a different mass-spectrometer acquisition folder.")
+            return
         self.folder_path = os.path.abspath(folder_path)
         self.dataObj.setDirectory(self.folder_path)
         self.setWindowTitle(f"LabView - {self.folder_path}")
