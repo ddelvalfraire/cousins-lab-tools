@@ -18,10 +18,10 @@ import {
   IconChartLine,
   IconTable,
 } from '@tabler/icons-react';
+import { motion as animated, type Transition } from 'motion/react';
 import {
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -30,7 +30,7 @@ import uPlot from 'uplot';
 import { useAppearance } from '../appearance';
 import type { SignalSample } from '../fixtures';
 import { formatMeasurement } from '../measurement';
-import { motion } from '../motion';
+import { curves, motion } from '../motion';
 import { rootTextScale, textScales } from '../textSize';
 import { seriesColors } from '../theme';
 import { MotionList, Presence, Swap } from './Motion';
@@ -523,6 +523,13 @@ function SignalPlot({
   );
 }
 
+/** The chart waits for the table to fade out before it fades in, so the two never show at once. */
+const chartViewTransition = (active: boolean): Transition => ({
+  duration: (active ? motion.base : motion.fast) / 1000,
+  delay: active ? motion.fast / 1000 : 0,
+  ease: curves.easeOut,
+});
+
 /** Keep both surfaces measurable so returning to the chart never reconstructs its canvas. */
 function ChartView({
   active,
@@ -531,54 +538,23 @@ function ChartView({
   active: boolean;
   children: React.ReactNode;
 }) {
-  const ref = useRef<HTMLDivElement>(null),
-    mounted = useRef(false),
-    running = useRef<Animation | null>(null);
   const reduced = useReducedMotion(false, { getInitialValueInEffect: false });
-  useLayoutEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
-    const element = ref.current;
-    if (!element) return;
-    const opacity = running.current
-      ? Number(getComputedStyle(element).opacity)
-      : active
-        ? 0
-        : 1;
-    running.current?.cancel();
-    if (reduced) {
-      delete element.dataset.motion;
-      return;
-    }
-    element.dataset.motion = active ? 'enter' : 'leave';
-    const animation = element.animate(
-      [{ opacity }, { opacity: active ? 1 : 0 }],
-      {
-        duration: active ? motion.base : motion.fast,
-        delay: active ? motion.fast : 0,
-        easing: motion.easeOut,
-        fill: 'backwards',
-      },
-    );
-    running.current = animation;
-    animation.onfinish = () => {
-      running.current = null;
-      delete element.dataset.motion;
-    };
-  }, [active, reduced]);
-  useEffect(() => () => running.current?.cancel(), []);
+  const [moving, setMoving] = useState<'enter' | 'leave'>();
   return (
-    <div
-      ref={ref}
+    <animated.div
       className="dv-chart-view"
       data-active={active}
+      data-motion={moving}
       inert={!active}
       aria-hidden={!active || undefined}
+      initial={false}
+      animate={reduced ? undefined : { opacity: active ? 1 : 0 }}
+      transition={chartViewTransition(active)}
+      onAnimationStart={() => setMoving(active ? 'enter' : 'leave')}
+      onAnimationComplete={() => setMoving(undefined)}
     >
       {children}
-    </div>
+    </animated.div>
   );
 }
 
