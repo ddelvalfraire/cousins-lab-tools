@@ -325,6 +325,7 @@ export const PreviewDiscardAndApply: Story = {
       origins: { sample: '120', reference: '135' },
     });
     await waitFor(() => expect(canvas.queryByText('Preview')).toBeNull());
+    await waitFor(() => expect(method(canvasElement)).toHaveFocus());
     await expect(apply(canvasElement)).toBeDisabled();
     await settleMotion();
   },

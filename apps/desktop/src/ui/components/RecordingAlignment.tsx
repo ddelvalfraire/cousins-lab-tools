@@ -1,6 +1,6 @@
 import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import type uPlot from 'uplot';
 import { Chip } from './Chip';
 import {
@@ -16,6 +16,7 @@ import { type Severity, StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';
 import { chosen } from './select';
+import { useFocusOnSettle } from './useFocusOnSettle';
 import { useKeyedValue } from './useKeyedValue';
 import './RecordingAlignment.css';
 
@@ -300,16 +301,11 @@ function AlignmentPane({
   const { settings, problem, status, dirty } = editor,
     saving = status === 'saving',
     event = settings.method === 'event';
-  const previous = useRef(status);
-  useEffect(() => {
-    if (previous.current === 'saving' && status === 'failed')
-      root.current
-        ?.querySelector<HTMLElement>('[data-action="retry"]')
-        ?.focus();
-    if (previous.current === 'saving' && status === 'saved')
-      root.current?.querySelector<HTMLElement>('.dv-select-input')?.focus();
-    previous.current = status;
-  }, [status]);
+  useFocusOnSettle(status, root, {
+    pending: 'saving',
+    failed: 'failed',
+    succeeded: 'saved',
+  });
   const discard = () => {
     editor.discard();
     root.current?.querySelector<HTMLElement>('.dv-select-input')?.focus();
