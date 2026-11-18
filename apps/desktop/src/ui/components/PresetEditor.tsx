@@ -1,4 +1,5 @@
 import { Select } from '@mantine/core';
+import { useClickOutside, useWindowEvent } from '@mantine/hooks';
 import {
   IconActivity,
   IconAdjustmentsHorizontal,
@@ -204,7 +205,13 @@ export function PresetEditor({
   );
   const [tab, setTab] = useState<PresetEditorTab>(initialTab);
   const [menuOpen, setMenuOpen] = useState(false);
-  const addRowRef = useRef<HTMLDivElement>(null);
+  // A press outside the Add panel button and its menu closes the menu.
+  const addRowRef = useClickOutside<HTMLDivElement>(
+    () => setMenuOpen(false),
+    ['pointerdown'],
+    undefined,
+    menuOpen,
+  );
   const [hover, setHover] = useState(initialHover ?? null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [resize, setResize] = useState<ResizeState | null>(() => {
@@ -397,73 +404,59 @@ export function PresetEditor({
     );
   }
 
-  // Pointer listeners read the latest render through this ref.
-  const pointer = useRef({ move: (_: PointerEvent) => {}, up: () => {} });
-  pointer.current = {
-    move(event) {
-      if (drag && !drag.frozen) {
-        const o = overIndex(event.clientX, event.clientY),
-          valid = o !== null,
-          over = valid ? o : drag.over;
-        const changed = valid !== drag.valid || over !== drag.over;
-        setDrag({
-          ...drag,
-          x: event.clientX,
-          y: event.clientY,
-          valid,
-          over,
-          moved: drag.moved || changed,
-        });
-      } else if (resize && !resize.frozen) {
-        const panel = panels.find((p) => p.id === resize.id)!,
-          min = MIN_SPAN[panel.kind];
-        const raw = resize.start + (event.clientX - resize.startX) / resize.col,
-          span = snapSpan(raw, min),
-          limited = raw < min - 0.5;
-        if (span !== resize.span || limited !== resize.limited)
-          setResize({ ...resize, span, limited });
+  // Listening all the time is simpler than adding listeners per drag; both handlers ignore events outside a live
+  // drag or resize.
+  useWindowEvent('pointermove', (event) => {
+    if (drag && !drag.frozen) {
+      const o = overIndex(event.clientX, event.clientY),
+        valid = o !== null,
+        over = valid ? o : drag.over;
+      const changed = valid !== drag.valid || over !== drag.over;
+      setDrag({
+        ...drag,
+        x: event.clientX,
+        y: event.clientY,
+        valid,
+        over,
+        moved: drag.moved || changed,
+      });
+    } else if (resize && !resize.frozen) {
+      const panel = panels.find((p) => p.id === resize.id)!,
+        min = MIN_SPAN[panel.kind];
+      const raw = resize.start + (event.clientX - resize.startX) / resize.col,
+        span = snapSpan(raw, min),
+        limited = raw < min - 0.5;
+      if (span !== resize.span || limited !== resize.limited)
+        setResize({ ...resize, span, limited });
+    }
+  });
+  useWindowEvent('pointerup', () => {
+    if (drag && !drag.frozen) {
+      const { id, valid, over } = drag,
+        panel = panels.find((p) => p.id === id)!;
+      setDrag(null);
+      if (valid && drag.moved) {
+        const next = panels.filter((p) => p.id !== id);
+        next.splice(over, 0, panel);
+        if (!same(next, panels)) commit(next);
+        announce(
+          `${panelName(panel)} moved to position ${over + 1} of ${next.length}.`,
+        );
+      } else if (!valid) announce('Move cancelled.');
+      focus(grip(id));
+    } else if (resize && !resize.frozen) {
+      const { id, span } = resize,
+        panel = panels.find((p) => p.id === id)!;
+      setResize(null);
+      if (panel.span !== span) {
+        update(id, { span });
+        announce(
+          `${panelName(panel)} is now ${WIDTH_NAMES[span].toLowerCase()} width.`,
+        );
       }
-    },
-    up() {
-      if (drag && !drag.frozen) {
-        const { id, valid, over } = drag,
-          panel = panels.find((p) => p.id === id)!;
-        setDrag(null);
-        if (valid && drag.moved) {
-          const next = panels.filter((p) => p.id !== id);
-          next.splice(over, 0, panel);
-          if (!same(next, panels)) commit(next);
-          announce(
-            `${panelName(panel)} moved to position ${over + 1} of ${next.length}.`,
-          );
-        } else if (!valid) announce('Move cancelled.');
-        focus(grip(id));
-      } else if (resize && !resize.frozen) {
-        const { id, span } = resize,
-          panel = panels.find((p) => p.id === id)!;
-        setResize(null);
-        if (panel.span !== span) {
-          update(id, { span });
-          announce(
-            `${panelName(panel)} is now ${WIDTH_NAMES[span].toLowerCase()} width.`,
-          );
-        }
-        focus(`.pe-canvas [data-resize="${id}"]`);
-      }
-    },
-  };
-  const tracking = (!!drag && !drag.frozen) || (!!resize && !resize.frozen);
-  useEffect(() => {
-    if (!tracking) return;
-    const move = (event: PointerEvent) => pointer.current.move(event),
-      up = () => pointer.current.up();
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-    return () => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-    };
-  }, [tracking]);
+      focus(`.pe-canvas [data-resize="${id}"]`);
+    }
+  });
 
   function startDrag(event: ReactPointerEvent<HTMLButtonElement>, id: string) {
     if (event.button !== 0) return;
@@ -683,16 +676,6 @@ export function PresetEditor({
       closeMenu();
     } else if (event.key === 'Tab') setMenuOpen(false);
   }
-  // A press outside the Add panel button and its menu closes the menu.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const away = (event: PointerEvent) => {
-      if (!addRowRef.current?.contains(event.target as Node))
-        setMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', away);
-    return () => document.removeEventListener('pointerdown', away);
-  }, [menuOpen]);
   function save() {
     if (!canSave) return;
     const next = {
