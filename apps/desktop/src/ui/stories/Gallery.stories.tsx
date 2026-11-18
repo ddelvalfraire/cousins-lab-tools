@@ -7,8 +7,9 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
+import { useTimeout } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StoryFrame } from '../../../.storybook/StoryFrame';
 import { reviewCases } from '../catalog';
 
@@ -16,14 +17,14 @@ function AllComponentsGallery() {
   const [query, setQuery] = useState(''),
     [group, setGroup] = useState<string | null>('All');
   // Some stories move focus to a button when they open, which scrolls the page; start the gallery at the top instead.
-  useEffect(() => {
-    const reset = () => {
+  useTimeout(
+    () => {
       (document.activeElement as HTMLElement | null)?.blur?.();
       window.scrollTo(0, 0);
-    };
-    const timer = window.setTimeout(reset, 400);
-    return () => window.clearTimeout(timer);
-  }, []);
+    },
+    400,
+    { autoInvoke: true },
+  );
   const matches = reviewCases.filter(
     (item) =>
       (group === 'All' || group === item.group) &&
