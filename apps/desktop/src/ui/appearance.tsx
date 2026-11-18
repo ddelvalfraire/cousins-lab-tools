@@ -6,6 +6,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
+import { MotionConfig } from 'motion/react';
 import {
   createContext,
   type ReactNode,
@@ -263,7 +264,7 @@ export function AppearanceProvider({
   return (
     <AppearanceContext.Provider value={value}>
       <MantineProvider {...mantine} forceColorScheme={applied}>
-        {children}
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </MantineProvider>
     </AppearanceContext.Provider>
   );
