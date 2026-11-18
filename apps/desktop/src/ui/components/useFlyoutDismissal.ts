@@ -1,4 +1,5 @@
-import { type RefObject, useCallback, useEffectEvent } from 'react';
+import { useClickOutside, useMergedRef, useWindowEvent } from '@mantine/hooks';
+import { type RefObject, useCallback } from 'react';
 
 /**
  * A ref callback for a flyout opened from a trigger. While `open`, it moves focus to the flyout's first button and
@@ -14,29 +15,25 @@ export function useFlyoutDismissal({
   trigger: RefObject<HTMLElement | null>;
   onClose: () => void;
 }) {
-  const close = useEffectEvent(onClose);
-  return useCallback(
-    (flyout: HTMLElement | null) => {
-      if (!flyout || !open) return;
-      flyout.querySelector('button')?.focus();
-      const onKey = (event: KeyboardEvent) => {
-        if (event.key !== 'Escape') return;
-        event.preventDefault();
-        close();
-        trigger.current?.focus();
-      };
-      const onClick = (event: MouseEvent) => {
-        const target = event.target as Node;
-        if (!flyout.contains(target) && !trigger.current?.contains(target))
-          close();
-      };
-      document.addEventListener('keydown', onKey);
-      document.addEventListener('click', onClick);
-      return () => {
-        document.removeEventListener('keydown', onKey);
-        document.removeEventListener('click', onClick);
-      };
+  useWindowEvent('keydown', (event) => {
+    if (!open || event.key !== 'Escape') return;
+    event.preventDefault();
+    onClose();
+    trigger.current?.focus();
+  });
+  const outsideRef = useClickOutside<HTMLElement>(
+    (event) => {
+      if (!trigger.current?.contains(event.target as Node)) onClose();
     },
-    [open, trigger],
+    ['click'],
+    undefined,
+    open,
   );
+  const focusFirstButton = useCallback(
+    (flyout: HTMLElement | null) => {
+      if (flyout && open) flyout.querySelector('button')?.focus();
+    },
+    [open],
+  );
+  return useMergedRef(outsideRef, focusFirstButton);
 }

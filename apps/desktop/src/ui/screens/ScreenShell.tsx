@@ -1,11 +1,5 @@
-import { useDidUpdate, useMergedRef, useOs } from '@mantine/hooks';
-import {
-  type ReactNode,
-  useCallback,
-  useEffectEvent,
-  useRef,
-  useState,
-} from 'react';
+import { useDidUpdate, useOs, useWindowEvent } from '@mantine/hooks';
+import { type ReactNode, useRef, useState } from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 
 export { PageHeader as ScreenHeading } from '../components/PageHeader';
@@ -25,7 +19,6 @@ import {
   ShellSearch,
   type ShellSearchHandle,
 } from './ShellSearch';
-import { useDocumentKeydown } from './useDocumentKeydown';
 import './screens.css';
 import { useAppearance } from '../appearance';
 import { ScrollFrame } from '../components/ScrollFrame';
@@ -319,27 +312,26 @@ export function ScreenShell({
     event.preventDefault();
     handlers[match.command as CommandId]?.();
   };
-  const revealInitialTarget = useEffectEvent(() => {
-    if (initialTarget) revealOnPage(initialTarget);
-  });
-  /** Reveals the place the shell opened at, and stops any reveal still waiting or highlighting when the shell goes. */
-  const revealWhileMounted = useCallback((node: HTMLDivElement | null) => {
+  useWindowEvent('keydown', onKey);
+  /**
+   * Reveals the place the shell opened at, and stops any reveal still waiting or highlighting when the shell goes.
+   * Created once: it runs at mount, when the first render's target and closures are the current ones.
+   */
+  const [revealWhileMounted] = useState(() => (node: HTMLDivElement | null) => {
     if (!node) return;
-    revealInitialTarget();
+    if (initialTarget) revealOnPage(initialTarget);
     return () => {
       cancelAnimationFrame(reveal.current.frame);
       reveal.current.stop?.();
     };
-  }, []);
-  const listenForKeys = useDocumentKeydown(onKey);
-  const shellRef = useMergedRef(listenForKeys, revealWhileMounted);
+  });
 
   const active = parentOf(page),
     detail = active !== page;
   const openExperiment = (id: string) => navigate('experiment', id);
   return (
     <div
-      ref={shellRef}
+      ref={revealWhileMounted}
       className="dv-shell"
       data-navigation-collapsed={collapsed}
     >
