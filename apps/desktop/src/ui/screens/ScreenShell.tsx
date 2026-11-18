@@ -1,5 +1,11 @@
-import { useOs } from '@mantine/hooks';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useDidUpdate, useMergedRef, useOs } from '@mantine/hooks';
+import {
+  type ReactNode,
+  useCallback,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 
 export { PageHeader as ScreenHeading } from '../components/PageHeader';
@@ -19,6 +25,7 @@ import {
   ShellSearch,
   type ShellSearchHandle,
 } from './ShellSearch';
+import { useDocumentKeydown } from './useDocumentKeydown';
 import './screens.css';
 import { useAppearance } from '../appearance';
 import { ScrollFrame } from '../components/ScrollFrame';
@@ -179,14 +186,9 @@ export function ScreenShell({
   const search = useRef<ShellSearchHandle>(null),
     main = useRef<HTMLDivElement>(null),
     sequenceStart = useRef<SequenceStart | null>(null);
-  const previousPage = useRef(page);
-  useEffect(() => {
-    if (
-      previousPage.current !== page &&
-      document.activeElement === document.body
-    )
-      main.current?.focus();
-    previousPage.current = page;
+  // The page is the host's route, which can change without any handler here (the host's own navigation).
+  useDidUpdate(() => {
+    if (document.activeElement === document.body) main.current?.focus();
   }, [page]);
   const toggleAppearance = (from?: Element) =>
     onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
@@ -317,28 +319,30 @@ export function ScreenShell({
     event.preventDefault();
     handlers[match.command as CommandId]?.();
   };
-  useEffect(() => {
+  const revealInitialTarget = useEffectEvent(() => {
     if (initialTarget) revealOnPage(initialTarget);
+  });
+  /** Reveals the place the shell opened at, and stops any reveal still waiting or highlighting when the shell goes. */
+  const revealWhileMounted = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    revealInitialTarget();
     return () => {
       cancelAnimationFrame(reveal.current.frame);
       reveal.current.stop?.();
     };
   }, []);
-  const keyHandler = useRef(onKey);
-  useEffect(() => {
-    keyHandler.current = onKey;
-  });
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => keyHandler.current(event);
-    document.addEventListener('keydown', listener);
-    return () => document.removeEventListener('keydown', listener);
-  }, []);
+  const listenForKeys = useDocumentKeydown(onKey);
+  const shellRef = useMergedRef(listenForKeys, revealWhileMounted);
 
   const active = parentOf(page),
     detail = active !== page;
   const openExperiment = (id: string) => navigate('experiment', id);
   return (
-    <div className="dv-shell" data-navigation-collapsed={collapsed}>
+    <div
+      ref={shellRef}
+      className="dv-shell"
+      data-navigation-collapsed={collapsed}
+    >
       <header className="dv-shell-topbar">
         <a href="#dvdash-screen-main" className="dv-skip-link">
           Skip to content
