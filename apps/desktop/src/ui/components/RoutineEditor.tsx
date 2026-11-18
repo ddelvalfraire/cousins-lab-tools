@@ -26,7 +26,7 @@ import type {
   MouseEvent,
   PointerEvent as ReactPointerEvent,
 } from 'react';
-import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Banner } from './Banner';
 import { Chip, StatusWord } from './Chip';
@@ -34,6 +34,10 @@ import { Presence } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { chosen, selectAria } from './select';
+import {
+  type RoutineDragState,
+  useFrozenRoutineDrag,
+} from './useFrozenRoutineDrag';
 import './RoutineEditor.css';
 
 export type RoutineStepKind = 'capture' | 'wait' | 'annotate';
@@ -159,19 +163,6 @@ const nextId = (prefix: string, ids: string[]) =>
   `${prefix}${Math.max(0, ...ids.map((id) => Number(id.slice(prefix.length)) || 0)) + 1}`;
 const steps = (n: number) => `${n} step${n === 1 ? '' : 's'}`;
 
-interface DragState {
-  id: string;
-  origin: number;
-  over: number;
-  valid: boolean;
-  x: number;
-  y: number;
-  ox: number;
-  oy: number;
-  w: number;
-  h: number;
-  moved: boolean;
-}
 interface KeyboardMove {
   id: string;
   start: RoutineDefinition;
@@ -234,12 +225,7 @@ function RoutineEditorDraft({
   const [hoverGrip, setHoverGrip] = useState(
     interaction?.type === 'grip-hover' ? interaction.stepId : null,
   );
-  const [drag, setDrag] = useState<DragState | null>(null);
-  const [freeze, setFreeze] = useState(
-    interaction?.type === 'dragging' || interaction?.type === 'outside'
-      ? interaction
-      : null,
-  );
+  const [drag, setDrag] = useState<RoutineDragState | null>(null);
   const [kb, setKb] = useState<KeyboardMove | null>(
     interaction?.type === 'keyboard' && keyboardStart
       ? { id: interaction.stepId, start: keyboardStart }
@@ -247,8 +233,7 @@ function RoutineEditorDraft({
   );
   const [raw, setRaw] = useState<Record<string, string>>({});
   const [announcement, setAnnouncement] = useState('');
-  const rootRef = useRef<HTMLElement>(null),
-    canvasRef = useRef<HTMLFieldSetElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
   const initialFocus =
     interaction?.type === 'keyboard'
       ? `[data-grip="${interaction.stepId}"]`
@@ -267,6 +252,16 @@ function RoutineEditorDraft({
   dragRef.current = drag;
   kbRef.current = kb;
   draftRef.current = draft;
+  const { frozen, canvasRef, attachCanvas, attachSlot } = useFrozenRoutineDrag({
+    initial:
+      interaction?.type === 'dragging' || interaction?.type === 'outside'
+        ? interaction
+        : null,
+    draft: draftRef,
+    drag: dragRef,
+    root: rootRef,
+    setDrag,
+  });
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const bad = draft.steps.flatMap((s, i) => {
@@ -294,62 +289,6 @@ function RoutineEditorDraft({
     setSelected(stepId);
     setTab('step');
   };
-
-  // Frozen drag states: measure the step, render the slot, then place the ghost beside it.
-  useLayoutEffect(() => {
-    const root = rootRef.current,
-      canvas = canvasRef.current;
-    if (!freeze || !root || !canvas) return;
-    if (!drag) {
-      const rect = canvas
-        .querySelector(`[data-step="${freeze.stepId}"]`)
-        ?.getBoundingClientRect();
-      if (!rect) {
-        setFreeze(null);
-        return;
-      }
-      const origin = draft.steps.findIndex((s) => s.id === freeze.stepId),
-        rest = draft.steps.filter((s) => s.id !== freeze.stepId);
-      const valid = freeze.type === 'dragging',
-        over = valid
-          ? rest.findIndex((s) => s.id === freeze.afterStepId) + 1
-          : origin;
-      setDrag({
-        id: freeze.stepId,
-        origin,
-        over,
-        valid,
-        x: 0,
-        y: 0,
-        ox: 0,
-        oy: 0,
-        w: rect.width,
-        h: rect.height,
-        moved: true,
-      });
-      return;
-    }
-    const slot = canvas
-        .querySelector('[data-placeholder]')
-        ?.getBoundingClientRect(),
-      box = canvas.getBoundingClientRect(),
-      base = root.getBoundingClientRect();
-    if (slot && drag.valid)
-      setDrag({
-        ...drag,
-        x: slot.left + slot.width * 0.38 - base.left,
-        y: slot.bottom + 18 - base.top,
-        ox: 12,
-        oy: 10,
-      });
-    else
-      setDrag({
-        ...drag,
-        x: box.right - drag.w * 0.4 - base.left,
-        y: box.top - 70 - base.top,
-      });
-    setFreeze(null);
-  }, [freeze, drag, draft]);
 
   const overIndex = (x: number, y: number) => {
     const box = canvasRef.current?.getBoundingClientRect();
@@ -789,6 +728,7 @@ function RoutineEditorDraft({
     const slot = (
       <div
         key="slot"
+        ref={attachSlot}
         className="dv-re-slot"
         data-placeholder
         data-return={!drag.valid || undefined}
@@ -816,7 +756,7 @@ function RoutineEditorDraft({
         width: drag.w,
         left: drag.x - drag.ox,
         top: drag.y - drag.oy,
-        visibility: freeze ? 'hidden' : undefined,
+        visibility: frozen ? 'hidden' : undefined,
       },
     });
   }
@@ -1250,7 +1190,7 @@ function RoutineEditorDraft({
           </div>
         )}
         <fieldset
-          ref={canvasRef}
+          ref={attachCanvas}
           className="dv-re-canvas"
           aria-label="Routine steps"
           data-mode={
