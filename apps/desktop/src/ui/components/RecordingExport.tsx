@@ -1,5 +1,5 @@
 import { Select } from '@mantine/core';
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { Chip } from './Chip';
 import {
   formatDuration,
@@ -12,6 +12,7 @@ import {
 import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { chosen } from './select';
+import { useResetOnClose } from './useResetOnClose';
 import './RecordingExport.css';
 
 export interface ExportSignal {
@@ -150,12 +151,10 @@ export function RecordingExportDialog({
   const [touched, setTouched] = useState(false),
     [attempted, setAttempted] = useState(false),
     formatLabel = useId();
-  useEffect(() => {
-    if (!opened) {
-      setTouched(false);
-      setAttempted(false);
-    }
-  }, [opened]);
+  useResetOnClose(opened, () => {
+    setTouched(false);
+    setAttempted(false);
+  });
   const set = (patch: Partial<RecordingExportSettings>) =>
     onChange({ ...value, ...patch });
   const rangeProblem = exportRangeProblem(value, recording.duration);

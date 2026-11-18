@@ -1,5 +1,5 @@
 import { Select } from '@mantine/core';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import {
   formatDuration,
@@ -16,6 +16,7 @@ import {
 import { MotionList, Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { chosen } from './select';
+import { useResetOnClose } from './useResetOnClose';
 import './RecordingImport.css';
 
 export interface RecordingChannel {
@@ -429,13 +430,11 @@ export function RecordingImport({
   const [names, setNames] = useState<Record<string, string>>({});
   const [presetId, setPresetId] = useState(presets[0]?.id ?? '');
   const stopped = useRef(false);
-  useEffect(() => {
-    if (!opened) {
-      setPhase('select');
-      setFiles([]);
-      setNames({});
-    }
-  }, [opened]);
+  useResetOnClose(opened, () => {
+    setPhase('select');
+    setFiles([]);
+    setNames({});
+  });
 
   const choose = async (chosen: File[]) => {
     const read = await Promise.all(
