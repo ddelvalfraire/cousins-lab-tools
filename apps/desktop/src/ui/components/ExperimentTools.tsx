@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import type uPlot from 'uplot';
 import { formatMeasurement } from '../measurement';
 import { seriesColors } from '../theme';
+import { keyedBy } from './keyedBy';
 import { Panel } from './Primitives';
 import { type PlotSeries, ScientificPlot } from './ScientificPlot';
 
@@ -45,6 +46,7 @@ export function DataPlotPanel({
 }) {
   const [view, setView] = useState('chart');
   const colors = seriesColors[useComputedColorScheme('light')];
+  const samples = view === 'table' ? keyedBy(Array.from(data[0]), String) : [];
   return (
     <Panel
       title={title}
@@ -109,8 +111,8 @@ export function DataPlotPanel({
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {Array.from(data[0]).map((x, i) => (
-                  <Table.Tr key={i}>
+                {samples.map(({ key, item: x, index: i }) => (
+                  <Table.Tr key={key}>
                     <Table.Td>{formatMeasurement(x)}</Table.Td>
                     {series.map((s, j) => (
                       <Table.Td key={s.label}>

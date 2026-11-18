@@ -19,6 +19,7 @@ import {
   useCatalogQuery,
   useCatalogSort,
 } from './CatalogTable';
+import { keyedBy } from './keyedBy';
 import { MotionList, Presence, Swap } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import {
@@ -118,16 +119,21 @@ const importGlyph = (
   </svg>
 );
 
+/** Panels never overlap, so a panel's corner names it. */
+const tilePlace = (tile: { x: number; y: number }) => `${tile.x},${tile.y}`;
+const panelName = (panel: CatalogPresetPanel) => panel.name;
+
 /** Panel geometry on a 100 × 70 canvas, never a screenshot (.preset-thumb). */
 export function PresetThumb({
   panels,
 }: {
   panels: readonly CatalogPresetPanel[];
 }) {
+  const tiles = keyedBy(panels, tilePlace);
   return (
     <span className="dv-cat-thumb" aria-hidden="true">
       <svg viewBox="0 0 100 70" preserveAspectRatio="none" focusable="false">
-        {panels.map(({ kind, x, y, w, h }, i) => {
+        {tiles.map(({ key, item: { kind, x, y, w, h } }) => {
           const height = h * 0.7;
           let inner: ReactNode;
           if (kind === 'line' || kind === 'multi')
@@ -212,7 +218,7 @@ export function PresetThumb({
               />
             );
           return (
-            <g key={i} transform={`translate(${x} ${y * 0.7})`}>
+            <g key={key} transform={`translate(${x} ${y * 0.7})`}>
               <rect
                 className="dv-cat-tile"
                 x={0.5}
@@ -467,8 +473,8 @@ export function PresetCatalog({
   else if (tab === 'panels')
     pane = (
       <SidebarSection title={`${selected.panels.length} panels`}>
-        {selected.panels.map((item, i) => (
-          <div key={i} className="dv-cat-side-signal">
+        {keyedBy(selected.panels, panelName).map(({ key, item }) => (
+          <div key={key} className="dv-cat-side-signal">
             <SidebarIcon
               name={
                 item.kind === 'line' ||

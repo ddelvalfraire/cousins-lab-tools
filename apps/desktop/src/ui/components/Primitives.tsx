@@ -15,6 +15,7 @@ import { isValidElement, type ReactNode } from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { formatMeasurement } from '../measurement';
 import { Banner } from './Banner';
+import { keyedBy } from './keyedBy';
 export type Severity = 'info' | 'warning' | 'error' | 'success';
 /** The approved banner, keeping the older call signature. Any fix renders inline after the text. */
 export function StatusBanner({
@@ -71,8 +72,8 @@ export function StatusMessages({
         items[0].text
       ) : (
         <ul className="dv-message-list">
-          {items.map((item, index) => (
-            <li key={index}>
+          {keyedBy(items, (item) => item.text).map(({ key, item }) => (
+            <li key={key}>
               {mixed && (
                 <strong className="dv-message-tone">{item.severity}: </strong>
               )}

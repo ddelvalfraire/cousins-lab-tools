@@ -9,6 +9,7 @@ import {
   ImportIcon,
   ImportProgressNote,
 } from './ImportDialog';
+import { keyedBy } from './keyedBy';
 import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import './PresetImport.css';
@@ -29,6 +30,9 @@ export interface PresetTile {
   h: number;
 }
 
+/** Panels never overlap, so a panel's corner names it. */
+const tilePlace = (tile: { x: number; y: number }) => `${tile.x},${tile.y}`;
+
 /** Miniature of a preset layout (.preset-thumb), from design/dvdash-field-review/preset-import-review.html. */
 export function PresetThumbnail({
   layout,
@@ -37,13 +41,14 @@ export function PresetThumbnail({
   layout: readonly PresetTile[];
   className?: string;
 }) {
+  const tiles = keyedBy(layout, tilePlace);
   return (
     <span
       className={className ? `dv-preset-thumb ${className}` : 'dv-preset-thumb'}
       aria-hidden="true"
     >
       <svg viewBox="0 0 100 70" preserveAspectRatio="none">
-        {layout.map(({ kind, x, y, w, h }, i) => {
+        {tiles.map(({ key, item: { kind, x, y, w, h } }) => {
           const height = h * 0.7;
           const inner =
             kind === 'line' || kind === 'multi' ? (
@@ -119,7 +124,7 @@ export function PresetThumbnail({
               />
             );
           return (
-            <g key={i} transform={`translate(${x} ${y * 0.7})`}>
+            <g key={key} transform={`translate(${x} ${y * 0.7})`}>
               <rect
                 className="dv-preset-thumb-tile"
                 x="0.5"

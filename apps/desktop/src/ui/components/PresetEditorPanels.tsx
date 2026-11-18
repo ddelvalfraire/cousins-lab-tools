@@ -17,6 +17,7 @@ import type {
   Ref,
 } from 'react';
 import { Chip } from './Chip';
+import { keyedBy } from './keyedBy';
 import './AcquisitionControls.css';
 
 /** `inputs` is a settings panel (labelled quantity fields); `controls` holds the recording controls. */
@@ -342,11 +343,11 @@ export function PanelPreview({
             aria-hidden="true"
           >
             <GridLines />
-            {xs.map((x, i) => (
+            {keyedBy(xs, (x) => `${x}`).map(({ key, item: x, index }) => (
               <path
-                key={i}
+                key={key}
                 className="pe-point"
-                d={`M${toX(x).toFixed(1)} ${toY(ys[i]).toFixed(1)}h0`}
+                d={`M${toX(x).toFixed(1)} ${toY(ys[index]).toFixed(1)}h0`}
                 stroke={color}
                 strokeWidth={5}
                 strokeLinecap="round"

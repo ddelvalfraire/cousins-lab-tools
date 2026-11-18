@@ -5,6 +5,7 @@ import { useAppearance } from '../appearance';
 import { formatMeasurement } from '../measurement';
 import { rootTextScale } from '../textSize';
 import { seriesColors } from '../theme';
+import { keyedBy } from './keyedBy';
 import { ScrollFrame } from './ScrollFrame';
 
 export type LineDash = 'solid' | 'dashed' | 'dotted';
@@ -441,6 +442,8 @@ export function ScientificPlot({
     u.redraw(false);
   }, [data, range, selection, marker, clock]);
   const description = `${series.map((s) => s.label).join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`;
+  // Tick labels come in fixed slots, which their anchor and order name.
+  const ticks = keyedBy(overlay?.labels ?? [], (label) => label.anchor);
   if (!frame)
     return (
       <ScrollFrame
@@ -481,8 +484,13 @@ export function ScientificPlot({
               aria-hidden="true"
               focusable="false"
             >
-              {overlay.labels.map((label, i) => (
-                <text key={i} x={label.x} y={label.y} textAnchor={label.anchor}>
+              {ticks.map(({ key, item: label }) => (
+                <text
+                  key={key}
+                  x={label.x}
+                  y={label.y}
+                  textAnchor={label.anchor}
+                >
                   {label.text}
                 </text>
               ))}

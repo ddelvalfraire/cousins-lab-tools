@@ -154,6 +154,9 @@ function moved(panels: readonly PresetPanel[], id: string, to: number) {
 }
 
 /** Drag-and-drop layout builder for a preset: move, resize and configure panels, then save a new revision. */
+/** One resize guide per grid column. */
+const GUIDE_COLUMNS = Array.from({ length: 12 }, (_, i) => i + 1);
+
 export function PresetEditor({
   preset,
   draft,
@@ -780,8 +783,8 @@ export function PresetEditor({
       );
     const guides = resize && (
       <div className="pe-guides" aria-hidden="true">
-        {Array.from({ length: 12 }, (_, i) => (
-          <span key={i} />
+        {GUIDE_COLUMNS.map((column) => (
+          <span key={column} />
         ))}
       </div>
     );

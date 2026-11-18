@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { keyedBy } from './keyedBy';
 import './Approved.css';
 import './RightSidebar.css';
 import { Swap } from './Motion';
@@ -406,12 +407,12 @@ export function SidebarSection({
 export function SidebarFacts({
   items,
 }: {
-  items: readonly (readonly [ReactNode, ReactNode])[];
+  items: readonly (readonly [string, ReactNode])[];
 }) {
   return (
     <dl className="dv-sidebar-facts">
-      {items.map(([term, value], i) => (
-        <div key={i}>
+      {keyedBy(items, ([term]) => term).map(({ key, item: [term, value] }) => (
+        <div key={key}>
           <dt>{term}</dt>
           <dd>{value}</dd>
         </div>

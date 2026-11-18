@@ -6,6 +6,7 @@ import {
   InstrumentCatalog,
   type InstrumentCatalogProps,
 } from '../components/InstrumentCatalog';
+import { keyedBy } from '../components/keyedBy';
 import { HeaderButton, PageHeader } from '../components/PageHeader';
 import {
   PresetCatalog,
@@ -128,8 +129,8 @@ function PresetPanelsPane({ preset }: { preset: PresetSpec }) {
   const panels = presetPanels(preset);
   return (
     <SidebarSection title={`${panels.length} panels`}>
-      {panels.map((item, i) => (
-        <div key={i} className="dv-cat-side-signal">
+      {keyedBy(panels, (panel) => panel.name).map(({ key, item }) => (
+        <div key={key} className="dv-cat-side-signal">
           <SidebarIcon name={item.signal ? 'signals' : 'panels'} />
           <div>
             <strong>{item.name}</strong>

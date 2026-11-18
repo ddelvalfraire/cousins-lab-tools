@@ -565,7 +565,7 @@ export interface DetailsPaneProps {
   onSampleNameChange: (value: string) => void;
   presetName: string;
   presetRevision: number;
-  facts: readonly (readonly [ReactNode, ReactNode])[];
+  facts: readonly (readonly [string, ReactNode])[];
   /** Further sections, e.g. the calibration checklist or saved-result inspector. */
   children?: ReactNode;
 }
@@ -692,7 +692,7 @@ export function DisplayPane({
   signal: string;
   settings: DisplaySettings;
   onChange: (settings: DisplaySettings) => void;
-  axes: readonly (readonly [ReactNode, ReactNode])[];
+  axes: readonly (readonly [string, ReactNode])[];
   /** Further display sections. */
   children?: ReactNode;
 }) {

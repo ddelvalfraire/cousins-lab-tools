@@ -1,5 +1,6 @@
 import { Kbd } from '@mantine/core';
 import { Fragment, type ReactNode, useEffect, useRef } from 'react';
+import { keyedBy } from './keyedBy';
 import './Approved.css';
 import './CommandCenter.css';
 import { MotionList } from './Motion';
@@ -154,9 +155,11 @@ export function KeyCaps({
 }) {
   return (
     <span className="dv-keycaps">
-      {keys.map((key, i) => (
-        <Fragment key={i}>
-          {sequence && i > 0 && <span className="dv-keycaps-then">then</span>}
+      {keyedBy(keys, (key) => key).map(({ key: id, item: key, index }) => (
+        <Fragment key={id}>
+          {sequence && index > 0 && (
+            <span className="dv-keycaps-then">then</span>
+          )}
           <Kbd size={size}>{key === 'Mod' ? (mac ? '⌘' : 'Ctrl') : key}</Kbd>
         </Fragment>
       ))}

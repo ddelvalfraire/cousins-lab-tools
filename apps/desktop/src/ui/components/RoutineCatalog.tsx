@@ -22,6 +22,7 @@ import {
   useCatalogPage,
   useCatalogQuery,
 } from './CatalogTable';
+import { keyedBy } from './keyedBy';
 import { MotionList, Presence, Swap } from './Motion';
 import { type PageBreadcrumb, PageHeader } from './PageHeader';
 import {
@@ -40,6 +41,9 @@ export interface CatalogRoutineStep {
   /** Seconds. Annotations take no time. */
   duration?: number;
 }
+const stepKey = (step: CatalogRoutineStep) =>
+  `${step.kind} ${step.name ?? ''} ${step.duration ?? ''}`;
+
 export interface CatalogRoutine {
   id: string;
   name: string;
@@ -129,6 +133,7 @@ function StepStrip({
   onStep: (index: number) => void;
 }) {
   const strip = useRef<HTMLDivElement>(null);
+  const steps = keyedBy(routine.steps, stepKey);
   const [atEnd, setAtEnd] = useState(true);
   const measure = () => {
     const el = strip.current;
@@ -165,8 +170,8 @@ function StepStrip({
         tabIndex={0}
         onScroll={measure}
       >
-        {routine.steps.map((step, i) => (
-          <span key={i} style={{ display: 'contents' }}>
+        {steps.map(({ key, item: step, index: i }) => (
+          <span key={key} style={{ display: 'contents' }}>
             {i > 0 && (
               <span className="dv-cat-step-connector" aria-hidden="true" />
             )}
@@ -407,9 +412,9 @@ export function RoutineCatalog({
       </SidebarSection>
     ) : (
       <SidebarSection title={`${selected.steps.length} ordered steps`}>
-        {selected.steps.map((s, i) => (
+        {keyedBy(selected.steps, stepKey).map(({ key, item: s, index: i }) => (
           <button
-            key={i}
+            key={key}
             type="button"
             className="dv-cat-side-step"
             onClick={() => {

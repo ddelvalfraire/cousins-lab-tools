@@ -1,6 +1,7 @@
 import { Anchor, Breadcrumbs, Text } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { keyedBy } from './keyedBy';
 import './Approved.css';
 import './PageHeader.css';
 
@@ -67,6 +68,7 @@ export function PageHeader({
   const trail =
     breadcrumbs ??
     (parent ? [{ label: parent, onClick: onBack }, { label: title }] : []);
+  const crumbs = keyedBy(trail, (crumb) => crumb.label);
   const detail = variant === 'detail' || !!parent || trail.length > 2;
   const hasMeta = meta || status || metadata || description;
   // A list page with buttons and nothing else for the action bar puts the buttons beside its title instead.
@@ -86,10 +88,10 @@ export function PageHeader({
                 separatorMargin={7}
                 className="dv-page-crumbs"
               >
-                {trail.map((crumb, i) =>
+                {crumbs.map(({ key, item: crumb, index: i }) =>
                   i < trail.length - 1 && crumb.onClick ? (
                     <Anchor
-                      key={`${i}-${crumb.label}`}
+                      key={key}
                       component="button"
                       type="button"
                       underline="never"
@@ -100,7 +102,7 @@ export function PageHeader({
                     </Anchor>
                   ) : (
                     <Text
-                      key={`${i}-${crumb.label}`}
+                      key={key}
                       span
                       title={crumb.label}
                       aria-current={i === trail.length - 1 ? 'page' : undefined}
