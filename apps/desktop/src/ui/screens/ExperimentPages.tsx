@@ -1,6 +1,7 @@
 import { Tabs } from '@mantine/core';
+import { useInterval, useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useState } from 'react';
 import { useAcquisitionControls } from '../components/AcquisitionControls';
 import { CalibrationChecklist } from '../components/CalibrationChecklist';
 import { Chip, StatusWord } from '../components/Chip';
@@ -93,6 +94,7 @@ import {
   type PresetSpec,
   routines,
 } from './screen-fixtures';
+import { usePageTimeouts } from './usePageTimeouts';
 
 /** Starting state of the experiment page, for frozen review stories. Every field is optional. */
 export interface ExperimentViewOptions {
@@ -188,38 +190,35 @@ export function CapturePage({
   );
   const [playing, setPlaying] = useState(view.playing ?? false);
   const [speed, setSpeed] = useState(1);
-  const timers = useRef<number[]>([]);
-  useEffect(
-    () => () => {
-      for (const id of timers.current) window.clearTimeout(id);
-    },
-    [],
-  );
+  const { later: schedule, clearOnUnmount } = usePageTimeouts();
   const later = (fn: () => void, ms: number) => {
-    if (!view.frozen) timers.current.push(window.setTimeout(fn, ms));
+    if (!view.frozen) schedule(fn, ms);
   };
 
   // Playback advances in real time; it stops at the end.
-  useEffect(() => {
-    if (!playing || view.frozen || live) return;
-    const id = window.setInterval(
-      () =>
-        setPosition((p) => {
-          const next = Math.min(duration, p + 0.1 * speed);
-          if (next >= duration) setPlaying(false);
-          return next;
-        }),
-      100,
-    );
-    return () => window.clearInterval(id);
-  }, [playing, speed, duration, live, view.frozen]);
+  const canPlay = !view.frozen && !live;
+  const playback = useInterval(
+    () =>
+      setPosition((p) => {
+        const next = Math.min(duration, p + 0.1 * speed);
+        if (next >= duration) changePlaying(false);
+        return next;
+      }),
+    100,
+    { autoInvoke: playing && canPlay },
+  );
+  const changePlaying = (next: boolean) => {
+    setPlaying(next);
+    if (next && canPlay) playback.start();
+    else playback.stop();
+  };
 
   const stop = () => {
     setAcquisition('stopping');
     later(() => {
       setAcquisition('recorded');
       setPosition(duration);
-      setPlaying(false);
+      changePlaying(false);
       setProblems([]);
       setSelected(null);
       onStop();
@@ -381,10 +380,10 @@ export function CapturePage({
     if (target.closest('input, select, textarea, [role="tablist"]')) return;
     if (event.key === ' ' && !target.closest('button')) {
       event.preventDefault();
-      setPlaying((p) => !p);
+      changePlaying(!playing);
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
-      setPlaying(false);
+      changePlaying(false);
       setPosition((p) =>
         Math.min(
           duration,
@@ -393,13 +392,17 @@ export function CapturePage({
       );
     } else if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault();
-      setPlaying(false);
+      changePlaying(false);
       setPosition(event.key === 'Home' ? 0 : duration);
     }
   };
 
   return (
-    <div className="dv-xw-page" data-problem-severity={severity}>
+    <div
+      className="dv-xw-page"
+      data-problem-severity={severity}
+      ref={clearOnUnmount}
+    >
       <PageHeader
         title={experiment.name}
         titleId="dv-experiment-title"
@@ -502,7 +505,7 @@ export function CapturePage({
                 sampleIndex={sampleIndexAt(rows, position)}
                 sampleCount={rows.length}
                 onSeek={setPosition}
-                onPlayingChange={setPlaying}
+                onPlayingChange={changePlaying}
                 onSpeedChange={setSpeed}
               />
               <Flagged panel="charts" problems={problems} selectedId={selected}>
@@ -638,8 +641,6 @@ export function ReviewPage({
       exportDefaults(experiment),
     ),
     [exported, setExported] = useState<ExportResult>();
-  const exportTimer = useRef<number>(undefined);
-  useEffect(() => () => window.clearTimeout(exportTimer.current), []);
   const exportRows = exportRowCount(exportValue);
   const saveExport = () => {
     const name = `${exportValue.fileName.trim()}.${exportValue.format}`;
@@ -672,24 +673,26 @@ export function ReviewPage({
     }
     return name;
   };
+  const finishExport = () => {
+    const fileName = saveExport();
+    setExported({
+      fileName,
+      rows: exportRows,
+      signals: exportValue.signals.length,
+      duration:
+        exportValue.range === 'full'
+          ? 300
+          : Number(exportValue.end) - Number(exportValue.start),
+    });
+    setPhase('done');
+  };
+  const exportTimeout = useTimeout(finishExport, 600);
   const startExport = () => {
     setPhase('preparing');
-    exportTimer.current = window.setTimeout(() => {
-      const fileName = saveExport();
-      setExported({
-        fileName,
-        rows: exportRows,
-        signals: exportValue.signals.length,
-        duration:
-          exportValue.range === 'full'
-            ? 300
-            : Number(exportValue.end) - Number(exportValue.start),
-      });
-      setPhase('done');
-    }, 600);
+    exportTimeout.start();
   };
   const closeExport = () => {
-    window.clearTimeout(exportTimer.current);
+    exportTimeout.clear();
     setExportOpen(false);
     setPhase('ready');
   };
@@ -922,7 +925,7 @@ export function ReviewPage({
         result={exported}
         onExport={startExport}
         onCancelExport={() => {
-          window.clearTimeout(exportTimer.current);
+          exportTimeout.clear();
           setPhase('ready');
         }}
         onDownloadAgain={saveExport}
