@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from './chooseOption';
 import type {
@@ -8,6 +7,7 @@ import type {
 } from './ExperimentsList';
 import { ExperimentsList } from './ExperimentsList';
 import { settleMotion } from './settleMotion';
+import { useResettingCopy } from './useResettingCopy';
 
 const experiments: ExperimentSummary[] = [
   {
@@ -69,8 +69,7 @@ const many: ExperimentSummary[] = Array.from({ length: 14 }, (_, i) => ({
 
 /** Query is controlled by the page's header search; this harness clears it the way the page would. */
 function ControlledQuery(args: ExperimentsListProps) {
-  const [query, setQuery] = useState(args.query);
-  useEffect(() => setQuery(args.query), [args.query]);
+  const [query, setQuery] = useResettingCopy(args.query);
   return (
     <ExperimentsList
       {...args}
@@ -302,6 +301,23 @@ export const Paginated: Story = {
     );
     await expect(rows(canvasElement)).toHaveLength(14);
     await expect(footer).toHaveTextContent('1 / 1');
+  },
+};
+
+/** A new search from the header, here clearing the filter, starts again on the first page. */
+export const NewSearchFirstPage: Story = {
+  args: { experiments: many, query: 'Leaf' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const footer = canvasElement.querySelector(
+      '.dv-exp-pagination',
+    ) as HTMLElement;
+    await userEvent.click(canvas.getByRole('button', { name: 'Next page' }));
+    await expect(footer).toHaveTextContent('11–14 of 14 experiments');
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear filter' }));
+    await expect(footer).toHaveTextContent('1–10 of 14 experiments');
+    await expect(footer).toHaveTextContent('1 / 2');
+    await settleMotion();
   },
 };
 

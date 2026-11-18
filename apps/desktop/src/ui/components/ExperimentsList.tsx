@@ -1,6 +1,6 @@
 import { Select } from '@mantine/core';
 import type { ReactNode } from 'react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { formatClockTime } from '../time';
 import type { StatusTone } from './Chip';
 import { Chip, StatusWord } from './Chip';
@@ -151,6 +151,23 @@ function compare(key: SortKey, a: ExperimentSummary, b: ExperimentSummary) {
   }
 }
 
+/** Page and page size of the list. A new search or page size starts again on the first page. */
+function useSearchPage(search: string) {
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
+  const [page, setPage] = useState(0);
+  const [pagedSearch, setPagedSearch] = useState(search);
+  if (pagedSearch !== search) {
+    setPagedSearch(search);
+    setPage(0);
+  }
+  const changePageSize = (next: number) => {
+    if (next === pageSize) return;
+    setPageSize(next);
+    setPage(0);
+  };
+  return { page, setPage, pageSize, changePageSize };
+}
+
 /** Experiments home list: shared page header and actions, sortable table, pagination, filter and empty states. */
 export function ExperimentsList({
   experiments,
@@ -167,8 +184,6 @@ export function ExperimentsList({
 }: ExperimentsListProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [ascending, setAscending] = useState(false);
-  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
-  const [page, setPage] = useState(0);
   const [announcement, setAnnouncement] = useState('');
   const titleId = useId(),
     sidebarId = useId().replace(/:/g, '');
@@ -179,6 +194,7 @@ export function ExperimentsList({
   const [reveal, setReveal] = useState(0);
   const reference = now ?? new Date();
   const search = query.trim();
+  const { page, setPage, pageSize, changePageSize } = useSearchPage(search);
 
   const filtered = useMemo(() => {
     const needle = search.toLowerCase();
@@ -192,9 +208,6 @@ export function ExperimentsList({
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, pageCount - 1);
-  useEffect(() => {
-    setPage(0);
-  }, [search, pageSize]);
   const visible = filtered.slice(current * pageSize, (current + 1) * pageSize);
   // Without a choice, or when the filter hides it, the first row the list shows is the selection.
   const selected =
@@ -421,7 +434,7 @@ export function ExperimentsList({
                   aria-label="Rows per page"
                   value={String(pageSize)}
                   data={PAGE_SIZES.map(String)}
-                  onChange={chosen((value) => setPageSize(Number(value)))}
+                  onChange={chosen((value) => changePageSize(Number(value)))}
                 />
               </label>
               <button
