@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { formatClockTime } from '../time';
 import { Chip } from './Chip';
 import {
@@ -220,12 +220,6 @@ export function useSavedResultInspector({
     [tab, setTab] = useState<SavedResultTab>('details'),
     [collapsed, setCollapsed] = useState(false);
   const epoch = useRef(0);
-  useEffect(
-    () => () => {
-      epoch.current++;
-    },
-    [],
-  );
   const open = async (id: string) => {
     const token = ++epoch.current;
     setSelectedId(id);
