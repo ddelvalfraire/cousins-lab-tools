@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-/** The element's rendered width in px, kept current with a ResizeObserver; `fallback` until the first measurement. */
+/**
+ * The element's rendered width in px, kept current with a ResizeObserver; `fallback` until the first measurement.
+ * Returns a ref callback to attach to the element.
+ */
 export function useElementWidth<T extends Element>(fallback: number) {
-  const ref = useRef<T>(null);
   const [width, setWidth] = useState(fallback);
-  useEffect(() => {
-    const el = ref.current;
+  const ref = useCallback((el: T | null) => {
     if (!el) return;
     const measure = () => {
       const w = Math.round(el.getBoundingClientRect().width);
