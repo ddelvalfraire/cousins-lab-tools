@@ -1,4 +1,5 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
+import { useDidUpdate } from '@mantine/hooks';
+import { type KeyboardEvent, type ReactNode, useRef } from 'react';
 import { useAppearance } from '../appearance';
 import { textScales } from '../textSize';
 import { Chip } from './Chip';
@@ -215,8 +216,9 @@ export function SavedVersionView({
   });
   const panel = useRef<HTMLElement>(null),
     restoreButton = useRef<HTMLButtonElement>(null);
+  // The owner reports the restore as finished, so no handler here runs at that moment.
   const previousRestore = useRef(restore);
-  useEffect(() => {
+  useDidUpdate(() => {
     if (previousRestore.current === 'restoring' && restore === 'restored')
       panel.current?.focus({ preventScroll: true });
     previousRestore.current = restore;
