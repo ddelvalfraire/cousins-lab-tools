@@ -14,7 +14,7 @@ import {
   WorkspaceBody,
 } from './RightSidebar';
 import { chosen } from './select';
-import { useArgCopy } from './useArgCopy';
+import { useResettingCopy } from './useResettingCopy';
 
 const tabs: RightSidebarTab[] = [
   { id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> },
@@ -141,8 +141,8 @@ function Pane({ tab }: { tab?: string }) {
 
 /** The sidebar in its page: a window-high page, the sidebar docked to its right edge beneath the shared header. */
 function InPage(args: RightSidebarProps) {
-  const [tab, setTab] = useArgCopy(args.activeTab),
-    [collapsed, setCollapsed] = useArgCopy(args.collapsed);
+  const [tab, setTab] = useResettingCopy(args.activeTab),
+    [collapsed, setCollapsed] = useResettingCopy(args.collapsed);
   return (
     <div
       className="dv-right-sidebar-example-page"

@@ -6,7 +6,7 @@ import {
   SideNavigation,
   type SideNavigationProps,
 } from './SideNavigation';
-import { useArgCopy } from './useArgCopy';
+import { useResettingCopy } from './useResettingCopy';
 
 const recents: RecentExperiment[] = [
   {
@@ -48,9 +48,9 @@ const germanLabels = {
 
 /** Stateful host: routing and the collapsed state belong to the app. */
 function SidebarExample(args: SideNavigationProps) {
-  const [active, setActive] = useArgCopy(args.active),
-    [collapsed, setCollapsed] = useArgCopy(args.collapsed),
-    [detail, setDetail] = useArgCopy(args.detail);
+  const [active, setActive] = useResettingCopy(args.active),
+    [collapsed, setCollapsed] = useResettingCopy(args.collapsed),
+    [detail, setDetail] = useResettingCopy(args.detail);
   return (
     <div style={{ height: 684, width: 'fit-content' }}>
       <SideNavigation

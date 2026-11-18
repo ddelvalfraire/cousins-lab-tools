@@ -10,7 +10,7 @@ import {
 } from './InspectorParts';
 import { Presence } from './Motion';
 import { type Severity, StatusBanner } from './Primitives';
-import { useStateResetByProp } from './useStateResetByProp';
+import { useResettingCopy } from './useResettingCopy';
 import './CalibrationChecklist.css';
 
 /** A named reading to capture, such as "Standard 100". `known` is the standard's known value, or null for a sample. */
@@ -116,9 +116,9 @@ export function CalibrationChecklist({
   const readings = controlled ?? own;
   const [start, setStart] = useState(String(defaultInterval[0])),
     [end, setEnd] = useState(String(defaultInterval[1]));
-  const [chosen, setChosen] = useStateResetByProp(intervalChosen);
+  const [chosen, setChosen] = useResettingCopy(intervalChosen);
   const [ownPending, setPending] = useState<string | null>(null),
-    [failed, setFailed] = useStateResetByProp<string | null>(failedStep);
+    [failed, setFailed] = useResettingCopy<string | null>(failedStep);
   const [confirm, setConfirm] = useState<string | null>(null),
     [notice, setNotice] = useState<string | null>(null);
   const [undo, setUndo] = useState<ChecklistReadings | null>(null),

@@ -6,7 +6,7 @@ import {
   NavigationDrawer,
   type RecentExperiment,
 } from './SideNavigation';
-import { useArgCopy } from './useArgCopy';
+import { useResettingCopy } from './useResettingCopy';
 
 const recents: RecentExperiment[] = [
   {
@@ -36,7 +36,7 @@ const acquisition: CurrentAcquisition = {
 };
 
 function DrawerExample(args: ComponentProps<typeof NavigationDrawer>) {
-  const [active, setActive] = useArgCopy(args.active);
+  const [active, setActive] = useResettingCopy(args.active);
   return (
     <NavigationDrawer
       {...args}
