@@ -1,5 +1,6 @@
 import { Modal, UnstyledButton } from '@mantine/core';
-import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import { useDidUpdate } from '@mantine/hooks';
+import { type ReactNode, type RefObject, useRef } from 'react';
 import { Banner } from './Banner';
 import './Approved.css';
 import './GuardDialog.css';
@@ -72,16 +73,17 @@ export function GuardDialog({
   );
 }
 
-/** Focuses `ref` when `when` turns true, e.g. the Retry button after an attempt fails. */
+/**
+ * Focuses `ref` when `when` turns true, e.g. the Retry button after an attempt fails. The owner decides when an
+ * attempt has failed, often after an await, so no event handler here can move focus at that moment.
+ */
 export function useFocusWhen(
   when: boolean,
   ref: RefObject<HTMLElement | null>,
 ) {
-  const previous = useRef(when);
-  useEffect(() => {
-    if (when && !previous.current) ref.current?.focus();
-    previous.current = when;
-  }, [when, ref]);
+  useDidUpdate(() => {
+    if (when) ref.current?.focus();
+  }, [when]);
 }
 
 export interface UnsavedChange {
