@@ -1,9 +1,10 @@
 import { Drawer } from '@mantine/core';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useId, useRef, useState } from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { StatusWord } from './Chip';
 import { Presence } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
+import { useFlyoutDismissal } from './useFlyoutDismissal';
 import './SideNavigation.css';
 
 export type NavigationDestination =
@@ -315,37 +316,16 @@ function Sidebar({
   const navRefs = useRef<
     Partial<Record<NavigationDestination, HTMLButtonElement | null>>
   >({});
-  const triggerRef = useRef<HTMLButtonElement>(null),
-    flyoutRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [flyoutOpen, setFlyoutOpen] = useState(false),
     [flyoutTop, setFlyoutTop] = useState(0);
   const showFlyout = flyoutOpen && collapsed && !inDrawer && recents.length > 0;
 
-  useEffect(() => {
-    if (!showFlyout) return;
-    flyoutRef.current?.querySelector('button')?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setFlyoutOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        !flyoutRef.current?.contains(target) &&
-        !triggerRef.current?.contains(target)
-      )
-        setFlyoutOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('click', onClick);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('click', onClick);
-    };
-  }, [showFlyout]);
+  const flyoutRef = useFlyoutDismissal({
+    open: showFlyout,
+    trigger: triggerRef,
+    onClose: () => setFlyoutOpen(false),
+  });
 
   const openExperiment = (experimentId: string) => {
     setFlyoutOpen(false);
