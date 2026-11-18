@@ -5,13 +5,13 @@ import {
   Transition,
   useMantineTheme,
 } from '@mantine/core';
+import { useDidUpdate } from '@mantine/hooks';
 import {
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   type Ref,
-  useEffect,
   useId,
   useImperativeHandle,
   useRef,
@@ -216,7 +216,8 @@ export function ShellSearch({
   };
 
   const typed = query.trim() !== '';
-  useEffect(() => {
+  // Opening, typing, a result type and the host's commands all change the count, so it is announced after any of them.
+  useDidUpdate(() => {
     if (all && open)
       onAnnounce(
         `${results.length} ${typed ? (results.length === 1 ? 'search result' : 'search results') : 'suggestions'}.`,
