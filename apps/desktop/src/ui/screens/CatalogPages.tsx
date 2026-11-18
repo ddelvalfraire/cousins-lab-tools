@@ -1,5 +1,6 @@
+import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { CatalogChip, CatalogRoot } from '../components/CatalogTable';
 import { Chip } from '../components/Chip';
 import {
@@ -265,8 +266,6 @@ export function RevisionHistoryPage({
     [sideTab, setSideTab] = useState<string>('revisions');
   const [restore, setRestore] = useState<RestorePhase>(initialRestore),
     [restoredFrom, setRestoredFrom] = useState<number>();
-  const timer = useRef<number>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
   const current = revisions[0].number;
   const revision =
     revisions.find((item) => item.number === selected) ?? revisions[0];
@@ -280,22 +279,27 @@ export function RevisionHistoryPage({
         after: c.before,
       }))
     : presetChanges(preset, revision.number);
-  const confirm = () => {
-    setRestore('restoring');
-    timer.current = window.setTimeout(() => {
+  /** Gets the revision being restored, the current number and the source from when the restore was confirmed. */
+  const finishRestore = useTimeout(
+    (restoring: HistoryRevision, latest: number, from: number) => {
       const created: HistoryRevision = {
-        ...revision,
-        number: current + 1,
-        note: `Restored from R${revision.number}`,
+        ...restoring,
+        number: latest + 1,
+        note: `Restored from R${restoring.number}`,
         savedAt: new Date().toISOString(),
-        restoredFrom: source,
+        restoredFrom: from,
       };
       setRevisions((list) => [created, ...list]);
-      setRestoredFrom(revision.number);
+      setRestoredFrom(restoring.number);
       setSelected(created.number);
       setTab('preview');
       setRestore('restored');
-    }, 600);
+    },
+    600,
+  );
+  const confirm = () => {
+    setRestore('restoring');
+    finishRestore.start(revision, current, source);
   };
   const sidebar = (
     <RightSidebar
