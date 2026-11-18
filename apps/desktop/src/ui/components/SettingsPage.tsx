@@ -1,5 +1,6 @@
 import { Select } from '@mantine/core';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useDidUpdate, useTimeout } from '@mantine/hooks';
+import { useCallback, useId, useRef, useState } from 'react';
 import type { AppearancePreference } from '../appearance';
 import {
   settings as declared,
@@ -136,22 +137,26 @@ export function SettingsPage({
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const timers = useRef<{ saved?: number; copied?: number; frame?: number }>(
-    {},
-  );
+  const savedMark = useTimeout(() => setSaved(false), MARK_MS);
+  const copiedMark = useTimeout(() => setCopied(false), MARK_MS);
+  const frame = useRef(0);
   const previousSettings = useRef(settings);
-  const previousStatus = useRef(folderState.status);
   const chooseAgain = useRef<HTMLButtonElement>(null);
   const delimiterSelect = useRef<HTMLInputElement>(null);
 
+  // Emptying the region first makes a repeated message announce again.
   const announce = (text: string) => {
-    cancelAnimationFrame(timers.current.frame ?? 0);
+    cancelAnimationFrame(frame.current);
     setAnnouncement('');
-    timers.current.frame = requestAnimationFrame(() => setAnnouncement(text));
+    frame.current = requestAnimationFrame(() => setAnnouncement(text));
   };
+  const cancelAnnouncementOnUnmount = useCallback(
+    () => () => cancelAnimationFrame(frame.current),
+    [],
+  );
 
-  // A setting counts as saved when the host hands back the new value.
-  useEffect(() => {
+  // A setting counts as saved when the host hands back the new value, which can arrive after onChange returns.
+  useDidUpdate(() => {
     const changed = (Object.keys(LABELS) as SettingKey[]).filter(
       (key) => previousSettings.current[key] !== settings[key],
     );
@@ -159,13 +164,12 @@ export function SettingsPage({
     if (!changed.length) return;
     setSaved(true);
     announce(`${LABELS[changed[changed.length - 1]]} saved.`);
-    window.clearTimeout(timers.current.saved);
-    timers.current.saved = window.setTimeout(() => setSaved(false), MARK_MS);
+    savedMark.clear();
+    savedMark.start();
   }, [settings]);
 
-  useEffect(() => {
-    if (previousStatus.current === folderState.status) return;
-    previousStatus.current = folderState.status;
+  // The host reports the system folder dialog's outcome, so no handler here runs when it arrives.
+  useDidUpdate(() => {
     if (folderState.status === 'choosing')
       announce('Choose a folder in the system dialog.');
     if (folderState.status === 'error') {
@@ -173,15 +177,6 @@ export function SettingsPage({
       announce('That folder can’t be used. Still using the previous folder.');
     }
   }, [folderState.status]);
-
-  useEffect(
-    () => () => {
-      window.clearTimeout(timers.current.saved);
-      window.clearTimeout(timers.current.copied);
-      cancelAnimationFrame(timers.current.frame ?? 0);
-    },
-    [],
-  );
 
   const copyCommit = async () => {
     try {
@@ -192,8 +187,8 @@ export function SettingsPage({
     }
     setCopied(true);
     announce('Commit hash copied.');
-    window.clearTimeout(timers.current.copied);
-    timers.current.copied = window.setTimeout(() => setCopied(false), MARK_MS);
+    copiedMark.clear();
+    copiedMark.start();
   };
 
   const decimal =
@@ -594,6 +589,7 @@ export function SettingsPage({
         </section>
       </div>
       <div
+        ref={cancelAnnouncementOnUnmount}
         className="dv-settings-announcer"
         role="status"
         aria-live="polite"

@@ -1,5 +1,5 @@
+import { useTimeout } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useRef, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from './chooseOption';
 import {
@@ -10,6 +10,7 @@ import {
   type SettingsPageProps,
 } from './SettingsPage';
 import { settleMotion } from './settleMotion';
+import { useResettingCopy } from './useResettingCopy';
 
 const COMMIT_RELEASE = 'fdba48e6d504efa8b66f04b0dd8ea7f892fd4a6b';
 const COMMIT_LOCAL = 'a63f1dcebf65218c1c6a34257327a9c426903f73';
@@ -71,14 +72,16 @@ function SettingsHost({
   outcome,
   ...props
 }: SettingsPageProps & { outcome: FolderOutcome }) {
-  const [settings, setSettings] = useState(props.settings);
-  const [folderState, setFolderState] = useState<FolderState>(
+  const [settings, setSettings] = useResettingCopy(props.settings);
+  const [folderState, setFolderState] = useResettingCopy<FolderState>(
     props.folderState,
   );
-  const timer = useRef<number>(undefined);
-  useEffect(() => setSettings(props.settings), [props.settings]);
-  useEffect(() => setFolderState(props.folderState), [props.folderState]);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const folderDialog = useTimeout(() => {
+    if (outcome === 'unwritable')
+      return setFolderState({ status: 'error', path: UNWRITABLE_FOLDER });
+    setSettings((current) => ({ ...current, folder: CHOSEN_FOLDER }));
+    setFolderState({ status: 'ready' });
+  }, 400);
   return (
     <SettingsPage
       {...props}
@@ -91,12 +94,7 @@ function SettingsHost({
       onChooseFolder={() => {
         props.onChooseFolder();
         setFolderState({ status: 'choosing' });
-        timer.current = window.setTimeout(() => {
-          if (outcome === 'unwritable')
-            return setFolderState({ status: 'error', path: UNWRITABLE_FOLDER });
-          setSettings((current) => ({ ...current, folder: CHOSEN_FOLDER }));
-          setFolderState({ status: 'ready' });
-        }, 400);
+        folderDialog.start();
       }}
     />
   );
