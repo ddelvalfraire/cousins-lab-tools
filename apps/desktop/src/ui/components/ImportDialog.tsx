@@ -18,77 +18,97 @@ const round = {
 } as const;
 /** Glyphs copied from the import and export mockups (recording-import-review.html, sideIcons). */
 const glyphs = {
-  file: [
-    { ...round, strokeWidth: 1.5 },
-    <>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-      <path d="M14 2v6h6M8 13h8M8 17h5" />
-    </>,
-  ],
-  close: [
-    {
+  file: {
+    attributes: { ...round, strokeWidth: 1.5 },
+    shape: (
+      <>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 2v6h6M8 13h8M8 17h5" />
+      </>
+    ),
+  },
+  close: {
+    attributes: {
       fill: 'none',
       stroke: 'currentColor',
       strokeWidth: 1.6,
       strokeLinecap: 'round',
     },
-    <path d="m6 6 12 12M18 6 6 18" />,
-  ],
-  upload: [
-    { ...round, strokeWidth: 1.6 },
-    <path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" />,
-  ],
-  clock: [
-    { ...round, strokeWidth: 1.6 },
-    <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </>,
-  ],
-  calendar: [
-    { ...round, strokeWidth: 1.6 },
-    <>
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M16 3v4M8 3v4M3 11h18" />
-    </>,
-  ],
-  check: [{ ...round, strokeWidth: 1.6 }, <path d="m5 12 4 4L19 6" />],
-  details: [
-    { ...round, strokeWidth: 1.6 },
-    <>
-      <rect x="4" y="3" width="16" height="18" rx="2" />
-      <path d="M8 8h8M8 12h8M8 16h5" />
-    </>,
-  ],
-  signals: [
-    { ...round, strokeWidth: 1.6 },
-    <path d="M3 12h4l3-7 4 14 3-7h4" />,
-  ],
-  panels: [
-    { ...round, strokeWidth: 1.6 },
-    <>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M3 10h18M11 10v10" />
-    </>,
-  ],
-  revisions: [
-    { ...round, strokeWidth: 1.6 },
-    <path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2" />,
-  ],
-  chevron: [{ ...round, strokeWidth: 1.7 }, <path d="m9 5 7 7-7 7" />],
-  warning: [
-    { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7 },
-    <>
-      <path d="m12 3 10 18H2L12 3Z" />
-      <path d="M12 9v5m0 3h.01" />
-    </>,
-  ],
+    shape: <path d="m6 6 12 12M18 6 6 18" />,
+  },
+  upload: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: (
+      <path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" />
+    ),
+  },
+  clock: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+  },
+  calendar: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 11h18" />
+      </>
+    ),
+  },
+  check: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: <path d="m5 12 4 4L19 6" />,
+  },
+  details: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: (
+      <>
+        <rect x="4" y="3" width="16" height="18" rx="2" />
+        <path d="M8 8h8M8 12h8M8 16h5" />
+      </>
+    ),
+  },
+  signals: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: <path d="M3 12h4l3-7 4 14 3-7h4" />,
+  },
+  panels: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: (
+      <>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M3 10h18M11 10v10" />
+      </>
+    ),
+  },
+  revisions: {
+    attributes: { ...round, strokeWidth: 1.6 },
+    shape: <path d="M3 11a9 9 0 1 1 2.6 7M3 5v6h6M12 7v5l3 2" />,
+  },
+  chevron: {
+    attributes: { ...round, strokeWidth: 1.7 },
+    shape: <path d="m9 5 7 7-7 7" />,
+  },
+  warning: {
+    attributes: { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7 },
+    shape: (
+      <>
+        <path d="m12 3 10 18H2L12 3Z" />
+        <path d="M12 9v5m0 3h.01" />
+      </>
+    ),
+  },
 } as const;
 export type ImportIconName = keyof typeof glyphs;
 
 /** Stroke icon from the approved import and export mockups. Size comes from the surrounding CSS. */
 export function ImportIcon({ name }: { name: ImportIconName }) {
-  const [attributes, shape] = glyphs[name];
+  const { attributes, shape } = glyphs[name];
   return (
     <svg
       viewBox="0 0 24 24"
