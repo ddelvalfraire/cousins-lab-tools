@@ -1,5 +1,6 @@
+import { useInterval } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   AcquisitionControls,
@@ -267,14 +268,14 @@ function Session({ startFailsOnce, stopFailsOnce, ...args }: SessionArgs) {
     [stopFailed, setStopFailed] = useState(false);
   const [starts, setStarts] = useState(0),
     [stops, setStops] = useState(0);
-  useEffect(() => {
-    if (state !== 'acquiring' && state !== 'stopping') return;
-    const tick = setInterval(() => {
+  const ticks = useInterval(
+    () => {
       setSamples((count) => count + 2);
       setSeconds((count) => count + 1);
-    }, 250);
-    return () => clearInterval(tick);
-  }, [state]);
+    },
+    250,
+    { autoInvoke: args.state === 'acquiring' || args.state === 'stopping' },
+  );
   return (
     <AcquisitionControls
       {...args}
@@ -296,7 +297,10 @@ function Session({ startFailsOnce, stopFailsOnce, ...args }: SessionArgs) {
           if (startFailsOnce && starts === 0) {
             setStartFailed(true);
             setState('ready');
-          } else setState('acquiring');
+          } else {
+            setState('acquiring');
+            ticks.start();
+          }
         }, 300);
       }}
       onStop={() => {
@@ -308,7 +312,10 @@ function Session({ startFailsOnce, stopFailsOnce, ...args }: SessionArgs) {
           if (stopFailsOnce && stops === 0) {
             setStopFailed(true);
             setState('acquiring');
-          } else setState('recorded');
+          } else {
+            setState('recorded');
+            ticks.stop();
+          }
         }, 300);
       }}
     />

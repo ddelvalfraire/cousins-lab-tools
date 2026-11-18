@@ -1,4 +1,5 @@
 import { UnstyledButton, VisuallyHidden } from '@mantine/core';
+import { useDidUpdate } from '@mantine/hooks';
 import {
   IconActivity,
   IconCheck,
@@ -9,7 +10,7 @@ import {
   IconPlayerStop,
   IconPlugConnectedX,
 } from '@tabler/icons-react';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { type ReactNode, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { Presence, Swap } from './Motion';
 import { StatusBanner, StatusMessages } from './Primitives';
@@ -199,6 +200,12 @@ export function useAcquisitionControls({
   const [confirming, setConfirming] = useState(
     defaultStopDialogOpen || state === 'stopping',
   );
+  const [seenState, setSeenState] = useState(state);
+  if (seenState !== state) {
+    setSeenState(state);
+    if (state === 'stopping') setConfirming(true);
+    if (state === 'recorded') setConfirming(false);
+  }
   const previous = useRef(state);
   const running = state === 'acquiring' || state === 'stopping';
   const phase = running
@@ -207,11 +214,10 @@ export function useAcquisitionControls({
       ? 'recorded'
       : 'setup';
 
-  useEffect(() => {
+  // The parent drives state from the instrument's outcome, so focus follows the change once it has rendered.
+  useDidUpdate(() => {
     const before = previous.current;
     previous.current = state;
-    if (state === 'stopping') setConfirming(true);
-    if (before === state) return;
     if (before === 'starting' && state === 'acquiring')
       stopRef.current?.focus();
     else if (
@@ -219,10 +225,7 @@ export function useAcquisitionControls({
       state === 'ready'
     )
       startRef.current?.focus();
-    else if (state === 'recorded') {
-      setConfirming(false);
-      statusRef.current?.focus();
-    }
+    else if (state === 'recorded') statusRef.current?.focus();
   }, [state]);
 
   const [TagIcon, tagLabel] = tags[state];
