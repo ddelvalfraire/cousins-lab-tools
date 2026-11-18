@@ -170,12 +170,6 @@ export function useAlignmentEditor({
   const [status, setStatus] = useState<AlignmentStatus>(initialStatus),
     [announcement, setAnnouncement] = useState('');
   const epoch = useRef(0);
-  useEffect(
-    () => () => {
-      epoch.current++;
-    },
-    [],
-  );
   const problem = alignmentProblem(settings, recordings);
   const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
   const edit = (next: AlignmentSettings) => {

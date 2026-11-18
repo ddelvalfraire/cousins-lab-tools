@@ -120,12 +120,6 @@ export function usePanelSource({
     [status, setStatus] = useState<PanelSourceStatus>(initialStatus),
     [announcement, setAnnouncement] = useState('');
   const epoch = useRef(0);
-  useEffect(
-    () => () => {
-      epoch.current++;
-    },
-    [],
-  );
   const problem = panelSourceProblem(draft, sources, channels, requires);
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
   const edit = (next: PanelBinding) => {
