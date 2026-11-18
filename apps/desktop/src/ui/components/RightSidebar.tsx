@@ -262,92 +262,97 @@ export function RightSidebar({
       data-mode={sheet ? 'sheet' : 'docked'}
       data-collapsed={!open}
       aria-label={label}
-      onKeyDown={onSidebarKeyDown}
     >
-      <section
-        className="dv-right-sidebar-pane"
-        id={paneId}
-        role="tabpanel"
-        aria-labelledby={selected ? tabId(selected) : undefined}
-        tabIndex={open ? 0 : -1}
-        inert={!open}
-        aria-hidden={!open || undefined}
+      <div
+        className="dv-right-sidebar-keys"
+        role="none"
+        onKeyDown={onSidebarKeyDown}
       >
-        <div className="dv-right-sidebar-title">
-          <div>
-            <h2>{title ?? current?.label}</h2>
-            {subtitle && <small>{subtitle}</small>}
+        <section
+          className="dv-right-sidebar-pane"
+          id={paneId}
+          role="tabpanel"
+          aria-labelledby={selected ? tabId(selected) : undefined}
+          tabIndex={open ? 0 : -1}
+          inert={!open}
+          aria-hidden={!open || undefined}
+        >
+          <div className="dv-right-sidebar-title">
+            <div>
+              <h2>{title ?? current?.label}</h2>
+              {subtitle && <small>{subtitle}</small>}
+            </div>
+            {collapsible && (
+              <button
+                type="button"
+                className="dv-right-sidebar-collapse"
+                aria-label="Collapse right sidebar"
+                title="Collapse sidebar"
+                onClick={collapse}
+              >
+                <CollapseGlyph />
+              </button>
+            )}
           </div>
-          {collapsible && (
-            <button
-              type="button"
-              className="dv-right-sidebar-collapse"
-              aria-label="Collapse right sidebar"
-              title="Collapse sidebar"
-              onClick={collapse}
-            >
-              <CollapseGlyph />
-            </button>
-          )}
-        </div>
+          <ScrollFrame
+            axes="y"
+            overscroll="contain"
+            rootClassName="dv-right-sidebar-content-root"
+            className="dv-right-sidebar-content"
+          >
+            <Swap swapKey={selected ?? ''}>{children}</Swap>
+          </ScrollFrame>
+        </section>
         <ScrollFrame
           axes="y"
-          overscroll="contain"
-          rootClassName="dv-right-sidebar-content-root"
-          className="dv-right-sidebar-content"
+          rootClassName="dv-right-sidebar-tabs-root"
+          contentClassName="dv-right-sidebar-tabs-list"
+          className="dv-right-sidebar-tabs"
+          role="tablist"
+          aria-label={tabsLabel ?? label}
+          aria-orientation="vertical"
+          onKeyDown={onKeyDown}
         >
-          <Swap swapKey={selected ?? ''}>{children}</Swap>
-        </ScrollFrame>
-      </section>
-      <ScrollFrame
-        axes="y"
-        rootClassName="dv-right-sidebar-tabs-root"
-        contentClassName="dv-right-sidebar-tabs-list"
-        className="dv-right-sidebar-tabs"
-        role="tablist"
-        aria-label={tabsLabel ?? label}
-        aria-orientation="vertical"
-        onKeyDown={onKeyDown}
-      >
-        {tabs.map((tab) => {
-          const isSelected = tab.id === selected;
-          return (
-            <button
-              key={tab.id}
-              ref={(node) => {
-                tabRefs.current[tab.id] = node;
-              }}
-              type="button"
-              role="tab"
-              id={tabId(tab.id)}
-              data-tab={tab.id}
-              aria-controls={paneId}
-              aria-selected={isSelected}
-              aria-expanded={open && isSelected}
-              tabIndex={isSelected ? 0 : -1}
-              disabled={tab.disabled}
-              title={tab.label}
-              onClick={() => select(tab.id)}
-            >
-              {tab.icon}
-              <span className="dv-right-sidebar-label">{tab.label}</span>
-              {tab.shortLabel && (
-                <span className="dv-right-sidebar-short" aria-hidden="true">
-                  {tab.shortLabel}
-                </span>
-              )}
-              {tab.badge !== undefined && (
-                <>
-                  <span className="dv-right-sidebar-badge" aria-hidden="true">
-                    {tab.badge}
+          {tabs.map((tab) => {
+            const isSelected = tab.id === selected;
+            return (
+              <button
+                key={tab.id}
+                ref={(node) => {
+                  tabRefs.current[tab.id] = node;
+                }}
+                type="button"
+                role="tab"
+                id={tabId(tab.id)}
+                data-tab={tab.id}
+                aria-controls={paneId}
+                aria-selected={isSelected}
+                aria-expanded={open && isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                disabled={tab.disabled}
+                title={tab.label}
+                onClick={() => select(tab.id)}
+              >
+                {tab.icon}
+                <span className="dv-right-sidebar-label">{tab.label}</span>
+                {tab.shortLabel && (
+                  <span className="dv-right-sidebar-short" aria-hidden="true">
+                    {tab.shortLabel}
                   </span>
-                  <span className="dv-right-sidebar-sr">, {tab.badge}</span>
-                </>
-              )}
-            </button>
-          );
-        })}
-      </ScrollFrame>
+                )}
+                {tab.badge !== undefined && (
+                  <>
+                    <span className="dv-right-sidebar-badge" aria-hidden="true">
+                      {tab.badge}
+                    </span>
+                    <span className="dv-right-sidebar-sr">, {tab.badge}</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </ScrollFrame>
+      </div>
     </aside>
   );
 }

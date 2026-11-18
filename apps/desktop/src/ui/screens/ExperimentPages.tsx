@@ -491,7 +491,7 @@ export function CapturePage({
               </p>
             </div>
           ) : (
-            <div className="dv-xw-recorded" onKeyDown={onKeys}>
+            <div className="dv-xw-recorded" role="none" onKeyDown={onKeys}>
               {startedLive && acq.status}
               <PlaybackTransport
                 position={position}

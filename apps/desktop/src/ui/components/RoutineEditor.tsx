@@ -411,7 +411,7 @@ function RoutineEditorDraft({
     };
   }, [dragging]);
 
-  function onCanvasPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+  function onGripPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
     const grip = (e.target as HTMLElement).closest<HTMLElement>('[data-grip]');
     if (!grip || e.button !== 0) return;
     e.preventDefault();
@@ -438,7 +438,7 @@ function RoutineEditorDraft({
     setKb(null);
   }
 
-  function onCanvasKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+  function onGripKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
     const grip = (e.target as HTMLElement).closest<HTMLElement>('[data-grip]');
     if (!grip) return;
     const stepId = grip.dataset.grip!,
@@ -476,7 +476,7 @@ function RoutineEditorDraft({
     }
   }
 
-  function onCanvasBlur(_: FocusEvent<HTMLDivElement>) {
+  function onGripBlur(_: FocusEvent<HTMLButtonElement>) {
     if (!kbRef.current) return;
     setTimeout(() => {
       const current = kbRef.current;
@@ -685,6 +685,9 @@ function RoutineEditorDraft({
           aria-describedby={id('grip-help')}
           aria-pressed={lifted}
           data-hover={hoverGrip === step.id || undefined}
+          onPointerDown={onGripPointerDown}
+          onKeyDown={onGripKeyDown}
+          onBlur={onGripBlur}
         >
           <IconGripVertical {...ICON} />
         </button>
@@ -1249,9 +1252,6 @@ function RoutineEditorDraft({
           data-mode={
             drag ? (drag.valid ? 'drag' : 'nodrop') : kb ? 'drag' : undefined
           }
-          onPointerDown={onCanvasPointerDown}
-          onKeyDown={onCanvasKeyDown}
-          onBlur={onCanvasBlur}
         >
           {renderCanvas()}
         </div>

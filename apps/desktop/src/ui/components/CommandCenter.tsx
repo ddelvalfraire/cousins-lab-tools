@@ -1,5 +1,11 @@
 import { Kbd } from '@mantine/core';
-import { Fragment, type ReactNode, useEffect, useRef } from 'react';
+import {
+  Fragment,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+} from 'react';
 import { keyedBy } from './keyedBy';
 import './Approved.css';
 import './CommandCenter.css';
@@ -322,10 +328,26 @@ export function CommandCenter({
     return () => row.removeEventListener('wheel', onWheel);
   }, []);
   let index = 0;
+  const itemsByOptionId = new Map(
+    groups.flatMap((group) =>
+      group.items.map((item) => [commandOptionId(listId, item), item] as const),
+    ),
+  );
+  // Options never take focus (the input keeps it and picks with Enter), so their clicks are handled here.
+  const selectClickedOption = (event: MouseEvent<HTMLDivElement>) => {
+    const option = (event.target as Element).closest('[role="option"]');
+    const item = option && itemsByOptionId.get(option.id);
+    if (item) onSelect(item);
+  };
   // Every click in the results keeps focus in the search input. Safari and Firefox on macOS don't focus a clicked
   // button, so without this the input blurs to nothing and the popup closes before the click lands.
   return (
-    <div className="dv-cmd" onMouseDown={(event) => event.preventDefault()}>
+    <div
+      className="dv-cmd"
+      role="none"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={selectClickedOption}
+    >
       <ScrollFrame
         axes="x"
         contentClassName="dv-cmd-types-list"
@@ -399,12 +421,12 @@ export function CommandCenter({
                       id={commandOptionId(listId, item)}
                       role="option"
                       aria-selected={i === activeIndex}
+                      tabIndex={-1}
                       className="dv-cmd-row"
                       data-command={command || undefined}
                       onMouseMove={() => {
                         if (i !== activeIndex) onActiveIndexChange(i);
                       }}
-                      onClick={() => onSelect(item)}
                     >
                       <span className="dv-cmd-row-icon">{item.icon}</span>
                       <span className="dv-cmd-row-copy">

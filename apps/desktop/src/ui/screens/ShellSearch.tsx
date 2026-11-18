@@ -235,7 +235,12 @@ export function ShellSearch({
       } as const)
     : {};
   return (
-    <div className="dv-shell-search-anchor" ref={anchorRef} onBlur={onBlur}>
+    <div
+      className="dv-shell-search-anchor"
+      role="none"
+      ref={anchorRef}
+      onBlur={onBlur}
+    >
       {/* The dialogs' dim and blur behind the open results. z-index -1 keeps it inside the anchor's stacking context,
         under the search box and the results but over the rest of the window. A click on it blurs the input, which closes the popup. */}
       {/* The dim fades itself: a fading wrapper would cut its blur off from the page and lift it over the search box. */}

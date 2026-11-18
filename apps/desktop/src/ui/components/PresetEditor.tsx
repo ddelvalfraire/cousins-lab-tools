@@ -225,7 +225,7 @@ export function PresetEditor({
   const [, bump] = useReducer((n: number) => n + 1, 0);
   const nextId = useRef(0);
   const rootRef = useRef<HTMLElement>(null),
-    canvasRef = useRef<HTMLDivElement>(null),
+    canvasRef = useRef<HTMLElement>(null),
     ghostRef = useRef<HTMLElement>(null),
     ghostLayerRef = useRef<HTMLDivElement>(null),
     announcerRef = useRef<HTMLDivElement>(null);
@@ -575,7 +575,7 @@ export function PresetEditor({
   }
   const kbRef = useRef(kb);
   kbRef.current = kb;
-  function canvasBlur() {
+  function gripBlur() {
     if (!kbRef.current) return;
     setTimeout(() => {
       const lifted = kbRef.current;
@@ -767,6 +767,7 @@ export function PresetEditor({
         onSelect={() => select(panel.id)}
         onGripPointerDown={(event) => startDrag(event, panel.id)}
         onGripKeyDown={(event) => gripKey(event, panel)}
+        onGripBlur={gripBlur}
         onShift={(direction) => shift(panel.id, direction)}
         onRemove={() => remove(panel.id)}
         onResizePointerDown={(event) => startResize(event, panel)}
@@ -1174,17 +1175,16 @@ export function PresetEditor({
           )}
         </div>
         <h2 className="pe-sr-only">Panels</h2>
-        <div
+        <section
           ref={canvasRef}
           className="pe-canvas"
           aria-label="Preset layout"
           data-mode={
             drag ? (drag.valid ? 'drag' : 'nodrop') : kb ? 'drag' : undefined
           }
-          onBlur={canvasBlur}
         >
           {canvasContent()}
-        </div>
+        </section>
         <div className="pe-add-row" ref={addRowRef}>
           <button
             type="button"

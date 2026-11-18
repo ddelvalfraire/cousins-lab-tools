@@ -433,6 +433,7 @@ export interface PanelCardProps {
   onSelect?: () => void;
   onGripPointerDown?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onGripKeyDown?: (event: KeyboardEvent<HTMLButtonElement>) => void;
+  onGripBlur?: () => void;
   onShift?: (direction: -1 | 1) => void;
   onRemove?: () => void;
   onResizePointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -457,6 +458,7 @@ export function PanelCard({
   onSelect,
   onGripPointerDown,
   onGripKeyDown,
+  onGripBlur,
   onShift,
   onRemove,
   onResizePointerDown,
@@ -528,6 +530,7 @@ export function PanelCard({
           tabIndex={tab}
           onPointerDown={onGripPointerDown}
           onKeyDown={onGripKeyDown}
+          onBlur={onGripBlur}
         >
           <IconGripVertical aria-hidden />
         </button>
