@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useDidUpdate } from '@mantine/hooks';
+import { useRef, useState } from 'react';
 import { Chip } from './Chip';
 import {
   formatFileSize,
@@ -508,7 +509,8 @@ export function PresetImport({
     setCheck(undefined);
     setName('');
   };
-  useEffect(() => {
+  // Closing also cancels a file check still in flight, which bumps a ref and so can't happen during render.
+  useDidUpdate(() => {
     if (!opened) reset();
   }, [opened]);
 
