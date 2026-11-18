@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { motion } from '../motion';
 import { MotionList, Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
-import { reduceMotion, settleMotion } from './settleMotion';
+import { reduceMotion } from './settleMotion';
 
 function pauseAnimations(element: Element) {
   for (const animation of element.getAnimations()) animation.pause();
@@ -126,8 +126,6 @@ export const MessageLeaves: Story = {
       () => expect(below.getBoundingClientRect().top).toBeCloseTo(top, 0),
       { timeout: motion.slow * 4 },
     );
-    // The accessibility scan that follows reads the banner's colours, which are faint until its fade in ends.
-    await settleMotion();
   },
 };
 

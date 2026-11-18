@@ -12,6 +12,7 @@ import { isTextSize, type TextSize } from '../src/ui/textSize';
 import { dvdashTheme } from '../src/ui/theme';
 import '../src/ui/dvdash.css';
 import '../src/ui/screens/screens.css';
+import { settleMotion } from '../src/ui/components/settleMotion';
 import { StoryFrame } from './StoryFrame';
 import './preview.css';
 
@@ -74,6 +75,13 @@ function StoryAppearance({
 }
 
 const preview: Preview = {
+  /**
+   * Runs before the accessibility scan. Storybook pauses CSS animations at their end for it, but Motion.tsx fades with
+   * the Web Animations API, which that pause does not reach, so the scan would read colours mid fade.
+   */
+  afterEach: async () => {
+    await settleMotion();
+  },
   initialGlobals: { appearance: 'light', textSize: 'default' },
   globalTypes: {
     appearance: {
