@@ -16,6 +16,8 @@
     "tauri": "tauri",
     "check": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit",
     "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome format --write .",
     "clean": "bun scripts/clean.mjs"
   },
   "dependencies": {

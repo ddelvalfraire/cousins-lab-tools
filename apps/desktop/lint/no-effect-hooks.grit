@@ -1,0 +1,14 @@
+language js
+
+or {
+  `useEffect($args)`,
+  `useLayoutEffect($args)`,
+  `$namespace.useEffect($args)`,
+  `$namespace.useLayoutEffect($args)`
+} as $call where {
+  register_diagnostic(
+    span = $call,
+    message = "Effects are banned in this app. Derive the value during render, do the work in the event handler that causes it, subscribe to external stores with useSyncExternalStore, set up and tear down DOM work in a ref callback that returns a cleanup, or use a hook from @mantine/hooks.",
+    severity = "error"
+  )
+}
