@@ -2,7 +2,7 @@ import { Button, Group, Text } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
-import { useArgCopy } from '../components/useArgCopy';
+import { useArgCopy } from './useArgCopy';
 
 function StoryHost({ arg }: { arg: string }) {
   const [value, setValue] = useArgCopy(arg);

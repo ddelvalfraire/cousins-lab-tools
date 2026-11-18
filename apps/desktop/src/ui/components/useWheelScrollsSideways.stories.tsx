@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
-import { useWheelScrollsSideways } from '../components/useWheelScrollsSideways';
+import { useWheelScrollsSideways } from './useWheelScrollsSideways';
 
 const labels = ['All', 'Actions', 'Settings', 'Experiments', 'Presets'];
 
