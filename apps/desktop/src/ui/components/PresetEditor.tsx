@@ -16,15 +16,7 @@ import {
   IconTable,
 } from '@tabler/icons-react';
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useReducer,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Chip, StatusWord } from './Chip';
 import { Presence, Swap } from './Motion';
@@ -54,6 +46,7 @@ import {
 import { StatusMessages } from './Primitives';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { chosen, selectAria } from './select';
+import { type PresetDragState, usePresetDragGhost } from './usePresetDragGhost';
 import './PresetEditor.css';
 
 export type {
@@ -97,20 +90,6 @@ export interface PresetEditorProps {
   breadcrumbs?: readonly PageBreadcrumb[];
 }
 
-interface DragState {
-  id: string;
-  origin: number;
-  over: number;
-  valid: boolean;
-  moved: boolean;
-  x: number;
-  y: number;
-  ox: number;
-  oy: number;
-  w: number;
-  h: number;
-  frozen: boolean;
-}
 interface ResizeState {
   id: string;
   startX: number;
@@ -213,7 +192,7 @@ export function PresetEditor({
     menuOpen,
   );
   const [hover, setHover] = useState(initialHover ?? null);
-  const [drag, setDrag] = useState<DragState | null>(null);
+  const [drag, setDrag] = useState<PresetDragState | null>(null);
   const [resize, setResize] = useState<ResizeState | null>(() => {
     if (!initialResize) return null;
     const panel = (draft ?? preset.panels).find(
@@ -231,13 +210,12 @@ export function PresetEditor({
         }
       : null;
   });
-  const [, bump] = useReducer((n: number) => n + 1, 0);
   const nextId = useRef(0);
   const rootRef = useRef<HTMLElement>(null),
-    canvasRef = useRef<HTMLElement>(null),
-    ghostRef = useRef<HTMLElement>(null),
-    ghostLayerRef = useRef<HTMLDivElement>(null),
     announcerRef = useRef<HTMLDivElement>(null);
+  const { canvasRef, attachCanvas, layerRef, attachGhost } = usePresetDragGhost(
+    { initial: initialDrag, panels, drag, setDrag },
+  );
   // Read once: a frozen keyboard move focuses its grip when the editor mounts.
   const [initialFocus] = useState(
     initialKeyboardMove ? `[data-grip="${initialKeyboardMove.id}"]` : null,
@@ -293,76 +271,6 @@ export function PresetEditor({
     if (selected !== id) setSelected(id);
   };
   const grip = (id: string) => `.pe-canvas [data-grip="${id}"]`;
-
-  // Review stories: freeze a drag in progress. Measure the panel first, then lift it.
-  useLayoutEffect(() => {
-    if (!initialDrag) return;
-    const el = canvasRef.current?.querySelector<HTMLElement>(
-      `:scope > [data-id="${initialDrag.id}"]`,
-    );
-    const origin = panels.findIndex((panel) => panel.id === initialDrag.id);
-    if (!el || origin < 0) return;
-    const rest = panels.filter((panel) => panel.id !== initialDrag.id),
-      valid = initialDrag.overId !== null;
-    const over = valid
-      ? Math.max(
-          0,
-          rest.findIndex((panel) => panel.id === initialDrag.overId),
-        )
-      : origin;
-    const r = el.getBoundingClientRect();
-    setDrag({
-      id: initialDrag.id,
-      origin,
-      over,
-      valid,
-      moved: true,
-      x: 0,
-      y: 0,
-      ox: 0,
-      oy: 0,
-      w: r.width,
-      h: r.height,
-      frozen: true,
-    });
-    // Mount only: this sets up the frozen example once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => {
-    if (!drag?.frozen) return;
-    window.addEventListener('resize', bump);
-    return () => window.removeEventListener('resize', bump);
-  }, [drag?.frozen]);
-
-  // Place the ghost. A frozen drag sits on its slot (or above the builder); a live drag follows the pointer.
-  useLayoutEffect(() => {
-    const ghost = ghostRef.current,
-      layer = ghostLayerRef.current,
-      canvas = canvasRef.current;
-    if (!drag || !ghost || !layer || !canvas) return;
-    const base = layer.getBoundingClientRect();
-    let left = drag.x - drag.ox,
-      top = drag.y - drag.oy,
-      width = drag.w;
-    if (drag.frozen) {
-      const slot = canvas
-          .querySelector('[data-placeholder]')
-          ?.getBoundingClientRect(),
-        c = canvas.getBoundingClientRect();
-      if (!slot) return;
-      width = slot.width;
-      if (drag.valid) {
-        left = slot.left + slot.width * 0.62 - 12;
-        top = slot.top + slot.height * 0.3 - 10;
-      } else {
-        left = c.right - width * 0.35;
-        top = c.top - 28;
-      }
-    }
-    ghost.style.width = `${width}px`;
-    ghost.style.left = `${left - base.left}px`;
-    ghost.style.top = `${top - base.top}px`;
-  });
 
   function overIndex(x: number, y: number) {
     const canvas = canvasRef.current;
@@ -1165,7 +1073,7 @@ export function PresetEditor({
         </div>
         <h2 className="pe-sr-only">Panels</h2>
         <section
-          ref={canvasRef}
+          ref={attachCanvas}
           className="pe-canvas"
           aria-label="Preset layout"
           data-mode={
@@ -1219,10 +1127,10 @@ export function PresetEditor({
           Escape to cancel.
         </p>
       </WorkspaceBody>
-      <div ref={ghostLayerRef} className="pe-ghost-layer">
+      <div ref={layerRef} className="pe-ghost-layer">
         {drag && draggedPanel && (
           <PanelCard
-            ref={ghostRef}
+            ref={attachGhost}
             panel={draggedPanel}
             index={0}
             total={1}
