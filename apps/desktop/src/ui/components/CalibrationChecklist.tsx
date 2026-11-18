@@ -1,4 +1,5 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Chip } from './Chip';
 import {
   Announcer,
@@ -9,6 +10,7 @@ import {
 } from './InspectorParts';
 import { Presence } from './Motion';
 import { type Severity, StatusBanner } from './Primitives';
+import { useStateResetByProp } from './useStateResetByProp';
 import './CalibrationChecklist.css';
 
 /** A named reading to capture, such as "Standard 100". `known` is the standard's known value, or null for a sample. */
@@ -101,41 +103,35 @@ export function CalibrationChecklist({
     helpId = `${id}-help`,
     messageId = `${id}-message`;
   const root = useRef<HTMLElement>(null),
-    focusNext = useRef<string | null>(null),
     epoch = useRef(0);
+  // Unmounting moves the epoch on, so a capture that settles afterwards is ignored.
+  const attachRoot = useCallback((node: HTMLElement) => {
+    root.current = node;
+    return () => {
+      root.current = null;
+      epoch.current++;
+    };
+  }, []);
   const [own, setOwn] = useState<ChecklistReadings>(defaultReadings);
   const readings = controlled ?? own;
   const [start, setStart] = useState(String(defaultInterval[0])),
     [end, setEnd] = useState(String(defaultInterval[1]));
-  const [chosen, setChosen] = useState(intervalChosen);
+  const [chosen, setChosen] = useStateResetByProp(intervalChosen);
   const [ownPending, setPending] = useState<string | null>(null),
-    [failed, setFailed] = useState<string | null>(failedStep);
+    [failed, setFailed] = useStateResetByProp<string | null>(failedStep);
   const [confirm, setConfirm] = useState<string | null>(null),
     [notice, setNotice] = useState<string | null>(null);
   const [undo, setUndo] = useState<ChecklistReadings | null>(null),
     [announcement, setAnnouncement] = useState('');
   const pending = pendingStep ?? ownPending;
-  useEffect(() => {
-    setChosen(intervalChosen);
-  }, [intervalChosen]);
-  useEffect(() => {
-    setFailed(failedStep);
-  }, [failedStep]);
-  useEffect(
-    () => () => {
-      epoch.current++;
-    },
-    [],
-  );
-  // A layout effect moves focus in the same commit that renders the target, before the screen updates.
-  useLayoutEffect(() => {
-    if (!focusNext.current) return;
+  // Renders the updates at once so the focus target exists before the screen updates.
+  const focusAfter = (selector: string, updates: () => void) => {
+    flushSync(updates);
     // A message or confirmation that is still leaving keeps its buttons but is inert, so it is skipped.
     root.current
-      ?.querySelector<HTMLElement>(`${focusNext.current}:not([inert] *)`)
+      ?.querySelector<HTMLElement>(`${selector}:not([inert] *)`)
       ?.focus();
-    focusNext.current = null;
-  });
+  };
 
   const update = (next: ChecklistReadings) => {
     if (controlled === undefined) setOwn(next);
@@ -183,8 +179,7 @@ export function CalibrationChecklist({
   async function capture(stepId: string, force = false) {
     if (blocked || mean === null) return;
     if (readings[stepId] && !force) {
-      setConfirm(stepId);
-      focusNext.current = '[data-action="cancel"]';
+      focusAfter('[data-action="cancel"]', () => setConfirm(stepId));
       return;
     }
     const reading = { start: a, end: b, mean },
@@ -199,41 +194,44 @@ export function CalibrationChecklist({
       await onCapture?.(stepId, reading);
     } catch {
       if (token !== epoch.current) return;
-      focusNext.current = '[data-action="retry"]';
-      setPending(null);
-      setFailed(stepId);
-      setAnnouncement('Capture failed. Saved readings are retained.');
+      focusAfter('[data-action="retry"]', () => {
+        setPending(null);
+        setFailed(stepId);
+        setAnnouncement('Capture failed. Saved readings are retained.');
+      });
       return;
     }
     if (token !== epoch.current) return;
-    // Set the focus target before the updates, so the render they trigger moves focus.
-    focusNext.current = `[data-action="capture"][data-step="${stepId}"]`;
-    setPending(null);
-    setUndo(before);
-    update({ ...before, [stepId]: reading });
     const text = `${label(stepId)} captured.`;
-    setNotice(text);
-    setAnnouncement(text);
+    focusAfter(`[data-action="capture"][data-step="${stepId}"]`, () => {
+      setPending(null);
+      setUndo(before);
+      update({ ...before, [stepId]: reading });
+      setNotice(text);
+      setAnnouncement(text);
+    });
   }
   function remove(stepId: string) {
     const next = { ...readings };
     delete next[stepId];
-    focusNext.current = `[data-action="capture"][data-step="${stepId}"]`;
-    setUndo(readings);
-    update(next);
-    setConfirm(null);
-    setFailed(null);
     const text = `${label(stepId)} removed.`;
-    setNotice(text);
-    setAnnouncement(text);
+    focusAfter(`[data-action="capture"][data-step="${stepId}"]`, () => {
+      setUndo(readings);
+      update(next);
+      setConfirm(null);
+      setFailed(null);
+      setNotice(text);
+      setAnnouncement(text);
+    });
   }
   function restore() {
     if (!undo) return;
-    focusNext.current = '[data-action="capture"]';
-    update(undo);
-    setUndo(null);
-    setNotice('Previous readings restored.');
-    setAnnouncement('Previous readings restored.');
+    focusAfter('[data-action="capture"]', () => {
+      update(undo);
+      setUndo(null);
+      setNotice('Previous readings restored.');
+      setAnnouncement('Previous readings restored.');
+    });
   }
   function edit(nextStart: string, nextEnd: string) {
     setStart(nextStart);
@@ -289,7 +287,11 @@ export function CalibrationChecklist({
   ) : null;
 
   return (
-    <section ref={root} className="dv-insp dv-cal" aria-labelledby={titleId}>
+    <section
+      ref={attachRoot}
+      className="dv-insp dv-cal"
+      aria-labelledby={titleId}
+    >
       <header className="dv-cal-header">
         <h2 id={titleId}>{title}</h2>
         <div className="dv-cal-progress">
@@ -473,10 +475,12 @@ export function CalibrationChecklist({
                       <InspectorButton
                         small
                         data-action="cancel"
-                        onClick={() => {
-                          setConfirm(null);
-                          focusNext.current = `[data-action="capture"][data-step="${step.id}"]`;
-                        }}
+                        onClick={() =>
+                          focusAfter(
+                            `[data-action="capture"][data-step="${step.id}"]`,
+                            () => setConfirm(null),
+                          )
+                        }
                       >
                         Cancel
                       </InspectorButton>
