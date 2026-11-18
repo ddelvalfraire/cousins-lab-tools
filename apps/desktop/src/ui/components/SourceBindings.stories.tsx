@@ -89,10 +89,11 @@ const all = ['44', '45', '49'];
 const switched = () => new Promise<void>((resolve) => setTimeout(resolve, 650));
 const failsOnce = () => {
   let failed = false;
-  return () =>
-    failed
-      ? switched()
-      : ((failed = true), Promise.reject(new Error('Not switched')));
+  return () => {
+    if (failed) return switched();
+    failed = true;
+    return Promise.reject(new Error('Not switched'));
+  };
 };
 
 type Scenario =

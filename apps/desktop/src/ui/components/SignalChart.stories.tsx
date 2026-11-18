@@ -11,7 +11,10 @@ function edgeCase(
   kind: 'gap' | 'imported' | 'irregular' | 'nonpositive' | 'range',
 ): SignalSample[] {
   let seed = 7;
-  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
   const out: [number, number | null][] = [];
   if (kind === 'gap')
     for (let t = 0; t <= 120; t++)

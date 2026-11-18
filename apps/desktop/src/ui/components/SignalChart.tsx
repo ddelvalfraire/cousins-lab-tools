@@ -233,7 +233,9 @@ function plotData(
     const inserted = pauses.get(i);
     if (inserted) {
       xs.push((rows[i - 1].time + row.time) / 2);
-      keys.forEach((k, s) => ys[s].push(inserted.has(k) ? null : undefined));
+      keys.forEach((k, s) => {
+        ys[s].push(inserted.has(k) ? null : undefined);
+      });
     }
     xs.push(row.time);
     keys.forEach((k, s) => {

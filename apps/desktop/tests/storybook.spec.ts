@@ -950,7 +950,6 @@ test('the narrow preset editor shows the requires note on its own line, without 
           ),
         );
         return {
-          text: span.innerText.trim(),
           below: box.top >= chipsBottom,
           left: Math.round(box.left - requires.getBoundingClientRect().left),
           lines: new Set(
@@ -958,7 +957,11 @@ test('the narrow preset editor shows the requires note on its own line, without 
           ).size,
         };
       });
-    expect(note.text, `${url} note text`).toBe('worked out from the panels');
+    // innerText, unlike textContent, leaves out the dot that is hidden on narrow windows.
+    await expect(
+      page.locator('.pe-requires > span:last-child').first(),
+      `${url} note text`,
+    ).toHaveText('worked out from the panels', { useInnerText: true });
     expect(note.below, `${url} note under the chips`).toBe(true);
     expect(note.left, `${url} note starts the line`).toBe(0);
     expect(note.lines, `${url} note lines`).toBe(1);
@@ -1637,9 +1640,9 @@ test('the main sidebar keeps its content laid out while it collapses and expands
     'the collapse animates',
   ).toBeGreaterThan(0);
   const collapsing = await sidebarLayout(page);
-  await page.evaluate(() =>
-    document.getAnimations().forEach((animation) => animation.finish()),
-  );
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) animation.finish();
+  });
   expect
     .soft(collapsing, 'first frame of the collapse')
     .toEqual(await sidebarLayout(page));

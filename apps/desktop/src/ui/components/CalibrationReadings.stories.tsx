@@ -44,10 +44,11 @@ const stored = () => new Promise<void>((resolve) => setTimeout(resolve, 650));
 /** Fails the first time, then stores: the Retry path. */
 const failsOnce = () => {
   let failed = false;
-  return () =>
-    failed
-      ? stored()
-      : ((failed = true), Promise.reject(new Error('Not stored')));
+  return () => {
+    if (failed) return stored();
+    failed = true;
+    return Promise.reject(new Error('Not stored'));
+  };
 };
 
 const meta = {

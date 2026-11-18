@@ -25,9 +25,11 @@ export const Information: Story = {};
 export const Warning: Story = {
   args: { severity: 'warning', children: 'Stale · last received 12 s ago' },
 };
-export const Error: Story = {
+const ErrorStory: Story = {
   args: { severity: 'error', children: 'Unavailable · Mass 44 is missing' },
 };
+
+export { ErrorStory as Error };
 export const Success: Story = {
   args: { severity: 'success', children: 'Revision 3 saved.', announce: true },
   play: async ({ canvasElement }) => {

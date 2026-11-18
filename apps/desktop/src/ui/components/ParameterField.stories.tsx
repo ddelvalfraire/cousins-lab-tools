@@ -32,7 +32,9 @@ export const Timing: Story = { args: { kind: 'timing' } };
 export const Text: Story = { args: { kind: 'text' } };
 export const SingleSelection: Story = { args: { kind: 'choice' } };
 export const MultipleSelection: Story = { args: { kind: 'multiple' } };
-export const Boolean: Story = { args: { kind: 'boolean' } };
+const BooleanStory: Story = { args: { kind: 'boolean' } };
+
+export { BooleanStory as Boolean };
 export const File: Story = { args: { kind: 'file' } };
 export const Notes: Story = { args: { kind: 'note' } };
 export const Invalid: Story = { args: { invalid: true } };

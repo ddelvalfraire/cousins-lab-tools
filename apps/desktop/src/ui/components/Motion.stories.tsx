@@ -6,6 +6,14 @@ import { MotionList, Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { reduceMotion } from './settleMotion';
 
+function pauseAnimations(element: Element) {
+  for (const animation of element.getAnimations()) animation.pause();
+}
+
+function finishAnimations(element: Element) {
+  for (const animation of element.getAnimations()) animation.finish();
+}
+
 function MessageDemo({ variant }: { variant: 'collapse' | 'fade' | 'pop' }) {
   const [error, setError] = useState<string | null>(
     'Choose a reference recording.',
@@ -160,7 +168,7 @@ function RowsDemo() {
   const [filtered, setFiltered] = useState(false);
   return (
     <>
-      <button onClick={() => setFiltered((value) => !value)}>
+      <button type="button" onClick={() => setFiltered((value) => !value)}>
         Filter rows
       </button>
       <table>
@@ -210,7 +218,7 @@ function SuccessiveRowsDemo() {
   const [count, setCount] = useState(0);
   return (
     <>
-      <button onClick={() => setCount((value) => value + 1)}>
+      <button type="button" onClick={() => setCount((value) => value + 1)}>
         Remove first row
       </button>
       <table>
@@ -238,20 +246,14 @@ export const SuccessiveRowsKeepOrder: Story = {
     await waitFor(() =>
       expect(within(canvasElement).getAllByRole('row')).toHaveLength(2),
     );
-    canvasElement
-      .querySelectorAll('tr')
-      .forEach((row) =>
-        row.getAnimations().forEach((animation) => animation.pause()),
-      );
+    canvasElement.querySelectorAll('tr').forEach(pauseAnimations);
     button.click();
     await waitFor(() =>
       expect(within(canvasElement).getAllByRole('row')).toHaveLength(1),
     );
     const rows = [...canvasElement.querySelectorAll('tr')];
     await expect(rows.map((row) => row.textContent)).toEqual(['A', 'B', 'C']);
-    rows.forEach((row) =>
-      row.getAnimations().forEach((animation) => animation.finish()),
-    );
+    rows.forEach(finishAnimations);
     await waitFor(() =>
       expect(canvasElement.querySelectorAll('tr')).toHaveLength(1),
     );

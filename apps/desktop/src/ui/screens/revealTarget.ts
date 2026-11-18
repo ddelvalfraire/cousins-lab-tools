@@ -50,8 +50,9 @@ export function revealTarget(viewport: HTMLElement, box: HTMLElement) {
   }
 
   let timer = 0;
-  const stopListening = () =>
-    DISMISS.forEach((type) => document.removeEventListener(type, leave, true));
+  const stopListening = () => {
+    for (const type of DISMISS) document.removeEventListener(type, leave, true);
+  };
   const clear = () => {
     window.clearTimeout(timer);
     stopListening();
@@ -69,8 +70,7 @@ export function revealTarget(viewport: HTMLElement, box: HTMLElement) {
   }
   box.dataset.searchReveal = reduced ? 'static' : 'pulse';
   timer = window.setTimeout(leave, REVEAL_MS);
-  DISMISS.forEach((type) =>
-    document.addEventListener(type, leave, { capture: true, passive: true }),
-  );
+  for (const type of DISMISS)
+    document.addEventListener(type, leave, { capture: true, passive: true });
   return clear;
 }

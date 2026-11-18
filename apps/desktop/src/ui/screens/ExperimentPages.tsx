@@ -190,7 +190,9 @@ export function CapturePage({
   const [speed, setSpeed] = useState(1);
   const timers = useRef<number[]>([]);
   useEffect(
-    () => () => timers.current.forEach((id) => window.clearTimeout(id)),
+    () => () => {
+      for (const id of timers.current) window.clearTimeout(id);
+    },
     [],
   );
   const later = (fn: () => void, ms: number) => {

@@ -27,5 +27,7 @@ const meta = {
 } satisfies Meta<typeof FormFeedback>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const Error: Story = {};
+const ErrorStory: Story = {};
+
+export { ErrorStory as Error };
 export const Warning: Story = { args: { severity: 'warning' } };

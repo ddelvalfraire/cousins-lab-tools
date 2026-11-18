@@ -61,10 +61,11 @@ const saved: AlignmentSettings = {
 const stored = () => new Promise<void>((resolve) => setTimeout(resolve, 650));
 const failsOnce = () => {
   let failed = false;
-  return () =>
-    failed
-      ? stored()
-      : ((failed = true), Promise.reject(new Error('Not saved')));
+  return () => {
+    if (failed) return stored();
+    failed = true;
+    return Promise.reject(new Error('Not saved'));
+  };
 };
 
 type Scenario =
