@@ -7,7 +7,15 @@
     "root": "../.."
   },
   "files": {
-    "includes": ["**", "!!**/src-tauri", "!!**/dist", "!bun.lock"]
+    "includes": [
+      "**",
+      "!!**/src-tauri",
+      "!!**/dist",
+      "!!**/storybook-static",
+      "!!**/test-results",
+      "!!**/playwright-report",
+      "!bun.lock"
+    ]
   },
   "plugins": ["./lint/no-effect-hooks.grit"],
   "formatter": {
