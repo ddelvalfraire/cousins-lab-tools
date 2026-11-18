@@ -1,4 +1,5 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useMounted } from '@mantine/hooks';
+import { type ReactNode, useRef } from 'react';
 import { formatClockTime } from '../time';
 import { Chip } from './Chip';
 import { ImportIcon } from './ImportDialog';
@@ -127,10 +128,10 @@ function RevisionEntry({
   animate: boolean;
   children: ReactNode;
 }) {
-  const [shown, setShown] = useState(!animate);
-  useEffect(() => setShown(true), []);
+  // Presence never animates its first render, so a new entry starts hidden and shows once mounted.
+  const mounted = useMounted();
   return (
-    <Presence show={shown} className="dv-revision-entry-slot">
+    <Presence show={mounted || !animate} className="dv-revision-entry-slot">
       {children}
     </Presence>
   );

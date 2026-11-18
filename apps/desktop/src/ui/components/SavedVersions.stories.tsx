@@ -421,6 +421,7 @@ export const RevisionMotion: Story = {
   play: async ({ canvasElement }) => {
     const page = within(canvasElement);
     let animated = false,
+      entryGrew = false,
       overlap = false,
       sampling = true;
     const sample = () => {
@@ -438,8 +439,16 @@ export const RevisionMotion: Story = {
       if (sampling) requestAnimationFrame(sample);
     };
     requestAnimationFrame(sample);
+    // A new revision's entry starts collapsed and grows in; entries already listed never do.
+    const collapsedEntry = () =>
+      [
+        ...canvasElement.querySelectorAll<HTMLElement>(
+          '.dv-revision-entry-slot',
+        ),
+      ].some((slot) => slot.style.height === '0px');
     const observer = new MutationObserver(() => {
       animated ||= !!canvasElement.querySelector('[data-motion]');
+      entryGrew ||= collapsedEntry();
     });
     observer.observe(canvasElement, {
       subtree: true,
@@ -480,9 +489,10 @@ export const RevisionMotion: Story = {
     sampling = false;
     observer.disconnect();
     await expect(overlap).toBe(false);
-    await expect(animated).toBe(
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    );
+    const motion = !window.matchMedia('(prefers-reduced-motion: reduce)')
+      .matches;
+    await expect(animated).toBe(motion);
+    await expect(entryGrew).toBe(motion);
     await expect(
       within(
         page.getByRole('navigation', { name: 'Saved preset versions' }),
