@@ -1,2 +1,5 @@
 /* Centered stories still need a responsive containing block on narrow canvases. */
-.sb-main-centered #storybook-root { width: 100%; min-width: 0; }
+.sb-main-centered #storybook-root {
+  width: 100%;
+  min-width: 0;
+}

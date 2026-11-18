@@ -1,67 +1,311 @@
 /* Experiments list. Source: design/dvdash-field-review/experiments-home-review.html. */
-.dv-exp { position: relative; color: var(--dv-ink); background: var(--dv-bg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; }
-.dv-exp :where(h1, h2, p) { margin: 0; }
-.dv-exp :where(button) { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
-.dv-exp :where(button:disabled) { cursor: default; }
-.dv-exp :focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
-.dv-exp svg { flex: none; pointer-events: none; }
-.dv-exp-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.dv-exp {
+  position: relative;
+  color: var(--dv-ink);
+  background: var(--dv-bg);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: normal;
+}
+.dv-exp :where(h1, h2, p) {
+  margin: 0;
+}
+.dv-exp :where(button) {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dv-exp :where(button:disabled) {
+  cursor: default;
+}
+.dv-exp :focus-visible {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 3px;
+}
+.dv-exp svg {
+  flex: none;
+  pointer-events: none;
+}
+.dv-exp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 
 /* Header and action bar: the shared PageHeader. */
 
 /* Filter line and toolbar; the body is the shared WorkspaceBody with the Details sidebar. */
-.dv-exp-filter { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: .6875rem; color: var(--dv-ink-muted); }
-.dv-exp-filter-query { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.dv-exp-filter-query span { overflow-wrap: anywhere; }
-.dv-exp-filter-query svg { width: 13px; height: 13px; }
-.dv-exp .dv-exp-text-button { font-size: .6875rem; padding: 3px 0; border: 0; background: none; color: var(--dv-accent); white-space: nowrap; }
+.dv-exp-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 0.6875rem;
+  color: var(--dv-ink-muted);
+}
+.dv-exp-filter-query {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.dv-exp-filter-query span {
+  overflow-wrap: anywhere;
+}
+.dv-exp-filter-query svg {
+  width: 13px;
+  height: 13px;
+}
+.dv-exp .dv-exp-text-button {
+  font-size: 0.6875rem;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--dv-accent);
+  white-space: nowrap;
+}
 /* The count row matches the catalog pages (CatalogTable.css .dv-cat-toolbar). */
-.dv-exp-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 32px; margin-bottom: var(--dv-gap); }
-.dv-exp-count { font-size: .75rem; color: var(--dv-ink-muted); }
+.dv-exp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 32px;
+  margin-bottom: var(--dv-gap);
+}
+.dv-exp-count {
+  font-size: 0.75rem;
+  color: var(--dv-ink-muted);
+}
 
 /* Table */
-.dv-exp-frame { position: relative; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); }
-.dv-exp .dv-exp-frame:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 2px; }
+.dv-exp-frame {
+  position: relative;
+  border: 1px solid var(--dv-line);
+  border-radius: 8px;
+  background: var(--dv-paper);
+}
+.dv-exp .dv-exp-frame:focus-visible {
+  outline: 2px solid var(--dv-blue);
+  outline-offset: 2px;
+}
 /* The meta columns take their content width and the name takes the rest, so the chips keep one line at the 772 px content width. */
-.dv-exp-table { width: 100%; border-collapse: collapse; font-size: .75rem; }
-.dv-exp-table :is(th, td):not(:first-child) { width: 1%; white-space: nowrap; }
+.dv-exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.dv-exp-table :is(th, td):not(:first-child) {
+  width: 1%;
+  white-space: nowrap;
+}
 /* Sort buttons are 24 px targets; the header cell gives back the extra height, so the row stays 34 px. */
-.dv-exp-table th { text-align: left; padding: 5px 12px; font-size: .625rem; font-weight: 500; color: var(--dv-ink-muted); background: var(--dv-bg); border-bottom: 1px solid var(--dv-line); }
-.dv-exp-table th button { display: flex; align-items: center; gap: 5px; min-height: 24px; font: inherit; padding: 0; border: 0; background: none; color: inherit; }
-.dv-exp-table td { padding: 11px 12px; border-bottom: 1px solid var(--dv-line); vertical-align: middle; }
-.dv-exp-table tr:last-child td { border-bottom: 0; }
-.dv-exp-table tbody tr:hover { background: var(--dv-bg); }
-.dv-exp-table tbody tr[data-selected='true'] { background: var(--dv-accent-soft); }
+.dv-exp-table th {
+  text-align: left;
+  padding: 5px 12px;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--dv-ink-muted);
+  background: var(--dv-bg);
+  border-bottom: 1px solid var(--dv-line);
+}
+.dv-exp-table th button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+.dv-exp-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--dv-line);
+  vertical-align: middle;
+}
+.dv-exp-table tr:last-child td {
+  border-bottom: 0;
+}
+.dv-exp-table tbody tr:hover {
+  background: var(--dv-bg);
+}
+.dv-exp-table tbody tr[data-selected="true"] {
+  background: var(--dv-accent-soft);
+}
 /* Muted text on the accent tint falls below 4.5:1, so the selected row uses ink, as the catalogs do. */
-.dv-exp-table tbody tr[data-selected='true'] { --dv-ink-muted: var(--dv-ink); }
+.dv-exp-table tbody tr[data-selected="true"] {
+  --dv-ink-muted: var(--dv-ink);
+}
 /* At narrow widths the table scrolls; this keeps a typical name (about 181 px) on one line instead of squeezing it. */
-.dv-exp-identity { display: flex; gap: 12px; align-items: center; min-width: 240px; }
-.dv-exp-identity > div { min-width: 0; }
-.dv-exp-mark { width: 38px; height: 38px; border: 1px solid var(--dv-line); border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--dv-bg); color: var(--dv-blue); }
-.dv-exp-mark svg { width: 22px; height: 22px; }
-.dv-exp .dv-exp-name { display: block; text-align: left; font-size: .8125rem; line-height: 1.45; font-weight: 600; padding: 0; border: 0; background: none; overflow-wrap: anywhere; color: var(--dv-ink); }
-.dv-exp .dv-exp-name:hover { color: var(--dv-accent); text-decoration: underline; text-underline-offset: 3px; }
-.dv-exp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-.dv-exp-date { font-size: .6875rem; display: block; }
-.dv-exp-date small { font-size: .625rem; color: var(--dv-ink-muted); display: block; margin-top: 4px; }
-.dv-exp .dv-exp-open { display: inline-flex; align-items: center; gap: 5px; padding: 6px 0; min-height: 28px; border: 0; border-radius: 3px; background: transparent; font-size: .625rem; font-weight: 500; white-space: nowrap; color: var(--dv-accent); }
-.dv-exp-open:hover { text-decoration: underline; text-underline-offset: 3px; }
-.dv-exp .dv-exp-open:focus-visible { outline: 2px solid var(--dv-blue); outline-offset: 4px; }
-.dv-exp-open svg { width: 12px; height: 12px; }
+.dv-exp-identity {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 240px;
+}
+.dv-exp-identity > div {
+  min-width: 0;
+}
+.dv-exp-mark {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--dv-line);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--dv-bg);
+  color: var(--dv-blue);
+}
+.dv-exp-mark svg {
+  width: 22px;
+  height: 22px;
+}
+.dv-exp .dv-exp-name {
+  display: block;
+  text-align: left;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  font-weight: 600;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow-wrap: anywhere;
+  color: var(--dv-ink);
+}
+.dv-exp .dv-exp-name:hover {
+  color: var(--dv-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dv-exp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.dv-exp-date {
+  font-size: 0.6875rem;
+  display: block;
+}
+.dv-exp-date small {
+  font-size: 0.625rem;
+  color: var(--dv-ink-muted);
+  display: block;
+  margin-top: 4px;
+}
+.dv-exp .dv-exp-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 0;
+  min-height: 28px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  font-size: 0.625rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--dv-accent);
+}
+.dv-exp-open:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dv-exp .dv-exp-open:focus-visible {
+  outline: 2px solid var(--dv-blue);
+  outline-offset: 4px;
+}
+.dv-exp-open svg {
+  width: 12px;
+  height: 12px;
+}
 
 /* Pagination footer */
-.dv-exp-pagination { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-top: 14px; font-size: .625rem; color: var(--dv-ink-muted); flex-wrap: wrap; }
-.dv-exp-pagination-controls { display: flex; gap: 4px; align-items: center; }
-.dv-exp-pagination-controls button { width: 1.6875rem; height: 1.6875rem; border: 1px solid var(--dv-line); border-radius: 4px; display: grid; place-items: center; background: var(--dv-paper); padding: 0; }
-.dv-exp .dv-exp-pagination-controls button { color: var(--dv-ink); }
-.dv-exp-pagination-controls button:disabled { opacity: .4; }
-.dv-exp-pagination .dv-select { --dv-select-height: 1.5rem; --dv-select-font: .625rem; --dv-select-pad: 6px; --dv-select-radius: 4px; --dv-select-border: var(--dv-line); --dv-select-section: 18px; display: inline-block; width: 54px; margin-inline: 5px; vertical-align: middle; }
+.dv-exp-pagination {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  font-size: 0.625rem;
+  color: var(--dv-ink-muted);
+  flex-wrap: wrap;
+}
+.dv-exp-pagination-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.dv-exp-pagination-controls button {
+  width: 1.6875rem;
+  height: 1.6875rem;
+  border: 1px solid var(--dv-line);
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  background: var(--dv-paper);
+  padding: 0;
+}
+.dv-exp .dv-exp-pagination-controls button {
+  color: var(--dv-ink);
+}
+.dv-exp-pagination-controls button:disabled {
+  opacity: 0.4;
+}
+.dv-exp-pagination .dv-select {
+  --dv-select-height: 1.5rem;
+  --dv-select-font: 0.625rem;
+  --dv-select-pad: 6px;
+  --dv-select-radius: 4px;
+  --dv-select-border: var(--dv-line);
+  --dv-select-section: 18px;
+  display: inline-block;
+  width: 54px;
+  margin-inline: 5px;
+  vertical-align: middle;
+}
 
 /* Empty states */
-.dv-exp-empty { padding: 26px 20px 27px; display: grid; justify-items: start; gap: 9px; }
-.dv-exp .dv-exp-empty h2 { font-size: .8125rem; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
-.dv-exp-empty p { font-size: .6875rem; color: var(--dv-ink-muted); line-height: 1.6; max-width: 330px; }
-.dv-exp .dv-exp-plain-button { border: 1px solid var(--dv-line); background: var(--dv-paper); color: var(--dv-ink); border-radius: 5px; padding: 7px 10px; font-size: .6875rem; }
-.dv-exp-plain-button:hover { background: var(--dv-soft); }
-.dv-exp-empty-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-
+.dv-exp-empty {
+  padding: 26px 20px 27px;
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+}
+.dv-exp .dv-exp-empty h2 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.dv-exp-empty p {
+  font-size: 0.6875rem;
+  color: var(--dv-ink-muted);
+  line-height: 1.6;
+  max-width: 330px;
+}
+.dv-exp .dv-exp-plain-button {
+  border: 1px solid var(--dv-line);
+  background: var(--dv-paper);
+  color: var(--dv-ink);
+  border-radius: 5px;
+  padding: 7px 10px;
+  font-size: 0.6875rem;
+}
+.dv-exp-plain-button:hover {
+  background: var(--dv-soft);
+}
+.dv-exp-empty-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}

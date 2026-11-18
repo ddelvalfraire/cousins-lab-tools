@@ -56,15 +56,15 @@ Install Chromium once with `bunx playwright install chromium`, or select an exis
 
 The application opens on **Experiments**. The Screens section holds full-page, navigable stories for each screen below, built from the `feat/acquisition-ui-prototype` workflow. Layouts and navigation follow the approved screen mockups in `design/dvdash-field-review/`.
 
-| Screen | Responsibility |
-| --- | --- |
-| Experiments (home) | Recent experiments and recordings, reopen work, start an experiment. |
-| Presets | Browse and preview reusable layouts, edit them, browse and restore revisions, import presets. |
-| New experiment | Choose a preset, bind instrument roles/data sources, resolve missing requirements. |
+| Screen               | Responsibility                                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Experiments (home)   | Recent experiments and recordings, reopen work, start an experiment.                                                                             |
+| Presets              | Browse and preview reusable layouts, edit them, browse and restore revisions, import presets.                                                    |
+| New experiment       | Choose a preset, bind instrument roles/data sources, resolve missing requirements.                                                               |
 | Experiment workspace | Charts/readouts/tables, intervals, calibration readings, saved results, problems and supported instrument controls; shared live/recorded layout. |
-| Routines | Browse and edit generic routines, inspect their settings, select a routine for an experiment. |
-| Instruments | Browse instruments and their available channels. |
-| Settings | Appearance, number display, recording location, export defaults and build details. |
+| Routines             | Browse and edit generic routines, inspect their settings, select a routine for an experiment.                                                    |
+| Instruments          | Browse instruments and their available channels.                                                                                                 |
+| Settings             | Appearance, number display, recording location, export defaults and build details.                                                               |
 
 Revision history is a preset page; saved results, alignment and source bindings are right-sidebar inspectors; recording and preset import and recording export are dialogs. The preset editor resizes panels, and routine steps reorder by drag or keyboard. Dragging panels to rearrange a dashboard is not built.
 

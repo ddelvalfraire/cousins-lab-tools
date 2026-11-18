@@ -1,9 +1,9 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 
-const root = document.getElementById("root");
-if (!root) throw new Error("Missing application root element");
+const root = document.getElementById('root');
+if (!root) throw new Error('Missing application root element');
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>

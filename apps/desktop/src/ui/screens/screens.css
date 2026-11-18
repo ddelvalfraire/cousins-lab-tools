@@ -1,197 +1,866 @@
 /* Application frame. Values from design/dvdash-field-review/main-sidebar-review.html (frame, sidebar, card)
    and right-sidebar-review.html (window bar). */
-.dv-shell { container: dv-shell / inline-size; --dv-nav-text: #51635a; --dv-nav-strong: #213c2e; --dv-nav-hover: #e2e9e3;
-  display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 480px; background: var(--dv-frame); color: var(--dv-ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-[data-mantine-color-scheme='dark'] .dv-shell { --dv-nav-text: #bdcbbd; --dv-nav-strong: #e4eee0; --dv-nav-hover: #2d3e32; }
-.dv-shell :where(.dv-side-navigation) { font-family: inherit; }
+.dv-shell {
+  container: dv-shell / inline-size;
+  --dv-nav-text: #51635a;
+  --dv-nav-strong: #213c2e;
+  --dv-nav-hover: #e2e9e3;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 480px;
+  background: var(--dv-frame);
+  color: var(--dv-ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+[data-mantine-color-scheme="dark"] .dv-shell {
+  --dv-nav-text: #bdcbbd;
+  --dv-nav-strong: #e4eee0;
+  --dv-nav-hover: #2d3e32;
+}
+.dv-shell :where(.dv-side-navigation) {
+  font-family: inherit;
+}
 
 /* Window bar (.topbar) */
-.dv-shell-topbar { --search-leading: 192px; flex: none; display: flex; align-items: center; gap: 18px; height: 58px; padding: 0 18px; background: var(--dv-frame); color: var(--dv-nav-strong); font-size: .8125rem; line-height: normal; }
-.dv-shell-topbar button { font: inherit; cursor: pointer; touch-action: manipulation; }
-.dv-shell-topbar :is(button, input):focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
-.dv-shell-ico { flex: none; width: 16px; height: 16px; pointer-events: none; }
-.dv-shell-wordmark { display: flex; flex: none; align-items: center; gap: 9px; width: 156px; padding: 0; border: 0; background: none; color: var(--dv-nav-strong); font-size: 1.25rem; font-weight: 700; letter-spacing: -.05em; text-align: start; }
-.dv-shell-topbar .dv-shell-wordmark { font-size: 1.25rem; font-weight: 700; letter-spacing: -.05em; }
-.dv-shell-wordmark .dv-brand-concept { width: 28px; height: 28px; border-radius: 6px; }
-.dv-shell-wordmark .dv-brand-concept img { width: 252.99px; height: 168.66px; left: -11.36px; top: -30.8px; }
-.dv-shell-search-anchor { position: relative; z-index: 5; flex: 1; min-width: 100px; max-width: 580px; margin-inline-start: max(0px, calc((100cqw - 580px) / 2 - var(--search-leading))); }
-.dv-shell-searchbox { display: flex; align-items: center; gap: 8px; min-width: 0; height: 2.125rem; padding: 0 10px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-paper); color: var(--dv-ink-muted); }
-.dv-shell-searchbox:focus-within { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
+.dv-shell-topbar {
+  --search-leading: 192px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 58px;
+  padding: 0 18px;
+  background: var(--dv-frame);
+  color: var(--dv-nav-strong);
+  font-size: 0.8125rem;
+  line-height: normal;
+}
+.dv-shell-topbar button {
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dv-shell-topbar :is(button, input):focus-visible {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 3px;
+}
+.dv-shell-ico {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.dv-shell-wordmark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  width: 156px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dv-nav-strong);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  text-align: start;
+}
+.dv-shell-topbar .dv-shell-wordmark {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.dv-shell-wordmark .dv-brand-concept {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+.dv-shell-wordmark .dv-brand-concept img {
+  width: 252.99px;
+  height: 168.66px;
+  left: -11.36px;
+  top: -30.8px;
+}
+.dv-shell-search-anchor {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  min-width: 100px;
+  max-width: 580px;
+  margin-inline-start: max(
+    0px,
+    calc((100cqw - 580px) / 2 - var(--search-leading))
+  );
+}
+.dv-shell-searchbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 2.125rem;
+  padding: 0 10px;
+  border: 1px solid var(--dv-line);
+  border-radius: 7px;
+  background: var(--dv-paper);
+  color: var(--dv-ink-muted);
+}
+.dv-shell-searchbox:focus-within {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 2px;
+}
 /* Over the open results' backdrop the ring keeps the undimmed bar colour on both sides, so it holds 3:1 contrast. */
-.dv-shell-search-anchor:has(.dv-shell-search-backdrop) .dv-shell-searchbox:focus-within { box-shadow: 0 0 0 6px var(--dv-frame); }
-.dv-shell-topbar .dv-shell-searchbox input:not(.dv-select-input):focus-visible { outline: none; }
-.dv-shell-searchbox .dv-select { --dv-select-height: 1.25rem; --dv-select-font: .625rem; --dv-select-pad: 5px; --dv-select-radius: 4px; --dv-select-border: transparent; --dv-select-bg: var(--dv-soft); --dv-select-section: 16px; flex: none; width: 6rem; }
-.dv-shell-searchbox input:not(.dv-select-input) { flex: 1; width: auto; min-width: 0; padding: 7px 0; border: 0; outline: none; background: transparent; color: var(--dv-ink); font: inherit; font-size: .75rem; text-overflow: ellipsis; appearance: none; }
-.dv-shell-searchbox input::-webkit-search-cancel-button { display: none; }
-.dvdash .dv-shell-searchbox input::placeholder { color: var(--dv-ink-muted); }
-.dv-shell-shortcut { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--dv-ink-muted); }
-.dv-shell-clear { display: inline-grid; flex: none; place-items: center; width: 20px; height: 24px; padding: 0; border: 0; background: none; color: var(--dv-ink-muted); }
-.dv-shell-clear .dv-shell-ico { width: 12px; height: 12px; }
-.dv-shell-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.dv-shell-tools { display: flex; gap: 3px; margin-left: auto; }
-.dv-shell-icon-button { display: inline-grid; flex: none; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--dv-nav-text); }
-.dv-shell-icon-button:hover { background: var(--dv-nav-hover); color: var(--dv-nav-strong); }
-.dv-shell-menu { display: none; width: 34px; height: 34px; }
-.dv-shell-menu svg { width: 20px; height: 20px; }
+.dv-shell-search-anchor:has(.dv-shell-search-backdrop)
+  .dv-shell-searchbox:focus-within {
+  box-shadow: 0 0 0 6px var(--dv-frame);
+}
+.dv-shell-topbar .dv-shell-searchbox input:not(.dv-select-input):focus-visible {
+  outline: none;
+}
+.dv-shell-searchbox .dv-select {
+  --dv-select-height: 1.25rem;
+  --dv-select-font: 0.625rem;
+  --dv-select-pad: 5px;
+  --dv-select-radius: 4px;
+  --dv-select-border: transparent;
+  --dv-select-bg: var(--dv-soft);
+  --dv-select-section: 16px;
+  flex: none;
+  width: 6rem;
+}
+.dv-shell-searchbox input:not(.dv-select-input) {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  padding: 7px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--dv-ink);
+  font: inherit;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  appearance: none;
+}
+.dv-shell-searchbox input::-webkit-search-cancel-button {
+  display: none;
+}
+.dvdash .dv-shell-searchbox input::placeholder {
+  color: var(--dv-ink-muted);
+}
+.dv-shell-shortcut {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dv-ink-muted);
+}
+.dv-shell-clear {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dv-ink-muted);
+}
+.dv-shell-clear .dv-shell-ico {
+  width: 12px;
+  height: 12px;
+}
+.dv-shell-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dv-shell-tools {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+.dv-shell-icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--dv-nav-text);
+}
+.dv-shell-icon-button:hover {
+  background: var(--dv-nav-hover);
+  color: var(--dv-nav-strong);
+}
+.dv-shell-menu {
+  display: none;
+  width: 34px;
+  height: 34px;
+}
+.dv-shell-menu svg {
+  width: 20px;
+  height: 20px;
+}
 
 /* Below the bar: the sidebar on the frame, then the page card with an 8 px gap right and bottom (.workspace, .content) */
-.dv-shell-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 11.5rem minmax(0, 1fr); padding: 0 8px 8px 0; transition: grid-template-columns 240ms cubic-bezier(.22,1,.36,1); }
-.dv-shell[data-navigation-collapsed='true'] .dv-shell-workspace { grid-template-columns: 58px minmax(0, 1fr); }
-.dv-shell-sidebar { position: relative; z-index: 2; min-width: 0; min-height: 0; }
-.dv-shell-sidebar .dv-side-navigation { height: 100%; }
-.dv-shell-page-frame { container: dv-page-frame / inline-size; display: flex; min-width: 0; min-height: 0; }
+.dv-shell-workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  padding: 0 8px 8px 0;
+  transition: grid-template-columns 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dv-shell[data-navigation-collapsed="true"] .dv-shell-workspace {
+  grid-template-columns: 58px minmax(0, 1fr);
+}
+.dv-shell-sidebar {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  min-height: 0;
+}
+.dv-shell-sidebar .dv-side-navigation {
+  height: 100%;
+}
+.dv-shell-page-frame {
+  container: dv-page-frame / inline-size;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
 /* The page scrolls in a ScrollFrame: the outer box takes the card's place in the frame, the card itself is the scroller. */
-.dv-shell-page-root { flex: 1 1 0; min-width: 0; min-height: 0; }
-.dv-shell-page-content { display: flex; flex-direction: column; flex: 1 0 auto; }
-.dv-shell-page { container: dv-page / inline-size; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--dv-line); border-radius: 10px; background: var(--dv-bg); outline: none; transition: padding-right var(--dv-side-motion); }
+.dv-shell-page-root {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+.dv-shell-page-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+}
+.dv-shell-page {
+  container: dv-page / inline-size;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--dv-line);
+  border-radius: 10px;
+  background: var(--dv-bg);
+  outline: none;
+  transition: padding-right var(--dv-side-motion);
+}
 /* The card takes focus from code after a navigation (and from the skip link) so screen readers start on the new page.
    It is not a control, so it gets no ring; this outranks the global .dvdash :focus-visible ring. */
-.dv-shell .dv-shell-page:focus-visible { outline: none; }
+.dv-shell .dv-shell-page:focus-visible {
+  outline: none;
+}
 /* A page's right sidebar is docked to the card's right edge at full height, beside the header (RightSidebar.css).
    The card's right padding makes room for it, so the header and body centre in the rest: opening the sidebar
    moves the content left, its side margins shrink to the minimum first, and only then does it get narrower. */
 /* Sidebars inside a hidden page (the experiment page stays mounted behind Review & export) don't count. */
-.dv-shell-page:has(.dv-right-sidebar:not([hidden] *)) { padding-right: var(--dv-side-rail); }
-.dv-shell-page:has(.dv-right-sidebar[data-mode='docked']:not([data-collapsed='true'], [hidden] *)) { padding-right: var(--dv-side-open); }
-@container dv-page-frame (max-width: 1052px) { .dv-shell-page { --dv-side-open: 292px; } }
+.dv-shell-page:has(.dv-right-sidebar:not([hidden] *)) {
+  padding-right: var(--dv-side-rail);
+}
+.dv-shell-page:has(
+  .dv-right-sidebar[data-mode="docked"]:not([data-collapsed="true"], [hidden] *)
+) {
+  padding-right: var(--dv-side-open);
+}
+@container dv-page-frame (max-width: 1052px) {
+  .dv-shell-page {
+    --dv-side-open: 292px;
+  }
+}
 /* The sidebar is positioned against the card, so no page root between them may be positioned. The editors' drag
    ghosts then use the card, which starts at the same corner as the editor. */
-.dv-shell-page :is(.dv-cat, .dv-exp, .dv-re, .dv-preset-editor) { position: static; }
+.dv-shell-page :is(.dv-cat, .dv-exp, .dv-re, .dv-preset-editor) {
+  position: static;
+}
 /* Every page fills the card. */
-.dv-shell-page-content > * { flex: 1 0 auto; }
+.dv-shell-page-content > * {
+  flex: 1 0 auto;
+}
 /* Pages with a docked sidebar (WorkspaceBody) are exactly the card's height: the header stays, and the main column
    and the sidebar below it scroll on their own. Each wrapper between the card and the body becomes a column. */
 /* Workspace pages scroll inside; important beats the scroller's inline overflow. */
-.dv-shell-page:has(.dv-workspace-body) { overflow: hidden !important; }
-.dv-shell-page :where(:has(.dv-workspace-body):not([hidden])) { display: flex; flex-direction: column; flex: 1 1 0; min-height: 0; }
-.dv-screen-body { padding: var(--dv-page-top) var(--dv-page-gutter) var(--dv-page-bottom); min-width: 0; }
+.dv-shell-page:has(.dv-workspace-body) {
+  overflow: hidden !important;
+}
+.dv-shell-page :where(:has(.dv-workspace-body):not([hidden])) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+.dv-screen-body {
+  padding: var(--dv-page-top) var(--dv-page-gutter) var(--dv-page-bottom);
+  min-width: 0;
+}
 /* Each page uses the standard or wide content width (data-width, set per route in ScreenShell). The gutter is
    restated here so it follows the page's own width rather than the one inherited from .dvdash. */
-.dv-shell-page { --dv-content-max: var(--dv-content-standard); --dv-page-gutter: max(var(--dv-page-pad), calc((100% - var(--dv-content-max)) / 2)); }
-.dv-shell-page[data-width='wide'] { --dv-content-max: var(--dv-content-wide); }
+.dv-shell-page {
+  --dv-content-max: var(--dv-content-standard);
+  --dv-page-gutter: max(
+    var(--dv-page-pad),
+    calc((100% - var(--dv-content-max)) / 2)
+  );
+}
+.dv-shell-page[data-width="wide"] {
+  --dv-content-max: var(--dv-content-wide);
+}
 /* Small pages: one side padding for header and body (the header's own steps are the same, PageHeader.css). */
 /* Measured on what the page can use (the card minus any sidebar), the same width the header's own steps follow. */
-@container dv-page (max-width: 760px) { .dv-shell-page-content > * { --dv-page-pad: 20px; --dv-page-gutter: 20px; } }
-@container dv-page (max-width: 600px) { .dv-shell-page-content > * { --dv-page-pad: 16px; --dv-page-gutter: 16px; } }
-@container dv-page (max-width: 380px) { .dv-shell-page-content > * { --dv-page-pad: 12px; --dv-page-gutter: 12px; } }
+@container dv-page (max-width: 760px) {
+  .dv-shell-page-content > * {
+    --dv-page-pad: 20px;
+    --dv-page-gutter: 20px;
+  }
+}
+@container dv-page (max-width: 600px) {
+  .dv-shell-page-content > * {
+    --dv-page-pad: 16px;
+    --dv-page-gutter: 16px;
+  }
+}
+@container dv-page (max-width: 380px) {
+  .dv-shell-page-content > * {
+    --dv-page-pad: 12px;
+    --dv-page-gutter: 12px;
+  }
+}
 
 @container dv-shell (max-width: 800px) {
-  .dv-shell-topbar { gap: 12px; }
-  .dv-shell-menu { display: grid; }
-  .dv-shell-workspace, .dv-shell[data-navigation-collapsed='true'] .dv-shell-workspace { grid-template-columns: minmax(0, 1fr); padding: 0 8px 8px; }
-  .dv-shell-sidebar { display: none; }
+  .dv-shell-topbar {
+    gap: 12px;
+  }
+  .dv-shell-menu {
+    display: grid;
+  }
+  .dv-shell-workspace,
+  .dv-shell[data-navigation-collapsed="true"] .dv-shell-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 8px 8px;
+  }
+  .dv-shell-sidebar {
+    display: none;
+  }
 }
 @container dv-shell (max-width: 760px) {
-  .dv-shell-topbar { --search-leading: 154px; }
-  .dv-shell-wordmark { width: 124px; }
-  .dv-shell-searchbox { gap: 5px; padding-inline: 7px; }
-  .dv-shell-searchbox .dv-select { --dv-select-font: .5625rem; width: 5.5rem; }
-  .dv-shell-shortcut { display: none; }
+  .dv-shell-topbar {
+    --search-leading: 154px;
+  }
+  .dv-shell-wordmark {
+    width: 124px;
+  }
+  .dv-shell-searchbox {
+    gap: 5px;
+    padding-inline: 7px;
+  }
+  .dv-shell-searchbox .dv-select {
+    --dv-select-font: 0.5625rem;
+    width: 5.5rem;
+  }
+  .dv-shell-shortcut {
+    display: none;
+  }
 }
 @container dv-shell (max-width: 600px) {
-  .dv-shell-topbar { --search-leading: 54px; gap: 10px; padding-inline: 12px; }
-  .dv-shell-wordmark { width: 32px; }
-  .dv-shell-wordmark > span:last-child { display: none; }
-  .dv-shell-shortcuts { display: none; }
-  .dv-shell-tools .dv-shell-icon-button { width: 27px; height: 27px; }
+  .dv-shell-topbar {
+    --search-leading: 54px;
+    gap: 10px;
+    padding-inline: 12px;
+  }
+  .dv-shell-wordmark {
+    width: 32px;
+  }
+  .dv-shell-wordmark > span:last-child {
+    display: none;
+  }
+  .dv-shell-shortcuts {
+    display: none;
+  }
+  .dv-shell-tools .dv-shell-icon-button {
+    width: 27px;
+    height: 27px;
+  }
 }
 @container dv-shell (max-width: 380px) {
-  .dv-shell-tools { display: none; }
-  .dv-shell-searchbox .dv-select { width: 5rem; }
+  .dv-shell-tools {
+    display: none;
+  }
+  .dv-shell-searchbox .dv-select {
+    width: 5rem;
+  }
 }
-@media (prefers-reduced-motion: reduce) { .dv-shell-workspace, .dv-shell-page { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .dv-shell-workspace,
+  .dv-shell-page {
+    transition: none;
+  }
+}
 
-.dv-screen-heading { padding:24px 30px; border-bottom:1px solid var(--dv-border); background:var(--dv-panel); }
-.dv-screen-breadcrumb { display:flex; align-items:center; gap:8px; color:var(--dv-muted); font-size:.6875rem; margin-bottom:18px; flex-wrap:wrap; }
-.dv-screen-title-row { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
-.dv-screen-section { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
-.dv-screen-section h2 { margin:0; }
-.dv-screen-toolbar { display:flex; justify-content:space-between; align-items:end; flex-wrap:wrap; gap:12px; }
-.dv-screen-search { width:min(100%,340px); }
-.dv-experiment-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-.dv-summary-card { padding:18px; display:flex; align-items:center; gap:14px; background:var(--dv-panel); border:1px solid var(--dv-border); border-radius:10px; }
-.dv-summary-icon { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; background:#e8f3ee; color:#175a3b; flex:none; }
-.dv-summary-card:nth-child(2) .dv-summary-icon { background:#edf2fa; color:#32618d; }
-.dv-summary-card:nth-child(3) .dv-summary-icon { background:#f6f0e4; color:#7e5d25; }
-[data-mantine-color-scheme='dark'] .dv-summary-icon { background:#284937; color:#b5e6ca; }
-[data-mantine-color-scheme='dark'] .dv-summary-card:nth-child(2) .dv-summary-icon { background:#243c50; color:#bfd9f3; }
-[data-mantine-color-scheme='dark'] .dv-summary-card:nth-child(3) .dv-summary-icon { background:#493d28; color:#ecd5a5; }
-.dv-summary-number { font-size:1.5625rem; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.2; }
-.dv-screen-table { overflow:auto; border:1px solid var(--dv-border); border-radius:10px; background:var(--dv-panel); }
-.dv-screen-table table { white-space:nowrap; font-variant-numeric:tabular-nums; }
-.dv-screen-table th { background:var(--dv-canvas); color:var(--dv-muted); font-size:.75rem; }
-.dv-screen-table th, .dv-screen-table td { padding:14px 16px; }
-.dv-screen-table td:last-child { text-align:right; }
-.dv-table-name { color:var(--dv-text); font-weight:650; font-size:.875rem; text-align:start; }
-.dv-table-name:hover { text-decoration:underline; }
-.dv-preset-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:18px; }
-.dv-preset-card { padding:0; overflow:hidden; }
-.dv-preset-art { display:block; width:100%; padding:24px; background:color-mix(in srgb,var(--dv-canvas) 70%,var(--dv-panel)); border-bottom:1px solid var(--dv-border); }
-.dv-preset-card-body { padding:20px; }
-.dv-preset-card-body h2 { font-size:1.125rem; }
-.dv-preset-preview { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:3px; height:174px; width:100%; padding:10px; border:1px solid var(--dv-border); border-radius:7px; background:var(--dv-panel); overflow:hidden; }
-.dv-preview-tile { min-width:0; position:relative; overflow:hidden; border-radius:3px; border:1px solid #bdcbd9; background:#e8eef7; }
-.dv-preview-tile svg { position:absolute; inset:15% 8% 10%; width:84%; height:75%; fill:none; stroke:#4774a7; stroke-width:1.8; }
-.dv-preview-inputs { background:#e8f3ed; border-color:#b4cfbf; }
-.dv-preview-readings { background:#f6efe2; border-color:#d8cba9; }
-.dv-preview-table { background:#f1edf7; border-color:#c9bfd9; }
-.dv-preview-controls { background:#e8edeb; border-color:#bdc9c3; }
-.dv-preview-lines { position:absolute; inset:18% 10%; display:grid; gap:3px; }
-.dv-preview-lines i { background:currentColor; color:#728478; opacity:.25; height:2px; }
-.dv-preview-label { position:absolute; inset:8px auto auto 9px; max-width:calc(100% - 18px); font-size:.6875rem; color:#223d32; font-weight:600; background:#ffffffd9; border-radius:3px; padding:2px 4px; }
-.dv-preset-preview-detailed { height:440px; gap:6px; padding:16px; }
-.dv-experiment-summary ~ .dv-preset-grid .dv-preset-preview { height:94px; }
-[data-mantine-color-scheme='dark'] .dv-preview-tile { background:#253e56; border-color:#4d6983; }
-[data-mantine-color-scheme='dark'] .dv-preview-tile svg { stroke:#96bce8; }
-[data-mantine-color-scheme='dark'] .dv-preview-inputs { background:#294936; border-color:#597966; }
-[data-mantine-color-scheme='dark'] .dv-preview-readings { background:#4a3d27; border-color:#806e49; }
-[data-mantine-color-scheme='dark'] .dv-preview-table { background:#3b324f; border-color:#77658f; }
-[data-mantine-color-scheme='dark'] .dv-preview-controls { background:#304038; border-color:#5f7366; }
-[data-mantine-color-scheme='dark'] .dv-preview-label { background:#13251ee8; color:#edf5ee; }
-.dv-workspace-plots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
-.dv-workspace-lower { display:grid; grid-template-columns:minmax(260px,1fr) minmax(0,2fr); align-items:start; gap:16px; }
-.dv-workspace-plots > *, .dv-workspace-lower > * { min-width:0; }
-.dv-playback { display:flex; align-items:center; flex-wrap:wrap; gap:14px; background:var(--dv-panel); border:1px solid var(--dv-border); border-radius:12px; padding:14px 18px; box-shadow:0 4px 18px #063d3009; }
-.dv-playback-slider { flex:1; min-width:140px; }
-.dv-playback-time { font-size:.75rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.dv-screen-heading {
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--dv-border);
+  background: var(--dv-panel);
+}
+.dv-screen-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dv-muted);
+  font-size: 0.6875rem;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.dv-screen-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.dv-screen-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.dv-screen-section h2 {
+  margin: 0;
+}
+.dv-screen-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.dv-screen-search {
+  width: min(100%, 340px);
+}
+.dv-experiment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.dv-summary-card {
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--dv-panel);
+  border: 1px solid var(--dv-border);
+  border-radius: 10px;
+}
+.dv-summary-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #e8f3ee;
+  color: #175a3b;
+  flex: none;
+}
+.dv-summary-card:nth-child(2) .dv-summary-icon {
+  background: #edf2fa;
+  color: #32618d;
+}
+.dv-summary-card:nth-child(3) .dv-summary-icon {
+  background: #f6f0e4;
+  color: #7e5d25;
+}
+[data-mantine-color-scheme="dark"] .dv-summary-icon {
+  background: #284937;
+  color: #b5e6ca;
+}
+[data-mantine-color-scheme="dark"]
+  .dv-summary-card:nth-child(2)
+  .dv-summary-icon {
+  background: #243c50;
+  color: #bfd9f3;
+}
+[data-mantine-color-scheme="dark"]
+  .dv-summary-card:nth-child(3)
+  .dv-summary-icon {
+  background: #493d28;
+  color: #ecd5a5;
+}
+.dv-summary-number {
+  font-size: 1.5625rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.dv-screen-table {
+  overflow: auto;
+  border: 1px solid var(--dv-border);
+  border-radius: 10px;
+  background: var(--dv-panel);
+}
+.dv-screen-table table {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.dv-screen-table th {
+  background: var(--dv-canvas);
+  color: var(--dv-muted);
+  font-size: 0.75rem;
+}
+.dv-screen-table th,
+.dv-screen-table td {
+  padding: 14px 16px;
+}
+.dv-screen-table td:last-child {
+  text-align: right;
+}
+.dv-table-name {
+  color: var(--dv-text);
+  font-weight: 650;
+  font-size: 0.875rem;
+  text-align: start;
+}
+.dv-table-name:hover {
+  text-decoration: underline;
+}
+.dv-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 18px;
+}
+.dv-preset-card {
+  padding: 0;
+  overflow: hidden;
+}
+.dv-preset-art {
+  display: block;
+  width: 100%;
+  padding: 24px;
+  background: color-mix(in srgb, var(--dv-canvas) 70%, var(--dv-panel));
+  border-bottom: 1px solid var(--dv-border);
+}
+.dv-preset-card-body {
+  padding: 20px;
+}
+.dv-preset-card-body h2 {
+  font-size: 1.125rem;
+}
+.dv-preset-preview {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  height: 174px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--dv-border);
+  border-radius: 7px;
+  background: var(--dv-panel);
+  overflow: hidden;
+}
+.dv-preview-tile {
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  border: 1px solid #bdcbd9;
+  background: #e8eef7;
+}
+.dv-preview-tile svg {
+  position: absolute;
+  inset: 15% 8% 10%;
+  width: 84%;
+  height: 75%;
+  fill: none;
+  stroke: #4774a7;
+  stroke-width: 1.8;
+}
+.dv-preview-inputs {
+  background: #e8f3ed;
+  border-color: #b4cfbf;
+}
+.dv-preview-readings {
+  background: #f6efe2;
+  border-color: #d8cba9;
+}
+.dv-preview-table {
+  background: #f1edf7;
+  border-color: #c9bfd9;
+}
+.dv-preview-controls {
+  background: #e8edeb;
+  border-color: #bdc9c3;
+}
+.dv-preview-lines {
+  position: absolute;
+  inset: 18% 10%;
+  display: grid;
+  gap: 3px;
+}
+.dv-preview-lines i {
+  background: currentColor;
+  color: #728478;
+  opacity: 0.25;
+  height: 2px;
+}
+.dv-preview-label {
+  position: absolute;
+  inset: 8px auto auto 9px;
+  max-width: calc(100% - 18px);
+  font-size: 0.6875rem;
+  color: #223d32;
+  font-weight: 600;
+  background: #ffffffd9;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.dv-preset-preview-detailed {
+  height: 440px;
+  gap: 6px;
+  padding: 16px;
+}
+.dv-experiment-summary ~ .dv-preset-grid .dv-preset-preview {
+  height: 94px;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-tile {
+  background: #253e56;
+  border-color: #4d6983;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-tile svg {
+  stroke: #96bce8;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-inputs {
+  background: #294936;
+  border-color: #597966;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-readings {
+  background: #4a3d27;
+  border-color: #806e49;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-table {
+  background: #3b324f;
+  border-color: #77658f;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-controls {
+  background: #304038;
+  border-color: #5f7366;
+}
+[data-mantine-color-scheme="dark"] .dv-preview-label {
+  background: #13251ee8;
+  color: #edf5ee;
+}
+.dv-workspace-plots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.dv-workspace-lower {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 16px;
+}
+.dv-workspace-plots > *,
+.dv-workspace-lower > * {
+  min-width: 0;
+}
+.dv-playback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: var(--dv-panel);
+  border: 1px solid var(--dv-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 18px #063d3009;
+}
+.dv-playback-slider {
+  flex: 1;
+  min-width: 140px;
+}
+.dv-playback-time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 /* First child of the window bar landmark; the type is pinned so it does not take the bar's 13 px. */
-.dv-skip-link { position:absolute; top:0; left:12px; transform:translateY(-120%); z-index:300; background:var(--dv-panel); padding:12px; color:var(--dv-text); font-size:.875rem; line-height:1.3125rem; }
-.dv-skip-link:focus { transform:none; }
+.dv-skip-link {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  transform: translateY(-120%);
+  z-index: 300;
+  background: var(--dv-panel);
+  padding: 12px;
+  color: var(--dv-text);
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+}
+.dv-skip-link:focus {
+  transform: none;
+}
 
-@media(max-width:1100px) { .dv-screen-heading { padding:22px; } }
-@media(max-width:800px) { .dv-screen-heading { padding:18px; } .dv-workspace-plots, .dv-workspace-lower { grid-template-columns:minmax(0,1fr); } }
-@media(max-width:480px) { .dv-experiment-summary { grid-template-columns:minmax(0,1fr); gap:8px; } .dv-summary-card { padding:12px 16px; } .dv-screen-actions { width:100%; } .dv-screen-title-row h1 { font-size:1.5rem; } .dv-preset-preview-detailed { height:340px; } .dv-preview-label { font-size:.5625rem; inset:3px auto auto 3px; max-width:calc(100% - 6px); } }
+@media (max-width: 1100px) {
+  .dv-screen-heading {
+    padding: 22px;
+  }
+}
+@media (max-width: 800px) {
+  .dv-screen-heading {
+    padding: 18px;
+  }
+  .dv-workspace-plots,
+  .dv-workspace-lower {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .dv-experiment-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .dv-summary-card {
+    padding: 12px 16px;
+  }
+  .dv-screen-actions {
+    width: 100%;
+  }
+  .dv-screen-title-row h1 {
+    font-size: 1.5rem;
+  }
+  .dv-preset-preview-detailed {
+    height: 340px;
+  }
+  .dv-preview-label {
+    font-size: 0.5625rem;
+    inset: 3px auto auto 3px;
+    max-width: calc(100% - 6px);
+  }
+}
 
 /* Pages inside the frame card sit directly on the page: editors, Settings and the setup form drop their own card. */
-.dv-shell-page :is(.dv-preset-editor, .dv-re) { border: 0; border-radius: 0; }
-.dv-shell-page :is(.dv-settings, .dv-setup) { overflow: visible; border: 0; border-radius: 0; background: none; }
+.dv-shell-page :is(.dv-preset-editor, .dv-re) {
+  border: 0;
+  border-radius: 0;
+}
+.dv-shell-page :is(.dv-settings, .dv-setup) {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
 /* settings-review.html's 760 px card less its 24 px padding, kept at the title's left edge. */
-.dv-shell-page .dv-settings { max-width: 712px; margin-inline: 0; }
-.dv-shell-page :is(.dv-settings-content, .dv-setup-content, .dv-setup-opened) { padding-inline: 0; }
-.dv-shell-page .dv-settings-content { padding-bottom: 0; }
-.dv-shell-page .dv-settings[data-header='hidden'] .dv-settings-section:first-child { padding-top: 0; }
-.dv-shell-page .dv-settings-saved-corner { top: 0; right: 0; }
-.dv-shell-page .dv-setup[data-header='hidden'] .dv-setup-content { padding-top: 0; }
-.dv-shell-page .dv-setup-actions { padding-inline: 0; padding-bottom: 0; background: none; }
+.dv-shell-page .dv-settings {
+  max-width: 712px;
+  margin-inline: 0;
+}
+.dv-shell-page :is(.dv-settings-content, .dv-setup-content, .dv-setup-opened) {
+  padding-inline: 0;
+}
+.dv-shell-page .dv-settings-content {
+  padding-bottom: 0;
+}
+.dv-shell-page
+  .dv-settings[data-header="hidden"]
+  .dv-settings-section:first-child {
+  padding-top: 0;
+}
+.dv-shell-page .dv-settings-saved-corner {
+  top: 0;
+  right: 0;
+}
+.dv-shell-page .dv-setup[data-header="hidden"] .dv-setup-content {
+  padding-top: 0;
+}
+.dv-shell-page .dv-setup-actions {
+  padding-inline: 0;
+  padding-bottom: 0;
+  background: none;
+}
 /* Without the card's paper behind it, the units preview keeps a rule to stay distinct from the page. */
-.dv-shell-page .dv-settings-preview { box-shadow: inset 0 0 0 1px var(--dv-line); }
+.dv-shell-page .dv-settings-preview {
+  box-shadow: inset 0 0 0 1px var(--dv-line);
+}
 /* Frame stories: the mockup's page placeholder (.page-placeholder). */
-.dv-frame-placeholder { display: grid; place-items: center; height: 420px; margin: 16px 24px 24px; border: 1px dashed var(--dv-line); border-radius: 8px; color: var(--dv-ink-muted); font-size: .75rem; }
+.dv-frame-placeholder {
+  display: grid;
+  place-items: center;
+  height: 420px;
+  margin: 16px 24px 24px;
+  border: 1px dashed var(--dv-line);
+  border-radius: 8px;
+  color: var(--dv-ink-muted);
+  font-size: 0.75rem;
+}
 
 /* Review & export page: shared header, then each tab's content beside its inspector. */
-.dv-review-page { min-height: 100%; background: var(--dv-bg); color: var(--dv-ink); }
+.dv-review-page {
+  min-height: 100%;
+  background: var(--dv-bg);
+  color: var(--dv-ink);
+}
 /* Each Review tab fills the page, so the new tab fades in over nothing instead of over the old one (Approved.css swap). */
-.dv-review-page[data-motion='swap'] > [role='tabpanel'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
-.dv-review-notice { margin-bottom: var(--dv-gap); }
+.dv-review-page[data-motion="swap"] > [role="tabpanel"] {
+  animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards;
+}
+.dv-review-notice {
+  margin-bottom: var(--dv-gap);
+}
 
 /* Search targets (revealTarget.ts): a box that a search result opens. It is always positioned, so the highlight never
    changes what its children are positioned against; the highlight sits behind its content, so nothing moves. */
-.dvdash [data-search-target] { position: relative; isolation: isolate; }
-.dvdash [data-search-reveal]::after { content: ''; position: absolute; inset: -6px -10px; z-index: -1; border-radius: 10px; background: var(--dv-accent-soft); box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--dv-accent), transparent 35%); pointer-events: none; }
-.dvdash [data-search-reveal='pulse']::after { animation: dv-reveal-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
-.dvdash [data-search-reveal='leave']::after { animation: dv-reveal-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards; }
-@keyframes dv-reveal-in { from { opacity: 0; box-shadow: 0 0 0 7px color-mix(in srgb, var(--dv-accent), transparent 75%); } }
-@keyframes dv-reveal-out { to { opacity: 0; } }
+.dvdash [data-search-target] {
+  position: relative;
+  isolation: isolate;
+}
+.dvdash [data-search-reveal]::after {
+  content: "";
+  position: absolute;
+  inset: -6px -10px;
+  z-index: -1;
+  border-radius: 10px;
+  background: var(--dv-accent-soft);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--dv-accent), transparent 35%);
+  pointer-events: none;
+}
+.dvdash [data-search-reveal="pulse"]::after {
+  animation: dv-reveal-in var(--dv-motion-base) var(--dv-ease-out) backwards;
+}
+.dvdash [data-search-reveal="leave"]::after {
+  animation: dv-reveal-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards;
+}
+@keyframes dv-reveal-in {
+  from {
+    opacity: 0;
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--dv-accent), transparent 75%);
+  }
+}
+@keyframes dv-reveal-out {
+  to {
+    opacity: 0;
+  }
+}
 /* A heading that takes focus for a search result is not a control, so it shows the highlight but no focus ring, as the
    page card does; fields and buttons keep their ring. */
-.dvdash :is(h1, h2, h3, h4, h5, h6)[data-search-focus]:focus-visible { outline: none; }
+.dvdash :is(h1, h2, h3, h4, h5, h6)[data-search-focus]:focus-visible {
+  outline: none;
+}

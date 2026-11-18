@@ -4,7 +4,8 @@ import { motion, prefersReducedMotion } from '../motion';
 export const REVEAL_MS = 1600;
 /** Room left above a target scrolled to the top of the page. */
 const SCROLL_MARGIN = 24;
-const CONTROLS = 'input:checked, input:not([type=radio]):not([type=hidden]), select, textarea, button, a[href]';
+const CONTROLS =
+  'input:checked, input:not([type=radio]):not([type=hidden]), select, textarea, button, a[href]';
 /** Anything the user does here ends the highlight early: typing, clicking, tapping or scrolling. */
 const DISMISS = ['keydown', 'pointerdown', 'wheel', 'touchstart'] as const;
 
@@ -12,7 +13,11 @@ const DISMISS = ['keydown', 'pointerdown', 'wheel', 'touchstart'] as const;
 function focusable(box: HTMLElement) {
   const marked = box.querySelector<HTMLElement>('[data-search-focus]');
   if (marked) return marked;
-  return [...box.querySelectorAll<HTMLElement>(CONTROLS)].find(control => !control.matches(':disabled') && !control.closest('[inert]')) ?? box;
+  return (
+    [...box.querySelectorAll<HTMLElement>(CONTROLS)].find(
+      (control) => !control.matches(':disabled') && !control.closest('[inert]'),
+    ) ?? box
+  );
 }
 
 /**
@@ -26,26 +31,46 @@ export function revealTarget(viewport: HTMLElement, box: HTMLElement) {
   // A heading is focusable only while it has focus, so Tab carries on from it and it never becomes a tab stop.
   if (target.tabIndex < 0 && !target.hasAttribute('tabindex')) {
     target.tabIndex = -1;
-    target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
+    target.addEventListener('blur', () => target.removeAttribute('tabindex'), {
+      once: true,
+    });
   }
   target.focus({ preventScroll: true });
 
-  const view = viewport.getBoundingClientRect(), rect = box.getBoundingClientRect();
+  const view = viewport.getBoundingClientRect(),
+    rect = box.getBoundingClientRect();
   if (rect.top < view.top || rect.bottom > view.bottom) {
-    viewport.scrollTo({ top: Math.max(0, viewport.scrollTop + rect.top - view.top - SCROLL_MARGIN), behavior: reduced ? 'instant' : 'smooth' });
+    viewport.scrollTo({
+      top: Math.max(
+        0,
+        viewport.scrollTop + rect.top - view.top - SCROLL_MARGIN,
+      ),
+      behavior: reduced ? 'instant' : 'smooth',
+    });
   }
 
   let timer = 0;
-  const stopListening = () => DISMISS.forEach(type => document.removeEventListener(type, leave, true));
-  const clear = () => { window.clearTimeout(timer); stopListening(); delete box.dataset.searchReveal; };
+  const stopListening = () =>
+    DISMISS.forEach((type) => document.removeEventListener(type, leave, true));
+  const clear = () => {
+    window.clearTimeout(timer);
+    stopListening();
+    delete box.dataset.searchReveal;
+  };
   function leave() {
-    stopListening(); window.clearTimeout(timer);
-    if (reduced || !box.isConnected) { clear(); return; }
+    stopListening();
+    window.clearTimeout(timer);
+    if (reduced || !box.isConnected) {
+      clear();
+      return;
+    }
     box.dataset.searchReveal = 'leave';
     timer = window.setTimeout(clear, motion.fast);
   }
   box.dataset.searchReveal = reduced ? 'static' : 'pulse';
   timer = window.setTimeout(leave, REVEAL_MS);
-  DISMISS.forEach(type => document.addEventListener(type, leave, { capture: true, passive: true }));
+  DISMISS.forEach((type) =>
+    document.addEventListener(type, leave, { capture: true, passive: true }),
+  );
   return clear;
 }

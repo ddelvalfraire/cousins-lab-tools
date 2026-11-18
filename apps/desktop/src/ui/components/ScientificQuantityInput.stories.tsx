@@ -1,17 +1,37 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { ScientificQuantityInput } from './ScientificQuantityInput';
 import { chooseOption } from './chooseOption';
+import { ScientificQuantityInput } from './ScientificQuantityInput';
 
 const meta = {
   title: 'Components/ScientificQuantityInput',
   component: ScientificQuantityInput,
   tags: ['autodocs'],
   parameters: { layout: 'centered', previewWidth: 620 },
-  decorators: [Story => <div style={{ background: 'var(--dv-paper)', border: '1px solid var(--dv-line)', borderRadius: 12, padding: '22px 24px 24px', color: 'var(--dv-ink)' }}><Story /></div>],
+  decorators: [
+    (Story) => (
+      <div
+        style={{
+          background: 'var(--dv-paper)',
+          border: '1px solid var(--dv-line)',
+          borderRadius: 12,
+          padding: '22px 24px 24px',
+          color: 'var(--dv-ink)',
+        }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
   args: {
-    title: 'Baseline offset', description: 'Subtracted from the Mass 44 signal before results are calculated.',
-    label: 'Offset', initialValue: -0.25, initialUnit: 'mV', emptyMessage: 'Enter an offset. Use 0 for no offset.', onValueChange: fn(),
+    title: 'Baseline offset',
+    description:
+      'Subtracted from the Mass 44 signal before results are calculated.',
+    label: 'Offset',
+    initialValue: -0.25,
+    initialUnit: 'mV',
+    emptyMessage: 'Enter an offset. Use 0 for no offset.',
+    onValueChange: fn(),
   },
 } satisfies Meta<typeof ScientificQuantityInput>;
 export default meta;
@@ -23,7 +43,9 @@ const parts = (canvasElement: HTMLElement) => {
     canvas,
     field: canvas.getByRole('textbox', { name: 'Offset' }),
     unit: canvas.getByRole('combobox', { name: 'Offset unit' }),
-    stored: canvasElement.querySelector('[data-quantity="stored"]') as HTMLElement,
+    stored: canvasElement.querySelector(
+      '[data-quantity="stored"]',
+    ) as HTMLElement,
   };
 };
 
@@ -48,13 +70,16 @@ export const ChangingUnits: Story = {
     await expect(stored).toHaveTextContent('-0.25 mV');
     await expect(args.onValueChange).not.toHaveBeenCalled();
     await chooseOption(unit, 'mV');
-    await userEvent.clear(field); await userEvent.type(field, '1.5e3');
+    await userEvent.clear(field);
+    await userEvent.type(field, '1.5e3');
     await expect(stored).toHaveTextContent('1500 mV');
     await expect(args.onValueChange).toHaveBeenLastCalledWith(1500);
-    await userEvent.clear(field); await userEvent.type(field, '2e-9');
+    await userEvent.clear(field);
+    await userEvent.type(field, '2e-9');
     await expect(stored).toHaveTextContent('2 × 10⁻⁹ mV');
     // A decimal comma works the same as a point.
-    await userEvent.clear(field); await userEvent.type(field, '1,25e-3');
+    await userEvent.clear(field);
+    await userEvent.type(field, '1,25e-3');
     await expect(args.onValueChange).toHaveBeenLastCalledWith(0.00125);
   },
 };
@@ -84,7 +109,9 @@ export const TooLarge: Story = {
   play: async ({ canvasElement }) => {
     const { canvas, field, stored } = parts(canvasElement);
     const message = canvas.getByRole('alert');
-    await expect(message).toHaveTextContent('This value is too large to store. Enter less than 1.798 × 10³⁰⁵ V.');
+    await expect(message).toHaveTextContent(
+      'This value is too large to store. Enter less than 1.798 × 10³⁰⁵ V.',
+    );
     await expect(message).toHaveTextContent('Still using -0.25 mV.');
     await expect(message.querySelectorAll('li')).toHaveLength(0);
     await expect(field).toHaveAttribute('aria-invalid', 'true');
@@ -96,7 +123,9 @@ export const TooSmall: Story = {
   args: { initialText: '1e-323', initialUnit: 'µV' },
   play: async ({ canvasElement }) => {
     const { canvas, field } = parts(canvasElement);
-    await expect(canvas.getByRole('alert')).toHaveTextContent('This value is too small to store and would become 0. Enter 0 or a larger value.');
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'This value is too small to store and would become 0. Enter 0 or a larger value.',
+    );
     await expect(field).toHaveAttribute('aria-invalid', 'true');
   },
 };
@@ -117,7 +146,9 @@ export const NotANumber: Story = {
   args: { initialText: '0.25 mV' },
   play: async ({ canvasElement }) => {
     const { canvas, field } = parts(canvasElement);
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Enter a number, such as 0.25, 0,25 or 2.5e-4.');
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Enter a number, such as 0.25, 0,25 or 2.5e-4.',
+    );
     await expect(field).toHaveAttribute('aria-invalid', 'true');
   },
 };
@@ -126,7 +157,9 @@ export const Empty: Story = {
   args: { initialText: '' },
   play: async ({ canvasElement }) => {
     const { canvas, field, stored } = parts(canvasElement);
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Enter an offset. Use 0 for no offset.');
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Enter an offset. Use 0 for no offset.',
+    );
     await expect(field).toHaveValue('');
     await expect(stored).toHaveTextContent('-0.25 mV');
   },
@@ -146,10 +179,23 @@ export const FillEmpty: Story = {
 
 /** Older field-only use: no heading, forced invalid by the surrounding form. */
 export const FieldOnly: Story = {
-  args: { title: undefined, description: undefined, label: 'Raw signal', initialValue: 3.2e-6, initialUnit: 'mV', emptyMessage: undefined, invalid: true, warning: true },
+  args: {
+    title: undefined,
+    description: undefined,
+    label: 'Raw signal',
+    initialValue: 3.2e-6,
+    initialUnit: 'mV',
+    emptyMessage: undefined,
+    invalid: true,
+    warning: true,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole('textbox', { name: 'Raw signal' })).toHaveValue('3.2e-6');
-    await expect(canvas.getByRole('alert').querySelectorAll('li')).toHaveLength(2);
+    await expect(
+      canvas.getByRole('textbox', { name: 'Raw signal' }),
+    ).toHaveValue('3.2e-6');
+    await expect(canvas.getByRole('alert').querySelectorAll('li')).toHaveLength(
+      2,
+    );
   },
 };

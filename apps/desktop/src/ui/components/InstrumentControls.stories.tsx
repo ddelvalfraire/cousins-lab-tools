@@ -1,7 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { InstrumentControls } from './ExperimentPanels';
-const meta = { title: 'Components/InstrumentControls', component: InstrumentControls, tags: ['autodocs'], parameters: { previewWidth: 480 }, args: { state: 'ready', onStart: fn(), onStop: fn() }, argTypes: { state: { control: 'select', options: ['ready', 'running', 'pending', 'rejected', 'unknown'] }, onStart: { control: false }, onStop: { control: false } } } satisfies Meta<typeof InstrumentControls>;
+
+const meta = {
+  title: 'Components/InstrumentControls',
+  component: InstrumentControls,
+  tags: ['autodocs'],
+  parameters: { previewWidth: 480 },
+  args: { state: 'ready', onStart: fn(), onStop: fn() },
+  argTypes: {
+    state: {
+      control: 'select',
+      options: ['ready', 'running', 'pending', 'rejected', 'unknown'],
+    },
+    onStart: { control: false },
+    onStop: { control: false },
+  },
+} satisfies Meta<typeof InstrumentControls>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Ready: Story = {};

@@ -1,11 +1,11 @@
-import { rmSync } from "node:fs";
+import { rmSync } from 'node:fs';
 
 const outputs = [
-  "node_modules",
-  "dist",
-  "dist-ssr",
-  "src-tauri/target",
-  "tsconfig.node.tsbuildinfo",
+  'node_modules',
+  'dist',
+  'dist-ssr',
+  'src-tauri/target',
+  'tsconfig.node.tsbuildinfo',
 ];
 
 for (const output of outputs) {

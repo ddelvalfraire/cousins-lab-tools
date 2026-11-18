@@ -1,30 +1,144 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import { CommandCenter, CommandGlyph, findCommands, type CommandCategory, type CommandItem } from './CommandCenter';
 import { StatusWord } from './Chip';
+import {
+  type CommandCategory,
+  CommandCenter,
+  CommandGlyph,
+  type CommandItem,
+  findCommands,
+} from './CommandCenter';
 import { ReviewIcon } from './ReviewIcons';
 
 /** Sample rows from command-center-review.html. */
 const items: CommandItem[] = [
-  { id: 'new', kind: 'actions', title: 'New experiment…', icon: <CommandGlyph name="experiment" />, keys: ['N'], featured: true, keywords: 'create new experiment setup' },
-  { id: 'import', kind: 'actions', title: 'Import recordings…', icon: <CommandGlyph name="import" />, keys: ['I'], featured: true, keywords: 'open file csv import recording data' },
-  { id: 'go-presets', kind: 'actions', title: 'Go to Presets', icon: <CommandGlyph name="preset" />, keys: ['G', 'P'], sequence: true, keywords: 'go navigation' },
-  { id: 'shortcuts', kind: 'actions', title: 'Show keyboard shortcuts', icon: <CommandGlyph name="keyboard" />, keys: ['?'], keywords: 'help keyboard shortcuts hotkeys commands' },
-  { id: 'theme', kind: 'settings', title: 'Theme', meta: 'Settings · Appearance', icon: <CommandGlyph name="sun" />, end: 'Light', featured: true, keywords: 'preferences display light dark mode appearance' },
-  { id: 'exp025', kind: 'experiments', title: 'Leaf respiration', meta: 'Sample 025 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, end: <StatusWord tone="accent" icon={<ReviewIcon name="signals" />}>Running</StatusWord>, keywords: 'mass 44 mass 45 MS-01', recent: true },
-  { id: 'exp021', kind: 'experiments', title: 'Réponse du dioxyde de carbone pendant la variation de température', meta: 'Échantillon 021 · CO₂ & O₂ analysis', icon: <CommandGlyph name="experiment" />, keywords: 'carbon dioxide mass 44' },
-  { id: 'preco2', kind: 'presets', title: 'CO₂ & O₂ analysis', meta: '10 panels · Gas signals and derived values', icon: <CommandGlyph name="preset" />, end: <><CommandGlyph name="history" />R3</>, keywords: 'mass 44 mass 45 leaf respiration' },
-  { id: 'ms01', kind: 'instruments', title: 'MS-01', meta: 'Mass spectrometer · 6 signals', icon: <CommandGlyph name="instrument" />, keywords: 'mass 44 mass 45 gas' },
+  {
+    id: 'new',
+    kind: 'actions',
+    title: 'New experiment…',
+    icon: <CommandGlyph name="experiment" />,
+    keys: ['N'],
+    featured: true,
+    keywords: 'create new experiment setup',
+  },
+  {
+    id: 'import',
+    kind: 'actions',
+    title: 'Import recordings…',
+    icon: <CommandGlyph name="import" />,
+    keys: ['I'],
+    featured: true,
+    keywords: 'open file csv import recording data',
+  },
+  {
+    id: 'go-presets',
+    kind: 'actions',
+    title: 'Go to Presets',
+    icon: <CommandGlyph name="preset" />,
+    keys: ['G', 'P'],
+    sequence: true,
+    keywords: 'go navigation',
+  },
+  {
+    id: 'shortcuts',
+    kind: 'actions',
+    title: 'Show keyboard shortcuts',
+    icon: <CommandGlyph name="keyboard" />,
+    keys: ['?'],
+    keywords: 'help keyboard shortcuts hotkeys commands',
+  },
+  {
+    id: 'theme',
+    kind: 'settings',
+    title: 'Theme',
+    meta: 'Settings · Appearance',
+    icon: <CommandGlyph name="sun" />,
+    end: 'Light',
+    featured: true,
+    keywords: 'preferences display light dark mode appearance',
+  },
+  {
+    id: 'exp025',
+    kind: 'experiments',
+    title: 'Leaf respiration',
+    meta: 'Sample 025 · CO₂ & O₂ analysis',
+    icon: <CommandGlyph name="experiment" />,
+    end: (
+      <StatusWord tone="accent" icon={<ReviewIcon name="signals" />}>
+        Running
+      </StatusWord>
+    ),
+    keywords: 'mass 44 mass 45 MS-01',
+    recent: true,
+  },
+  {
+    id: 'exp021',
+    kind: 'experiments',
+    title: 'Réponse du dioxyde de carbone pendant la variation de température',
+    meta: 'Échantillon 021 · CO₂ & O₂ analysis',
+    icon: <CommandGlyph name="experiment" />,
+    keywords: 'carbon dioxide mass 44',
+  },
+  {
+    id: 'preco2',
+    kind: 'presets',
+    title: 'CO₂ & O₂ analysis',
+    meta: '10 panels · Gas signals and derived values',
+    icon: <CommandGlyph name="preset" />,
+    end: (
+      <>
+        <CommandGlyph name="history" />
+        R3
+      </>
+    ),
+    keywords: 'mass 44 mass 45 leaf respiration',
+  },
+  {
+    id: 'ms01',
+    kind: 'instruments',
+    title: 'MS-01',
+    meta: 'Mass spectrometer · 6 signals',
+    icon: <CommandGlyph name="instrument" />,
+    keywords: 'mass 44 mass 45 gas',
+  },
 ];
 
-function CommandCenterExample({ query, initialCategory = 'all', onSelect, onClearQuery, onShortcuts }: { query: string; initialCategory?: CommandCategory; onSelect: (item: CommandItem) => void; onClearQuery: () => void; onShortcuts: () => void }) {
-  const [category, setCategory] = useState<CommandCategory>(initialCategory), [active, setActive] = useState(0);
-  return <div style={{ position: 'relative', maxWidth: 580, height: 560 }}>
-    <CommandCenter listId="story-results" groups={findCommands(items, query, category)} query={query} category={category}
-      onCategoryChange={next => { setCategory(next); setActive(0); }} activeIndex={active} onActiveIndexChange={setActive}
-      onSelect={onSelect} onClearQuery={onClearQuery} onShortcuts={onShortcuts} mac={false} />
-  </div>;
+function CommandCenterExample({
+  query,
+  initialCategory = 'all',
+  onSelect,
+  onClearQuery,
+  onShortcuts,
+}: {
+  query: string;
+  initialCategory?: CommandCategory;
+  onSelect: (item: CommandItem) => void;
+  onClearQuery: () => void;
+  onShortcuts: () => void;
+}) {
+  const [category, setCategory] = useState<CommandCategory>(initialCategory),
+    [active, setActive] = useState(0);
+  return (
+    <div style={{ position: 'relative', maxWidth: 580, height: 560 }}>
+      <CommandCenter
+        listId="story-results"
+        groups={findCommands(items, query, category)}
+        query={query}
+        category={category}
+        onCategoryChange={(next) => {
+          setCategory(next);
+          setActive(0);
+        }}
+        activeIndex={active}
+        onActiveIndexChange={setActive}
+        onSelect={onSelect}
+        onClearQuery={onClearQuery}
+        onShortcuts={onShortcuts}
+        mac={false}
+      />
+    </div>
+  );
 }
 
 const meta = {
@@ -36,15 +150,28 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const groupNames = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('[role=listbox] [role=group]:not([data-motion=leave])')].map(group => group.getAttribute('aria-label'));
+const groupNames = (canvasElement: HTMLElement) =>
+  [
+    ...canvasElement.querySelectorAll(
+      '[role=listbox] [role=group]:not([data-motion=leave])',
+    ),
+  ].map((group) => group.getAttribute('aria-label'));
 
 /** Nothing typed: suggested actions and settings, and recent records. */
 export const Suggested: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(groupNames(canvasElement)).toEqual(['Suggested actions', 'Settings', 'Recent · Experiments']);
-    await expect(canvas.getByRole('option', { name: /New experiment/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(canvas.queryByRole('option', { name: /Go to Presets/ })).toBeNull();
+    await expect(groupNames(canvasElement)).toEqual([
+      'Suggested actions',
+      'Settings',
+      'Recent · Experiments',
+    ]);
+    await expect(
+      canvas.getByRole('option', { name: /New experiment/ }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await expect(
+      canvas.queryByRole('option', { name: /Go to Presets/ }),
+    ).toBeNull();
     await userEvent.click(canvas.getByRole('button', { name: /Shortcuts/ }));
     await expect(args.onShortcuts).toHaveBeenCalled();
   },
@@ -55,19 +182,31 @@ export const Results: Story = {
   args: { query: 'mass' },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(groupNames(canvasElement)).toEqual(['Instruments', 'Experiments', 'Presets']);
+    await expect(groupNames(canvasElement)).toEqual([
+      'Instruments',
+      'Experiments',
+      'Presets',
+    ]);
     await userEvent.click(canvas.getByRole('button', { name: 'Presets' }));
-    await expect(canvas.getByRole('button', { name: 'Presets' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      canvas.getByRole('button', { name: 'Presets' }),
+    ).toHaveAttribute('aria-pressed', 'true');
     await expect(groupNames(canvasElement)).toEqual(['Presets']);
-    await userEvent.click(canvas.getByRole('option', { name: /CO₂ & O₂ analysis/ }));
-    await expect(args.onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'preco2' }));
+    await userEvent.click(
+      canvas.getByRole('option', { name: /CO₂ & O₂ analysis/ }),
+    );
+    await expect(args.onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'preco2' }),
+    );
   },
 };
 
 export const AccentInsensitive: Story = {
   args: { query: 'temperature' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('option', { name: /Réponse du dioxyde/ })).toBeVisible();
+    await expect(
+      within(canvasElement).getByRole('option', { name: /Réponse du dioxyde/ }),
+    ).toBeVisible();
   },
 };
 
@@ -88,7 +227,11 @@ export const NoRecent: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('No recent presets')).toBeVisible();
-    await expect(canvas.getByText('Type to search the catalogs on this device.')).toBeVisible();
-    await expect(canvas.queryByRole('button', { name: 'Clear search' })).toBeNull();
+    await expect(
+      canvas.getByText('Type to search the catalogs on this device.'),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole('button', { name: 'Clear search' }),
+    ).toBeNull();
   },
 };

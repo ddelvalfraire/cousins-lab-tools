@@ -1,5 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/ui", "src/vite-env.d.ts", ".storybook", "vitest.config.ts", "playwright.storybook.config.ts", "tests/storybook.spec.ts"],
+  "include": [
+    "src/ui",
+    "src/vite-env.d.ts",
+    ".storybook",
+    "vitest.config.ts",
+    "playwright.storybook.config.ts",
+    "tests/storybook.spec.ts"
+  ],
   "references": []
 }

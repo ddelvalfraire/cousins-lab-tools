@@ -6,27 +6,67 @@
  * Borders, icons and layout widths stay in px.
  */
 .dvdash {
-  --dv-bg: #f8faf8; --dv-paper: #fff; --dv-ink: #24322c; --dv-ink-muted: #617168;
-  --dv-line: #dce3dd; --dv-control: #acbab0; --dv-soft: #edf1ed;
-  --dv-accent: #07543e; --dv-accent-soft: #e5f2e9; --dv-on-accent: #fff;
-  --dv-blue: #326db1; --dv-purple: #7850a1;
-  --dv-info: #224f72; --dv-info-bg: #eff6fb; --dv-info-line: #c9ddea;
-  --dv-warn: #79520c; --dv-warn-bg: #fff7e5; --dv-warn-line: #ead49e;
-  --dv-error: #96362f; --dv-error-bg: #fff0ee; --dv-error-line: #e9bbb7;
-  --dv-success: #175a3b; --dv-success-bg: #edf8ef; --dv-success-line: #c2dfc8;
+  --dv-bg: #f8faf8;
+  --dv-paper: #fff;
+  --dv-ink: #24322c;
+  --dv-ink-muted: #617168;
+  --dv-line: #dce3dd;
+  --dv-control: #acbab0;
+  --dv-soft: #edf1ed;
+  --dv-accent: #07543e;
+  --dv-accent-soft: #e5f2e9;
+  --dv-on-accent: #fff;
+  --dv-blue: #326db1;
+  --dv-purple: #7850a1;
+  --dv-info: #224f72;
+  --dv-info-bg: #eff6fb;
+  --dv-info-line: #c9ddea;
+  --dv-warn: #79520c;
+  --dv-warn-bg: #fff7e5;
+  --dv-warn-line: #ead49e;
+  --dv-error: #96362f;
+  --dv-error-bg: #fff0ee;
+  --dv-error-line: #e9bbb7;
+  --dv-success: #175a3b;
+  --dv-success-bg: #edf8ef;
+  --dv-success-line: #c2dfc8;
   --dv-focus: #4c86c8;
-  --dv-s1: var(--dv-blue); --dv-s2: var(--dv-purple); --dv-s3: #1a8f74; --dv-s4: #b0652a; --dv-s5: #5a6b8c; --dv-s6: #a14a6b;
+  --dv-s1: var(--dv-blue);
+  --dv-s2: var(--dv-purple);
+  --dv-s3: #1a8f74;
+  --dv-s4: #b0652a;
+  --dv-s5: #5a6b8c;
+  --dv-s6: #a14a6b;
 }
-[data-mantine-color-scheme='dark'] .dvdash {
-  --dv-bg: #1c2620; --dv-paper: #27332b; --dv-ink: #e7eee5; --dv-ink-muted: #b5c4b5;
-  --dv-line: #45584a; --dv-control: #708574; --dv-soft: #303f34;
-  --dv-accent: #b2d2b4; --dv-accent-soft: #344c39; --dv-on-accent: #1c2620;
-  --dv-blue: #91b8eb; --dv-purple: #c69bdf;
-  --dv-info: #b6d9f4; --dv-info-bg: #142f42; --dv-info-line: #3f6077;
-  --dv-warn: #efd39c; --dv-warn-bg: #3c3019; --dv-warn-line: #796235;
-  --dv-error: #f4bdb6; --dv-error-bg: #402522; --dv-error-line: #805049;
-  --dv-success: #b9e4c8; --dv-success-bg: #173c2a; --dv-success-line: #3e7154;
-  --dv-s3: #6fd1b3; --dv-s4: #e6a46a; --dv-s5: #b3c0dc; --dv-s6: #e59bb8;
+[data-mantine-color-scheme="dark"] .dvdash {
+  --dv-bg: #1c2620;
+  --dv-paper: #27332b;
+  --dv-ink: #e7eee5;
+  --dv-ink-muted: #b5c4b5;
+  --dv-line: #45584a;
+  --dv-control: #708574;
+  --dv-soft: #303f34;
+  --dv-accent: #b2d2b4;
+  --dv-accent-soft: #344c39;
+  --dv-on-accent: #1c2620;
+  --dv-blue: #91b8eb;
+  --dv-purple: #c69bdf;
+  --dv-info: #b6d9f4;
+  --dv-info-bg: #142f42;
+  --dv-info-line: #3f6077;
+  --dv-warn: #efd39c;
+  --dv-warn-bg: #3c3019;
+  --dv-warn-line: #796235;
+  --dv-error: #f4bdb6;
+  --dv-error-bg: #402522;
+  --dv-error-line: #805049;
+  --dv-success: #b9e4c8;
+  --dv-success-bg: #173c2a;
+  --dv-success-line: #3e7154;
+  --dv-s3: #6fd1b3;
+  --dv-s4: #e6a46a;
+  --dv-s5: #b3c0dc;
+  --dv-s6: #e59bb8;
 }
 
 /*
@@ -41,13 +81,18 @@
   --dv-content-wide: 1760px;
   --dv-content-max: var(--dv-content-wide);
   --dv-page-pad: 24px;
-  --dv-page-gutter: max(var(--dv-page-pad), calc((100% - var(--dv-content-max)) / 2));
-  --dv-page-top: 16px;     /* header to content */
+  --dv-page-gutter: max(
+    var(--dv-page-pad),
+    calc((100% - var(--dv-content-max)) / 2)
+  );
+  --dv-page-top: 16px; /* header to content */
   --dv-page-bottom: 24px;
-  --dv-gap: 16px;          /* between components, and between cards in a grid */
+  --dv-gap: 16px; /* between components, and between cards in a grid */
   /* Right sidebar: open width, the rail it collapses to, and its slide. */
-  --dv-side-rail: 3.25rem; --dv-side-open: calc(280px + var(--dv-side-rail));
-  --dv-side-duration: var(--dv-motion-slow); --dv-side-motion: var(--dv-side-duration) var(--dv-ease-out);
+  --dv-side-rail: 3.25rem;
+  --dv-side-open: calc(280px + var(--dv-side-rail));
+  --dv-side-duration: var(--dv-motion-slow);
+  --dv-side-motion: var(--dv-side-duration) var(--dv-ease-out);
 }
 
 /*
@@ -55,52 +100,152 @@
  * values for Mantine transitions). Under prefers-reduced-motion dvdash.css turns every transition and animation off,
  * and the theme's respectReducedMotion makes Mantine's instant, so each change is immediate.
  */
-:root, .dvdash {
-  --dv-motion-fast: 120ms; --dv-motion-base: 180ms; --dv-motion-slow: 240ms; --dv-motion-reveal: 420ms;
-  --dv-ease-out: cubic-bezier(.22, 1, .36, 1); --dv-ease-in-out: cubic-bezier(.4, 0, .2, 1);
+:root,
+.dvdash {
+  --dv-motion-fast: 120ms;
+  --dv-motion-base: 180ms;
+  --dv-motion-slow: 240ms;
+  --dv-motion-reveal: 420ms;
+  --dv-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dv-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* Text size setting (textSize.ts): the root font size every rem follows. Default leaves the browser's 16 px. These are
    on html, not .dvdash, so Mantine's portalled lists, dialogs and tooltips scale too. */
-html[data-dv-text-size='large'] { font-size: 112.5%; }
-html[data-dv-text-size='larger'] { font-size: 125%; }
-html[data-dv-text-size='largest'] { font-size: 150%; }
+html[data-dv-text-size="large"] {
+  font-size: 112.5%;
+}
+html[data-dv-text-size="larger"] {
+  font-size: 125%;
+}
+html[data-dv-text-size="largest"] {
+  font-size: 150%;
+}
 /* Colour scheme reveal (colorSchemeTransition.ts): the new scheme grows over the old one as a circle, without the default cross-fade. */
-html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html[data-dv-theme-reveal]::view-transition-old(root),
+html[data-dv-theme-reveal]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
 /* Presence (Motion.tsx): a collapsing wrapper keeps its children's margins, so its measured height is its real height. */
-[data-presence='collapse'] { display: flow-root; }
+[data-presence="collapse"] {
+  display: flow-root;
+}
 /* Swap (Motion.tsx): the new content keeps the layout; the old one sits over it, clipped to its box, while it fades. */
-.dv-swap { position: relative; min-width: 0; }
-.dv-swap-item[data-motion='enter'] { animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards; }
-.dv-swap-sequential > .dv-swap-item[data-motion='enter'] { animation-delay: var(--dv-motion-fast); }
-.dv-swap-item[data-motion='leave'] { position: absolute; inset: 0; overflow: hidden; pointer-events: none; animation: dv-swap-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards; }
-@keyframes dv-swap-in { from { opacity: 0; transform: translateY(4px); } }
-@keyframes dv-swap-out { to { opacity: 0; } }
+.dv-swap {
+  position: relative;
+  min-width: 0;
+}
+.dv-swap-item[data-motion="enter"] {
+  animation: dv-swap-in var(--dv-motion-base) var(--dv-ease-out) backwards;
+}
+.dv-swap-sequential > .dv-swap-item[data-motion="enter"] {
+  animation-delay: var(--dv-motion-fast);
+}
+.dv-swap-item[data-motion="leave"] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  animation: dv-swap-out var(--dv-motion-fast) var(--dv-ease-in-out) forwards;
+}
+@keyframes dv-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes dv-swap-out {
+  to {
+    opacity: 0;
+  }
+}
 
 /* Chip: small labelled state with an icon (approved catalog "side-chip"). */
-.dv-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid var(--dv-line); border-radius: 5px; background: var(--dv-paper); color: var(--dv-ink-muted); font-size: .625rem; line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.dv-chip > span { overflow: hidden; text-overflow: ellipsis; }
-.dv-chip > svg { width: 12px; height: 12px; flex: none; }
-.dv-chip[data-tone='accent'] { border-color: color-mix(in srgb, var(--dv-accent), transparent 55%); background: var(--dv-accent-soft); color: var(--dv-accent); }
-.dv-chip[data-tone='warning'] { border-color: var(--dv-warn-line); background: var(--dv-warn-bg); color: var(--dv-warn); }
+.dv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid var(--dv-line);
+  border-radius: 5px;
+  background: var(--dv-paper);
+  color: var(--dv-ink-muted);
+  font-size: 0.625rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.dv-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dv-chip > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.dv-chip[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--dv-accent), transparent 55%);
+  background: var(--dv-accent-soft);
+  color: var(--dv-accent);
+}
+.dv-chip[data-tone="warning"] {
+  border-color: var(--dv-warn-line);
+  background: var(--dv-warn-bg);
+  color: var(--dv-warn);
+}
 
 /* Status word: icon plus word, coloured by state, never colour alone. */
-.dv-status-word { display: inline-flex; align-items: center; gap: 5px; font-size: .6875rem; font-weight: 500; color: var(--dv-ink-muted); white-space: nowrap; }
-.dv-status-word > svg { width: 13px; height: 13px; flex: none; }
-.dv-status-word[data-tone='accent'] { color: var(--dv-accent); }
-.dv-status-word[data-tone='warning'] { color: var(--dv-warn); }
-.dv-status-word[data-tone='error'] { color: var(--dv-error); }
-.dv-status-word[data-tone='info'] { color: var(--dv-info); }
+.dv-status-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--dv-ink-muted);
+  white-space: nowrap;
+}
+.dv-status-word > svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.dv-status-word[data-tone="accent"] {
+  color: var(--dv-accent);
+}
+.dv-status-word[data-tone="warning"] {
+  color: var(--dv-warn);
+}
+.dv-status-word[data-tone="error"] {
+  color: var(--dv-error);
+}
+.dv-status-word[data-tone="info"] {
+  color: var(--dv-info);
+}
 
 /*
  * Overlay scroll bars (ScrollFrame and every Mantine ScrollArea): no track and a thin ink thumb.
  * A ScrollFrame's outer box doesn't clip: the scroller inside clips its own content, so its focus ring stays whole.
  * It is a column so the scroller also shrinks with a frame whose height comes from flex, where its 100% height can't resolve.
  */
-.dvdash .dv-scroll { overflow: visible; }
-.dvdash .dv-scroll:not([hidden]) { display: flex; flex-direction: column; }
-.dvdash .dv-scroll-bar, .dvdash .dv-scroll-bar:hover { background: transparent; }
-.dvdash .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 38%, transparent); }
-.dvdash .dv-scroll-bar:hover .dv-scroll-thumb { background: color-mix(in srgb, var(--dv-ink) 58%, transparent); }
+.dvdash .dv-scroll {
+  overflow: visible;
+}
+.dvdash .dv-scroll:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+.dvdash .dv-scroll-bar,
+.dvdash .dv-scroll-bar:hover {
+  background: transparent;
+}
+.dvdash .dv-scroll-thumb {
+  background: color-mix(in srgb, var(--dv-ink) 38%, transparent);
+}
+.dvdash .dv-scroll-bar:hover .dv-scroll-thumb {
+  background: color-mix(in srgb, var(--dv-ink) 58%, transparent);
+}
 
 /*
  * Select: Mantine Select, given these class names by the theme (theme.ts). A field sizes it through the --dv-select-*
@@ -108,29 +253,118 @@ html[data-dv-theme-reveal]::view-transition-old(root), html[data-dv-theme-reveal
  * directly rather than through Mantine's input variables, so a field's own `input` rule can't restyle it by accident.
  */
 .dvdash .dv-select {
-  --dv-select-height: 2.25rem; --dv-select-font: .8125rem; --dv-select-pad: 10px; --dv-select-radius: 6px; --dv-select-section: 30px;
-  --dv-select-border: var(--dv-control); --dv-select-bg: var(--dv-paper); --dv-select-weight: 400;
+  --dv-select-height: 2.25rem;
+  --dv-select-font: 0.8125rem;
+  --dv-select-pad: 10px;
+  --dv-select-radius: 6px;
+  --dv-select-section: 30px;
+  --dv-select-border: var(--dv-control);
+  --dv-select-bg: var(--dv-paper);
+  --dv-select-weight: 400;
   min-width: 0;
 }
-.dvdash .dv-select-wrapper { --input-right-section-width: var(--dv-select-section); }
-.dvdash .dv-select-input {
-  height: var(--dv-select-height); min-height: var(--dv-select-height); margin: 0; padding-block: 0; padding-inline: var(--dv-select-pad) var(--dv-select-section);
-  border: 1px solid var(--dv-select-border); border-radius: var(--dv-select-radius); background: var(--dv-select-bg); color: var(--dv-ink);
-  font-family: inherit; font-size: var(--dv-select-font); font-weight: var(--dv-select-weight); line-height: 1.2; text-overflow: ellipsis; transition: none;
+.dvdash .dv-select-wrapper {
+  --input-right-section-width: var(--dv-select-section);
 }
-.dvdash .dv-select-input:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
-.dvdash .dv-select-input[data-error] { border-color: var(--dv-error); }
-.dvdash .dv-select-input:disabled { opacity: 1; background: var(--dv-soft); color: var(--dv-ink-muted); }
-.dvdash .dv-select-chevron { width: 1.1em; height: 1.1em; color: var(--dv-ink-muted); stroke-width: 2; font-size: var(--dv-select-font); }
-.dvdash .dv-select-input[data-expanded] + .dv-select-section .dv-select-chevron { transform: rotate(180deg); }
+.dvdash .dv-select-input {
+  height: var(--dv-select-height);
+  min-height: var(--dv-select-height);
+  margin: 0;
+  padding-block: 0;
+  padding-inline: var(--dv-select-pad) var(--dv-select-section);
+  border: 1px solid var(--dv-select-border);
+  border-radius: var(--dv-select-radius);
+  background: var(--dv-select-bg);
+  color: var(--dv-ink);
+  font-family: inherit;
+  font-size: var(--dv-select-font);
+  font-weight: var(--dv-select-weight);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  transition: none;
+}
+.dvdash .dv-select-input:focus-visible {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 2px;
+}
+.dvdash .dv-select-input[data-error] {
+  border-color: var(--dv-error);
+}
+.dvdash .dv-select-input:disabled {
+  opacity: 1;
+  background: var(--dv-soft);
+  color: var(--dv-ink-muted);
+}
+.dvdash .dv-select-chevron {
+  width: 1.1em;
+  height: 1.1em;
+  color: var(--dv-ink-muted);
+  stroke-width: 2;
+  font-size: var(--dv-select-font);
+}
+.dvdash
+  .dv-select-input[data-expanded]
+  + .dv-select-section
+  .dv-select-chevron {
+  transform: rotate(180deg);
+}
 
 /* The open list: the command centre's popup look, with the highlighted row in the accent. */
-.dvdash.dv-select-dropdown { max-width: calc(100vw - 16px); padding: 4px; border: 1px solid var(--dv-line); border-radius: 8px; background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 12px 30px #09261920; font-size: .8125rem; line-height: 1.4; }
-@media (prefers-reduced-motion: no-preference) { .dvdash.dv-select-dropdown { animation: dv-select-in var(--dv-motion-fast) var(--dv-ease-out); } }
-@keyframes dv-select-in { from { opacity: 0; } }
-.dvdash .dv-select-option { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px 6px 6px; border-radius: 5px; font-size: .8125rem; overflow-wrap: anywhere; }
-.dvdash .dv-select-option > svg, .dvdash .dv-select-option > div:first-child { flex: none; opacity: 1; width: 14px; height: 14px; margin-top: 2px; }
-.dvdash .dv-select-option[data-checked] { font-weight: 600; }
-.dvdash .dv-select-option[data-combobox-selected], .dvdash .dv-select-option:hover:not([data-combobox-disabled]) { background: var(--dv-accent); color: var(--dv-on-accent); }
-.dvdash .dv-select-option[data-combobox-disabled] { opacity: 1; color: var(--dv-ink-muted); }
-.dvdash .dv-select-group { padding: 8px 6px 4px; color: var(--dv-ink-muted); font-size: .6875rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.dvdash.dv-select-dropdown {
+  max-width: calc(100vw - 16px);
+  padding: 4px;
+  border: 1px solid var(--dv-line);
+  border-radius: 8px;
+  background: var(--dv-paper);
+  color: var(--dv-ink);
+  box-shadow: 0 12px 30px #09261920;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dvdash.dv-select-dropdown {
+    animation: dv-select-in var(--dv-motion-fast) var(--dv-ease-out);
+  }
+}
+@keyframes dv-select-in {
+  from {
+    opacity: 0;
+  }
+}
+.dvdash .dv-select-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 5px;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+.dvdash .dv-select-option > svg,
+.dvdash .dv-select-option > div:first-child {
+  flex: none;
+  opacity: 1;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+.dvdash .dv-select-option[data-checked] {
+  font-weight: 600;
+}
+.dvdash .dv-select-option[data-combobox-selected],
+.dvdash .dv-select-option:hover:not([data-combobox-disabled]) {
+  background: var(--dv-accent);
+  color: var(--dv-on-accent);
+}
+.dvdash .dv-select-option[data-combobox-disabled] {
+  opacity: 1;
+  color: var(--dv-ink-muted);
+}
+.dvdash .dv-select-group {
+  padding: 8px 6px 4px;
+  color: var(--dv-ink-muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

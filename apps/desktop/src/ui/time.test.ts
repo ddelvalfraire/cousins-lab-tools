@@ -2,13 +2,19 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { formatClockTime } from './time';
 
 const zone = process.env.TZ;
-afterEach(() => { process.env.TZ = zone; });
+afterEach(() => {
+  process.env.TZ = zone;
+});
 
 describe('formatClockTime', () => {
   test('shows 24 h time with seconds in the given zone', () => {
     expect(formatClockTime('2026-03-05T14:05:12Z', 'UTC')).toBe('14:05:12');
-    expect(formatClockTime('2026-03-05T14:05:12Z', 'America/Los_Angeles')).toBe('06:05:12');
-    expect(formatClockTime('2026-03-05T14:05:12Z', 'Asia/Kolkata')).toBe('19:35:12');
+    expect(formatClockTime('2026-03-05T14:05:12Z', 'America/Los_Angeles')).toBe(
+      '06:05:12',
+    );
+    expect(formatClockTime('2026-03-05T14:05:12Z', 'Asia/Kolkata')).toBe(
+      '19:35:12',
+    );
   });
 
   test('midnight is 00:00:00 and noon is 12:00:00, never 24 or AM/PM', () => {

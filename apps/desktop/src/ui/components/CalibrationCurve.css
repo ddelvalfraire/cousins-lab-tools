@@ -1,36 +1,175 @@
 /* Calibration curve (approved design/dvdash-field-review/calibration-curve-review.html). */
-.dv-curve { background: var(--dv-paper); color: var(--dv-ink); border: 1px solid var(--dv-line); border-radius: 12px; padding: 20px 22px 22px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .8125rem; line-height: normal; min-width: 0; }
-.dv-curve-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-.dv-curve h2 { margin: 0; font-size: 1.0625rem; font-weight: 650; letter-spacing: -.02em; line-height: normal; }
-.dv-curve-switch { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--dv-line); border-radius: 7px; background: var(--dv-bg); }
-.dv-curve-switch button { border: 0; background: none; color: var(--dv-ink-muted); padding: 6px 12px; border-radius: 5px; font: inherit; font-size: .75rem; font-weight: 550; cursor: pointer; touch-action: manipulation; }
-.dv-curve-switch [aria-pressed='true'] { background: var(--dv-paper); color: var(--dv-ink); box-shadow: 0 1px 3px #10271b14; }
-.dv-curve-switch button:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 3px; }
-.dv-curve-summary { margin: 4px 0 0; font-size: .75rem; line-height: 1.6; color: var(--dv-ink-muted); font-variant-numeric: tabular-nums; }
-.dv-curve-frame { margin-top: 14px; height: 300px; position: relative; }
-.dv-curve-plot { width: 100%; height: 100%; }
-.dv-curve-plot .uplot { font-family: inherit; }
-.dv-curve-legend { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: .6875rem; color: var(--dv-ink-muted); margin-top: 12px; }
-.dv-curve-legend span { display: flex; align-items: center; gap: 6px; }
-.dv-curve-legend svg { width: 16px; height: 12px; flex: none; }
-.dv-curve-table-root { margin-top: 14px; height: 300px; }
-.dv-curve-table { border: 1px solid var(--dv-line); border-radius: 6px; }
-.dv-curve-table:focus-visible { outline: 2px solid var(--dv-focus); outline-offset: 2px; }
-.dv-curve-table table { width: 100%; border-collapse: collapse; font-size: .75rem; font-variant-numeric: tabular-nums; }
-.dv-curve-table caption { text-align: left; font-size: .6875rem; color: var(--dv-ink-muted); padding: 9px 10px; caption-side: bottom; }
-.dv-curve-table th, .dv-curve-table td { padding: 8px 10px; text-align: right; white-space: nowrap; }
-.dv-curve-table th:first-child, .dv-curve-table td:first-child, .dv-curve-table th:last-child, .dv-curve-table td:last-child { text-align: left; }
-.dv-curve-table tbody th { font-weight: 500; }
-.dv-curve-table thead th { position: sticky; top: 0; z-index: 1; background: var(--dv-bg); font-weight: 600; border-bottom: 1px solid var(--dv-line); font-size: .6875rem; }
-.dv-curve-table thead th small { display: block; font-weight: 400; color: var(--dv-ink-muted); }
-.dv-curve-table tbody tr:nth-child(even) { background: var(--dv-bg); }
-.dv-curve-muted { color: var(--dv-ink-muted); }
-.dv-curve-table .dv-status-word { color: inherit; font-size: inherit; font-weight: inherit; vertical-align: top; }
-.dv-curve-messages { margin-top: 12px; }
+.dv-curve {
+  background: var(--dv-paper);
+  color: var(--dv-ink);
+  border: 1px solid var(--dv-line);
+  border-radius: 12px;
+  padding: 20px 22px 22px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: normal;
+  min-width: 0;
+}
+.dv-curve-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dv-curve h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: normal;
+}
+.dv-curve-switch {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--dv-line);
+  border-radius: 7px;
+  background: var(--dv-bg);
+}
+.dv-curve-switch button {
+  border: 0;
+  background: none;
+  color: var(--dv-ink-muted);
+  padding: 6px 12px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 550;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dv-curve-switch [aria-pressed="true"] {
+  background: var(--dv-paper);
+  color: var(--dv-ink);
+  box-shadow: 0 1px 3px #10271b14;
+}
+.dv-curve-switch button:focus-visible {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 3px;
+}
+.dv-curve-summary {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--dv-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.dv-curve-frame {
+  margin-top: 14px;
+  height: 300px;
+  position: relative;
+}
+.dv-curve-plot {
+  width: 100%;
+  height: 100%;
+}
+.dv-curve-plot .uplot {
+  font-family: inherit;
+}
+.dv-curve-legend {
+  display: flex;
+  gap: 6px 16px;
+  flex-wrap: wrap;
+  font-size: 0.6875rem;
+  color: var(--dv-ink-muted);
+  margin-top: 12px;
+}
+.dv-curve-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dv-curve-legend svg {
+  width: 16px;
+  height: 12px;
+  flex: none;
+}
+.dv-curve-table-root {
+  margin-top: 14px;
+  height: 300px;
+}
+.dv-curve-table {
+  border: 1px solid var(--dv-line);
+  border-radius: 6px;
+}
+.dv-curve-table:focus-visible {
+  outline: 2px solid var(--dv-focus);
+  outline-offset: 2px;
+}
+.dv-curve-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.dv-curve-table caption {
+  text-align: left;
+  font-size: 0.6875rem;
+  color: var(--dv-ink-muted);
+  padding: 9px 10px;
+  caption-side: bottom;
+}
+.dv-curve-table th,
+.dv-curve-table td {
+  padding: 8px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+.dv-curve-table th:first-child,
+.dv-curve-table td:first-child,
+.dv-curve-table th:last-child,
+.dv-curve-table td:last-child {
+  text-align: left;
+}
+.dv-curve-table tbody th {
+  font-weight: 500;
+}
+.dv-curve-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--dv-bg);
+  font-weight: 600;
+  border-bottom: 1px solid var(--dv-line);
+  font-size: 0.6875rem;
+}
+.dv-curve-table thead th small {
+  display: block;
+  font-weight: 400;
+  color: var(--dv-ink-muted);
+}
+.dv-curve-table tbody tr:nth-child(even) {
+  background: var(--dv-bg);
+}
+.dv-curve-muted {
+  color: var(--dv-ink-muted);
+}
+.dv-curve-table .dv-status-word {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  vertical-align: top;
+}
+.dv-curve-messages {
+  margin-top: 12px;
+}
 @media (max-width: 560px) {
-  .dv-curve { padding: 18px 14px; }
-  .dv-curve-frame, .dv-curve-table { height: 260px; }
+  .dv-curve {
+    padding: 18px 14px;
+  }
+  .dv-curve-frame,
+  .dv-curve-table {
+    height: 260px;
+  }
 }
 
 /* This mockup's banner lists have no gap between items. */
-.dv-curve .dv-banner-approved li + li { margin-top: 0; }
+.dv-curve .dv-banner-approved li + li {
+  margin-top: 0;
+}

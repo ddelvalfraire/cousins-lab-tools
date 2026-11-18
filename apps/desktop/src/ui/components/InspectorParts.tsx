@@ -1,4 +1,9 @@
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
+import {
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import './Approved.css';
 import './Inspectors.css';
 import { ScrollFrame } from './ScrollFrame';
@@ -31,35 +36,120 @@ const paths = {
 } as const;
 export type InspectorIconName = keyof typeof paths;
 
-export function InspectorIcon({ name, className }: { name: InspectorIconName; className?: string }) {
-  return <svg className={['dv-insp-ico', className].filter(Boolean).join(' ')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
+export function InspectorIcon({
+  name,
+  className,
+}: {
+  name: InspectorIconName;
+  className?: string;
+}) {
+  return (
+    <svg
+      className={['dv-insp-ico', className].filter(Boolean).join(' ')}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={paths[name]} />
+    </svg>
+  );
 }
 
 export type InspectorButtonVariant = 'default' | 'primary' | 'quiet';
-export function InspectorButton({ variant = 'default', small = false, className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: InspectorButtonVariant; small?: boolean }) {
-  return <button type="button" {...props} className={['dv-insp-button', className].filter(Boolean).join(' ')} data-variant={variant} data-size={small ? 'small' : undefined} />;
+export function InspectorButton({
+  variant = 'default',
+  small = false,
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: InspectorButtonVariant;
+  small?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      {...props}
+      className={['dv-insp-button', className].filter(Boolean).join(' ')}
+      data-variant={variant}
+      data-size={small ? 'small' : undefined}
+    />
+  );
 }
 
 /** Number field with its unit inside the border (.input-unit). */
-export function UnitInput({ unit, invalid, ...props }: InputHTMLAttributes<HTMLInputElement> & { unit: string; invalid?: boolean }) {
-  return <div className="dv-insp-input-unit"><input inputMode="decimal" autoComplete="off" {...props} aria-invalid={invalid ? true : undefined} /><span aria-hidden="true">{unit}</span></div>;
+export function UnitInput({
+  unit,
+  invalid,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & {
+  unit: string;
+  invalid?: boolean;
+}) {
+  return (
+    <div className="dv-insp-input-unit">
+      <input
+        inputMode="decimal"
+        autoComplete="off"
+        {...props}
+        aria-invalid={invalid ? true : undefined}
+      />
+      <span aria-hidden="true">{unit}</span>
+    </div>
+  );
 }
 
 /**
  * Sidebar pane content with a scroll area and actions pinned below it (.scroll + .sidebar-actions).
  * Place it directly inside a `RightSidebar`.
  */
-export function InspectorPane({ label, actions, children, ref }: { label: string; actions?: ReactNode; children: ReactNode; ref?: Ref<HTMLDivElement> }) {
-  return <div ref={ref} className="dv-insp dv-insp-pane">
-    <ScrollFrame axes="y" overscroll="contain" rootClassName="dv-insp-scroll-root" className="dv-insp-scroll" role="region" aria-label={label} tabIndex={0}>{children}</ScrollFrame>
-    {actions && <div className="dv-insp-actions">{actions}</div>}
-  </div>;
+export function InspectorPane({
+  label,
+  actions,
+  children,
+  ref,
+}: {
+  label: string;
+  actions?: ReactNode;
+  children: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+}) {
+  return (
+    <div ref={ref} className="dv-insp dv-insp-pane">
+      <ScrollFrame
+        axes="y"
+        overscroll="contain"
+        rootClassName="dv-insp-scroll-root"
+        className="dv-insp-scroll"
+        role="region"
+        aria-label={label}
+        tabIndex={0}
+      >
+        {children}
+      </ScrollFrame>
+      {actions && <div className="dv-insp-actions">{actions}</div>}
+    </div>
+  );
 }
 
 /** Polite live region for completed actions. */
 export function Announcer({ message }: { message: string }) {
-  return <div className="dv-insp-sr" role="status" aria-live="polite" aria-atomic="true">{message}</div>;
+  return (
+    <div
+      className="dv-insp-sr"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {message}
+    </div>
+  );
 }
 
 /** Number parsing used by every inspector: blank is not a number; a decimal comma is accepted. */
-export const parseNumber = (text: string) => text.trim() === '' ? NaN : Number(text.trim().replace(',', '.'));
+export const parseNumber = (text: string) =>
+  text.trim() === '' ? NaN : Number(text.trim().replace(',', '.'));
