@@ -1,5 +1,6 @@
 import { Select } from '@mantine/core';
-import { useEffect, useId, useRef, useState } from 'react';
+import { type RefObject, useCallback, useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Banner } from './Banner';
 import { Presence } from './Motion';
 import { chosen, selectAria } from './select';
@@ -155,8 +156,7 @@ export function ExperimentSetupForm({
   const attempt = useRef(0),
     retryRef = useRef<HTMLButtonElement>(null),
     openedRef = useRef<HTMLHeadingElement>(null),
-    nameRef = useRef<HTMLInputElement>(null),
-    returning = useRef(false);
+    nameRef = useRef<HTMLInputElement>(null);
   const ids = {
     title: useId(),
     source: useId(),
@@ -167,20 +167,20 @@ export function ExperimentSetupForm({
     mode: useId(),
   };
   const fieldId = (name: string) => `${ids.field}-${name}`;
-  useEffect(
-    () => () => {
+  // Unmounting moves the attempt on, so a preparation that settles afterwards is ignored.
+  const endAttemptsOnUnmount = useCallback(() => {
+    return () => {
       attempt.current++;
-    },
-    [],
-  );
-  useEffect(() => {
-    if (status === 'failed' && attempt.current > 0) retryRef.current?.focus();
-    if (status === 'prepared') openedRef.current?.focus();
-    if (status === 'editing' && returning.current) {
-      returning.current = false;
-      nameRef.current?.focus();
-    }
-  }, [status]);
+    };
+  }, []);
+  // Renders the updates at once so the focus target exists before the screen updates.
+  const focusAfter = (
+    target: RefObject<HTMLElement | null>,
+    updates: () => void,
+  ) => {
+    flushSync(updates);
+    target.current?.focus();
+  };
 
   const preset = presets.find((p) => p.id === values.presetId) ?? presets[0];
   const source = sources.find((s) => s.id === values.sourceId);
@@ -283,13 +283,17 @@ export function ExperimentSetupForm({
     try {
       await onOpen?.(submitted);
       if (token !== attempt.current) return;
-      setPrepared(submitted);
-      setStatus('prepared');
-      setAnnouncement('Experiment configuration prepared.');
+      focusAfter(openedRef, () => {
+        setPrepared(submitted);
+        setStatus('prepared');
+        setAnnouncement('Experiment configuration prepared.');
+      });
     } catch {
       if (token !== attempt.current) return;
-      setStatus('failed');
-      setAnnouncement('Preparation failed. Your settings are retained.');
+      focusAfter(retryRef, () => {
+        setStatus('failed');
+        setAnnouncement('Preparation failed. Your settings are retained.');
+      });
     }
   };
   const reset = () => {
@@ -330,6 +334,7 @@ export function ExperimentSetupForm({
       prepared.routine && routines.find((r) => r.id === prepared.routine!.id);
     return (
       <section
+        ref={endAttemptsOnUnmount}
         className="dv-setup"
         data-header={hideHeader ? 'hidden' : undefined}
         {...sectionLabel}
@@ -365,10 +370,7 @@ export function ExperimentSetupForm({
           <button
             type="button"
             className="dv-setup-button"
-            onClick={() => {
-              returning.current = true;
-              setStatus('editing');
-            }}
+            onClick={() => focusAfter(nameRef, () => setStatus('editing'))}
           >
             Return to setup
           </button>
@@ -408,6 +410,7 @@ export function ExperimentSetupForm({
 
   return (
     <section
+      ref={endAttemptsOnUnmount}
       className="dv-setup"
       data-header={hideHeader ? 'hidden' : undefined}
       {...sectionLabel}
