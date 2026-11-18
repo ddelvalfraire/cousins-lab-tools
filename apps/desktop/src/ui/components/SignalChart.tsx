@@ -19,7 +19,7 @@ import {
   IconTable,
 } from '@tabler/icons-react';
 import { motion as animated, type Transition } from 'motion/react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import { useAppearance } from '../appearance';
 import type { SignalSample } from '../fixtures';
@@ -634,30 +634,35 @@ export function SignalChart({
     String(typeof disconnectAfter === 'object' ? disconnectAfter.threshold : 3),
   );
   const [connectSeconds, setConnectSeconds] = useState(
-      seconds(connectDraft) ?? 5,
+      typeof connectNulls === 'object' ? connectNulls.threshold : 5,
     ),
     [disconnectSeconds, setDisconnectSeconds] = useState(
-      seconds(disconnectDraft) ?? 3,
+      typeof disconnectAfter === 'object' ? disconnectAfter.threshold : 3,
     );
-  useEffect(() => {
+  // Storing information from the previous render: new initial settings from the parent reset the controls.
+  const [logFor, setLogFor] = useState(initialLog);
+  if (logFor !== initialLog) {
+    setLogFor(initialLog);
     setLog(initialLog);
-  }, [initialLog]);
-  useEffect(() => {
-    const c: ConnectNulls = JSON.parse(connectKey);
-    setConnect(connectMode(c));
-    if (typeof c === 'object') {
-      setConnectDraft(String(c.threshold));
-      setConnectSeconds(c.threshold);
+  }
+  const [connectFor, setConnectFor] = useState(connectKey);
+  if (connectFor !== connectKey) {
+    setConnectFor(connectKey);
+    setConnect(connectMode(connectNulls));
+    if (typeof connectNulls === 'object') {
+      setConnectDraft(String(connectNulls.threshold));
+      setConnectSeconds(connectNulls.threshold);
     }
-  }, [connectKey]);
-  useEffect(() => {
-    const d: DisconnectAfter = JSON.parse(disconnectKey);
-    setDisconnect(connectMode(d));
-    if (typeof d === 'object') {
-      setDisconnectDraft(String(d.threshold));
-      setDisconnectSeconds(d.threshold);
+  }
+  const [disconnectFor, setDisconnectFor] = useState(disconnectKey);
+  if (disconnectFor !== disconnectKey) {
+    setDisconnectFor(disconnectKey);
+    setDisconnect(connectMode(disconnectAfter));
+    if (typeof disconnectAfter === 'object') {
+      setDisconnectDraft(String(disconnectAfter.threshold));
+      setDisconnectSeconds(disconnectAfter.threshold);
     }
-  }, [disconnectKey]);
+  }
   const connectInvalid =
       connect === 'threshold' && seconds(connectDraft) === null,
     disconnectInvalid =
@@ -701,19 +706,18 @@ export function SignalChart({
     () => plotData(currentRows, plotKeys, analysis, log),
     [currentRows, plotKeys, analysis, log],
   );
-  const lastLimits = useRef<[number, number] | undefined>(undefined);
-  const limits = useMemo<[number, number] | undefined>(
-    () =>
-      fixed
-        ? limitError
-          ? lastLimits.current
-          : [Number(min), Number(max)]
-        : undefined,
+  const enteredLimits = useMemo<[number, number] | undefined>(
+    () => (fixed && !limitError ? [Number(min), Number(max)] : undefined),
     [fixed, limitError, min, max],
   );
-  useEffect(() => {
-    if (fixed && !limitError) lastLimits.current = limits;
-  }, [fixed, limitError, limits]);
+  // Storing information from the previous render: while the entry is invalid the chart keeps the last valid limits.
+  const [lastLimits, setLastLimits] = useState(enteredLimits);
+  if (
+    enteredLimits &&
+    (enteredLimits[0] !== lastLimits?.[0] || enteredLimits[1] !== lastLimits[1])
+  )
+    setLastLimits(enteredLimits);
+  const limits = fixed ? (enteredLimits ?? lastLimits) : undefined;
   const labels = keys.map((k) => signalLabels[k]);
   const t0 = currentRows[0]?.time,
     t1 = currentRows[currentRows.length - 1]?.time;
