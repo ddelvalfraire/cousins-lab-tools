@@ -60,7 +60,6 @@ const stroke = {
   strokeWidth: 1.6,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
-  'aria-hidden': true,
   focusable: false,
 } as const;
 /** The mockup's sidebar glyphs (right-sidebar-review.html, sideIcons). */
@@ -109,7 +108,11 @@ const glyphs = {
 } as const;
 export type SidebarIconName = keyof typeof glyphs;
 export function SidebarIcon({ name }: { name: SidebarIconName }) {
-  return <svg {...stroke}>{glyphs[name]}</svg>;
+  return (
+    <svg {...stroke} aria-hidden="true">
+      {glyphs[name]}
+    </svg>
+  );
 }
 const CollapseGlyph = () => <SidebarIcon name="collapse" />;
 

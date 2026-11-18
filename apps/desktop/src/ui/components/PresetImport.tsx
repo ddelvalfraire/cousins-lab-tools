@@ -47,7 +47,7 @@ export function PresetThumbnail({
       className={className ? `dv-preset-thumb ${className}` : 'dv-preset-thumb'}
       aria-hidden="true"
     >
-      <svg viewBox="0 0 100 70" preserveAspectRatio="none">
+      <svg viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true">
         {tiles.map(({ key, item: { kind, x, y, w, h } }) => {
           const height = h * 0.7;
           const inner =

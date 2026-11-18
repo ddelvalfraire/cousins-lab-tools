@@ -100,7 +100,11 @@ export function RevisionHistoryList({
               <span className="dv-revision-entry-title">{revision.note}</span>
               <span className="dv-revision-entry-meta">
                 <Chip icon={<ImportIcon name="calendar" />}>
-                  <time dateTime={revision.savedAt} aria-label={saved.label}>
+                  <time
+                    dateTime={revision.savedAt}
+                    role="img"
+                    aria-label={saved.label}
+                  >
                     {saved.short}
                   </time>
                 </Chip>

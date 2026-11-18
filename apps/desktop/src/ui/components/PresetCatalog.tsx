@@ -132,7 +132,12 @@ export function PresetThumb({
   const tiles = keyedBy(panels, tilePlace);
   return (
     <span className="dv-cat-thumb" aria-hidden="true">
-      <svg viewBox="0 0 100 70" preserveAspectRatio="none" focusable="false">
+      <svg
+        viewBox="0 0 100 70"
+        preserveAspectRatio="none"
+        focusable="false"
+        aria-hidden="true"
+      >
         {tiles.map(({ key, item: { kind, x, y, w, h } }) => {
           const height = h * 0.7;
           let inner: ReactNode;

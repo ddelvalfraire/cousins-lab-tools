@@ -19,7 +19,13 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "a11y": "on",
+      "a11y": {
+        "preset": "all",
+        "noLabelWithoutControl": {
+          "level": "on",
+          "options": { "inputComponents": ["Select"] }
+        }
+      },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
           "level": "warn",

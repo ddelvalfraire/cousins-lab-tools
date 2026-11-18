@@ -37,7 +37,11 @@ export function PresetLayoutPreview({
           aria-hidden
         >
           {tile.kind === 'chart' ? (
-            <svg viewBox="0 0 100 34" preserveAspectRatio="none">
+            <svg
+              viewBox="0 0 100 34"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
               <path d="M0 27 L12 25 L23 13 L35 16 L46 9 L57 15 L69 6 L80 10 L90 5 L100 7" />
             </svg>
           ) : (

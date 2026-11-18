@@ -187,13 +187,13 @@ export function Readout({
           w={240}
           events={{ hover: true, focus: true, touch: true }}
         >
-          <span
+          <button
+            type="button"
             className="dv-unit"
-            tabIndex={0}
             aria-label={`${unit}: ${explanation}`}
           >
             {unit}
-          </span>
+          </button>
         </Tooltip>
       </div>
       <StatusBanner severity={severity}>

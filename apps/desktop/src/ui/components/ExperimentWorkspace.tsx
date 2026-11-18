@@ -34,7 +34,6 @@ const strokeProps = {
   strokeWidth: 1.6,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
-  'aria-hidden': true,
   focusable: false,
 } as const;
 const glyphs = {
@@ -50,7 +49,11 @@ const glyphs = {
   next: <path d="m5 5 11 7-11 7ZM19 5v14" />,
 } as const;
 export function WorkspaceGlyph({ name }: { name: keyof typeof glyphs }) {
-  return <svg {...strokeProps}>{glyphs[name]}</svg>;
+  return (
+    <svg {...strokeProps} aria-hidden="true">
+      {glyphs[name]}
+    </svg>
+  );
 }
 
 const fixed = (value: number | null | undefined, digits: number) =>
@@ -270,7 +273,7 @@ export function PlaybackTransport({
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
             ) : ended ? (
-              <svg {...strokeProps} strokeWidth={1.8}>
+              <svg {...strokeProps} strokeWidth={1.8} aria-hidden="true">
                 <path d="M20 7v5h-5M19 12a7 7 0 1 1-2-5l3 3" />
               </svg>
             ) : (
@@ -652,6 +655,7 @@ export function SignalsPane({
                 role="switch"
                 aria-label={`Show ${signal.title}`}
                 checked={!hidden.has(signal.id)}
+                aria-checked={!hidden.has(signal.id)}
                 onChange={(event) =>
                   onVisibleChange(signal.id, event.currentTarget.checked)
                 }

@@ -120,6 +120,21 @@
   font-size: 0.75rem;
   letter-spacing: 0;
 }
+/* The readout's unit is a button only to open its tooltip, so it looks like the plain unit text. */
+button.dv-unit {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: auto;
+}
 .dv-readout-card {
   padding: 16px;
 }
