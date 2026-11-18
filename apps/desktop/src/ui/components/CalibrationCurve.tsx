@@ -103,7 +103,12 @@ export function CalibrationCurve({
   initialView?: 'chart' | 'table';
 }) {
   const [view, setView] = useState(initialView);
-  useEffect(() => setView(initialView), [initialView]);
+  // Storing information from the previous render: a new initialView from the parent switches the view.
+  const [viewFor, setViewFor] = useState(initialView);
+  if (viewFor !== initialView) {
+    setViewFor(initialView);
+    setView(initialView);
+  }
   const titleId = useId(),
     summaryId = useId(),
     captionId = useId();
