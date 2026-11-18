@@ -103,7 +103,10 @@ test('every component has typed CSF metadata and no review onboarding', async ({
     const source = await readFile(file, 'utf8');
     expect(source, file).toContain('component:');
     expect(source, file).toContain('satisfies Meta<typeof');
-    expected += [...source.matchAll(/export const \w+/g)].length;
+    // Stories named after globals (Error, Boolean) are declared under another name and exported as { X as Error }.
+    expected += [
+      ...source.matchAll(/export const \w+|export \{ \w+ as \w+ \}/g),
+    ].length;
   }
   const index = await (await request.get('/index.json')).json();
   const stories = Object.values(index.entries).filter(
