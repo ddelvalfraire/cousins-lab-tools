@@ -4,7 +4,7 @@ import {
   IconCircleCheck,
   IconCircleX,
 } from '@tabler/icons-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import { useAppearance } from '../appearance';
 import { rootTextScale } from '../textSize';
@@ -13,6 +13,7 @@ import { StatusWord } from './Chip';
 import './Approved.css';
 import './CalibrationCurve.css';
 import { ScrollFrame } from './ScrollFrame';
+import { useUplotChart } from './useUplotChart';
 
 export interface CalibrationStandard {
   id: string;
@@ -322,6 +323,11 @@ function tokens(el: Element) {
   };
 }
 
+const size = (el: HTMLDivElement) => ({
+  width: Math.max(1, el.clientWidth),
+  height: el.clientHeight || 300,
+});
+
 /** Scatter of standards on a uPlot frame. Markers and the fit line are drawn in the draw hook so each kind keeps its own shape. */
 function CurvePlot({
   standards,
@@ -334,15 +340,11 @@ function CurvePlot({
   axisMax?: { concentration: number; signal: number };
   labelledBy: string;
 }) {
-  const host = useRef<HTMLDivElement>(null);
   const current = useRef({ standards, fit });
   current.current = { standards, fit };
   const scheme = useComputedColorScheme('light'),
     { textSize } = useAppearance();
-  const key = JSON.stringify([standards, fit, axisMax ?? null]);
-  useEffect(() => {
-    const el = host.current;
-    if (!el) return;
+  const create = (el: HTMLDivElement) => {
     const sorted = [...standards].sort(
       (a, b) => a.concentration - b.concentration,
     );
@@ -363,10 +365,6 @@ function CurvePlot({
         { length: Math.round((top - low) / step) + 1 },
         (_, i) => +(low + i * step).toPrecision(12),
       );
-    const size = () => ({
-      width: Math.max(1, el.clientWidth),
-      height: el.clientHeight || 300,
-    });
     // Axis text follows the Text size setting, and the axes grow with it.
     const s = rootTextScale();
     const axis = (label: string, splits: number[]): uPlot.Axis => ({
@@ -381,10 +379,10 @@ function CurvePlot({
       grid: { stroke: () => tokens(el).line, width: 1 },
       ticks: { show: false },
     });
-    const u = new uPlot(
+    return new uPlot(
       {
         // Plot margins from the mockup: 10 px above, 12 px right; at the Default text size the axes take 58 px left and 44 px below.
-        ...size(),
+        ...size(el),
         padding: [10, 12, 0, 0],
         legend: { show: false },
         cursor: { show: false },
@@ -471,14 +469,18 @@ function CurvePlot({
       [sorted.map((p) => p.concentration), sorted.map((p) => p.signal)],
       el,
     );
-    const observer = new ResizeObserver(() => u.setSize(size()));
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      u.destroy();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, scheme, textSize]);
+  };
+  const host = useUplotChart({
+    rebuildKey: JSON.stringify([
+      standards,
+      fit,
+      axisMax ?? null,
+      scheme,
+      textSize,
+    ]),
+    create,
+    size,
+  });
   return (
     <div
       ref={host}
