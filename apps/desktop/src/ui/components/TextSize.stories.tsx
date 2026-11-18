@@ -9,7 +9,6 @@ import {
   Tooltip,
 } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { AppearanceProvider, useAppearance } from '../appearance';
@@ -143,20 +142,22 @@ interface FirstFrame {
 }
 
 function AfterProvider({ onFrame }: { onFrame: (frame: FirstFrame) => void }) {
-  useLayoutEffect(
-    () =>
-      onFrame({
-        attribute: html().getAttribute(TEXT_SIZE_ATTRIBUTE),
-        size: px(html()),
-      }),
-    [onFrame],
+  return (
+    <span
+      ref={(node) => {
+        if (node)
+          onFrame({
+            attribute: html().getAttribute(TEXT_SIZE_ATTRIBUTE),
+            size: px(html()),
+          });
+      }}
+    />
   );
-  return null;
 }
 
 /**
- * Renders an uncontrolled provider in its own root, then reads the root font size in a layout effect that runs after the
- * provider's in the same commit: what the browser would paint first.
+ * Renders an uncontrolled provider in its own root, then reads the root font size in a ref callback that runs after the
+ * provider's mount work in the same commit: what the browser would paint first.
  */
 function firstFrameSize() {
   const container = document.createElement('div');
