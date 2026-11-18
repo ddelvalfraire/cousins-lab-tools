@@ -1,10 +1,9 @@
+import { useClickOutside, useMergedRef } from '@mantine/hooks';
 import {
   type KeyboardEvent,
   type ReactNode,
-  type RefObject,
-  useEffect,
+  useCallback,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -123,11 +122,12 @@ export const RIGHT_SIDEBAR_SHEET_BELOW = 800;
  * True while the page holding the sidebar is narrower than `RIGHT_SIDEBAR_SHEET_BELOW`: the frame's page card, or
  * the WorkspaceBody outside the frame. A sidebar on its own stays docked.
  * The card is measured whole, padding included, because its padding follows the sidebar's own width.
+ * Returns the mode and a ref callback for the sidebar, which measures in the commit, before the first paint.
  */
-function useSheetMode(ref: RefObject<HTMLElement | null>) {
+function useSheetMode() {
   const [sheet, setSheet] = useState(false);
-  useLayoutEffect(() => {
-    const grid = ref.current?.parentElement;
+  const measure = useCallback((aside: HTMLElement | null) => {
+    const grid = aside?.parentElement;
     if (!grid?.classList.contains('dv-workspace-grid')) return;
     const host = grid.closest<HTMLElement>('.dv-shell-page') ?? grid;
     const update = () => setSheet(host.clientWidth < RIGHT_SIDEBAR_SHEET_BELOW);
@@ -136,8 +136,8 @@ function useSheetMode(ref: RefObject<HTMLElement | null>) {
     const observer = new ResizeObserver(update);
     observer.observe(host);
     return () => observer.disconnect();
-  }, [ref]);
-  return sheet;
+  }, []);
+  return [sheet, measure] as const;
 }
 
 /**
@@ -174,27 +174,21 @@ export function RightSidebar({
   const selected = activeTab ?? ownTab,
     isCollapsed = collapsed ?? ownCollapsed;
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const asideRef = useRef<HTMLElement>(null),
-    sheet = useSheetMode(asideRef);
+  const [sheet, measureSheet] = useSheetMode();
   const [sheetOpen, setSheetOpen] = useState(false);
-  // The sheet starts closed whenever the page becomes narrow.
-  useEffect(() => {
+  const [seen, setSeen] = useState({ sheet, activeTab, collapsed, revealKey });
+  const requestedOpen =
+    seen.activeTab !== activeTab ||
+    seen.collapsed !== collapsed ||
+    seen.revealKey !== revealKey;
+  if (requestedOpen || seen.sheet !== sheet) {
+    // Storing information from the previous render: React reruns this component before its children render.
+    setSeen({ sheet, activeTab, collapsed, revealKey });
+    // The sheet starts closed whenever the page becomes narrow.
     if (!sheet) setSheetOpen(false);
-  }, [sheet]);
-  // A page that opens the sidebar itself (another tab, or expanded) opens the sheet too.
-  const requested = useRef({ activeTab, collapsed, revealKey });
-  useEffect(() => {
-    const before = requested.current;
-    requested.current = { activeTab, collapsed, revealKey };
-    if (
-      sheet &&
-      collapsed !== true &&
-      (before.activeTab !== activeTab ||
-        before.collapsed !== collapsed ||
-        before.revealKey !== revealKey)
-    )
-      setSheetOpen(true);
-  }, [sheet, activeTab, collapsed, revealKey]);
+    // A page that opens the sidebar itself (another tab, or expanded) opens the sheet too.
+    else if (requestedOpen && collapsed !== true) setSheetOpen(true);
+  }
   const open = sheet ? sheetOpen : !isCollapsed;
   const tabId = (tab: string) => `${base}-tab-${tab}`,
     paneId = `${base}-pane`;
@@ -244,16 +238,13 @@ export function RightSidebar({
     focusSelected();
   };
 
-  // The sheet closes on a click outside the sidebar.
-  useEffect(() => {
-    if (!sheet || !sheetOpen) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!asideRef.current?.contains(event.target as Node))
-        setSheetOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [sheet, sheetOpen]);
+  const outsideRef = useClickOutside<HTMLElement>(
+    () => setSheetOpen(false),
+    ['pointerdown'],
+    undefined,
+    sheet && sheetOpen,
+  );
+  const asideRef = useMergedRef(outsideRef, measureSheet);
 
   return (
     <aside
