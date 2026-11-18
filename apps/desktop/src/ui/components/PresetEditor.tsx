@@ -16,6 +16,7 @@ import {
 } from '@tabler/icons-react';
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import {
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -23,6 +24,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { Chip, StatusWord } from './Chip';
 import { Presence, Swap } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
@@ -229,8 +231,17 @@ export function PresetEditor({
     ghostRef = useRef<HTMLElement>(null),
     ghostLayerRef = useRef<HTMLDivElement>(null),
     announcerRef = useRef<HTMLDivElement>(null);
-  const focusAfter = useRef<string | null>(
+  // Read once: a frozen keyboard move focuses its grip when the editor mounts.
+  const [initialFocus] = useState(
     initialKeyboardMove ? `[data-grip="${initialKeyboardMove.id}"]` : null,
+  );
+  const attachRoot = useCallback(
+    (node: HTMLElement | null) => {
+      rootRef.current = node;
+      if (node && initialFocus)
+        node.querySelector<HTMLElement>(initialFocus)?.focus();
+    },
+    [initialFocus],
   );
 
   const dirty = !same(panels, saved.panels);
@@ -257,9 +268,11 @@ export function PresetEditor({
       el.textContent = text;
     });
   };
+  // Handlers call this after their updates: flushSync renders everything queued so far, so a control that a
+  // re-render moves or replaces exists again before it takes focus.
   const focus = (selector: string) => {
-    focusAfter.current = selector;
-    bump();
+    flushSync(() => {});
+    rootRef.current?.querySelector<HTMLElement>(selector)?.focus();
   };
   const commit = (next: PresetPanel[]) => {
     setPanels(next);
@@ -273,13 +286,6 @@ export function PresetEditor({
     if (selected !== id) setSelected(id);
   };
   const grip = (id: string) => `.pe-canvas [data-grip="${id}"]`;
-
-  // Restore focus after a re-render moves or replaces the focused control.
-  useLayoutEffect(() => {
-    if (!focusAfter.current) return;
-    rootRef.current?.querySelector<HTMLElement>(focusAfter.current)?.focus();
-    focusAfter.current = null;
-  });
 
   // Review stories: freeze a drag in progress. Measure the panel first, then lift it.
   useLayoutEffect(() => {
@@ -833,7 +839,7 @@ export function PresetEditor({
 
   return (
     <section
-      ref={rootRef}
+      ref={attachRoot}
       className="dv-preset-editor"
       aria-labelledby={hideHeader ? undefined : ids.title}
       aria-label={hideHeader ? preset.name : undefined}
