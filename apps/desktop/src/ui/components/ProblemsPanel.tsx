@@ -1,3 +1,4 @@
+import { useDidUpdate } from '@mantine/hooks';
 import {
   IconAlertTriangle,
   IconCheck,
@@ -10,9 +11,10 @@ import {
   IconRefresh,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { Presence } from './Motion';
+import { useResolvedAnnouncement } from './useResolvedAnnouncement';
 import './ProblemsPanel.css';
 
 export type ProblemSeverity = 'error' | 'warning' | 'info';
@@ -131,10 +133,13 @@ export function problemFlag(
     : null;
 }
 
+/** Shared default, so the resolved list keeps its identity between renders. */
+const NO_RESOLVED: readonly ResolvedProblem[] = [];
+
 /** Content of the right sidebar's Problems tab. Fixes run in place; no dialogs open. */
 export function ProblemsPanel({
   problems,
-  resolved = [],
+  resolved = NO_RESOLVED,
   selectedId = null,
   actionStatus = {},
   lastChecked,
@@ -151,9 +156,11 @@ export function ProblemsPanel({
   );
   const [prevSelected, setPrevSelected] = useState(selectedId);
   const [resolvedOpen, setResolvedOpen] = useState(defaultResolvedOpen);
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useResolvedAnnouncement(
+    problems,
+    resolved,
+  );
   const actedOn = useRef<string | null>(null);
-  const previous = useRef({ problems, resolved });
 
   // A problem selected from outside (a panel flag, a locate action) opens too.
   if (selectedId !== prevSelected) {
@@ -162,27 +169,9 @@ export function ProblemsPanel({
       setOpen(new Set(open).add(selectedId));
   }
 
-  // Announce fixes and dismissals once the owner moves a problem to the resolved list.
-  useEffect(() => {
-    const before = previous.current;
-    previous.current = { problems, resolved };
-    const added = resolved.filter(
-      (r) => !before.resolved.some((b) => b.id === r.id),
-    );
-    if (!added.length) return;
-    const last = added[added.length - 1];
-    const fix = before.problems
-      .find((p) => p.id === last.id)
-      ?.actions.find((a) => a.kind === 'fix');
-    setAnnouncement(
-      last.how === 'dismissed'
-        ? 'Notice dismissed.'
-        : (fix?.done ?? `${last.title}: fixed.`),
-    );
-  }, [problems, resolved]);
-
-  // When the problem the user acted on leaves the list, keep keyboard focus in the panel.
-  useLayoutEffect(() => {
+  // When the problem the user acted on leaves the list, keep keyboard focus in the panel. The owner removes it
+  // after the action, often once a fix finishes, so no handler here runs at that moment.
+  useDidUpdate(() => {
     const id = actedOn.current;
     if (!id || problems.some((p) => p.id === id)) return;
     actedOn.current = null;

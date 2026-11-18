@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import type { Problem, ResolvedProblem } from './ProblemsPanel';
+import type {
+  Problem,
+  ProblemsPanelProps,
+  ResolvedProblem,
+} from './ProblemsPanel';
 import {
   AffectedPanelFlag,
   ProblemsPanel,
@@ -9,6 +13,7 @@ import {
   problemFlag,
 } from './ProblemsPanel';
 import { settleMotion } from './settleMotion';
+import { useResettingCopy } from './useResettingCopy';
 
 const SIGNALS = { id: 'p1', title: 'CO₂ and O₂ signals' };
 const READINGS = { id: 'p2', title: 'Current readings' };
@@ -126,8 +131,7 @@ const meta = {
   },
   // Selection is owned by the workspace; this render plays that role so selecting works in the canvas.
   render: function Render(args) {
-    const [selectedId, setSelectedId] = useState(args.selectedId);
-    useEffect(() => setSelectedId(args.selectedId), [args.selectedId]);
+    const [selectedId, setSelectedId] = useResettingCopy(args.selectedId);
     return (
       <ProblemsPanel
         {...args}
@@ -310,6 +314,76 @@ export const Fixed: Story = {
     await waitFor(() =>
       expect(canvas.queryByText('Fixed at 14:05:20')).toBeNull(),
     );
+  },
+};
+
+/** Plays the workspace: a fix succeeds a moment after it starts, and a dismissal is recorded at once. */
+function ResolvingOwner(args: ProblemsPanelProps) {
+  const [problems, setProblems] = useState(args.problems);
+  const [resolved, setResolved] = useState<ResolvedProblem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const resolve = (problem: Problem, how: ResolvedProblem['how']) => {
+    setProblems((current) => current.filter((p) => p.id !== problem.id));
+    setResolved((current) => [
+      ...current,
+      { id: problem.id, title: problem.title, how, at: '14:05:20' },
+    ]);
+  };
+  const find = (id: string) => problems.find((p) => p.id === id)!;
+  return (
+    <ProblemsPanel
+      {...args}
+      problems={problems}
+      resolved={resolved}
+      selectedId={selectedId}
+      onSelect={(id) => {
+        args.onSelect(id);
+        setSelectedId(id);
+      }}
+      onAction={(id, action) => {
+        args.onAction(id, action);
+        const problem = find(id);
+        window.setTimeout(() => resolve(problem, 'fixed'), 100);
+      }}
+      onDismiss={(id) => {
+        args.onDismiss(id);
+        resolve(find(id), 'dismissed');
+      }}
+    />
+  );
+}
+
+/** When the problem acted on leaves the list, focus stays in the panel and the outcome is announced. */
+export const ResolvingKeepsFocus: Story = {
+  render: (args) => <ResolvingOwner {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const announcer = canvasElement.querySelector('.dv-prob-sr-only');
+    const firstToggle = () =>
+      canvas.getByRole('button', { name: /CO₂ pressure can’t be calculated/ });
+    await userEvent.click(
+      canvas.getByRole('button', { name: /MS-01 stopped sending data/ }),
+    );
+    await userEvent.click(
+      await canvas.findByRole('button', { name: 'Reconnect MS-01' }),
+    );
+    await waitFor(() =>
+      expect(announcer).toHaveTextContent('MS-01 is sending data again.'),
+    );
+    await waitFor(() => expect(firstToggle()).toHaveFocus());
+
+    canvas
+      .getByRole('button', { name: /3 samples arrived out of order/ })
+      .focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Dismiss' })).toBeVisible(),
+    );
+    canvas.getByRole('button', { name: 'Dismiss' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await expect(announcer).toHaveTextContent('Notice dismissed.');
+    await expect(firstToggle()).toHaveFocus();
+    await settleMotion();
   },
 };
 
