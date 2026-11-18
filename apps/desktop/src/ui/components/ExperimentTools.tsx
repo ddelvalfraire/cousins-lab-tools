@@ -8,12 +8,13 @@ import {
   Text,
   useComputedColorScheme,
 } from '@mantine/core';
+import { useInterval } from '@mantine/hooks';
 import {
   IconPlayerPause,
   IconPlayerPlay,
   IconPlayerSkipBack,
 } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type uPlot from 'uplot';
 import { formatMeasurement } from '../measurement';
 import { seriesColors } from '../theme';
@@ -144,21 +145,25 @@ export function PlaybackControls({
   position?: number;
   onPositionChange?: (position: number) => void;
 }) {
-  const [playing, setPlaying] = useState(false),
-    [speed, setSpeed] = useState<string | null>('1');
+  const [speed, setSpeed] = useState<string | null>('1');
   const [local, setLocal] = useState(position);
   const cursor = onPositionChange ? position : local;
   const update = (value: number) =>
     onPositionChange ? onPositionChange(value) : setLocal(value);
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(() => {
-      const next = Math.min(duration, cursor + Number(speed));
-      update(next);
-      if (next >= duration) setPlaying(false);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [playing, cursor, speed, duration, onPositionChange]);
+  const playback = useInterval(() => {
+    const next = Math.min(duration, cursor + Number(speed));
+    update(next);
+    if (next >= duration) playback.stop();
+  }, 1000);
+  const playing = playback.active;
+  const changeSpeed = (value: string | null) => {
+    setSpeed(value);
+    // A new speed waits a full second before its first step.
+    if (playing) {
+      playback.stop();
+      playback.start();
+    }
+  };
   return (
     <fieldset className="dv-playback" aria-label="Recording playback">
       <ActionIcon
@@ -168,7 +173,7 @@ export function PlaybackControls({
         aria-label={playing ? 'Pause playback' : 'Play recording'}
         onClick={() => {
           if (!playing && cursor >= duration) update(0);
-          setPlaying(!playing);
+          playback.toggle();
         }}
       >
         {playing ? (
@@ -182,7 +187,7 @@ export function PlaybackControls({
         color="gray"
         aria-label="Restart recording"
         onClick={() => {
-          setPlaying(false);
+          playback.stop();
           update(0);
         }}
       >
@@ -198,7 +203,7 @@ export function PlaybackControls({
           max={duration}
           value={cursor}
           onChange={(value) => {
-            setPlaying(false);
+            playback.stop();
             update(value);
           }}
           label={clock}
@@ -210,7 +215,7 @@ export function PlaybackControls({
         w={88}
         allowDeselect={false}
         value={speed}
-        onChange={setSpeed}
+        onChange={changeSpeed}
         data={[
           { value: '0.5', label: '0.5×' },
           { value: '1', label: '1×' },
