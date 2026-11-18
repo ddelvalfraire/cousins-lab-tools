@@ -137,6 +137,23 @@ export const ScalesEverything: Story = {
   },
 };
 
+interface FirstFrame {
+  attribute: string | null;
+  size: number;
+}
+
+function AfterProvider({ onFrame }: { onFrame: (frame: FirstFrame) => void }) {
+  useLayoutEffect(
+    () =>
+      onFrame({
+        attribute: html().getAttribute(TEXT_SIZE_ATTRIBUTE),
+        size: px(html()),
+      }),
+    [onFrame],
+  );
+  return null;
+}
+
 /**
  * Renders an uncontrolled provider in its own root, then reads the root font size in a layout effect that runs after the
  * provider's in the same commit: what the browser would paint first.
@@ -145,27 +162,14 @@ function firstFrameSize() {
   const container = document.createElement('div');
   document.body.append(container);
   const root = createRoot(container);
-  const sizes = new Promise<{ attribute: string | null; size: number }>(
-    (resolve) => {
-      function AfterProvider() {
-        useLayoutEffect(
-          () =>
-            resolve({
-              attribute: html().getAttribute(TEXT_SIZE_ATTRIBUTE),
-              size: px(html()),
-            }),
-          [],
-        );
-        return null;
-      }
-      root.render(
-        <>
-          <AppearanceProvider theme={dvdashTheme} />
-          <AfterProvider />
-        </>,
-      );
-    },
-  );
+  const sizes = new Promise<FirstFrame>((resolve) => {
+    root.render(
+      <>
+        <AppearanceProvider theme={dvdashTheme} />
+        <AfterProvider onFrame={resolve} />
+      </>,
+    );
+  });
   return {
     sizes,
     unmount: () => {

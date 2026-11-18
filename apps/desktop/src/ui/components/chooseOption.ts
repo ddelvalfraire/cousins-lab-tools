@@ -8,7 +8,7 @@ export async function chooseOption(select: HTMLElement, option: string) {
     const element = document.getElementById(
       select.getAttribute('aria-controls') ?? '',
     );
-    if (!element || !element.checkVisibility())
+    if (!element?.checkVisibility())
       throw new Error('The select list did not open');
     return element;
   });

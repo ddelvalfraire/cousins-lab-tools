@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { pages } from '../search-registry';
 import { formatClockTime } from '../time';
 import {
@@ -129,7 +129,7 @@ export function PresetThumb({
       <svg viewBox="0 0 100 70" preserveAspectRatio="none" focusable="false">
         {panels.map(({ kind, x, y, w, h }, i) => {
           const height = h * 0.7;
-          let inner;
+          let inner: ReactNode;
           if (kind === 'line' || kind === 'multi')
             inner = (
               <>
@@ -311,7 +311,7 @@ export function PresetCatalog({
     </button>
   );
 
-  let body;
+  let body: ReactNode;
   if (!presets.length)
     body = (
       <CatalogState
@@ -455,7 +455,7 @@ export function PresetCatalog({
       </div>
     );
 
-  let pane;
+  let pane: ReactNode;
   if (!selected)
     pane = (
       <SidebarEmpty

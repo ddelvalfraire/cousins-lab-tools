@@ -40,10 +40,7 @@ function edgeCase(
       ]);
   if (kind === 'range')
     for (let t = 0; t <= 120; t++)
-      out.push([
-        t,
-        0.002 * Math.pow(10, (t / 120) * 5.6) * (1 + rand() * 0.08),
-      ]);
+      out.push([t, 0.002 * 10 ** ((t / 120) * 5.6) * (1 + rand() * 0.08)]);
   return out.map(([time, mass44]) => ({ time, mass44, mass49: null }));
 }
 const edge = {
@@ -118,13 +115,11 @@ export const Unavailable: Story = { args: { state: 'unavailable' } };
 export const SingleSample: Story = { args: { rows: [samples[30]] } };
 export const SmallSignals: Story = {
   args: {
-    rows: samples
-      .slice(0, 20)
-      .map((row) => ({
-        ...row,
-        mass44: row.mass44 === null ? null : row.mass44 * 1e-7,
-        mass49: row.mass49 === null ? null : row.mass49 * 1e-7,
-      })),
+    rows: samples.slice(0, 20).map((row) => ({
+      ...row,
+      mass44: row.mass44 === null ? null : row.mass44 * 1e-7,
+      mass49: row.mass49 === null ? null : row.mass49 * 1e-7,
+    })),
   },
 };
 export const SwitchViews: Story = {

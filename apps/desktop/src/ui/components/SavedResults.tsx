@@ -292,7 +292,9 @@ export function SavedResultInspector({
   onCollapsedChange?: (collapsed: boolean) => void;
   onRetry?: () => void;
   /** Exports the selected result. A returned sentence is shown under the button. */
-  onExport?: (result: SavedResult) => Promise<string | void> | string | void;
+  onExport?: (
+    result: SavedResult,
+  ) => Promise<string | undefined> | string | undefined;
 }) {
   const [ownTab, setOwnTab] = useState<SavedResultTab>('details'),
     tab = controlledTab ?? ownTab;

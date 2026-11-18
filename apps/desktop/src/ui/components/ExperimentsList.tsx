@@ -466,7 +466,7 @@ export function ExperimentsList({
     );
   }
 
-  let pane;
+  let pane: ReactNode;
   if (!selected)
     pane = (
       <SidebarEmpty

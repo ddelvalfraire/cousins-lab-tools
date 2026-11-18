@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { pages } from '../search-registry';
 import {
   CatalogAction,
@@ -259,7 +266,7 @@ export function RoutineCatalog({
   const duration = (r: CatalogRoutine) =>
     r.steps.reduce((sum, s) => sum + (s.duration ?? 0), 0);
 
-  let body;
+  let body: ReactNode;
   if (!routines.length)
     body = (
       <CatalogState
@@ -358,7 +365,7 @@ export function RoutineCatalog({
       </div>
     );
 
-  let pane;
+  let pane: ReactNode;
   if (!selected)
     pane = (
       <SidebarEmpty

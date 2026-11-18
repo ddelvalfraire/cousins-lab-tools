@@ -19,8 +19,7 @@ export const TEXT_SIZE_KEY = 'dvdash-text-size';
 export const TEXT_SIZE_ATTRIBUTE = 'data-dv-text-size';
 
 export const isTextSize = (value: unknown): value is TextSize =>
-  typeof value === 'string' &&
-  Object.prototype.hasOwnProperty.call(textScales, value);
+  typeof value === 'string' && Object.keys(textScales).includes(value);
 
 /** The saved step, or Default when nothing valid is saved or storage is unavailable. */
 export function readTextSize(

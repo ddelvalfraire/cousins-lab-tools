@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { pages } from '../search-registry';
 import {
   CatalogAction,
@@ -268,22 +275,20 @@ export function InstrumentCatalog({
       </CatalogAction>
     );
   };
+  const instrumentId = (value: string) => (
+    <span className="dv-cat-instrument-id">{value}</span>
+  );
   const facts = (i: CatalogInstrument, last: [string, string]) => (
     <SidebarFacts
       items={[
         ['Transport', i.transport],
-        ['Port', <span className="dv-cat-instrument-id">{i.port}</span>],
-        last[0] === 'Identifier'
-          ? [
-              'Identifier',
-              <span className="dv-cat-instrument-id">{last[1]}</span>,
-            ]
-          : last,
+        ['Port', instrumentId(i.port)],
+        last[0] === 'Identifier' ? ['Identifier', instrumentId(last[1])] : last,
       ]}
     />
   );
 
-  let body;
+  let body: ReactNode;
   if (!instruments.length)
     body = (
       <CatalogState
@@ -402,7 +407,7 @@ export function InstrumentCatalog({
       </CatalogFrame>
     );
 
-  let pane;
+  let pane: ReactNode;
   if (!selected)
     pane = (
       <SidebarEmpty

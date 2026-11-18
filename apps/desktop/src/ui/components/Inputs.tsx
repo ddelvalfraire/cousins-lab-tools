@@ -11,7 +11,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconFileImport } from '@tabler/icons-react';
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import {
   Panel,
   type Severity,
@@ -80,7 +80,7 @@ export function ParameterField({
         warning={warning}
       />
     );
-  let field;
+  let field: ReactNode;
   if (kind === 'count' || kind === 'timing')
     field = (
       <NumberInput

@@ -1,8 +1,8 @@
-import {
-  type ButtonHTMLAttributes,
-  type InputHTMLAttributes,
-  type ReactNode,
-  type Ref,
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  Ref,
 } from 'react';
 import './Approved.css';
 import './Inspectors.css';

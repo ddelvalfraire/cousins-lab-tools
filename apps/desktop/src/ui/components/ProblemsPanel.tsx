@@ -126,7 +126,7 @@ export function problemFlag(
   panelId: string,
 ) {
   const selected = problems.find((p) => p.id === selectedId);
-  return selected && selected.affects.some((a) => a.id === panelId)
+  return selected?.affects.some((a) => a.id === panelId)
     ? { severity: selected.severity, label: selected.title }
     : null;
 }

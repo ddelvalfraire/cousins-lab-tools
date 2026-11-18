@@ -886,13 +886,13 @@ export function ReviewPage({
               collapsed={inspector.collapsed}
               onCollapsedChange={inspector.setCollapsed}
               onRetry={inspector.retry}
-              onExport={(result) =>
+              onExport={(result) => {
                 onDownload(
                   `${result.id}.json`,
                   JSON.stringify(result, null, 2),
                   'application/json',
-                )
-              }
+                );
+              }}
             />
           }
         >

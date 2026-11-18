@@ -57,7 +57,7 @@ function SavedResultsExample({
   onExport,
 }: {
   scenario?: Scenario;
-  onExport?: (result: SavedResult) => string | void;
+  onExport?: (result: SavedResult) => string | undefined;
 }) {
   const rows = scenario === 'empty' ? [] : results;
   const shown = (r: SavedResult) =>

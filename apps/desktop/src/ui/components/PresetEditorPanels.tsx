@@ -309,8 +309,8 @@ export function PanelPreview({
       xh = Math.max(...xs),
       yl = Math.min(...ys),
       yh = Math.max(...ys);
-    const X = (v: number) => 8 + ((v - xl) / (xh - xl)) * 284,
-      Y = (v: number) => 142 - ((v - yl) / (yh - yl)) * 134;
+    const toX = (v: number) => 8 + ((v - xl) / (xh - xl)) * 284,
+      toY = (v: number) => 142 - ((v - yl) / (yh - yl)) * 134;
     const n = xs.length,
       mx = xs.reduce((a, b) => a + b) / n,
       my = ys.reduce((a, b) => a + b) / n;
@@ -346,7 +346,7 @@ export function PanelPreview({
               <path
                 key={i}
                 className="pe-point"
-                d={`M${X(x).toFixed(1)} ${Y(ys[i]).toFixed(1)}h0`}
+                d={`M${toX(x).toFixed(1)} ${toY(ys[i]).toFixed(1)}h0`}
                 stroke={color}
                 strokeWidth={5}
                 strokeLinecap="round"
@@ -355,7 +355,7 @@ export function PanelPreview({
             ))}
             <path
               className="pe-fit"
-              d={`M${X(xl)} ${Y(slope * xl + intercept)}L${X(xh)} ${Y(slope * xh + intercept)}`}
+              d={`M${toX(xl)} ${toY(slope * xl + intercept)}L${toX(xh)} ${toY(slope * xh + intercept)}`}
               stroke="var(--dv-ink)"
               strokeDasharray="5 4"
               strokeWidth={1.4}

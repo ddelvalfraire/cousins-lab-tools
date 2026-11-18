@@ -707,7 +707,7 @@ export function PresetEditor({
   }
 
   function changeKind(panel: PresetPanel, kind: PresetPanelKind) {
-    const span = panel.span < MIN_SPAN[kind] ? MIN_SPAN[kind] : panel.span;
+    const span = Math.max(panel.span, MIN_SPAN[kind]) as PanelSpan;
     const extra =
       kind === 'inputs'
         ? { fields: panel.fields ?? [] }
