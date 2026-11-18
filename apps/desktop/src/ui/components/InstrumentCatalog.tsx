@@ -1,11 +1,4 @@
-import {
-  type ReactNode,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { pages } from '../search-registry';
 import {
   CatalogAction,
@@ -34,6 +27,8 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from './RightSidebar';
+import { usePendingTimeouts } from './usePendingTimeouts';
+import { useResettingCopy } from './useResettingCopy';
 
 export type InstrumentState =
   | 'receiving'
@@ -187,7 +182,7 @@ export function InstrumentCatalog({
   const sidebarId = useId().replace(/:/g, '');
   const [search, clearSearch] = useCatalogQuery(query, onClearQuery);
   const [sort, sortBy] = useCatalogSort<InstrumentSortKey>(initialSort);
-  const [items, setItems] = useState(instruments);
+  const [items, setItems] = useResettingCopy(instruments);
   const [selectedId, setSelectedId] = useState(initialSelected);
   const [tab, setTab] = useState<string>(initialTab);
   const [collapsed, setCollapsed] = useState(
@@ -195,11 +190,7 @@ export function InstrumentCatalog({
   );
   const [reveal, setReveal] = useState(0);
   const [announcement, setAnnouncement] = useState('');
-  const timers = useRef<number[]>([]);
-  useEffect(() => {
-    setItems(instruments);
-  }, [instruments]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const timeouts = usePendingTimeouts();
 
   const rows = useMemo(
     () =>
@@ -231,18 +222,15 @@ export function InstrumentCatalog({
   const connect = (i: CatalogInstrument) => {
     update(i.id, { state: 'connecting' });
     setAnnouncement(`Connecting to ${i.name}.`);
-    timers.current.push(
-      window.setTimeout(() => {
-        if (
-          document.activeElement?.getAttribute('aria-label') ===
-            'Connecting…' &&
-          document.activeElement.closest('.dv-right-sidebar')
-        )
-          focusPane(sidebarId);
-        update(i.id, { state: 'ready', note: 'Connected · not acquiring' });
-        setAnnouncement(`${i.name} connected. Acquisition has not started.`);
-      }, connectDelay),
-    );
+    timeouts.schedule(() => {
+      if (
+        document.activeElement?.getAttribute('aria-label') === 'Connecting…' &&
+        document.activeElement.closest('.dv-right-sidebar')
+      )
+        focusPane(sidebarId);
+      update(i.id, { state: 'ready', note: 'Connected · not acquiring' });
+      setAnnouncement(`${i.name} connected. Acquisition has not started.`);
+    }, connectDelay);
   };
   const action = (i: CatalogInstrument) => {
     if (i.state === 'receiving' || i.state === 'ready')
@@ -539,6 +527,7 @@ export function InstrumentCatalog({
         </Presence>
       </WorkspaceBody>
       <div
+        ref={timeouts.ref}
         className="dv-cat-sr"
         role="status"
         aria-live="polite"
