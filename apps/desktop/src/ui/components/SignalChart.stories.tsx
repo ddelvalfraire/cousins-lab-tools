@@ -443,7 +443,10 @@ export const MotionStates: Story = {
     const [state, setState] = useState<ChartState>('recorded');
     return (
       <>
-        <div role="group" aria-label="Example source state">
+        <fieldset
+          aria-label="Example source state"
+          style={{ margin: 0, padding: 0, border: 0, minInlineSize: 'auto' }}
+        >
           {(
             ['recorded', 'stale', 'missing', 'empty', 'unavailable'] as const
           ).map((value) => (
@@ -451,7 +454,7 @@ export const MotionStates: Story = {
               {value}
             </button>
           ))}
-        </div>
+        </fieldset>
         <SignalChart {...args} state={state} />
       </>
     );

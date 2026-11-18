@@ -175,6 +175,8 @@
   position: relative;
   display: grid;
   gap: 10px;
+  margin: 0;
+  min-inline-size: auto;
   padding: 14px;
   border: 1px solid var(--dv-line);
   border-radius: 10px;

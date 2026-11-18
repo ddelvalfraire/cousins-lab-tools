@@ -102,6 +102,8 @@
 .dv-cat-views {
   display: flex;
   gap: 2px;
+  margin: 0;
+  min-inline-size: auto;
   border: 1px solid var(--dv-line);
   border-radius: 6px;
   padding: 3px;
@@ -760,6 +762,11 @@
 .dv-cat-routine-head button:focus-visible {
   outline: 2px solid var(--dv-blue);
   outline-offset: 3px;
+}
+.dv-cat-routine-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .dv-cat-routine {
   padding: 16px 16px 0;

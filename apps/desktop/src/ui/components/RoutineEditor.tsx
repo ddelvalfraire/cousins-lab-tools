@@ -246,7 +246,7 @@ function RoutineEditorDraft({
   const [raw, setRaw] = useState<Record<string, string>>({});
   const [announcement, setAnnouncement] = useState('');
   const rootRef = useRef<HTMLElement>(null),
-    canvasRef = useRef<HTMLDivElement>(null);
+    canvasRef = useRef<HTMLFieldSetElement>(null);
   const focusRef = useRef<string | null>(
     interaction?.type === 'keyboard'
       ? `[data-grip="${interaction.stepId}"]`
@@ -1244,17 +1244,16 @@ function RoutineEditorDraft({
             </div>
           </div>
         )}
-        <div
+        <fieldset
           ref={canvasRef}
           className="dv-re-canvas"
-          role="group"
           aria-label="Routine steps"
           data-mode={
             drag ? (drag.valid ? 'drag' : 'nodrop') : kb ? 'drag' : undefined
           }
         >
           {renderCanvas()}
-        </div>
+        </fieldset>
         <div className="dv-re-add-row">
           {(Object.keys(KIND) as RoutineStepKind[]).map((k) => (
             <button

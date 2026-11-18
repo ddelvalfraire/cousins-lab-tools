@@ -233,11 +233,7 @@ export function PlaybackTransport({
       ? 'Replay recording'
       : 'Play recording';
   return (
-    <section
-      className="dv-xw-transport"
-      role="group"
-      aria-label="Recording playback"
-    >
+    <fieldset className="dv-xw-transport" aria-label="Recording playback">
       <div className="dv-xw-transport-bar">
         <div className="dv-xw-transport-controls">
           <button
@@ -346,7 +342,7 @@ export function PlaybackTransport({
           />
         </label>
       </div>
-    </section>
+    </fieldset>
   );
 }
 

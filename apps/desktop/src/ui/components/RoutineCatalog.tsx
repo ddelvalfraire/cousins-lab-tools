@@ -307,13 +307,12 @@ export function RoutineCatalog({
           <span>Revision</span>
           <span className="dv-cat-sr">Actions</span>
         </div>
-        <div role="list" aria-label="Routine definitions">
+        <ul className="dv-cat-routine-list" aria-label="Routine definitions">
           <MotionList resetKey={pager.start}>
             {rows.slice(pager.start, pager.end).map((r) => (
-              <div
+              <li
                 key={r.id}
                 className="dv-cat-routine"
-                role="listitem"
                 data-selected={selected?.id === r.id}
               >
                 <div className="dv-cat-routine-top">
@@ -363,10 +362,10 @@ export function RoutineCatalog({
                   current={selected?.id === r.id ? step : null}
                   onStep={(i) => open(r.id, 'steps', i)}
                 />
-              </div>
+              </li>
             ))}
           </MotionList>
-        </div>
+        </ul>
       </div>
     );
 

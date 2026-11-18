@@ -363,7 +363,7 @@ export function PanelSourceBindingPane({
         <span id={`${id}-signals`}>Visible signals</span>
         <small>{draft.signals.length} selected</small>
       </div>
-      <div role="group" aria-labelledby={`${id}-signals`}>
+      <fieldset className="dv-src-signals" aria-labelledby={`${id}-signals`}>
         {channels.map((channel) => {
           const available = !!s && s.channels.includes(channel.id),
             checked = draft.signals.includes(channel.id);
@@ -390,7 +390,7 @@ export function PanelSourceBindingPane({
             </label>
           );
         })}
-      </div>
+      </fieldset>
       <div id={messageId} className="dv-src-status">
         <Presence show={!!problem}>
           {problem && (

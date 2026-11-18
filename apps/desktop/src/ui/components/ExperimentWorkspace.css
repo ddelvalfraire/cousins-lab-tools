@@ -250,6 +250,7 @@
   top: calc(8px - var(--dv-page-top));
   z-index: 5;
   margin: 0;
+  min-inline-size: auto;
   padding: 8px 11px;
   border: 1px solid var(--dv-line);
   border-radius: 10px;

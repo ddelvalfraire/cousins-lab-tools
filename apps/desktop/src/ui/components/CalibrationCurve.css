@@ -27,6 +27,8 @@
 .dv-curve-switch {
   display: flex;
   gap: 2px;
+  margin: 0;
+  min-inline-size: auto;
   padding: 3px;
   border: 1px solid var(--dv-line);
   border-radius: 7px;

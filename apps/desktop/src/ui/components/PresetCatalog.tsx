@@ -623,7 +623,7 @@ export function PresetCatalog({
           <CatalogFilter query={search} onClear={clearSearch} />
         </Presence>
         <CatalogToolbar count={noun(rows.length)}>
-          <div className="dv-cat-views" role="group" aria-label="Preset view">
+          <fieldset className="dv-cat-views" aria-label="Preset view">
             <button
               type="button"
               aria-pressed={view === 'list'}
@@ -640,7 +640,7 @@ export function PresetCatalog({
               <SidebarIcon name="panels" />
               Grid
             </button>
-          </div>
+          </fieldset>
         </CatalogToolbar>
         <Swap swapKey={rows.length ? 'list' : 'empty'}>{body}</Swap>
         <Presence show={rows.length > 0}>

@@ -153,7 +153,7 @@ type Story = StoryObj<typeof meta>;
 const groupNames = (canvasElement: HTMLElement) =>
   [
     ...canvasElement.querySelectorAll(
-      '[role=listbox] [role=group]:not([data-motion=leave])',
+      '[role=listbox] fieldset:not([data-motion=leave])',
     ),
   ].map((group) => group.getAttribute('aria-label'));
 

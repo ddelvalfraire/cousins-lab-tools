@@ -687,6 +687,8 @@
   min-width: 0;
 }
 .dv-playback {
+  margin: 0;
+  min-inline-size: auto;
   display: flex;
   align-items: center;
   flex-wrap: wrap;

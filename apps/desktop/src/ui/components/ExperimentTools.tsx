@@ -91,9 +91,8 @@ export function DataPlotPanel({
             logarithmic={logarithmic}
           />
         ) : (
-          <div
+          <section
             className="dv-table-frame"
-            role="region"
             aria-label={`${title} samples`}
             tabIndex={0}
             style={{ height }}
@@ -123,7 +122,7 @@ export function DataPlotPanel({
                 ))}
               </Table.Tbody>
             </Table>
-          </div>
+          </section>
         )}
       </Stack>
     </Panel>
@@ -161,7 +160,7 @@ export function PlaybackControls({
     return () => clearInterval(timer);
   }, [playing, cursor, speed, duration, onPositionChange]);
   return (
-    <div className="dv-playback" role="group" aria-label="Recording playback">
+    <fieldset className="dv-playback" aria-label="Recording playback">
       <ActionIcon
         size="lg"
         variant="filled"
@@ -218,6 +217,6 @@ export function PlaybackControls({
           { value: '2', label: '2×' },
         ]}
       />
-    </div>
+    </fieldset>
   );
 }

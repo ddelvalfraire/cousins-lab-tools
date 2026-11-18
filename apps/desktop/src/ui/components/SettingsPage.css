@@ -214,7 +214,8 @@ fieldset > .dv-settings-hint {
   gap: 8px;
   align-items: stretch;
 }
-.dv-settings-path {
+/* fieldset in the selector outranks the .dv-settings fieldset reset, which would drop this box's padding and border. */
+fieldset.dv-settings-path {
   flex: 1;
   min-width: 0;
   display: flex;

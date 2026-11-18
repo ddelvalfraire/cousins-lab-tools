@@ -134,7 +134,7 @@ export function CalibrationCurve({
             {summary}
           </p>
         </div>
-        <div className="dv-curve-switch" role="group" aria-label="View">
+        <fieldset className="dv-curve-switch" aria-label="View">
           {(['chart', 'table'] as const).map((option) => (
             <button
               key={option}
@@ -145,7 +145,7 @@ export function CalibrationCurve({
               {option === 'chart' ? 'Chart' : 'Table'}
             </button>
           ))}
-        </div>
+        </fieldset>
       </div>
       <div className="dv-curve-frame" hidden={view !== 'chart'}>
         <CurvePlot

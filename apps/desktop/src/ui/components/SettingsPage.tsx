@@ -382,15 +382,14 @@ export function SettingsPage({
             >
               <span id={ids.folder}>{LABELS.folder}</span>
               <div className="dv-settings-folder">
-                <div
+                <fieldset
                   className="dv-settings-path"
-                  role="group"
                   aria-labelledby={ids.folder}
                   data-testid="folder-path"
                 >
                   <ReviewIcon name="folder" />
                   <span>{settings.folder}</span>
-                </div>
+                </fieldset>
                 <button
                   type="button"
                   className="dv-settings-button"

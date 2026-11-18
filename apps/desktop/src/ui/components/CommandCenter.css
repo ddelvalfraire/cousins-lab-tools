@@ -53,6 +53,13 @@
 .dv-scroll .dv-cmd-body {
   height: auto;
 }
+/* A fieldset for its group role, without the fieldset's own box. */
+.dv-cmd-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: auto;
+}
 .dv-cmd-group + .dv-cmd-group {
   margin-top: 5px;
   padding-top: 5px;

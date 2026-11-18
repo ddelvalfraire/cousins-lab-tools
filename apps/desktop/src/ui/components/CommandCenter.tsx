@@ -402,9 +402,8 @@ export function CommandCenter({
         >
           <MotionList>
             {groups.map((group) => (
-              <div
+              <fieldset
                 key={group.kind}
-                role="group"
                 aria-label={group.label}
                 className="dv-cmd-group"
               >
@@ -451,7 +450,7 @@ export function CommandCenter({
                     </div>
                   );
                 })}
-              </div>
+              </fieldset>
             ))}
           </MotionList>
         </div>
