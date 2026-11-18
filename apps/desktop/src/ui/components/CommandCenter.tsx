@@ -1,16 +1,11 @@
 import { Kbd } from '@mantine/core';
-import {
-  Fragment,
-  type MouseEvent,
-  type ReactNode,
-  useEffect,
-  useRef,
-} from 'react';
+import { Fragment, type MouseEvent, type ReactNode } from 'react';
 import { keyedBy } from './keyedBy';
 import './Approved.css';
 import './CommandCenter.css';
 import { MotionList } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
+import { useWheelScrollsSideways } from './useWheelScrollsSideways';
 
 /*
  * The command center: the results list under the window bar's search box when it searches All DVDash.
@@ -302,31 +297,8 @@ export function CommandCenter({
   mac,
 }: CommandCenterProps) {
   const typed = query.trim() !== '';
-  const typesRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const row = typesRef.current;
-    if (!row) return;
-    // In a narrow window the tabs scroll sideways, which a plain mouse wheel cannot do on its own.
-    const onWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-      const step =
-        event.deltaMode === WheelEvent.DOM_DELTA_LINE
-          ? 16
-          : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-            ? row.clientWidth
-            : 1;
-      const max = row.scrollWidth - row.clientWidth;
-      const next = Math.min(
-        max,
-        Math.max(0, row.scrollLeft + event.deltaY * step),
-      );
-      if (max <= 0 || next === row.scrollLeft) return;
-      event.preventDefault();
-      row.scrollLeft = next;
-    };
-    row.addEventListener('wheel', onWheel, { passive: false });
-    return () => row.removeEventListener('wheel', onWheel);
-  }, []);
+  // In a narrow window the tabs scroll sideways, which a plain mouse wheel cannot do on its own.
+  const typesRef = useWheelScrollsSideways();
   let index = 0;
   const itemsByOptionId = new Map(
     groups.flatMap((group) =>
