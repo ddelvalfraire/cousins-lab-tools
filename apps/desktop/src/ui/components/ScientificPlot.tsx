@@ -1,5 +1,5 @@
 import { useComputedColorScheme } from '@mantine/core';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import uPlot from 'uplot';
 import { useAppearance } from '../appearance';
 import { formatMeasurement } from '../measurement';
@@ -7,6 +7,7 @@ import { rootTextScale } from '../textSize';
 import { seriesColors } from '../theme';
 import { keyedBy } from './keyedBy';
 import { ScrollFrame } from './ScrollFrame';
+import { useUplotChart } from './useUplotChart';
 
 export type LineDash = 'solid' | 'dashed' | 'dotted';
 /** Dash patterns from the approved inspector charts: dashed `6 4`, dotted `2 4`. */
@@ -107,38 +108,20 @@ export function ScientificPlot({
   /** Colour of the selected interval: `lime` (default) or the mockups' soft panel colour. The sparse frame always uses `soft`. */
   band?: 'lime' | 'soft';
 }) {
-  const host = useRef<HTMLDivElement>(null),
-    plot = useRef<uPlot | null>(null);
   const lastYExtent = useRef<[number, number] | undefined>(undefined);
-  const callbacks = useRef({
-    onSelection,
-    selection,
-    range,
-    data,
-    marker,
-    clock,
-  });
-  callbacks.current = { onSelection, selection, range, data, marker, clock };
+  const callbacks = useRef({ onSelection, selection, data, marker, clock });
+  callbacks.current = { onSelection, selection, data, marker, clock };
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const scheme = useComputedColorScheme('light'),
     { textSize } = useAppearance();
-  const seriesKey = JSON.stringify(series);
-  const limitKey = JSON.stringify(limits);
   const frame = sparse
     ? { left: 42, bottom: 37, ...(typeof sparse === 'object' ? sparse : {}) }
     : null;
-  const frameKey = JSON.stringify(frame);
   const soft = !!frame || band === 'soft';
-  useEffect(() => {
-    if (!host.current) return;
-    const el = host.current;
+  const create = (el: HTMLDivElement) => {
     const colors = seriesColors[scheme],
       ink = scheme === 'dark' ? '#b5c6bb' : '#53675e';
-    const parsedSeries: PlotSeries[] = JSON.parse(seriesKey);
-    const parsedLimits: [number, number] | undefined = limitKey
-      ? JSON.parse(limitKey)
-      : undefined;
-    const sparseFrame: Required<SparseFrame> | null = JSON.parse(frameKey);
+    const sparseFrame: Required<SparseFrame> | null = frame;
     const { line, muted } = frameColors[scheme];
     const bandColor = soft
       ? frameColors[scheme].soft
@@ -262,7 +245,7 @@ export function ScientificPlot({
         y: {
           distr: logarithmic ? 3 : 1,
           range:
-            parsedLimits ??
+            limits ??
             ((_u, min, max) => {
               if (
                 typeof min !== 'number' ||
@@ -324,7 +307,7 @@ export function ScientificPlot({
           ],
       series: [
         { label: xLabel },
-        ...parsedSeries.map((s, i) => ({
+        ...series.map((s, i) => ({
           label: s.label,
           stroke: s.color ?? colors[i % colors.length],
           width: 2,
@@ -391,44 +374,9 @@ export function ScientificPlot({
         ],
       },
     };
-    const u = new uPlot(options, callbacks.current.data, el);
-    plot.current = u;
-    if (callbacks.current.range)
-      u.setScale('x', {
-        min: callbacks.current.range[0],
-        max: callbacks.current.range[1],
-      });
-    const observer = new ResizeObserver(() => {
-      if (host.current)
-        u.setSize({
-          width: Math.max(minimumWidth, host.current.clientWidth),
-          height,
-        });
-    });
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      u.destroy();
-      plot.current = null;
-    };
-  }, [
-    seriesKey,
-    scheme,
-    textSize,
-    limitKey,
-    logarithmic,
-    points,
-    height,
-    xLabel,
-    yLabel,
-    minimumWidth,
-    frameKey,
-    unit,
-    soft,
-  ]);
-  useEffect(() => {
-    const u = plot.current;
-    if (!u) return;
+    return new uPlot(options, callbacks.current.data, el);
+  };
+  const update = (u: uPlot) => {
     u.setData(data);
     const xs = data[0],
       first = xs[0] ?? 0,
@@ -440,7 +388,28 @@ export function ScientificPlot({
     // Do not rebuild from uncommitted scales during uPlot's initial microtask.
     // setData/setScale already invalidate paths; only schedule the selection paint.
     u.redraw(false);
-  }, [data, range, selection, marker, clock]);
+  };
+  const host = useUplotChart({
+    rebuildKey: JSON.stringify([
+      series,
+      scheme,
+      textSize,
+      limits,
+      logarithmic,
+      points,
+      height,
+      xLabel,
+      yLabel,
+      minimumWidth,
+      frame,
+      unit,
+      soft,
+    ]),
+    create,
+    size: (el) => ({ width: Math.max(minimumWidth, el.clientWidth), height }),
+    update,
+    updateDeps: [data, range, selection, marker, clock],
+  });
   const description = `${series.map((s) => s.label).join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`;
   // Tick labels come in fixed slots, which their anchor and order name.
   const ticks = keyedBy(overlay?.labels ?? [], (label) => label.anchor);
