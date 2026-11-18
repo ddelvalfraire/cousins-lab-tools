@@ -14,6 +14,7 @@ import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';
 import { chosen } from './select';
+import { useKeyedValue } from './useKeyedValue';
 import './PanelSource.css';
 
 /** A signal the panel can show. `line` is its style in the chart and legend. */
@@ -488,18 +489,19 @@ export function PanelSourceChart({
   const live = s.kind === 'Live',
     waiting = live && stream === 'waiting',
     interval = editor.interval;
-  const key = JSON.stringify([s.id, editor.applied.signals, waiting]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const data = useMemo<uPlot.AlignedData>(
-    () =>
-      waiting
-        ? [[0], ...shown.map(() => [null])]
-        : [
-            s.data.map((row) => row.t),
-            ...shown.map((c) => s.data.map((row) => row[c.id] ?? null)),
-          ],
-    [key],
+  const plotted = useKeyedValue(
+    JSON.stringify([s.id, editor.applied.signals, waiting]),
+    { source: s, shown },
   );
+  const data = useMemo<uPlot.AlignedData>(() => {
+    const rows = plotted.source.data;
+    return waiting
+      ? [[0], ...plotted.shown.map(() => [null])]
+      : [
+          rows.map((row) => row.t),
+          ...plotted.shown.map((c) => rows.map((row) => row[c.id] ?? null)),
+        ];
+  }, [plotted, waiting]);
   return (
     <div className="dv-insp dv-src-main">
       <section className="dv-insp-card" aria-label={title}>

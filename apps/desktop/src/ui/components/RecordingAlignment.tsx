@@ -16,6 +16,7 @@ import { type Severity, StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';
 import { chosen } from './select';
+import { useKeyedValue } from './useKeyedValue';
 import './RecordingAlignment.css';
 
 export type AlignmentMethod = 'event' | 'elapsed' | 'clock';
@@ -555,15 +556,13 @@ export function AlignmentPreviewChart({
             ? longest - Math.min(...origins)
             : longest,
         ];
-  const key = JSON.stringify([
-    settings,
-    visible,
-    recordings.map((r) => r.available),
-  ]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const aligned = useKeyedValue(
+    JSON.stringify([settings, visible, recordings.map((r) => r.available)]),
+    { recordings, origins },
+  );
   const data = useMemo(
-    () => alignedData(recordings, visible ? origins : null),
-    [key],
+    () => alignedData(aligned.recordings, visible ? aligned.origins : null),
+    [aligned, visible],
   );
   const eventLabel =
     events.find((e) => e.id === settings.event)?.label.toLowerCase() ?? 'event';

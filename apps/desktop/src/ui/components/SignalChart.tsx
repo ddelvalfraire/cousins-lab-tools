@@ -39,6 +39,7 @@ import { useElementWidth } from './useElementWidth';
 import './Approved.css';
 import './SignalChart.css';
 import { ScrollFrame } from './ScrollFrame';
+import { useKeyedValue } from './useKeyedValue';
 
 export type { PlotSeries } from './ScientificPlot';
 export { ScientificPlot } from './ScientificPlot';
@@ -725,25 +726,26 @@ export function SignalChart({
           : rows,
     [rows, state, unavailable],
   );
-  const keys = signals,
-    keysKey = keys.join();
+  const keys = signals;
+  const plotKeys = useKeyedValue(keys.join(), keys);
   const connectSetting: ConnectNulls =
     connect === 'threshold'
       ? { threshold: connectSeconds }
       : (connect as 'never' | 'always');
   const disconnectSetting: DisconnectAfter =
     disconnect === 'threshold' ? { threshold: disconnectSeconds } : 'never';
-  const settingsKey = JSON.stringify([connectSetting, disconnectSetting]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const gaps = useKeyedValue(
+    JSON.stringify([connectSetting, disconnectSetting]),
+    { connect: connectSetting, disconnect: disconnectSetting },
+  );
   const analysis = useMemo(
     () =>
-      analyseSignal(currentRows, keys, connectSetting, disconnectSetting, log),
-    [currentRows, keysKey, settingsKey, log],
+      analyseSignal(currentRows, plotKeys, gaps.connect, gaps.disconnect, log),
+    [currentRows, plotKeys, gaps, log],
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const data = useMemo(
-    () => plotData(currentRows, keys, analysis, log),
-    [currentRows, keysKey, analysis, log],
+    () => plotData(currentRows, plotKeys, analysis, log),
+    [currentRows, plotKeys, analysis, log],
   );
   const lastLimits = useRef<[number, number] | undefined>(undefined);
   const limits = useMemo<[number, number] | undefined>(
