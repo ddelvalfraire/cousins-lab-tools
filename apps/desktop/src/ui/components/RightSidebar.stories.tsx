@@ -1,6 +1,6 @@
 import { type ComboboxItem, Select } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { Chip } from './Chip';
 import { PageHeader } from './PageHeader';
@@ -14,6 +14,7 @@ import {
   WorkspaceBody,
 } from './RightSidebar';
 import { chosen } from './select';
+import { useArgCopy } from './useArgCopy';
 
 const tabs: RightSidebarTab[] = [
   { id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> },
@@ -140,10 +141,8 @@ function Pane({ tab }: { tab?: string }) {
 
 /** The sidebar in its page: a window-high page, the sidebar docked to its right edge beneath the shared header. */
 function InPage(args: RightSidebarProps) {
-  const [tab, setTab] = useState(args.activeTab),
-    [collapsed, setCollapsed] = useState(args.collapsed);
-  useEffect(() => setTab(args.activeTab), [args.activeTab]);
-  useEffect(() => setCollapsed(args.collapsed), [args.collapsed]);
+  const [tab, setTab] = useArgCopy(args.activeTab),
+    [collapsed, setCollapsed] = useArgCopy(args.collapsed);
   return (
     <div
       className="dv-right-sidebar-example-page"

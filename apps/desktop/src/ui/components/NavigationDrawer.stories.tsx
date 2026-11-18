@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { type ComponentProps, useEffect, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   type CurrentAcquisition,
   NavigationDrawer,
   type RecentExperiment,
 } from './SideNavigation';
+import { useArgCopy } from './useArgCopy';
 
 const recents: RecentExperiment[] = [
   {
@@ -35,8 +36,7 @@ const acquisition: CurrentAcquisition = {
 };
 
 function DrawerExample(args: ComponentProps<typeof NavigationDrawer>) {
-  const [active, setActive] = useState(args.active);
-  useEffect(() => setActive(args.active), [args.active]);
+  const [active, setActive] = useArgCopy(args.active);
   return (
     <NavigationDrawer
       {...args}

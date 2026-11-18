@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   type CurrentAcquisition,
@@ -7,6 +6,7 @@ import {
   SideNavigation,
   type SideNavigationProps,
 } from './SideNavigation';
+import { useArgCopy } from './useArgCopy';
 
 const recents: RecentExperiment[] = [
   {
@@ -48,12 +48,9 @@ const germanLabels = {
 
 /** Stateful host: routing and the collapsed state belong to the app. */
 function SidebarExample(args: SideNavigationProps) {
-  const [active, setActive] = useState(args.active),
-    [collapsed, setCollapsed] = useState(args.collapsed),
-    [detail, setDetail] = useState(args.detail);
-  useEffect(() => setActive(args.active), [args.active]);
-  useEffect(() => setCollapsed(args.collapsed), [args.collapsed]);
-  useEffect(() => setDetail(args.detail), [args.detail]);
+  const [active, setActive] = useArgCopy(args.active),
+    [collapsed, setCollapsed] = useArgCopy(args.collapsed),
+    [detail, setDetail] = useArgCopy(args.detail);
   return (
     <div style={{ height: 684, width: 'fit-content' }}>
       <SideNavigation
