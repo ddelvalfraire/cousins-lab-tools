@@ -1,11 +1,12 @@
 import { Select } from '@mantine/core';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Chip } from './Chip';
 import { SidebarIcon, type SidebarIconName } from './RightSidebar';
 import { chosen } from './select';
 import './Approved.css';
 import './CatalogTable.css';
 import { ScrollFrame } from './ScrollFrame';
+import { useResettingCopy } from './useResettingCopy';
 
 /*
  * Shared pieces of the catalog pages (presets, instruments, routines), from the approved catalog mockups.
@@ -212,12 +213,14 @@ export function useCatalogPage(
     [page, setPage] = useState(0);
   const count = Math.max(1, Math.ceil(total / size)),
     current = Math.min(page, count - 1);
-  useEffect(() => {
+  const changeSize = (next: number) => {
+    if (next === size) return;
+    setSize(next);
     setPage(0);
-  }, [size]);
+  };
   return {
     size,
-    setSize,
+    setSize: changeSize,
     page: current,
     setPage,
     count,
@@ -349,10 +352,7 @@ export function SidebarEmpty({
 
 /** Search text the page filters by. Clear filter clears it here and tells the host. */
 export function useCatalogQuery(query: string, onClearQuery?: () => void) {
-  const [value, setValue] = useState(query);
-  useEffect(() => {
-    setValue(query);
-  }, [query]);
+  const [value, setValue] = useResettingCopy(query);
   const clear = () => {
     setValue('');
     onClearQuery?.();
