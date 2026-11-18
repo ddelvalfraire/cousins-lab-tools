@@ -1,19 +1,36 @@
 import { REDUCED_MOTION_QUERY } from '../motion';
 
-/**
- * Resolves once every finite animation in the document has finished, for story checks that read final colours or
- * positions (the accessibility scan's contrast check reads a fading popup's colours mid-fade). Spinners and other
- * endless animations are skipped.
- */
-export async function settleMotion(root: Document = document) {
-  const finite = root
+const nextFrame = () => new Promise(requestAnimationFrame);
+
+const finiteAnimations = (root: Document) =>
+  root
     .getAnimations()
     .filter(
       (animation) => animation.effect?.getComputedTiming().endTime !== Infinity,
     );
-  await Promise.all(
-    finite.map((animation) => animation.finished.catch(() => undefined)),
-  );
+
+/** Content that is still entering or leaving, which Motion.tsx marks until its animation completes. */
+const moving = (root: Document) => !!root.querySelector('[data-motion]');
+
+const SETTLE_LIMIT_MS = 5000;
+
+/**
+ * Resolves once every finite animation in the document has finished and nothing is still entering or leaving, for
+ * story checks that read final colours or positions (the accessibility scan's contrast check reads a fading popup's
+ * colours mid-fade). Spinners and other endless animations are skipped. Motion starts its animations on the next
+ * frame and can start another when one ends, so this looks again each frame, up to a limit.
+ */
+export async function settleMotion(root: Document = document) {
+  const limit = performance.now() + SETTLE_LIMIT_MS;
+  await nextFrame();
+  while (performance.now() < limit) {
+    const finite = finiteAnimations(root);
+    if (!finite.length && !moving(root)) return;
+    await Promise.all(
+      finite.map((animation) => animation.finished.catch(() => undefined)),
+    );
+    await nextFrame();
+  }
 }
 
 /**
