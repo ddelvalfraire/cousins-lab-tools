@@ -71,6 +71,7 @@ import {
   SavedResultsTable,
   useSavedResultInspector,
 } from '../components/SavedResults';
+import { usePendingTimeouts } from '../components/usePendingTimeouts';
 import {
   alignmentDefaults,
   alignmentEvents,
@@ -94,7 +95,6 @@ import {
   type PresetSpec,
   routines,
 } from './screen-fixtures';
-import { usePageTimeouts } from './usePageTimeouts';
 
 /** Starting state of the experiment page, for frozen review stories. Every field is optional. */
 export interface ExperimentViewOptions {
@@ -190,7 +190,7 @@ export function CapturePage({
   );
   const [playing, setPlaying] = useState(view.playing ?? false);
   const [speed, setSpeed] = useState(1);
-  const { later: schedule, clearOnUnmount } = usePageTimeouts();
+  const { schedule, ref: clearOnUnmount } = usePendingTimeouts();
   const later = (fn: () => void, ms: number) => {
     if (!view.frozen) schedule(fn, ms);
   };
