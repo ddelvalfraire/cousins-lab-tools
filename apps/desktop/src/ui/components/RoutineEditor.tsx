@@ -1,4 +1,5 @@
 import { Select } from '@mantine/core';
+import { useWindowEvent } from '@mantine/hooks';
 import {
   IconActivity,
   IconAdjustmentsHorizontal,
@@ -25,7 +26,8 @@ import type {
   MouseEvent,
   PointerEvent as ReactPointerEvent,
 } from 'react';
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Banner } from './Banner';
 import { Chip, StatusWord } from './Chip';
 import { Presence } from './Motion';
@@ -247,10 +249,17 @@ function RoutineEditorDraft({
   const [announcement, setAnnouncement] = useState('');
   const rootRef = useRef<HTMLElement>(null),
     canvasRef = useRef<HTMLFieldSetElement>(null);
-  const focusRef = useRef<string | null>(
+  const initialFocus =
     interaction?.type === 'keyboard'
       ? `[data-grip="${interaction.stepId}"]`
-      : null,
+      : null;
+  const attachRoot = useCallback(
+    (node: HTMLElement | null) => {
+      rootRef.current = node;
+      if (node && initialFocus)
+        node.querySelector<HTMLElement>(initialFocus)?.focus();
+    },
+    [initialFocus],
   );
   const dragRef = useRef(drag),
     kbRef = useRef(kb),
@@ -266,8 +275,10 @@ function RoutineEditorDraft({
   });
   const canSave = dirty && !bad.length && draft.steps.length > 0;
 
-  const focusLater = (selector: string) => {
-    focusRef.current = selector;
+  // Renders the updates at once so the focus target exists before the screen updates.
+  const focusAfter = (selector: string, updates: () => void) => {
+    flushSync(updates);
+    rootRef.current?.querySelector<HTMLElement>(selector)?.focus();
   };
   const announce = (text: string) => {
     setAnnouncement('');
@@ -283,13 +294,6 @@ function RoutineEditorDraft({
     setSelected(stepId);
     setTab('step');
   };
-
-  useLayoutEffect(() => {
-    const selector = focusRef.current;
-    if (!selector) return;
-    focusRef.current = null;
-    rootRef.current?.querySelector<HTMLElement>(selector)?.focus();
-  });
 
   // Frozen drag states: measure the step, render the slot, then place the ghost beside it.
   useLayoutEffect(() => {
@@ -347,50 +351,47 @@ function RoutineEditorDraft({
     setFreeze(null);
   }, [freeze, drag, draft]);
 
-  const dragging = !!drag;
-  useEffect(() => {
-    if (!dragging) return;
-    const overIndex = (x: number, y: number) => {
-      const box = canvasRef.current?.getBoundingClientRect();
-      if (
-        !box ||
-        x < box.left ||
-        x > box.right ||
-        y < box.top - 12 ||
-        y > box.bottom + 12
-      )
-        return null;
-      let index = 0;
-      for (const el of canvasRef.current!.querySelectorAll(
-        ':scope > [data-step]',
-      )) {
-        const r = el.getBoundingClientRect();
-        if (y > r.top + r.height / 2) index++;
-      }
-      return index;
-    };
-    const move = (e: PointerEvent) => {
-      const current = dragRef.current,
-        base = rootRef.current?.getBoundingClientRect();
-      if (!current || !base) return;
-      const over = overIndex(e.clientX, e.clientY),
-        valid = over !== null;
-      const changed =
-        valid !== current.valid || (valid && over !== current.over);
-      setDrag({
-        ...current,
-        x: e.clientX - base.left,
-        y: e.clientY - base.top,
-        valid,
-        over: valid ? over : current.over,
-        moved: current.moved || changed,
-      });
-    };
-    const end = (e: PointerEvent) => {
-      const current = dragRef.current;
-      if (!current) return;
+  const overIndex = (x: number, y: number) => {
+    const box = canvasRef.current?.getBoundingClientRect();
+    if (
+      !box ||
+      x < box.left ||
+      x > box.right ||
+      y < box.top - 12 ||
+      y > box.bottom + 12
+    )
+      return null;
+    let index = 0;
+    for (const el of canvasRef.current!.querySelectorAll(
+      ':scope > [data-step]',
+    )) {
+      const r = el.getBoundingClientRect();
+      if (y > r.top + r.height / 2) index++;
+    }
+    return index;
+  };
+  // Listening all the time is simpler than adding listeners per drag; both handlers ignore events outside a drag.
+  useWindowEvent('pointermove', (e) => {
+    const current = dragRef.current,
+      base = rootRef.current?.getBoundingClientRect();
+    if (!current || !base) return;
+    const over = overIndex(e.clientX, e.clientY),
+      valid = over !== null;
+    const changed = valid !== current.valid || (valid && over !== current.over);
+    setDrag({
+      ...current,
+      x: e.clientX - base.left,
+      y: e.clientY - base.top,
+      valid,
+      over: valid ? over : current.over,
+      moved: current.moved || changed,
+    });
+  });
+  const endDrag = (e: PointerEvent) => {
+    const current = dragRef.current;
+    if (!current) return;
+    focusAfter(`[data-grip="${current.id}"]`, () => {
       setDrag(null);
-      focusLater(`[data-grip="${current.id}"]`);
       const cancelled = e.type === 'pointercancel' || !current.valid;
       if (!cancelled && current.moved) {
         const routineNow = draftRef.current,
@@ -400,16 +401,10 @@ function RoutineEditorDraft({
           `${stepTitle(step)} moved to step ${current.over + 1} of ${routineNow.steps.length}.`,
         );
       } else if (!current.valid) announce('Move cancelled.');
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', end);
-    document.addEventListener('pointercancel', end);
-    return () => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', end);
-      document.removeEventListener('pointercancel', end);
-    };
-  }, [dragging]);
+    });
+  };
+  useWindowEvent('pointerup', endDrag);
+  useWindowEvent('pointercancel', endDrag);
 
   function onGripPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
     const grip = (e.target as HTMLElement).closest<HTMLElement>('[data-grip]');
@@ -446,17 +441,18 @@ function RoutineEditorDraft({
       index = draft.steps.indexOf(step);
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      focusLater(`[data-grip="${stepId}"]`);
-      if (kb?.id === stepId) {
-        setKb(null);
-        announce(`${stepTitle(step)} dropped at step ${index + 1}.`);
-      } else {
-        setKb({ id: stepId, start: clone(draft) });
-        select(stepId);
-        announce(
-          `${stepTitle(step)} picked up. Step ${index + 1} of ${draft.steps.length}. Use the arrow keys to move.`,
-        );
-      }
+      focusAfter(`[data-grip="${stepId}"]`, () => {
+        if (kb?.id === stepId) {
+          setKb(null);
+          announce(`${stepTitle(step)} dropped at step ${index + 1}.`);
+        } else {
+          setKb({ id: stepId, start: clone(draft) });
+          select(stepId);
+          announce(
+            `${stepTitle(step)} picked up. Step ${index + 1} of ${draft.steps.length}. Use the arrow keys to move.`,
+          );
+        }
+      });
       return;
     }
     if (kb?.id !== stepId) return;
@@ -464,15 +460,17 @@ function RoutineEditorDraft({
       e.preventDefault();
       const to = index + (e.key === 'ArrowUp' ? -1 : 1);
       if (to < 0 || to >= draft.steps.length) return;
-      update((next) => moveStep(next, stepId, to));
-      focusLater(`[data-grip="${stepId}"]`);
-      announce(`Step ${to + 1} of ${draft.steps.length}.`);
+      focusAfter(`[data-grip="${stepId}"]`, () => {
+        update((next) => moveStep(next, stepId, to));
+        announce(`Step ${to + 1} of ${draft.steps.length}.`);
+      });
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      setDraft(clone(kb.start));
-      setKb(null);
-      focusLater(`[data-grip="${stepId}"]`);
-      announce('Move cancelled.');
+      focusAfter(`[data-grip="${stepId}"]`, () => {
+        setDraft(clone(kb.start));
+        setKb(null);
+        announce('Move cancelled.');
+      });
     }
   }
 
@@ -493,17 +491,17 @@ function RoutineEditorDraft({
     const from = draft.steps.findIndex((s) => s.id === stepId),
       to = from + dir;
     if (to < 0 || to >= draft.steps.length) return;
-    update((next) => moveStep(next, stepId, to));
-    select(stepId);
     const edge = to === 0 || to === draft.steps.length - 1;
-    focusLater(
-      edge
-        ? `.dv-re-canvas [data-shift="${stepId}"]:not(:disabled)`
-        : `.dv-re-canvas [data-shift="${stepId}"][data-dir="${dir}"]`,
-    );
-    announce(
-      `${stepTitle(draft.steps[from])} moved to step ${to + 1} of ${draft.steps.length}.`,
-    );
+    const target = edge
+      ? `.dv-re-canvas [data-shift="${stepId}"]:not(:disabled)`
+      : `.dv-re-canvas [data-shift="${stepId}"][data-dir="${dir}"]`;
+    focusAfter(target, () => {
+      update((next) => moveStep(next, stepId, to));
+      select(stepId);
+      announce(
+        `${stepTitle(draft.steps[from])} moved to step ${to + 1} of ${draft.steps.length}.`,
+      );
+    });
   }
 
   function removeStep(stepId: string) {
@@ -511,14 +509,16 @@ function RoutineEditorDraft({
       title = stepTitle(draft.steps[index]);
     const rest = draft.steps.filter((s) => s.id !== stepId),
       next = rest[Math.min(index, rest.length - 1)];
-    update((r) => {
-      r.steps = r.steps.filter((s) => s.id !== stepId);
+    const target = next
+      ? `.dv-re-canvas [data-grip="${next.id}"]`
+      : '[data-add="capture"]';
+    focusAfter(target, () => {
+      update((r) => {
+        r.steps = r.steps.filter((s) => s.id !== stepId);
+      });
+      if (selected === stepId) setSelected(null);
+      announce(`${title} removed. Discard changes to undo.`);
     });
-    if (selected === stepId) setSelected(null);
-    focusLater(
-      next ? `.dv-re-canvas [data-grip="${next.id}"]` : '[data-add="capture"]',
-    );
-    announce(`${title} removed. Discard changes to undo.`);
   }
 
   function addStep(kind: RoutineStepKind) {
@@ -526,41 +526,44 @@ function RoutineEditorDraft({
       's',
       [...draft.steps, ...saved.steps].map((s) => s.id),
     );
-    update((r) => {
-      r.steps.push({
-        id: stepId,
-        kind,
-        name: '',
-        duration:
-          kind === 'annotate' ? null : { fixed: kind === 'wait' ? 5 : 10 },
+    const target =
+      kind === 'wait' ? '[data-field="fixed"]' : '[data-field="name"]';
+    focusAfter(target, () => {
+      update((r) => {
+        r.steps.push({
+          id: stepId,
+          kind,
+          name: '',
+          duration:
+            kind === 'annotate' ? null : { fixed: kind === 'wait' ? 5 : 10 },
+        });
       });
+      select(stepId);
+      setNotice(null);
+      announce(`${KIND[kind]} step added at the end.`);
     });
-    select(stepId);
-    setNotice(null);
-    focusLater(
-      kind === 'wait' ? '[data-field="fixed"]' : '[data-field="name"]',
-    );
-    announce(`${KIND[kind]} step added at the end.`);
   }
 
   function save() {
     const next = revision + 1;
-    onSave?.({ name, revision: next, routine: clone(draft) });
-    setRevision(next);
-    setSaved(clone(draft));
-    focusLater(`[id="${id('title')}"]`);
-    announce(`Saved as R${next}.`);
+    focusAfter(`[id="${id('title')}"]`, () => {
+      onSave?.({ name, revision: next, routine: clone(draft) });
+      setRevision(next);
+      setSaved(clone(draft));
+      announce(`Saved as R${next}.`);
+    });
   }
 
   function discard() {
     const restored = clone(saved);
-    setDraft(restored);
-    if (!restored.steps.some((s) => s.id === selected)) setSelected(null);
-    setNotice(null);
-    setBlocked(null);
-    focusLater(`[id="${id('title')}"]`);
-    announce('Changes discarded.');
-    onDiscard?.();
+    focusAfter(`[id="${id('title')}"]`, () => {
+      setDraft(restored);
+      if (!restored.steps.some((s) => s.id === selected)) setSelected(null);
+      setNotice(null);
+      setBlocked(null);
+      announce('Changes discarded.');
+      onDiscard?.();
+    });
   }
 
   function changeKind(step: RoutineStep, kind: RoutineStepKind) {
@@ -594,12 +597,13 @@ function RoutineEditorDraft({
       return;
     }
     const rest = draft.parameters.filter((p) => p.id !== parameterId);
-    update((r) => {
-      r.parameters = r.parameters.filter((p) => p.id !== parameterId);
+    focusAfter(rest.length ? '[data-param-remove]' : '[data-add-param]', () => {
+      update((r) => {
+        r.parameters = r.parameters.filter((p) => p.id !== parameterId);
+      });
+      setBlocked(null);
+      announce('Parameter removed.');
     });
-    setBlocked(null);
-    focusLater(rest.length ? '[data-param-remove]' : '[data-add-param]');
-    announce('Parameter removed.');
   }
 
   function addParameter() {
@@ -607,12 +611,13 @@ function RoutineEditorDraft({
       'q',
       [...draft.parameters, ...saved.parameters].map((p) => p.id),
     );
-    update((r) => {
-      r.parameters.push({ id: parameterId, name: '', seconds: 10 });
+    focusAfter(`[data-param-name="${parameterId}"]`, () => {
+      update((r) => {
+        r.parameters.push({ id: parameterId, name: '', seconds: 10 });
+      });
+      setBlocked(null);
+      announce('Parameter added.');
     });
-    setBlocked(null);
-    focusLater(`[data-param-name="${parameterId}"]`);
-    announce('Parameter added.');
   }
 
   const rawValue = (field: string, value: number) =>
@@ -1118,7 +1123,7 @@ function RoutineEditorDraft({
 
   return (
     <section
-      ref={rootRef}
+      ref={attachRoot}
       className="dv-re"
       aria-labelledby={hideHeader ? undefined : id('title')}
       aria-label={hideHeader ? name : undefined}
