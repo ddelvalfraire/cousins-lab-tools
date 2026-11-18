@@ -1,11 +1,4 @@
-import {
-  type ReactNode,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { pages } from '../search-registry';
 import {
   CatalogAction,
@@ -33,6 +26,7 @@ import {
   WorkspaceBody,
 } from './RightSidebar';
 import { ScrollFrame } from './ScrollFrame';
+import { useAtScrollEnd } from './useAtScrollEnd';
 
 export interface CatalogRoutineStep {
   kind: 'capture' | 'wait' | 'annotate';
@@ -132,25 +126,10 @@ function StepStrip({
   current: number | null;
   onStep: (index: number) => void;
 }) {
-  const strip = useRef<HTMLDivElement>(null);
   const steps = keyedBy(routine.steps, stepKey);
-  const [atEnd, setAtEnd] = useState(true);
-  const measure = () => {
-    const el = strip.current;
-    if (el) setAtEnd(el.scrollWidth <= el.clientWidth + el.scrollLeft + 2);
-  };
-  useEffect(() => {
-    measure();
-    const el = strip.current,
-      observer =
-        typeof ResizeObserver === 'undefined'
-          ? null
-          : new ResizeObserver(measure);
-    if (el) observer?.observe(el);
-    return () => observer?.disconnect();
-  }, [routine.steps.length]);
+  const strip = useAtScrollEnd<HTMLDivElement>();
   const next = () => {
-    strip.current?.scrollBy({
+    strip.element.current?.scrollBy({
       left: 220,
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'instant'
@@ -163,12 +142,12 @@ function StepStrip({
         axes="x"
         rootClassName="dv-cat-strip-root"
         contentClassName="dv-cat-strip-list"
-        ref={strip}
+        ref={strip.ref}
         className="dv-cat-strip"
         role="group"
         aria-label={`${routine.name} · ${routine.steps.length} steps`}
         tabIndex={0}
-        onScroll={measure}
+        onScroll={strip.measure}
       >
         {steps.map(({ key, item: step, index: i }) => (
           <span key={key} style={{ display: 'contents' }}>
@@ -205,7 +184,7 @@ function StepStrip({
         type="button"
         className="dv-cat-scroll-next"
         aria-label={`Scroll ${routine.name} steps right`}
-        disabled={atEnd}
+        disabled={strip.atEnd}
         onClick={next}
       >
         <CatalogArrow />

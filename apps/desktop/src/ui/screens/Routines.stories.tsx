@@ -201,6 +201,23 @@ export const NarrowSheet: Story = {
     await choose('Reference and sample');
   },
 };
+/** A step strip wider than its row offers the next button, which turns off once the strip reaches its last step. */
+export const StepStripEnd: Story = {
+  render: () => <FrozenRoutines />,
+  parameters: { previewWidth: 390 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const next = canvas.getByRole('button', {
+      name: 'Scroll Repeated sampling steps right',
+    });
+    await waitFor(() => expect(next).toBeEnabled());
+    const strip = canvas.getByRole('group', {
+      name: /^Repeated sampling · \d+ steps$/,
+    });
+    strip.scrollTo({ left: strip.scrollWidth, behavior: 'instant' });
+    await waitFor(() => expect(next).toBeDisabled());
+  },
+};
 /** Selecting a step in a row opens it in the Steps tab; back returns to the full list. */
 export const InspectStep: Story = {
   render: () => <FrozenRoutines />,
