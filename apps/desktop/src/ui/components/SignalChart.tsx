@@ -19,13 +19,7 @@ import {
   IconTable,
 } from '@tabler/icons-react';
 import { motion as animated, type Transition } from 'motion/react';
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import { useAppearance } from '../appearance';
 import type { SignalSample } from '../fixtures';
@@ -36,6 +30,7 @@ import { seriesColors } from '../theme';
 import { MotionList, Presence, Swap } from './Motion';
 import { StatusMessages } from './Primitives';
 import { useElementWidth } from './useElementWidth';
+import { useUplotChart } from './useUplotChart';
 import './Approved.css';
 import './SignalChart.css';
 import { ScrollFrame } from './ScrollFrame';
@@ -304,24 +299,16 @@ function SignalPlot({
   xLabel?: string;
   yLabel?: string;
 }) {
-  const host = useRef<HTMLDivElement>(null),
-    plot = useRef<uPlot | null>(null),
-    lastY = useRef<[number, number] | undefined>(undefined);
+  const lastY = useRef<[number, number] | undefined>(undefined);
   const current = useRef({ data, bands });
   current.current = { data, bands };
   const [boxes, setBoxes] = useState<BandBox[]>([]);
   const scheme = useComputedColorScheme('light'),
     { textSize } = useAppearance();
-  const labelKey = JSON.stringify(labels),
-    limitKey = JSON.stringify(limits ?? null),
-    hasBands = bands.length > 0;
-  useEffect(() => {
-    const el = host.current;
-    if (!el) return;
+  const hasBands = bands.length > 0;
+  const create = (el: HTMLDivElement) => {
     const colors = seriesColors[scheme],
       ink = scheme === 'dark' ? '#b5c6bb' : '#53675e';
-    const parsedLabels: string[] = JSON.parse(labelKey),
-      parsedLimits: [number, number] | null = JSON.parse(limitKey);
     // Band geometry comes from uPlot's own layout, so it stays correct while the chart view is hidden.
     const place = (u: uPlot) => {
       const r = uPlot.pxRatio,
@@ -383,7 +370,7 @@ function SignalPlot({
         y: {
           distr: logarithmic ? 3 : 1,
           range:
-            parsedLimits ??
+            limits ??
             ((_u, min, max) => {
               if (
                 typeof min !== 'number' ||
@@ -426,7 +413,7 @@ function SignalPlot({
       ],
       series: [
         { label: xLabel },
-        ...parsedLabels.map((label, i) => ({
+        ...labels.map((label, i) => ({
           label,
           stroke: colors[i % colors.length],
           width: 2,
@@ -446,38 +433,9 @@ function SignalPlot({
       cursor: { drag: { x: false, y: false } },
       hooks: { draw: [place] },
     };
-    const u = new uPlot(options, current.current.data, el);
-    plot.current = u;
-    const observer = new ResizeObserver(() => {
-      if (host.current)
-        u.setSize({
-          width: Math.max(minimumWidth, host.current.clientWidth),
-          height,
-        });
-    });
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      u.destroy();
-      plot.current = null;
-    };
-  }, [
-    labelKey,
-    scheme,
-    textSize,
-    limitKey,
-    logarithmic,
-    logDecades,
-    points,
-    hasBands,
-    height,
-    minimumWidth,
-    xLabel,
-    yLabel,
-  ]);
-  useEffect(() => {
-    const u = plot.current;
-    if (!u) return;
+    return new uPlot(options, current.current.data, el);
+  };
+  const update = (u: uPlot) => {
     u.setData(data);
     const xs = data[0],
       first = xs[0] ?? 0,
@@ -488,7 +446,27 @@ function SignalPlot({
     });
     // Do not rebuild from uncommitted scales during uPlot's initial microtask; only schedule a repaint.
     u.redraw(false);
-  }, [data, bands]);
+  };
+  const host = useUplotChart({
+    rebuildKey: JSON.stringify([
+      labels,
+      scheme,
+      textSize,
+      limits ?? null,
+      logarithmic,
+      logDecades,
+      points,
+      hasBands,
+      height,
+      minimumWidth,
+      xLabel,
+      yLabel,
+    ]),
+    create,
+    size: (el) => ({ width: Math.max(minimumWidth, el.clientWidth), height }),
+    update,
+    updateDeps: [data, bands],
+  });
   return (
     <ScrollFrame
       axes="x"
