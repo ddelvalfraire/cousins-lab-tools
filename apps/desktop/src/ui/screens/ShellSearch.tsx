@@ -262,11 +262,7 @@ export function ShellSearch({
           />
         )}
       </Transition>
-      <div
-        className="dv-shell-searchbox"
-        role="search"
-        aria-label="DVDash search"
-      >
+      <search className="dv-shell-searchbox" aria-label="DVDash search">
         {glyph(
           <>
             <circle cx="10.5" cy="10.5" r="6.5" />
@@ -323,7 +319,7 @@ export function ShellSearch({
           <span className="dv-shell-sr">Open command center</span>
           <KeyCaps keys={['Mod', 'K']} mac={mac} size="xs" />
         </button>
-      </div>
+      </search>
       <Presence show={all && open} variant="fade">
         <CommandCenter
           listId={listId}

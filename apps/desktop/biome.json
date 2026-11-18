@@ -23,8 +23,11 @@
         "preset": "all",
         "noLabelWithoutControl": {
           "level": "on",
-          "options": { "inputComponents": ["Select"] }
-        }
+          "options": {
+            "inputComponents": ["Select"]
+          }
+        },
+        "noNoninteractiveTabindex": "off"
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": {

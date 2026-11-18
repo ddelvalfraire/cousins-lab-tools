@@ -146,7 +146,8 @@ export const ActionTitlesMatchTheScreens: Story = {
       'The window bar shortcuts button and its command share a title',
     ).toBeVisible();
     await expect(
-      within(canvas.getByRole('search')).getByRole('button', {
+      // Testing Library does not map the native search element to its role yet.
+      within(canvas.getByLabelText('DVDash search')).getByRole('button', {
         name: new RegExp(
           `^${titleOf(command('command-center'), { dark: false })}`,
         ),
