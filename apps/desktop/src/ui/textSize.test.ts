@@ -4,7 +4,11 @@ import { isTextSize, readTextSize, TEXT_SIZE_ATTRIBUTE, TEXT_SIZE_KEY, textScale
 import { textSizeOptions } from './search-registry';
 
 const css = readFileSync(new URL('./components/Approved.css', import.meta.url), 'utf8');
-const rootRule = (size: TextSize) => css.match(new RegExp(`html\\[${TEXT_SIZE_ATTRIBUTE}='${size}'\\]\\s*\\{\\s*font-size:\\s*([\\d.]+)%`))?.[1];
+// Either quote style, so the check survives the stylesheet being reformatted.
+const rootRule = (size: TextSize) => {
+  const selector = `html\\[${TEXT_SIZE_ATTRIBUTE}=["']${size}["']\\]`;
+  return css.match(new RegExp(`${selector}\\s*\\{\\s*font-size:\\s*([\\d.]+)%`))?.[1];
+};
 const memory = (initial: Record<string, string> = {}) => {
   const items = new Map(Object.entries(initial));
   return { getItem: (key: string) => items.get(key) ?? null, setItem: (key: string, value: string) => { items.set(key, value); }, items };
