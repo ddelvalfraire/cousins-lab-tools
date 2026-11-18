@@ -1,25 +1,25 @@
 import {
+  isMantineColorScheme,
   localStorageColorSchemeManager,
   type MantineColorScheme,
+  type MantineColorSchemeManager,
   MantineProvider,
   type MantineProviderProps,
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
+import { useColorScheme, useDidUpdate, useWindowEvent } from '@mantine/hooks';
 import { MotionConfig } from 'motion/react';
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { flushSync } from 'react-dom';
-import { type RevealOrigin, switchColorScheme } from './colorSchemeTransition';
+import type { RevealOrigin } from './colorSchemeTransition';
 import {
   applyTextSize,
   isTextSize,
@@ -28,6 +28,7 @@ import {
   type TextSize,
   writeTextSize,
 } from './textSize';
+import { useColorSchemeReveal } from './useColorSchemeReveal';
 
 export type AppearancePreference = 'system' | 'light' | 'dark';
 export type ColorScheme = 'light' | 'dark';
@@ -50,7 +51,6 @@ export interface Appearance {
 }
 
 export const STORAGE_KEY = 'dvdash-color-scheme';
-const DARK_QUERY = '(prefers-color-scheme: dark)';
 /** A pointer press this recent is taken to be what asked for the change. */
 const POINTER_ORIGIN_MS = 1500;
 
@@ -58,14 +58,23 @@ const toMantine = (preference: AppearancePreference): MantineColorScheme =>
   preference === 'system' ? 'auto' : preference;
 const fromMantine = (scheme: MantineColorScheme): AppearancePreference =>
   scheme === 'auto' ? 'system' : scheme;
-const systemScheme = (): ColorScheme =>
-  typeof window !== 'undefined' && window.matchMedia?.(DARK_QUERY).matches
-    ? 'dark'
-    : 'light';
 const centreOf = (element: Element): RevealOrigin => {
   const r = element.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 };
+
+const ignore = () => {};
+/**
+ * Tells Mantine the scheme on screen and saves nothing. Mantine writes data-mantine-color-scheme from the manager when it
+ * mounts, before the first paint, so the saved scheme is on the root from the first frame.
+ */
+const showingScheme = (scheme: ColorScheme): MantineColorSchemeManager => ({
+  get: () => scheme,
+  set: ignore,
+  subscribe: ignore,
+  unsubscribe: ignore,
+  clear: ignore,
+});
 
 const AppearanceContext = createContext<Appearance | null>(null);
 
@@ -87,7 +96,8 @@ export interface AppearanceProviderProps
 
 /**
  * Owns the colour scheme: the saved or controlled preference, the system scheme and the scheme on screen. Every change,
- * whether a control, another window or the system, reaches the screen through one effect that runs the reveal.
+ * whether a control, a parent, another window or the system, reaches the screen through one reveal
+ * (useColorSchemeReveal.ts).
  * Mantine only ever sees the result, through forceColorScheme, because its own "auto" mode repaints outside React.
 
  * It also owns the text size, which it writes to the root element as data-dv-text-size (textSize.ts).
@@ -107,108 +117,67 @@ export function AppearanceProvider({
   const [stored, setStored] = useState(() =>
     fromMantine(manager.get(toMantine(defaultPreference))),
   );
-  const [os, setOs] = useState(systemScheme);
+  const os = useColorScheme(undefined, { getInitialValueInEffect: false });
   const preference = controlled ?? stored;
   const target: ColorScheme = preference === 'system' ? os : preference;
-  const [applied, setApplied] = useState(target);
+  const { applied, revealFrom } = useColorSchemeReveal(target);
+  const shownToMantine = useMemo(() => showingScheme(applied), [applied]);
   const latest = useRef({
-    target,
     preference,
     os,
     controlled: controlled !== undefined,
     onPreferenceChange,
   });
   latest.current = {
-    target,
     preference,
     os,
     controlled: controlled !== undefined,
     onPreferenceChange,
   };
-  const pending = useRef<{
-    target: ColorScheme;
-    origin: RevealOrigin | null;
-  } | null>(null);
   const pointer = useRef<{ x: number; y: number; at: number } | null>(null);
-  const inEffect = useRef(false);
   const [storedTextSize, setStoredTextSize] = useState(() => readTextSize());
   const textSize = controlledTextSize ?? storedTextSize;
+  const controlsTextSize = controlledTextSize !== undefined;
 
-  useEffect(() => {
-    if (controlled !== undefined) return;
-    manager.subscribe((value) => setStored(fromMantine(value)));
-    return manager.unsubscribe;
-  }, [manager, controlled]);
+  // The first render puts the size on the root, so the saved size is there before the first paint.
+  useState(() => applyTextSize(textSize));
+  // A parent's new size arrives as a prop, which no handler here sees.
+  useDidUpdate(() => applyTextSize(textSize), [controlledTextSize]);
 
-  useEffect(() => {
-    const media = window.matchMedia?.(DARK_QUERY);
-    if (!media) return;
-    const change = (event: MediaQueryListEvent) =>
-      setOs(event.matches ? 'dark' : 'light');
-    setOs(media.matches ? 'dark' : 'light');
-    media.addEventListener('change', change);
-    return () => media.removeEventListener('change', change);
-  }, []);
-
-  useEffect(() => {
-    const press = (event: PointerEvent) => {
-      pointer.current = {
-        x: event.clientX,
-        y: event.clientY,
-        at: performance.now(),
-      };
+  const recordPress = (event: PointerEvent) => {
+    pointer.current = {
+      x: event.clientX,
+      y: event.clientY,
+      at: performance.now(),
     };
-    document.addEventListener('pointerdown', press, true);
-    return () => document.removeEventListener('pointerdown', press, true);
-  }, []);
+  };
+  useWindowEvent('pointerdown', recordPress, true);
 
-  useLayoutEffect(() => {
-    if (target === applied) return;
-    const origin =
-      pending.current?.target === target ? pending.current.origin : null;
-    pending.current = null;
-    // On the instant path apply runs inside this effect, where flushSync is not allowed; the browser calls it later.
-    const apply = () => {
-      const next = latest.current.target;
-      if (inEffect.current) setApplied(next);
-      else flushSync(() => setApplied(next));
-    };
-    inEffect.current = true;
-    try {
-      switchColorScheme(apply, { origin });
-    } finally {
-      inEffect.current = false;
+  /** Changes saved by another window. */
+  const followStorage = (event: StorageEvent) => {
+    if (
+      event.key === STORAGE_KEY &&
+      controlled === undefined &&
+      event.storageArea === window.localStorage &&
+      isMantineColorScheme(event.newValue)
+    )
+      setStored(fromMantine(event.newValue));
+    if (event.key === TEXT_SIZE_KEY && !controlsTextSize) {
+      const next = isTextSize(event.newValue) ? event.newValue : 'default';
+      setStoredTextSize(next);
+      applyTextSize(next);
     }
-  }, [target, applied]);
-
-  useLayoutEffect(() => {
-    document.documentElement.setAttribute('data-mantine-color-scheme', applied);
-  }, [applied]);
-  // A layout effect, like the scheme above, so the saved size is on the root before the first paint.
-  useLayoutEffect(() => {
-    applyTextSize(textSize);
-  }, [textSize]);
-
-  useEffect(() => {
-    if (controlledTextSize !== undefined) return;
-    const changed = (event: StorageEvent) => {
-      if (event.key === TEXT_SIZE_KEY)
-        setStoredTextSize(
-          isTextSize(event.newValue) ? event.newValue : 'default',
-        );
-    };
-    window.addEventListener('storage', changed);
-    return () => window.removeEventListener('storage', changed);
-  }, [controlledTextSize]);
+  };
+  useWindowEvent('storage', followStorage);
 
   const textSizeChange = useRef(onTextSizeChange);
   textSizeChange.current = onTextSizeChange;
-  const controlsTextSize = controlledTextSize !== undefined;
   const setTextSize = useCallback(
     (next: TextSize) => {
       if (!controlsTextSize) {
         writeTextSize(next);
         setStoredTextSize(next);
+        applyTextSize(next);
       }
       textSizeChange.current?.(next);
     },
@@ -236,7 +205,7 @@ export function AppearanceProvider({
               : active
                 ? centreOf(active)
                 : null));
-      pending.current = { target: next === 'system' ? now.os : next, origin };
+      revealFrom(next === 'system' ? now.os : next, origin);
       if (now.controlled) {
         now.onPreferenceChange?.(next);
         return;
@@ -245,7 +214,7 @@ export function AppearanceProvider({
       setStored(next);
       now.onPreferenceChange?.(next);
     },
-    [manager],
+    [manager, revealFrom],
   );
 
   const value = useMemo<Appearance>(
@@ -263,7 +232,11 @@ export function AppearanceProvider({
 
   return (
     <AppearanceContext.Provider value={value}>
-      <MantineProvider {...mantine} forceColorScheme={applied}>
+      <MantineProvider
+        {...mantine}
+        colorSchemeManager={shownToMantine}
+        forceColorScheme={applied}
+      >
         <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </MantineProvider>
     </AppearanceContext.Provider>
