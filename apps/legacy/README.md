@@ -60,6 +60,8 @@ From the repository root, with the legacy dependencies installed in `.venv`:
 .venv/bin/python apps/legacy/tests/check_capture_titles.py
 ```
 
+Manual test cases for Modules 1 and 2 are in [documentation/testing](../../documentation/testing/).
+
 ## Historical paths
 
 Older documentation may refer to standalone `module1/application/` and `module2/application/` folders. Modules 1 and 2 now share the code under `apps/legacy/Code/Module_Main_1_3/`. Project reports and history remain in [documentation](../../documentation/).
