@@ -13,8 +13,8 @@ import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';
 
 /*
- * Guards that keep the search registry (src/ui/search-registry.ts) and the screens it describes in step. Each failure
- * says what to add to the registry or to the page.
+ * Guards that keep the search registry (src/shared/config/search-registry.ts) and the screens it describes in step.
+ * Each failure says what to add to the registry or to the page.
  */
 const meta = {
   title: 'Screens/Search registry',
@@ -26,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const REGISTRY = 'src/ui/search-registry.ts';
+const REGISTRY = 'src/shared/config/search-registry.ts';
 const text = (element: Element | null | undefined) =>
   element?.textContent?.replace(/\s+/g, ' ').trim();
 /** The visible label of a target box: a section's heading, a field's label or legend, or an action's own text. */

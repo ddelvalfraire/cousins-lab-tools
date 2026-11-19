@@ -2,16 +2,66 @@
 
 Run `bun run storybook` from `apps/desktop`. This uses Storybook's standard component sidebar, Canvas, Docs, Controls, Actions and component-test panel.
 
+## Layout
+
+The UI is organised by feature. Code flows one way: `shared` is used by `features`, and both are used by `app`.
+
+```
+src/
+  app/          screens and the shell that compose features, screen stories and their sample data,
+                the component gallery, and index.ts (the public exports)
+  features/     one folder per feature, flat: components, hooks, pure logic, stories, tests and CSS together
+    acquisition   the acquisition bar and instrument controls
+    calibration   calibration checklist, readings and curve
+    exchange      preset and recording import, recording export, revision history and saved versions
+    experiments   experiments list and the new-experiment form
+    inspectors    right-sidebar inspectors: source bindings, recording alignment, saved results
+    instruments   instrument catalog
+    navigation    side navigation and its compact drawer
+    presets       preset catalog and editor
+    routines      routine catalog and editor
+    settings      settings page
+    shortcuts     keyboard shortcuts dialog
+    signals       live signal panels: gas signals, derived values, data plot, playback controls
+    templates     template library, template card and definition editor
+    workspace     experiment workspace and its problems panel
+  shared/       used by two or more features or by the app, never feature-specific
+    charts        SignalChart, ScientificPlot and the uPlot hook
+    config        the search registry (pages, commands, settings)
+    hooks         generic hooks
+    lib           formatting and keying helpers
+    motion        motion tokens and the Motion primitives
+    testing       story and test helpers and sample data
+    theme         theme, appearance and text size, global CSS
+    ui            UI atoms and layout pieces (Chip, Primitives, PageHeader, RightSidebar, CatalogTable, ...)
+```
+
+Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`):
+
+- A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
+- `shared` never imports `@/features` or `@/app`.
+- Outside a feature, import it only through its public API: `@/features/<name>` (its `index.ts`), or `@/features/<name>/fixtures` for the sample data that app stories reuse.
+- Relative imports stay inside their folder; other folders are reached through `@/` (`tsconfig.json` `paths`, which Vite reads with `resolve.tsconfigPaths`). Only `.storybook/` and the repository's `design/` folder are reached by relative path, because Vite applies the alias only to files `tsconfig.json` includes.
+
+The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule and must be rejected; `*.allowed.ts` files must pass.
+
+To add a feature:
+
+1. Create `src/features/<name>/` and put the components, hooks, stories, tests and CSS in it, importing each other by relative path.
+2. Add `index.ts` exporting what the app uses (`export * from './Thing';` or named exports). Add `fixtures.ts` only if app stories reuse its sample data.
+3. Compose it in `src/app/screens/` through `@/features/<name>`, and add it to `src/app/index.ts` if it is part of the public exports.
+4. Stories are found anywhere under `src/`; the gallery collects every story in `src/features` and `src/shared`. Keep each story's `title` (story ids derive from it).
+
 ## Story conventions
 
 - Colocate `Component.stories.tsx` with each component family. Use `component`, `satisfies Meta<typeof Component>` and `StoryObj<typeof meta>` for prop inference and native Docs/Controls.
 - Describe variants with `args`. Only use `render` for a necessary composition or stateful harness. Shared providers/theme/styles belong in `.storybook/preview.tsx`.
 - Give examples a realistic containing block with `parameters.previewWidth`: fields/readouts/template cards 360 px, compact forms 480 px, default panels 720 px, charts/tables 960 px, screens `'viewport'` (the application frame fills the canvas, as the app fills its window; narrow screen stories still set a width). The shared story decorator keeps these responsive. Use native `layout: 'centered'` for compact isolated examples, padded for panels and fullscreen for screen compositions. These are example-context limits, not constraints on production components. The composed gallery reads the same parameters. See [Storybook layout parameters](https://storybook.js.org/docs/api/parameters) and [decorators](https://storybook.js.org/docs/writing-stories/decorators).
-- Pass deterministic data from `fixtures.ts` through args. For example, SignalChart's default data is empty; its stories supply sample rows. TemplateLibrary receives its fixture catalog as a prop.
+- Pass deterministic data from `shared/testing/fixtures.ts` through args. For example, SignalChart's default data is empty; its stories supply sample rows. TemplateLibrary receives its fixture catalog as a prop.
 - Mock action boundaries with `fn()` from `storybook/test`, passed through args. Save/start/stop/retry spies never contact a catalog or instrument. These are intent callbacks, not proof of a committed revision or physical operation.
 - Put interaction checks in `play`, using `within`, `userEvent` and `expect` from `storybook/test`. The Vitest addon runs the actual stories in Chromium. Storybook 10.3+ provisions project annotations automatically; there is no duplicate setup provider.
 - MSW is appropriate for real HTTP boundaries. This Tauri app has no HTTP data API, so no fictitious REST endpoints or service worker are introduced. Future IPC/provider contracts should be injected and mocked at their actual boundary.
-- `catalog.tsx` composes component stories with Storybook's `composeStories`. Full pages live in the Screens section, rather than being repeated inside All components. The gallery consumes the component stories; it does not define another catalog of props or states. It is excluded from native component tests because those already run its constituent stories. Browser checks cover the gallery itself.
+- `app/gallery/catalog.tsx` composes component stories with Storybook's `composeStories`. Full pages live in the Screens section, rather than being repeated inside All components. The gallery consumes the component stories; it does not define another catalog of props or states. It is excluded from native component tests because those already run its constituent stories. Browser checks cover the gallery itself.
 
 ## Open-source precedents
 
@@ -41,7 +91,7 @@ STORYBOOK_ALLOWED_HOSTS=<hostname> bun run storybook --host <address> --ci
 ## Verification
 
 ```sh
-bun run check              # types, Biome lint and format, and the effect ban's fixtures
+bun run check              # types, Biome lint and format, and the effect ban's and boundary rules' fixtures
 bun run storybook:check
 bun run storybook:build
 bun run storybook:test     # Storybook's native Vitest/browser tests, including play
@@ -84,4 +134,4 @@ The mockups in `design/dvdash-field-review/` set component structure, and GREEN 
 
 No actual IPC, catalog persistence, acquisition or scientific calculation service is implemented. Scientific arithmetic and results in the prototype panels remain illustrative. Screen compositions are fixture scenarios, not migrated production workflows. The native starter (`src/App.tsx`, `src/main.tsx`, `public/`, `vite.config.ts`, `scripts/clean.mjs`) is unchanged and outside Biome's scope. UI modules do not import Tauri invoke/listen; data-provider/service contracts remain separate work.
 
-Source: `components/`, `screens/`, `Screens.tsx`, `theme.ts`, `dvdash.css`; public exports: `index.ts`. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.
+Source: see [Layout](#layout); public exports: `app/index.ts`. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.

@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "include": [
-    "src/ui",
     "src/app",
     "src/features",
     "src/shared",

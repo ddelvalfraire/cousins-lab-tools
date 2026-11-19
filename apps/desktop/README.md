@@ -1,6 +1,6 @@
 # Tauri + React + TypeScript
 
-The local [DVDash component catalog](src/ui/README.md) runs with `bun run storybook` from this directory. It uses Mantine and uPlot independently of the native starter. Browse native component stories or open `http://127.0.0.1:6006/?path=/story/gallery-all-components--all-components`.
+The local [DVDash component catalog](src/README.md) runs with `bun run storybook` from this directory. It uses Mantine and uPlot independently of the native starter. Browse native component stories or open `http://127.0.0.1:6006/?path=/story/gallery-all-components--all-components`.
 
 Install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/), Node.js 26.12.1 (selected by `.nvmrc`), and Bun 1.4.4. Rust and Cargo are required for the native app.
 
@@ -52,6 +52,7 @@ Source files, lockfiles, toolchains, and shared caches stay in place. Run `bun i
 ```sh
 bun run lint               # Biome lint and format check
 bun run lint:fixtures      # proves the effect ban rejects every file in lint/fixtures
+bun run lint:boundaries    # proves the import boundary rules reject every file in lint/boundaries/fixtures
 ```
 
-`bun run format` rewrites files with Biome's formatting. See [the UI README](src/ui/README.md#verification) for the rules they enforce.
+`bun run format` rewrites files with Biome's formatting. See [the UI README](src/README.md#verification) for the rules they enforce and [its layout section](src/README.md#layout) for how the source is organised.

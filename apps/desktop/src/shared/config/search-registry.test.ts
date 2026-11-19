@@ -60,7 +60,7 @@ describe('search registry: shortcuts', () => {
       .map(([keys, ids]) => `${keys}: ${ids.join(', ')}`);
     expect(
       clashes,
-      'Give each of these commands its own keys in src/ui/search-registry.ts',
+      'Give each of these commands its own keys in src/shared/config/search-registry.ts',
     ).toEqual([]);
   });
 
@@ -98,7 +98,7 @@ describe('search registry: shortcuts', () => {
     );
     expect(
       [...rows].sort(),
-      'Each dialog row must be a command in src/ui/search-registry.ts with the same title and keys',
+      'Each dialog row must be a command in src/shared/config/search-registry.ts with the same title and keys',
     ).toEqual(
       keyed
         .map(

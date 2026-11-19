@@ -96,9 +96,9 @@
 }
 
 /*
- * Motion: every state change that adds, removes or replaces something uses these (src/ui/motion.ts holds the same
- * values for Mantine transitions). Under prefers-reduced-motion dvdash.css turns every transition and animation off,
- * and the theme's respectReducedMotion makes Mantine's instant, so each change is immediate.
+ * Motion: every state change that adds, removes or replaces something uses these (src/shared/motion/motion.ts holds
+ * the same values for Mantine transitions). Under prefers-reduced-motion dvdash.css turns every transition and
+ * animation off, and the theme's respectReducedMotion makes Mantine's instant, so each change is immediate.
  */
 :root,
 .dvdash {
