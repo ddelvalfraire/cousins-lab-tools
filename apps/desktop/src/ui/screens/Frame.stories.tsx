@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import type {
+  CurrentAcquisition,
+  RecentExperiment,
+} from '@/features/navigation';
 import { chooseOption } from '@/shared/testing/chooseOption';
 import { CommandGlyph } from '@/shared/ui/CommandCenter';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import type {
-  CurrentAcquisition,
-  RecentExperiment,
-} from '../components/SideNavigation';
 import { acquisitionTrace } from './approved-fixtures';
 import {
   type ScreenRoute,

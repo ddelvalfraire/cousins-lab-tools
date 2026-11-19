@@ -8,6 +8,10 @@ import type {
   SetupSource,
 } from '@/features/experiments';
 import type {
+  CurrentAcquisition,
+  RecentExperiment,
+} from '@/features/navigation';
+import type {
   EditablePreset,
   PanelSpan,
   PresetPanel,
@@ -19,10 +23,6 @@ import {
   type PresetSpec,
   presets,
 } from '@/shared/testing/screen-fixtures';
-import type {
-  CurrentAcquisition,
-  RecentExperiment,
-} from '../components/SideNavigation';
 
 const instrumentFor = (row: ExperimentSummary) =>
   row.setup?.source && !row.setup.source.startsWith('sample')

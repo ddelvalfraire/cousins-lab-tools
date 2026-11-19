@@ -4,8 +4,6 @@ import identityBoard from '../../../../../design/dvdash-field-review/identity-re
 
 export { PageHeader as ScreenHeading } from '@/shared/ui/PageHeader';
 
-import { CommandGlyph, type CommandItem } from '@/shared/ui/CommandCenter';
-import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import {
   type CurrentAcquisition,
   MenuGlyph,
@@ -13,7 +11,9 @@ import {
   NavigationDrawer,
   type RecentExperiment,
   SideNavigation,
-} from '../components/SideNavigation';
+} from '@/features/navigation';
+import { CommandGlyph, type CommandItem } from '@/shared/ui/CommandCenter';
+import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import {
   type ShellCommand,
   ShellSearch,
