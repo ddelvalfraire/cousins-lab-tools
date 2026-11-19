@@ -2,7 +2,6 @@ import { useReducedMotion } from '@mantine/hooks';
 import {
   AnimatePresence,
   motion as animated,
-  PresenceContext,
   type TargetAndTransition,
   type Transition,
   useIsPresent,
@@ -13,8 +12,6 @@ import {
   type ElementType,
   type ReactElement,
   type ReactNode,
-  useContext,
-  useState,
 } from 'react';
 import { curves, motion } from '../motion';
 import './Approved.css';
@@ -30,13 +27,13 @@ const leaving: Transition = {
   ease: curves.easeOut,
 };
 
+/**
+ * MotionConfig's reducedMotion="user" only stops transform and layout animations; opacity and height still animate. Under
+ * reduced motion the wrappers render plain elements instead, because AnimatePresence keeps a leaving child mounted until
+ * its exit finishes, even a zero-length one, so the old and new content would both be on the page for a frame.
+ */
 function useInstant() {
   return useReducedMotion(false, { getInitialValueInEffect: false });
-}
-
-/** False for content that was already there when its AnimatePresence first rendered, which never animates in. */
-function useAnimatesIn() {
-  return useContext(PresenceContext)?.initial !== false;
 }
 
 /** Leaving content stays on screen while it fades, but takes no focus or tab stop and is not read twice. */
@@ -45,11 +42,6 @@ function leavingProps(present: boolean) {
     inert: !present,
     'aria-hidden': present ? undefined : true,
   };
-}
-
-function motionState(present: boolean, animatingIn: boolean) {
-  if (!present) return 'leave';
-  return animatingIn ? 'enter' : undefined;
 }
 
 export interface PresenceProps {
@@ -192,12 +184,10 @@ function SwapItem({
   children: ReactNode;
 }) {
   const present = useIsPresent();
-  const animatesIn = useAnimatesIn();
-  const [animatingIn, setAnimatingIn] = useState(animatesIn);
   return (
     <animated.div
       className="dv-swap-item"
-      data-motion={motionState(present, animatingIn)}
+      data-motion={present ? undefined : 'leave'}
       {...leavingProps(present)}
       initial={{ opacity: 0, transform: 'translateY(4px)' }}
       animate={{ opacity: 1, transform: 'none' }}
@@ -206,7 +196,6 @@ function SwapItem({
         transition: { duration: seconds(motion.fast), ease: curves.easeInOut },
       }}
       transition={{ ...entering, delay: sequential ? seconds(motion.fast) : 0 }}
-      onAnimationComplete={() => setAnimatingIn(false)}
     >
       {children}
     </animated.div>
@@ -215,7 +204,10 @@ function SwapItem({
 
 type ListChild = ReactElement<Record<string, unknown>, ElementType>;
 
-/** Keyed DOM children retain their own geometry during a fade, including table rows. */
+/**
+ * Keyed children retain their own geometry during a fade, including table rows. Each child is a DOM element, which
+ * fades through motion's own component for its tag, or a component made with `animated.create` at module scope.
+ */
 export function MotionList({
   children,
   resetKey = '',
@@ -236,33 +228,23 @@ export function MotionList({
   );
 }
 
-const animatedTypes = new Map<ElementType, ElementType>();
-
-/** One motion component per element type, so a row keeps its identity across renders. */
-function animatedType(type: ElementType) {
-  let created = animatedTypes.get(type);
-  if (!created) {
-    created = animated.create(type) as ElementType;
-    animatedTypes.set(type, created);
-  }
-  return created;
-}
+const animatedType = (type: ElementType): ElementType =>
+  typeof type === 'string'
+    ? (animated[type as keyof typeof animated] as ElementType)
+    : type;
 
 function MotionListItem({ node }: { node: ListChild }) {
   const present = useIsPresent();
-  const animatesIn = useAnimatesIn();
-  const [animatingIn, setAnimatingIn] = useState(animatesIn);
   const Animated = animatedType(node.type);
   return (
     <Animated
       {...node.props}
-      data-motion={motionState(present, animatingIn)}
+      data-motion={present ? undefined : 'leave'}
       {...leavingProps(present)}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: leaving }}
       transition={entering}
-      onAnimationComplete={() => setAnimatingIn(false)}
     />
   );
 }

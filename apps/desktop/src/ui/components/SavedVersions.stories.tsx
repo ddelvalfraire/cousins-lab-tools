@@ -428,7 +428,10 @@ export const RevisionMotion: Story = {
       for (const swap of canvasElement.querySelectorAll(
         '.dv-swap-sequential',
       )) {
-        const entering = swap.querySelector(':scope > [data-motion="enter"]'),
+        // While a copy is leaving, the other item is the one entering.
+        const entering = swap.querySelector(
+            ':scope > .dv-swap-item:not([data-motion="leave"])',
+          ),
           leaving = swap.querySelector(':scope > [data-motion="leave"]');
         overlap ||=
           !!entering &&

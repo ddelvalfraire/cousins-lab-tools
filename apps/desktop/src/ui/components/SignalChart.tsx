@@ -503,6 +503,9 @@ function SignalPlot({
   );
 }
 
+/** Table rows fade through MotionList, which needs a motion component made outside render. */
+const AnimatedRow = animated.create(Table.Tr);
+
 /** The chart waits for the table to fade out before it fades in, so the two never show at once. */
 const chartViewTransition = (active: boolean): Transition => ({
   duration: (active ? motion.base : motion.fast) / 1000,
@@ -942,7 +945,7 @@ export function SignalChart({
                 <Table.Tbody>
                   <MotionList>
                     {tableRows.map(({ row, note, index }) => (
-                      <Table.Tr key={`${row.time}-${index}`}>
+                      <AnimatedRow key={`${row.time}-${index}`}>
                         <Table.Td>
                           {row.time.toFixed(analysis.irregular ? 2 : 1)}
                         </Table.Td>
@@ -957,16 +960,16 @@ export function SignalChart({
                         >
                           {note}
                         </Table.Td>
-                      </Table.Tr>
+                      </AnimatedRow>
                     ))}
                     {!tableRows.length && (
-                      <Table.Tr key="empty">
+                      <AnimatedRow key="empty">
                         <Table.Td colSpan={keys.length + 2}>
                           {onlyNotes && currentRows.length
                             ? 'No rows have notes.'
                             : 'No samples in this range.'}
                         </Table.Td>
-                      </Table.Tr>
+                      </AnimatedRow>
                     )}
                   </MotionList>
                 </Table.Tbody>
