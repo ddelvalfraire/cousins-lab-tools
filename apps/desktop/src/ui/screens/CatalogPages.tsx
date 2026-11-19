@@ -1,6 +1,7 @@
 import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
+import { PresetCatalog, type PresetCatalogProps } from '@/features/presets';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import { CatalogChip, CatalogRoot } from '@/shared/ui/CatalogTable';
@@ -17,10 +18,6 @@ import {
   InstrumentCatalog,
   type InstrumentCatalogProps,
 } from '../components/InstrumentCatalog';
-import {
-  PresetCatalog,
-  type PresetCatalogProps,
-} from '../components/PresetCatalog';
 import {
   type PresetRevision,
   type RestorePhase,

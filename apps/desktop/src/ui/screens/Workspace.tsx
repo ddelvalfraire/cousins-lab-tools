@@ -6,6 +6,7 @@ import {
   ExperimentsList,
   type PreparedExperiment,
 } from '@/features/experiments';
+import { PresetEditor } from '@/features/presets';
 import { savedResults } from '@/shared/testing/fixtures';
 import {
   type ExperimentSummary,
@@ -17,7 +18,6 @@ import {
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { PresetEditor } from '../components/PresetEditor';
 import { PresetImport } from '../components/PresetImport';
 import { RecordingImport } from '../components/RecordingImport';
 import { RoutineEditor } from '../components/RoutineEditor';

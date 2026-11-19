@@ -7,13 +7,16 @@ import type {
   SetupRoutine,
   SetupSource,
 } from '@/features/experiments';
+import type {
+  EditablePreset,
+  PanelSpan,
+  PresetPanel,
+} from '@/features/presets';
 import {
   type ExperimentSummary,
   type PresetSpec,
   presets,
 } from '@/shared/testing/screen-fixtures';
-import type { EditablePreset } from '../components/PresetEditor';
-import type { PanelSpan, PresetPanel } from '../components/PresetEditorPanels';
 import type { RoutineDefinition } from '../components/RoutineEditor';
 import type { AppSettings, BuildInfo } from '../components/SettingsPage';
 import type {
