@@ -7,10 +7,10 @@ import {
   waitFor,
   within,
 } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from './chooseOption';
 import type { RoutineDefinition } from './RoutineEditor';
 import { RoutineEditor } from './RoutineEditor';
-import { settleMotion } from './settleMotion';
 
 const savedRoutine: RoutineDefinition = {
   parameters: [

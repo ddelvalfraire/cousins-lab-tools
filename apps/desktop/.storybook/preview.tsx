@@ -12,8 +12,8 @@ import { isTextSize, type TextSize } from '../src/ui/textSize';
 import { dvdashTheme } from '../src/ui/theme';
 import '../src/ui/dvdash.css';
 import '../src/ui/screens/screens.css';
-import { settleMotion } from '../src/ui/components/settleMotion';
 import { StoryFrame } from './StoryFrame';
+import { settleMotion } from './settleMotion';
 import './preview.css';
 
 /** Queries give up after one second by default, which loaded machines miss while an animation settles. */

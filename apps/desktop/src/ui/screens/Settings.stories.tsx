@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { reduceMotion } from '../components/settleMotion';
+import { reduceMotion } from '../../../.storybook/settleMotion';
 import { REVEAL_MS } from './revealTarget';
 import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';

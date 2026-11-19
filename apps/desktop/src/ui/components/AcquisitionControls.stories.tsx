@@ -2,12 +2,12 @@ import { useInterval } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import {
   AcquisitionControls,
   type AcquisitionControlsProps,
   type AcquisitionState,
 } from './AcquisitionControls';
-import { reduceMotion, settleMotion } from './settleMotion';
 
 /** Dialogs render in a portal, so dialog queries run against the whole document. */
 const page = (canvasElement: HTMLElement) =>

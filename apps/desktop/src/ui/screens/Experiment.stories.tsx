@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from '../components/chooseOption';
-import { reduceMotion, settleMotion } from '../components/settleMotion';
 import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';
 

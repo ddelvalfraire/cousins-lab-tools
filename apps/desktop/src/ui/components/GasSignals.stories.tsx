@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import type uPlot from 'uplot';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { experimentRecording } from '../fixtures';
 import { GasSignals } from './GasSignals';
-import { settleMotion } from './settleMotion';
 
 const data: uPlot.AlignedData = [
   experimentRecording.map((row) => row.time),

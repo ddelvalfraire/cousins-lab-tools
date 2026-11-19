@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import type { RoutineCatalogProps } from '../components/RoutineCatalog';
-import { reduceMotion, settleMotion } from '../components/settleMotion';
 import { toAcquisition, toRecents } from './approved-fixtures';
 import { RoutinesPage } from './CatalogPages';
 import { ScreenShell } from './ScreenShell';

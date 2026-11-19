@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import {
   presetRevisions,
   restoredRevision,
@@ -19,7 +20,6 @@ import {
   type SavedVersionTab,
   SavedVersionView,
 } from './SavedVersions';
-import { reduceMotion, settleMotion } from './settleMotion';
 
 /** Story revisions remember which revision a restored copy came from, to show its layout and changes. */
 type StoryRevision = PresetRevision & { restoredFrom?: number };

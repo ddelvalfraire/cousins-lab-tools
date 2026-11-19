@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { Chip } from './Chip';
 import { chooseOption } from './chooseOption';
 import { InspectorIcon } from './InspectorParts';
@@ -14,7 +15,6 @@ import {
   useAlignmentEditor,
 } from './RecordingAlignment';
 import { WorkspaceBody } from './RightSidebar';
-import { settleMotion } from './settleMotion';
 
 /** Synthetic recordings from alignment-inspector-review.html: the same response, 15 s apart. */
 const trace = (origin: number) =>

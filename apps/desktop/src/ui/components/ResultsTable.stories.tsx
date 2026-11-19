@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { formatClockTime } from '../time';
 import { Chip } from './Chip';
 import { InspectorIcon } from './InspectorParts';
@@ -13,7 +14,6 @@ import {
   SavedResultsTable,
   useSavedResultInspector,
 } from './SavedResults';
-import { settleMotion } from './settleMotion';
 
 /** Synthetic saved results from saved-result-inspector-review.html. */
 const results: SavedResult[] = [1.508, 1.742, 2.713, 1.92, 1.335, 0.85].map(

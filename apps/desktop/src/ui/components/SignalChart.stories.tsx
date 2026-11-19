@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import { type SignalSample, samples } from '../fixtures';
 import type { ChartState } from './SignalChart';
 import { analyseSignal, SignalChart, SignalTrace } from './SignalChart';
-import { reduceMotion, settleMotion } from './settleMotion';
 
 /** Deterministic synthetic Mass 44 traces from the approved signal edge-case review (same generator and seed). */
 function edgeCase(

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { CommandGlyph } from '../components/CommandCenter';
 import { chooseOption } from '../components/chooseOption';
 import { PageHeader } from '../components/PageHeader';
@@ -8,7 +9,6 @@ import type {
   CurrentAcquisition,
   RecentExperiment,
 } from '../components/SideNavigation';
-import { settleMotion } from '../components/settleMotion';
 import { acquisitionTrace } from './approved-fixtures';
 import {
   type ScreenRoute,

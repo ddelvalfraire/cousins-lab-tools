@@ -1,4 +1,4 @@
-import { REDUCED_MOTION_QUERY } from '../motion';
+import { REDUCED_MOTION_QUERY } from '../src/ui/motion';
 
 const nextFrame = () => new Promise(requestAnimationFrame);
 
@@ -23,27 +23,33 @@ const timeLeft = (deadline: number) =>
     setTimeout(resolve, Math.max(0, deadline - performance.now())),
   );
 
-/** Content that is still entering or leaving, which Motion.tsx marks until its animation completes. */
-const moving = (root: Document) =>
-  !!root.querySelector('[data-motion="enter"], [data-motion="leave"]');
+/**
+ * Content that is still leaving (Motion.tsx marks it from useIsPresent) or a chart view still fading (SignalChart.tsx marks
+ * it between its animation's start and complete callbacks).
+ */
+const MOVING = '[data-motion="enter"], [data-motion="leave"]';
 
 const SETTLE_LIMIT_MS = 5000;
 
 /**
- * Resolves once every running finite animation in the document has finished and nothing is still entering or leaving, for
- * story checks that read final colours or positions (the accessibility scan's contrast check reads a fading popup's
- * colours mid-fade). Spinners and other endless animations are skipped. Motion starts its animations on the next
- * frame and can start another when one ends, so this looks again each frame, up to a limit.
+ * Resolves once every running finite animation in the document has finished and nothing is still leaving, for story
+ * checks that read final colours or positions (the accessibility scan's contrast check reads a fading popup's colours
+ * mid-fade). Spinners and other endless animations are skipped. Motion starts its animations on the next frame and can
+ * start another when one ends, so this looks again each frame. It throws if motion is still running at the limit, so a
+ * check never reads a screen that has not settled.
  */
 export async function settleMotion(root: Document = document) {
   const deadline = performance.now() + SETTLE_LIMIT_MS;
   await nextFrame();
   while (performance.now() < deadline) {
     const running = runningAnimations(root);
-    if (!running.length && !moving(root)) return;
+    if (!running.length && !root.querySelector(MOVING)) return;
     await Promise.race([allFinished(running), timeLeft(deadline)]);
     await nextFrame();
   }
+  throw new Error(
+    `Motion was still running after ${SETTLE_LIMIT_MS} ms: ${runningAnimations(root).length} animations, ${root.querySelectorAll(MOVING).length} marked elements.`,
+  );
 }
 
 /**

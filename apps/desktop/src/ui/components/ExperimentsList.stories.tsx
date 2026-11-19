@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from './chooseOption';
 import type {
   ExperimentSummary,
   ExperimentsListProps,
 } from './ExperimentsList';
 import { ExperimentsList } from './ExperimentsList';
-import { settleMotion } from './settleMotion';
 import { useResettingCopy } from './useResettingCopy';
 
 const experiments: ExperimentSummary[] = [

@@ -1,6 +1,7 @@
 import { useTimeout } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from './chooseOption';
 import {
   type AppSettings,
@@ -9,7 +10,6 @@ import {
   SettingsPage,
   type SettingsPageProps,
 } from './SettingsPage';
-import { settleMotion } from './settleMotion';
 import { useResettingCopy } from './useResettingCopy';
 
 const COMMIT_RELEASE = 'fdba48e6d504efa8b66f04b0dd8ea7f892fd4a6b';

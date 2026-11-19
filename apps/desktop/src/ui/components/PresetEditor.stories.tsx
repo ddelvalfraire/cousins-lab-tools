@@ -7,10 +7,10 @@ import {
   waitFor,
   within,
 } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from './chooseOption';
 import type { EditablePreset, PresetPanel } from './PresetEditor';
 import { PresetEditor } from './PresetEditor';
-import { settleMotion } from './settleMotion';
 
 const savedPanels = (): PresetPanel[] => [
   {

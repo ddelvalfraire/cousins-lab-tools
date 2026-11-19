@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { settleMotion } from '../../../.storybook/settleMotion';
 import { chooseOption } from './chooseOption';
 import {
   exportDefaults,
@@ -12,7 +13,6 @@ import {
   RecordingExportDialog,
   type RecordingExportDialogProps,
 } from './RecordingExport';
-import { settleMotion } from './settleMotion';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
 const dialog = (canvasElement: HTMLElement) =>
