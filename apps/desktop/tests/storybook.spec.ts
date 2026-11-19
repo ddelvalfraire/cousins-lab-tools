@@ -1335,6 +1335,44 @@ test('with motion on a hidden signal card and the live view on stopping fade out
   ).not.toContain('Stop acquisition');
 });
 
+test('turning on reduced motion mid-session makes the chart and table switch at once', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await story(page, 'components-signalchart--recorded');
+  // The segmented control's radio is visually hidden; its label takes the click.
+  const show = (view: string) =>
+    page
+      .locator('#storybook-root label')
+      .filter({ hasText: new RegExp(`^${view}$`) })
+      .click();
+  const views = () =>
+    page.evaluate(async () => {
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+      return [
+        ...document.querySelectorAll<HTMLElement>(
+          '#storybook-root .dv-chart-view',
+        ),
+      ].map((view) => ({
+        active: view.dataset.active,
+        opacity: getComputedStyle(view).opacity,
+        animating: view.getAnimations().length > 0,
+      }));
+    });
+  await show('Table');
+  await expect(
+    page.locator('#storybook-root .dv-chart-view[data-active="false"]'),
+    'the chart faded out with motion',
+  ).toHaveCSS('opacity', '0');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await show('Chart');
+  expect(await views(), 'two frames after the click').toEqual([
+    { active: 'true', opacity: '1', animating: false },
+    { active: 'false', opacity: '0', animating: false },
+  ]);
+});
+
 test('routine steps reorder without dragging and unsaveable steps block saving', async ({
   page,
 }) => {

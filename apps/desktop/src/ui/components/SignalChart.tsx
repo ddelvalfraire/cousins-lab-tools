@@ -531,8 +531,8 @@ function ChartView({
       inert={!active}
       aria-hidden={!active || undefined}
       initial={false}
-      animate={reduced ? undefined : { opacity: active ? 1 : 0 }}
-      transition={chartViewTransition(active)}
+      animate={{ opacity: active ? 1 : 0 }}
+      transition={reduced ? { duration: 0 } : chartViewTransition(active)}
       onAnimationStart={() => setMoving(active ? 'enter' : 'leave')}
       onAnimationComplete={() => setMoving(undefined)}
     >
