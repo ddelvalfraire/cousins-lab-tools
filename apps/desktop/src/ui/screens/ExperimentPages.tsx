@@ -4,6 +4,7 @@ import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { type KeyboardEvent, useState } from 'react';
 import type { IntervalResult } from '@/features/acquisition';
 import { useAcquisitionControls } from '@/features/acquisition';
+import { CalibrationChecklist } from '@/features/calibration';
 import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
 import { Presence, Swap } from '@/shared/motion/Motion';
 import {
@@ -22,7 +23,6 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
-import { CalibrationChecklist } from '../components/CalibrationChecklist';
 import {
   DerivedCard,
   DetailsPane,

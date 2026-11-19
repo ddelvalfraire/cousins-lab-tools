@@ -1,5 +1,7 @@
 export * from '@/features/acquisition';
 export * from '@/features/acquisition';
+export * from '@/features/calibration';
+export * from '@/features/calibration';
 export * from '@/features/signals';
 export * from '@/features/signals';
 export * from '@/features/signals';
@@ -19,8 +21,6 @@ export * from '@/shared/ui/RightSidebar';
 export * from '@/shared/ui/ScientificQuantityInput';
 export * from '@/shared/ui/select';
 export * from '@/shared/ui/UnsavedChangesDialog';
-export * from './components/CalibrationChecklist';
-export * from './components/CalibrationCurve';
 export * from './components/Catalog';
 export * from './components/ExperimentSetupForm';
 export * from './components/ExperimentsList';

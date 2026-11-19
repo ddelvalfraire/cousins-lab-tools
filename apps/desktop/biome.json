@@ -76,7 +76,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/CalibrationChecklist.tsx"],
+      "includes": ["src/features/calibration/CalibrationChecklist.tsx"],
       "linter": {
         "rules": {
           "complexity": {
