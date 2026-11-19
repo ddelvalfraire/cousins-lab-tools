@@ -6,6 +6,18 @@ import type { IntervalResult } from '@/features/acquisition';
 import { useAcquisitionControls } from '@/features/acquisition';
 import { CalibrationChecklist } from '@/features/calibration';
 import {
+  AlignmentPreviewChart,
+  PanelSourceAppliedPane,
+  PanelSourceBindingPane,
+  PanelSourceChart,
+  RecordingAlignmentInspector,
+  SavedResultInspector,
+  SavedResultsTable,
+  useAlignmentEditor,
+  usePanelSource,
+  useSavedResultInspector,
+} from '@/features/inspectors';
+import {
   DerivedCard,
   DetailsPane,
   DisplayPane,
@@ -54,27 +66,11 @@ import {
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
 import {
-  PanelSourceAppliedPane,
-  PanelSourceBindingPane,
-  PanelSourceChart,
-  usePanelSource,
-} from '../components/PanelSource';
-import {
-  AlignmentPreviewChart,
-  RecordingAlignmentInspector,
-  useAlignmentEditor,
-} from '../components/RecordingAlignment';
-import {
   type ExportResult,
   RecordingExportDialog,
   type RecordingExportPhase,
   type RecordingExportSettings,
 } from '../components/RecordingExport';
-import {
-  SavedResultInspector,
-  SavedResultsTable,
-  useSavedResultInspector,
-} from '../components/SavedResults';
 import {
   alignmentDefaults,
   alignmentEvents,

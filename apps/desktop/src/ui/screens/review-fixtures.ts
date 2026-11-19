@@ -5,25 +5,24 @@
 
 import type { IntervalResult } from '@/features/acquisition';
 import type { ChecklistStep, IntervalSummary } from '@/features/calibration';
+import type {
+  AlignmentEvent,
+  AlignmentRecording,
+  AlignmentSettings,
+  PanelChannel,
+  PanelSourceOption,
+  ResultQuantity,
+  SavedResult,
+} from '@/features/inspectors';
 import type { RecordedSample } from '@/features/workspace/fixtures';
 import type {
   ExperimentSummary,
   PresetSpec,
 } from '@/shared/testing/screen-fixtures';
 import type {
-  PanelChannel,
-  PanelSourceOption,
-} from '../components/PanelSource';
-import type {
-  AlignmentEvent,
-  AlignmentRecording,
-  AlignmentSettings,
-} from '../components/RecordingAlignment';
-import type {
   ExportSignal,
   RecordingExportSettings,
 } from '../components/RecordingExport';
-import type { ResultQuantity, SavedResult } from '../components/SavedResults';
 
 const DURATION = 300;
 /** A response 18 s after the event, then a smaller one 55 s after it (alignment-inspector-review.html `raw`). */

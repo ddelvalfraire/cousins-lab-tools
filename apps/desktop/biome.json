@@ -136,7 +136,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/RecordingAlignment.tsx"],
+      "includes": ["src/features/inspectors/RecordingAlignment.tsx"],
       "linter": {
         "rules": {
           "complexity": {
