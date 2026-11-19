@@ -8,7 +8,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from '@mantine/core';
-import { useColorScheme, useDidUpdate, useWindowEvent } from '@mantine/hooks';
+import { useColorScheme, useWindowEvent } from '@mantine/hooks';
 import { MotionConfig } from 'motion/react';
 import {
   createContext,
@@ -120,7 +120,7 @@ export function AppearanceProvider({
   const os = useColorScheme(undefined, { getInitialValueInEffect: false });
   const preference = controlled ?? stored;
   const target: ColorScheme = preference === 'system' ? os : preference;
-  const { applied, revealFrom } = useColorSchemeReveal(target);
+  const { applied, revealFrom, revealOnCommit } = useColorSchemeReveal(target);
   const shownToMantine = useMemo(() => showingScheme(applied), [applied]);
   const latest = useRef({
     preference,
@@ -139,10 +139,16 @@ export function AppearanceProvider({
   const textSize = controlledTextSize ?? storedTextSize;
   const controlsTextSize = controlledTextSize !== undefined;
 
-  // The first render puts the size on the root, so the saved size is there before the first paint.
-  useState(() => applyTextSize(textSize));
-  // A parent's new size arrives as a prop, which no handler here sees.
-  useDidUpdate(() => applyTextSize(textSize), [controlledTextSize]);
+  // A parent's scheme or size can arrive as a prop, which no handler here sees. This element's ref callback changes with
+  // both, and React calls it after the commit and before paint, so the saved size is on the root from the first frame.
+  const followAppearance = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) return;
+      applyTextSize(textSize);
+      revealOnCommit();
+    },
+    [textSize, revealOnCommit],
+  );
 
   const recordPress = (event: PointerEvent) => {
     pointer.current = {
@@ -165,7 +171,6 @@ export function AppearanceProvider({
     if (event.key === TEXT_SIZE_KEY && !controlsTextSize) {
       const next = isTextSize(event.newValue) ? event.newValue : 'default';
       setStoredTextSize(next);
-      applyTextSize(next);
     }
   };
   useWindowEvent('storage', followStorage);
@@ -177,7 +182,6 @@ export function AppearanceProvider({
       if (!controlsTextSize) {
         writeTextSize(next);
         setStoredTextSize(next);
-        applyTextSize(next);
       }
       textSizeChange.current?.(next);
     },
@@ -237,7 +241,11 @@ export function AppearanceProvider({
         colorSchemeManager={shownToMantine}
         forceColorScheme={applied}
       >
-        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+        <MotionConfig reducedMotion="user">
+          <div style={{ display: 'contents' }} ref={followAppearance}>
+            {children}
+          </div>
+        </MotionConfig>
       </MantineProvider>
     </AppearanceContext.Provider>
   );
