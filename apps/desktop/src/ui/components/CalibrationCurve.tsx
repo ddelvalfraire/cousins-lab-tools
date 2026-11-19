@@ -470,14 +470,24 @@ function CurvePlot({
       el,
     );
   };
-  const host = useUplotChart({
-    rebuildKey: JSON.stringify([
-      standards,
-      fit,
-      axisMax ?? null,
+  const { host } = useUplotChart({
+    buildFrom: [
+      standards.length,
+      ...standards.flatMap((s) => [
+        s.id,
+        s.concentration,
+        s.signal,
+        s.excluded,
+      ]),
+      fit.n,
+      fit.slope,
+      fit.intercept,
+      fit.r2,
+      axisMax?.concentration,
+      axisMax?.signal,
       scheme,
       textSize,
-    ]),
+    ],
     create,
     size,
   });

@@ -447,12 +447,14 @@ function SignalPlot({
     // Do not rebuild from uncommitted scales during uPlot's initial microtask; only schedule a repaint.
     u.redraw(false);
   };
-  const host = useUplotChart({
-    rebuildKey: JSON.stringify([
-      labels,
+  const { host, follow } = useUplotChart({
+    buildFrom: [
+      labels.length,
+      ...labels,
       scheme,
       textSize,
-      limits ?? null,
+      limits?.[0],
+      limits?.[1],
       logarithmic,
       logDecades,
       points,
@@ -461,11 +463,11 @@ function SignalPlot({
       minimumWidth,
       xLabel,
       yLabel,
-    ]),
+    ],
     create,
     size: (el) => ({ width: Math.max(minimumWidth, el.clientWidth), height }),
     update,
-    updateDeps: [data, bands],
+    updateFrom: [data, bands],
   });
   return (
     <ScrollFrame
@@ -475,7 +477,7 @@ function SignalPlot({
       role="region"
       aria-label={`${labels.join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`}
     >
-      <div className="dv-signal-plot">
+      <div className="dv-signal-plot" ref={follow}>
         <div
           ref={host}
           className="dv-plot"

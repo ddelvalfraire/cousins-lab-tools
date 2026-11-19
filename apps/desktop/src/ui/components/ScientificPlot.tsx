@@ -389,26 +389,29 @@ export function ScientificPlot({
     // setData/setScale already invalidate paths; only schedule the selection paint.
     u.redraw(false);
   };
-  const host = useUplotChart({
-    rebuildKey: JSON.stringify([
-      series,
+  const { host, follow } = useUplotChart({
+    buildFrom: [
+      series.length,
+      ...series.flatMap((s) => [s.label, s.unit, s.kind, s.color, s.dash]),
       scheme,
       textSize,
-      limits,
+      limits?.[0],
+      limits?.[1],
       logarithmic,
       points,
       height,
       xLabel,
       yLabel,
       minimumWidth,
-      frame,
+      frame?.left,
+      frame?.bottom,
       unit,
       soft,
-    ]),
+    ],
     create,
     size: (el) => ({ width: Math.max(minimumWidth, el.clientWidth), height }),
     update,
-    updateDeps: [data, range, selection, marker, clock],
+    updateFrom: [data, range, selection, marker, clock],
   });
   const description = `${series.map((s) => s.label).join(', ')} · ${yLabel} by ${xLabel}. Scroll horizontally when needed.`;
   // Tick labels come in fixed slots, which their anchor and order name.
@@ -422,12 +425,13 @@ export function ScientificPlot({
         role="region"
         aria-label={description}
       >
-        <div
-          ref={host}
-          className="dv-plot"
-          role="img"
-          aria-label={series.map((s) => s.label).join(', ')}
-        />
+        <div className="dv-plot" ref={follow}>
+          <div
+            ref={host}
+            role="img"
+            aria-label={series.map((s) => s.label).join(', ')}
+          />
+        </div>
       </ScrollFrame>
     );
   return (
@@ -439,7 +443,7 @@ export function ScientificPlot({
         role="region"
         aria-label={description}
       >
-        <div className="dv-plot dv-plot-sparse">
+        <div className="dv-plot dv-plot-sparse" ref={follow}>
           <div
             ref={host}
             role="img"
