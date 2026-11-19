@@ -12,7 +12,7 @@ Manual test cases for behavior that the automated tests don't cover.
 
 Run these on every release candidate. Run a full suite when its feature changes.
 
-- Run the [legacy/chart-styles](legacy/chart-styles/) suite.
+- [legacy/chart-styles](legacy/chart-styles/)
 
 ## Conventions
 
