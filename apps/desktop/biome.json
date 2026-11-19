@@ -14,9 +14,11 @@
       "!!**/storybook-static",
       "!!**/test-results",
       "!!**/playwright-report",
+      "!lint/fixtures",
       "!bun.lock"
     ]
   },
+  "extends": ["./lint/effects.json"],
   "plugins": ["./lint/no-effect-hooks.grit"],
   "formatter": {
     "enabled": true,
@@ -48,19 +50,7 @@
       },
       "style": {
         "noNonNullAssertion": "off",
-        "noDescendingSpecificity": "off",
-        "noRestrictedImports": {
-          "level": "error",
-          "options": {
-            "paths": {
-              "react": {
-                "importNames": ["useEffect", "useLayoutEffect"],
-                "message": "Effects are banned in this app. Derive the value during render, do the work in the event handler that causes it, subscribe to external stores with useSyncExternalStore, set up and tear down DOM work in a ref callback that returns a cleanup, or use a hook from @mantine/hooks."
-              },
-              "framer-motion": "Import from motion/react instead; framer-motion is the old name of the same library."
-            }
-          }
-        }
+        "noDescendingSpecificity": "off"
       }
     }
   },

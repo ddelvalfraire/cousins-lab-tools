@@ -14,9 +14,10 @@
     "storybook:e2e": "playwright test --config playwright.storybook.config.ts",
     "storybook:check": "tsc --project tsconfig.storybook.json --noEmit",
     "tauri": "tauri",
-    "check": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit",
+    "check": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit && bun run lint:fixtures",
     "test": "vitest run",
     "lint": "biome check .",
+    "lint:fixtures": "bun lint/check-fixtures.mjs",
     "format": "biome format --write .",
     "clean": "bun scripts/clean.mjs"
   },

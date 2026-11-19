@@ -1,0 +1,34 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "linter": {
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "react": {
+                "importNames": [
+                  "useEffect",
+                  "useLayoutEffect",
+                  "useInsertionEffect",
+                  "useEffectEvent"
+                ],
+                "message": "Effects are banned in this app, including wrappers such as Mantine's useDidUpdate. Derive the value during render, do the work in the event handler that causes it, reset state with a key, subscribe to external stores with useSyncExternalStore, or set up and tear down DOM work in a ref callback that returns a cleanup."
+              },
+              "@mantine/hooks": {
+                "importNames": [
+                  "useDidUpdate",
+                  "useIsomorphicEffect",
+                  "useShallowEffect"
+                ],
+                "message": "Effects are banned in this app, including wrappers such as Mantine's useDidUpdate. Derive the value during render, do the work in the event handler that causes it, reset state with a key, subscribe to external stores with useSyncExternalStore, or set up and tear down DOM work in a ref callback that returns a cleanup."
+              },
+              "framer-motion": "Import from motion/react instead; framer-motion is the old name of the same library."
+            }
+          }
+        }
+      }
+    }
+  }
+}
