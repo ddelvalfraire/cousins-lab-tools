@@ -301,11 +301,16 @@ function AlignmentPane({
   const { settings, problem, status, dirty } = editor,
     saving = status === 'saving',
     event = settings.method === 'event';
-  const rootRef = useFocusOnSettle(status, root, {
-    pending: 'saving',
-    failed: 'failed',
-    succeeded: 'saved',
-  });
+  const rootRef = useFocusOnSettle(
+    status,
+    root,
+    {
+      pending: 'saving',
+      failed: 'failed',
+      succeeded: 'saved',
+    },
+    { failed: '[data-action="retry"]', succeeded: '.dv-select-input' },
+  );
   const discard = () => {
     editor.discard();
     root.current?.querySelector<HTMLElement>('.dv-select-input')?.focus();

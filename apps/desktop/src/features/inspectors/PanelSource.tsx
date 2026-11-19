@@ -270,11 +270,16 @@ export function PanelSourceBindingPane({
         })),
     })),
   ];
-  const rootRef = useFocusOnSettle(status, root, {
-    pending: 'switching',
-    failed: 'failed',
-    succeeded: 'idle',
-  });
+  const rootRef = useFocusOnSettle(
+    status,
+    root,
+    {
+      pending: 'switching',
+      failed: 'failed',
+      succeeded: 'idle',
+    },
+    { failed: '[data-action="retry"]', succeeded: '.dv-select-input' },
+  );
   const discard = () => {
     editor.discard();
     root.current?.querySelector<HTMLElement>('.dv-select-input')?.focus();
