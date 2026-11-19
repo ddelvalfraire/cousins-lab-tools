@@ -12,8 +12,8 @@ import {
   type RecentExperiment,
   SideNavigation,
 } from '@/features/navigation';
+import { KeyboardShortcuts } from '@/features/shortcuts';
 import { CommandGlyph, type CommandItem } from '@/shared/ui/CommandCenter';
-import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import {
   type ShellCommand,
   ShellSearch,
