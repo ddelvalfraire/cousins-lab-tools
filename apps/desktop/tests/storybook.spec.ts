@@ -87,17 +87,12 @@ test('every component has typed CSF metadata and no review onboarding', async ({
   request,
 }) => {
   test.setTimeout(360_000);
-  const files = (
-    await Promise.all(
-      ['components', 'screens'].map(async (folder) =>
-        (
-          await readdir(resolve(`src/ui/${folder}`))
-        )
-          .filter((file) => file.endsWith('.stories.tsx'))
-          .map((file) => resolve(`src/ui/${folder}/${file}`)),
-      ),
+  const files = (await readdir(resolve('src'), { recursive: true }))
+    .filter(
+      (file) =>
+        file.endsWith('.stories.tsx') && !file.endsWith('Gallery.stories.tsx'),
     )
-  ).flat();
+    .map((file) => resolve('src', file));
   let expected = 1; // Gallery composes the component/screen stories.
   for (const file of files) {
     const source = await readFile(file, 'utf8');

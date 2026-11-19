@@ -2,7 +2,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
 import { mergeConfig } from 'vite';
 
 const config: StorybookConfig = {
-  stories: ['../src/ui/**/*.stories.tsx'],
+  stories: ['../src/**/*.stories.tsx'],
   addons: [
     '@storybook/addon-docs',
     '@storybook/addon-a11y',
@@ -13,6 +13,7 @@ const config: StorybookConfig = {
   viteFinal: (config) =>
     mergeConfig(config, {
       optimizeDeps: { include: ['@mantine/hooks'] },
+      resolve: { tsconfigPaths: true },
       server: {
         watch: {
           ignored: [

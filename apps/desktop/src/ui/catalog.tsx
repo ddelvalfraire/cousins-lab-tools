@@ -8,9 +8,16 @@ type PortableStory = ComponentType & {
   storyName: string;
   parameters: { previewWidth?: number; gallery?: boolean };
 };
-const modules = import.meta.glob<StoryModule>(['./components/*.stories.tsx'], {
-  eager: true,
-});
+const modules = import.meta.glob<StoryModule>(
+  [
+    './components/*.stories.tsx',
+    '../features/*/*.stories.tsx',
+    '../shared/*/*.stories.tsx',
+  ],
+  {
+    eager: true,
+  },
+);
 export const reviewCases = Object.values(modules)
   .flatMap((module) => {
     const title = String(module.default.title);
