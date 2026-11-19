@@ -14,7 +14,7 @@ import type {
   LiveStream,
   RecordedChannel,
   RecordedSample,
-} from './ExperimentWorkspace.fixtures';
+} from './fixtures.ts';
 import {
   AffectedPanelFlag,
   ProblemsPanel,

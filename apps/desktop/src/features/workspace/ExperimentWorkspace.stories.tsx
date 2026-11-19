@@ -14,7 +14,7 @@ import {
   recordedChannels,
   recordedSamples,
   recordedSamplesWithGap,
-} from './ExperimentWorkspace.fixtures';
+} from './fixtures.ts';
 
 /** The compact sticky playback transport (sticky-playback-review.html). Position and play state are owned by the page.
  *  The page's workspace container is what switches the bar to two rows when narrow, so the harness provides one. */

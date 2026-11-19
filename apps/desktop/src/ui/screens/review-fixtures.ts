@@ -5,11 +5,11 @@
 
 import type { IntervalResult } from '@/features/acquisition';
 import type { ChecklistStep, IntervalSummary } from '@/features/calibration';
+import type { RecordedSample } from '@/features/workspace/fixtures';
 import type {
   ExperimentSummary,
   PresetSpec,
 } from '@/shared/testing/screen-fixtures';
-import type { RecordedSample } from '../components/ExperimentWorkspace.fixtures';
 import type {
   PanelChannel,
   PanelSourceOption,

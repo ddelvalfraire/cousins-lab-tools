@@ -5,6 +5,36 @@ import { type KeyboardEvent, useState } from 'react';
 import type { IntervalResult } from '@/features/acquisition';
 import { useAcquisitionControls } from '@/features/acquisition';
 import { CalibrationChecklist } from '@/features/calibration';
+import {
+  DerivedCard,
+  DetailsPane,
+  DisplayPane,
+  type DisplaySettings,
+  ExperimentSidebar,
+  type ExperimentSidebarTab,
+  Flagged,
+  LiveSummary,
+  PlaybackChartCard,
+  PlaybackShortcuts,
+  PlaybackTransport,
+  type Problem,
+  type ProblemActionStatus,
+  ProblemsTrigger,
+  problemsSummary,
+  RecordedSamples,
+  type ResolvedProblem,
+  SignalsPane,
+  StreamCard,
+  sampleIndexAt,
+} from '@/features/workspace';
+import {
+  liveProblems,
+  liveStreams,
+  recordedChannels,
+  recordedProblems,
+  recordedSamples,
+  recordedSamplesWithGap,
+} from '@/features/workspace/fixtures';
 import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
 import { Presence, Swap } from '@/shared/motion/Motion';
 import {
@@ -24,43 +54,11 @@ import {
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
 import {
-  DerivedCard,
-  DetailsPane,
-  DisplayPane,
-  type DisplaySettings,
-  ExperimentSidebar,
-  type ExperimentSidebarTab,
-  Flagged,
-  LiveSummary,
-  PlaybackChartCard,
-  PlaybackShortcuts,
-  PlaybackTransport,
-  RecordedSamples,
-  SignalsPane,
-  StreamCard,
-  sampleIndexAt,
-} from '../components/ExperimentWorkspace';
-import {
-  liveProblems,
-  liveStreams,
-  recordedChannels,
-  recordedProblems,
-  recordedSamples,
-  recordedSamplesWithGap,
-} from '../components/ExperimentWorkspace.fixtures';
-import {
   PanelSourceAppliedPane,
   PanelSourceBindingPane,
   PanelSourceChart,
   usePanelSource,
 } from '../components/PanelSource';
-import {
-  type Problem,
-  type ProblemActionStatus,
-  ProblemsTrigger,
-  problemsSummary,
-  type ResolvedProblem,
-} from '../components/ProblemsPanel';
 import {
   AlignmentPreviewChart,
   RecordingAlignmentInspector,
