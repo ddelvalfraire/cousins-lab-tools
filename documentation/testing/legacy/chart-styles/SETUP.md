@@ -1,6 +1,6 @@
 # Chart styles test setup
 
-Preconditions shared by every case in [TEST_CASES.md](TEST_CASES.md).
+Preconditions shared by the test cases in this folder.
 
 ## Build
 
