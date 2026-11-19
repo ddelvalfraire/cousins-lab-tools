@@ -9,14 +9,14 @@ import {
   type SetupPreview,
 } from '@/shared/testing/screen-fixtures';
 import { useAppearance } from '@/shared/theme/appearance';
-import { Chip } from '../components/Chip';
+import { Chip } from '@/shared/ui/Chip';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import type { IntervalResult } from '../components/ExperimentPanels';
 import {
   ExperimentSetupForm,
   type PreparedExperiment,
 } from '../components/ExperimentSetupForm';
 import { ExperimentsList } from '../components/ExperimentsList';
-import { PageHeader } from '../components/PageHeader';
 import { PresetEditor } from '../components/PresetEditor';
 import { PresetImport } from '../components/PresetImport';
 import { RecordingImport } from '../components/RecordingImport';

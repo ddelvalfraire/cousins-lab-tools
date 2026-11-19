@@ -17,8 +17,8 @@ import type {
   Ref,
 } from 'react';
 import { keyedBy } from '@/shared/lib/keyedBy';
-import { Chip } from './Chip';
-import './AcquisitionControls.css';
+import { Chip } from '@/shared/ui/Chip';
+import '@/shared/ui/AcquisitionControls.css';
 
 /** `inputs` is a settings panel (labelled quantity fields); `controls` holds the recording controls. */
 export type PresetPanelKind =

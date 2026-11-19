@@ -4,10 +4,10 @@ import {
   type ExperimentSummary,
   presets,
 } from '@/shared/testing/screen-fixtures';
-import { type StatusTone, StatusWord } from '../components/Chip';
-import { CommandGlyph } from '../components/CommandCenter';
+import { type StatusTone, StatusWord } from '@/shared/ui/Chip';
+import { CommandGlyph } from '@/shared/ui/CommandCenter';
+import { ReviewIcon } from '@/shared/ui/ReviewIcons';
 import { InstrumentStatus } from '../components/InstrumentCatalog';
-import { ReviewIcon } from '../components/ReviewIcons';
 import { toListExperiment, toRecents } from './approved-fixtures';
 import {
   catalogInstruments,

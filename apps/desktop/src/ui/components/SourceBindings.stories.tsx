@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from '@/shared/testing/chooseOption';
-import { Chip } from './Chip';
-import { InspectorIcon } from './InspectorParts';
-import { PageHeader } from './PageHeader';
+import { Chip } from '@/shared/ui/Chip';
+import { InspectorIcon } from '@/shared/ui/InspectorParts';
+import { PageHeader } from '@/shared/ui/PageHeader';
+import { WorkspaceBody } from '@/shared/ui/RightSidebar';
 import {
   type PanelBinding,
   type PanelChannel,
@@ -14,7 +15,6 @@ import {
   type StreamState,
   usePanelSource,
 } from './PanelSource';
-import { WorkspaceBody } from './RightSidebar';
 
 /** Synthetic sources from source-binding-review.html. */
 const rows = (count: number, n: number) =>

@@ -1,9 +1,11 @@
 import { type KeyboardEvent, type ReactNode, useCallback, useRef } from 'react';
+import { useElementWidth } from '@/shared/hooks/useElementWidth';
 import { Presence, Swap } from '@/shared/motion/Motion';
 import { useAppearance } from '@/shared/theme/appearance';
 import { textScales } from '@/shared/theme/textSize';
-import { Chip } from './Chip';
-import { StatusBanner } from './Primitives';
+import { Chip } from '@/shared/ui/Chip';
+import { StatusBanner } from '@/shared/ui/Primitives';
+import { SidebarIcon } from '@/shared/ui/RightSidebar';
 import {
   formatSavedAt,
   type PresetRevision,
@@ -13,8 +15,6 @@ import {
   RevisionChanges,
   RevisionRestoreConfirm,
 } from './RevisionHistory';
-import { SidebarIcon } from './RightSidebar';
-import { useElementWidth } from './useElementWidth';
 import './SavedVersions.css';
 
 export interface SavedChart {

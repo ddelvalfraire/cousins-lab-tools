@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from '@/shared/testing/chooseOption';
+import { Chip } from '@/shared/ui/Chip';
+import { InspectorIcon } from '@/shared/ui/InspectorParts';
+import { PageHeader } from '@/shared/ui/PageHeader';
+import { WorkspaceBody } from '@/shared/ui/RightSidebar';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { Chip } from './Chip';
-import { InspectorIcon } from './InspectorParts';
-import { PageHeader } from './PageHeader';
 import {
   type AlignmentEvent,
   AlignmentPreviewChart,
@@ -14,7 +15,6 @@ import {
   RecordingAlignmentInspector,
   useAlignmentEditor,
 } from './RecordingAlignment';
-import { WorkspaceBody } from './RightSidebar';
 
 /** Synthetic recordings from alignment-inspector-review.html: the same response, 15 s apart. */
 const trace = (origin: number) =>

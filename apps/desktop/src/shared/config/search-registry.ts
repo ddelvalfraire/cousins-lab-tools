@@ -18,7 +18,7 @@
 
 import type { AppearancePreference } from '@/shared/theme/appearance';
 import type { TextSize } from '@/shared/theme/textSize';
-import type { CommandGlyphName } from '@/ui/components/CommandCenter';
+import type { CommandGlyphName } from '@/shared/ui/CommandCenter';
 
 /** What a title or detail may depend on. */
 export interface SearchContext {

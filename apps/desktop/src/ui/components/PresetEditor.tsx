@@ -19,8 +19,19 @@ import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import { Chip, StatusWord } from './Chip';
-import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
+import { Chip, StatusWord } from '@/shared/ui/Chip';
+import {
+  HeaderButton,
+  type PageBreadcrumb,
+  PageHeader,
+} from '@/shared/ui/PageHeader';
+import { StatusMessages } from '@/shared/ui/Primitives';
+import {
+  RightSidebar,
+  SidebarIcon,
+  WorkspaceBody,
+} from '@/shared/ui/RightSidebar';
+import { chosen, selectAria } from '@/shared/ui/select';
 import type {
   PanelSpan,
   PresetPanel,
@@ -43,9 +54,6 @@ import {
   snapSpan,
   WIDTH_NAMES,
 } from './PresetEditorPanels';
-import { StatusMessages } from './Primitives';
-import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
-import { chosen, selectAria } from './select';
 import { type PresetDragState, usePresetDragGhost } from './usePresetDragGhost';
 import './PresetEditor.css';
 

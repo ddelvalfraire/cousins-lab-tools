@@ -9,7 +9,7 @@ import {
 } from '@mantine/core';
 import { IconPlayerPlay, IconPlayerStop } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Panel, StatusBanner } from './Primitives';
+import { Panel, StatusBanner } from '@/shared/ui/Primitives';
 
 export interface IntervalResult {
   id: string;

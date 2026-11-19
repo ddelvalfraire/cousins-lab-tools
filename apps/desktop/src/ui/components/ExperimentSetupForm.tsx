@@ -2,8 +2,8 @@ import { Select } from '@mantine/core';
 import { type RefObject, useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Presence } from '@/shared/motion/Motion';
-import { Banner } from './Banner';
-import { chosen, selectAria } from './select';
+import { Banner } from '@/shared/ui/Banner';
+import { chosen, selectAria } from '@/shared/ui/select';
 import '@/shared/theme/Approved.css';
 import './ExperimentSetupForm.css';
 

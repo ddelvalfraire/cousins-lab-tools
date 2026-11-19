@@ -2,9 +2,9 @@ import { useOs, useWindowEvent } from '@mantine/hooks';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 
-export { PageHeader as ScreenHeading } from '../components/PageHeader';
+export { PageHeader as ScreenHeading } from '@/shared/ui/PageHeader';
 
-import { CommandGlyph, type CommandItem } from '../components/CommandCenter';
+import { CommandGlyph, type CommandItem } from '@/shared/ui/CommandCenter';
 import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import {
   type CurrentAcquisition,
@@ -34,7 +34,7 @@ import {
   titleOf,
 } from '@/shared/config/search-registry';
 import { useAppearance } from '@/shared/theme/appearance';
-import { ScrollFrame } from '../components/ScrollFrame';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 import { revealTarget } from './revealTarget';
 
 export type ScreenRoute =

@@ -2,8 +2,10 @@ import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useId, useMemo, useRef, useState } from 'react';
 import type uPlot from 'uplot';
+import { ScientificPlot } from '@/shared/charts/SignalChart';
+import { useKeyedValue } from '@/shared/hooks/useKeyedValue';
 import { Presence } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
+import { Chip } from '@/shared/ui/Chip';
 import {
   Announcer,
   InspectorButton,
@@ -11,13 +13,11 @@ import {
   InspectorPane,
   parseNumber,
   UnitInput,
-} from './InspectorParts';
-import { type Severity, StatusBanner } from './Primitives';
-import { RightSidebar, type RightSidebarTab } from './RightSidebar';
-import { ScientificPlot } from './SignalChart';
-import { chosen } from './select';
+} from '@/shared/ui/InspectorParts';
+import { type Severity, StatusBanner } from '@/shared/ui/Primitives';
+import { RightSidebar, type RightSidebarTab } from '@/shared/ui/RightSidebar';
+import { chosen } from '@/shared/ui/select';
 import { useFocusOnSettle } from './useFocusOnSettle';
-import { useKeyedValue } from './useKeyedValue';
 import './RecordingAlignment.css';
 
 export type AlignmentMethod = 'event' | 'elapsed' | 'clock';

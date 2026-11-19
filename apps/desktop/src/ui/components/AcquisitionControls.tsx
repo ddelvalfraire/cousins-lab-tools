@@ -11,12 +11,12 @@ import {
 } from '@tabler/icons-react';
 import { type ReactNode, useCallback, useId, useState } from 'react';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
-import { StatusBanner, StatusMessages } from './Primitives';
-import { GuardDialog, useFocusWhen } from './UnsavedChangesDialog';
+import { Chip } from '@/shared/ui/Chip';
+import { StatusBanner, StatusMessages } from '@/shared/ui/Primitives';
+import { GuardDialog, useFocusWhen } from '@/shared/ui/UnsavedChangesDialog';
 import '@/shared/theme/Approved.css';
-import './AcquisitionControls.css';
-import './GuardDialog.css';
+import '@/shared/ui/AcquisitionControls.css';
+import '@/shared/ui/GuardDialog.css';
 
 export type AcquisitionState =
   | 'disconnected'

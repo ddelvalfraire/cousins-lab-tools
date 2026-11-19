@@ -1,4 +1,5 @@
 import { type PresetSpec, presets } from '@/shared/testing/screen-fixtures';
+import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
 import type {
   SetupPreset,
   SetupRoutine,
@@ -8,7 +9,6 @@ import type {
   CatalogPreset,
   CatalogPresetPanel,
 } from '../components/PresetCatalog';
-import type { LayoutTile } from '../components/PresetLayoutPreview';
 import type { CatalogRoutine } from '../components/RoutineCatalog';
 import type { RoutineDefinition } from '../components/RoutineEditor';
 

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { settleMotion } from '../../../.storybook/settleMotion';
 import type {
   Problem,
@@ -13,7 +14,6 @@ import {
   ProblemsTrigger,
   problemFlag,
 } from './ProblemsPanel';
-import { useResettingCopy } from './useResettingCopy';
 
 const SIGNALS = { id: 'p1', title: 'CO₂ and O₂ signals' };
 const READINGS = { id: 'p2', title: 'Current readings' };

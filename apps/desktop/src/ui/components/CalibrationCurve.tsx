@@ -8,12 +8,12 @@ import { useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
 import { useAppearance } from '@/shared/theme/appearance';
 import { rootTextScale } from '@/shared/theme/textSize';
-import { Banner } from './Banner';
-import { StatusWord } from './Chip';
+import { Banner } from '@/shared/ui/Banner';
+import { StatusWord } from '@/shared/ui/Chip';
 import '@/shared/theme/Approved.css';
 import './CalibrationCurve.css';
-import { ScrollFrame } from './ScrollFrame';
-import { useUplotChart } from './useUplotChart';
+import { useUplotChart } from '@/shared/charts/useUplotChart';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
 export interface CalibrationStandard {
   id: string;

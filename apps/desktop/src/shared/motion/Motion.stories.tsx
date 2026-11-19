@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { StatusBanner } from '@/ui/components/Primitives';
+import { StatusBanner } from '@/shared/ui/Primitives';
 import { reduceMotion } from '../../../.storybook/settleMotion';
 import { MotionList, Presence, Swap } from './Motion';
 import { motion } from './motion';

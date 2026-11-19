@@ -3,13 +3,20 @@ import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import type { PresetSpec } from '@/shared/testing/screen-fixtures';
-import { CatalogChip, CatalogRoot } from '../components/CatalogTable';
-import { Chip } from '../components/Chip';
+import { CatalogChip, CatalogRoot } from '@/shared/ui/CatalogTable';
+import { Chip } from '@/shared/ui/Chip';
+import { HeaderButton, PageHeader } from '@/shared/ui/PageHeader';
+import {
+  RightSidebar,
+  SidebarFacts,
+  SidebarIcon,
+  SidebarSection,
+  WorkspaceBody,
+} from '@/shared/ui/RightSidebar';
 import {
   InstrumentCatalog,
   type InstrumentCatalogProps,
 } from '../components/InstrumentCatalog';
-import { HeaderButton, PageHeader } from '../components/PageHeader';
 import {
   PresetCatalog,
   type PresetCatalogProps,
@@ -19,13 +26,6 @@ import {
   type RestorePhase,
   RevisionHistoryList,
 } from '../components/RevisionHistory';
-import {
-  RightSidebar,
-  SidebarFacts,
-  SidebarIcon,
-  SidebarSection,
-  WorkspaceBody,
-} from '../components/RightSidebar';
 import {
   RoutineCatalog,
   type RoutineCatalogProps,

@@ -2,15 +2,26 @@ import { Tabs } from '@mantine/core';
 import { useInterval, useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { type KeyboardEvent, useState } from 'react';
+import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
 import { Presence, Swap } from '@/shared/motion/Motion';
 import {
   type ExperimentSummary,
   type PresetSpec,
   routines,
 } from '@/shared/testing/screen-fixtures';
+import { Chip, StatusWord } from '@/shared/ui/Chip';
+import { HeaderButton, PageHeader } from '@/shared/ui/PageHeader';
+import { StatusBanner } from '@/shared/ui/Primitives';
+import { ReviewIcon } from '@/shared/ui/ReviewIcons';
+import {
+  RightSidebar,
+  SidebarFacts,
+  SidebarIcon,
+  SidebarSection,
+  WorkspaceBody,
+} from '@/shared/ui/RightSidebar';
 import { useAcquisitionControls } from '../components/AcquisitionControls';
 import { CalibrationChecklist } from '../components/CalibrationChecklist';
-import { Chip, StatusWord } from '../components/Chip';
 import type { IntervalResult } from '../components/ExperimentPanels';
 import {
   DerivedCard,
@@ -37,14 +48,12 @@ import {
   recordedSamples,
   recordedSamplesWithGap,
 } from '../components/ExperimentWorkspace.fixtures';
-import { HeaderButton, PageHeader } from '../components/PageHeader';
 import {
   PanelSourceAppliedPane,
   PanelSourceBindingPane,
   PanelSourceChart,
   usePanelSource,
 } from '../components/PanelSource';
-import { StatusBanner } from '../components/Primitives';
 import {
   type Problem,
   type ProblemActionStatus,
@@ -63,20 +72,11 @@ import {
   type RecordingExportPhase,
   type RecordingExportSettings,
 } from '../components/RecordingExport';
-import { ReviewIcon } from '../components/ReviewIcons';
-import {
-  RightSidebar,
-  SidebarFacts,
-  SidebarIcon,
-  SidebarSection,
-  WorkspaceBody,
-} from '../components/RightSidebar';
 import {
   SavedResultInspector,
   SavedResultsTable,
   useSavedResultInspector,
 } from '../components/SavedResults';
-import { usePendingTimeouts } from '../components/usePendingTimeouts';
 import {
   alignmentDefaults,
   alignmentEvents,

@@ -3,22 +3,30 @@ import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
 import { formatClockTime } from '@/shared/lib/time';
 import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
-import type { StatusTone } from './Chip';
-import { Chip, StatusWord } from './Chip';
-import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
-import { ReviewIcon } from './ReviewIcons';
-import { chosen } from './select';
+import type { StatusTone } from '@/shared/ui/Chip';
+import { Chip, StatusWord } from '@/shared/ui/Chip';
+import {
+  HeaderButton,
+  type PageBreadcrumb,
+  PageHeader,
+} from '@/shared/ui/PageHeader';
+import { ReviewIcon } from '@/shared/ui/ReviewIcons';
+import { chosen } from '@/shared/ui/select';
 import './ExperimentsList.css';
 import { pages } from '@/shared/config/search-registry';
-import { CatalogAction, focusPane, SidebarEmpty } from './CatalogTable';
+import {
+  CatalogAction,
+  focusPane,
+  SidebarEmpty,
+} from '@/shared/ui/CatalogTable';
 import {
   RightSidebar,
   SidebarFacts,
   SidebarIcon,
   SidebarSection,
   WorkspaceBody,
-} from './RightSidebar';
-import { ScrollFrame } from './ScrollFrame';
+} from '@/shared/ui/RightSidebar';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
 export type ExperimentStatus = 'running' | 'recorded' | 'interrupted';
 

@@ -2,6 +2,7 @@ import { type ComboboxItem, Select } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useId, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { Chip } from './Chip';
 import { PageHeader } from './PageHeader';
 import {
@@ -14,7 +15,6 @@ import {
   WorkspaceBody,
 } from './RightSidebar';
 import { chosen } from './select';
-import { useResettingCopy } from './useResettingCopy';
 
 const tabs: RightSidebarTab[] = [
   { id: 'details', label: 'Details', icon: <SidebarIcon name="details" /> },

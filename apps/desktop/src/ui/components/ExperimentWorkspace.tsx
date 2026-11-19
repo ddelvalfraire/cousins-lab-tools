@@ -1,6 +1,15 @@
 import { Kbd, Select } from '@mantine/core';
 import { type ReactNode, useId, useState } from 'react';
-import { Chip } from './Chip';
+import { SignalTrace } from '@/shared/charts/SignalChart';
+import { Chip } from '@/shared/ui/Chip';
+import {
+  RightSidebar,
+  type RightSidebarTab,
+  SidebarFacts,
+  SidebarIcon,
+  SidebarSection,
+} from '@/shared/ui/RightSidebar';
+import { chosen } from '@/shared/ui/select';
 import type {
   LiveStream,
   RecordedChannel,
@@ -13,18 +22,9 @@ import {
   problemFlag,
   problemsSummary,
 } from './ProblemsPanel';
-import {
-  RightSidebar,
-  type RightSidebarTab,
-  SidebarFacts,
-  SidebarIcon,
-  SidebarSection,
-} from './RightSidebar';
-import { SignalTrace } from './SignalChart';
-import { chosen } from './select';
 import '@/shared/theme/Approved.css';
 import './ExperimentWorkspace.css';
-import { ScrollFrame } from './ScrollFrame';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
 /* Glyphs from the approved mockups (24 px grid, 1.6 stroke). */
 const strokeProps = {

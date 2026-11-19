@@ -12,7 +12,7 @@ import {
 import type { ReactNode } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
 import { Presence } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
+import { Chip } from '@/shared/ui/Chip';
 import { useResolvedAnnouncement } from './useResolvedAnnouncement';
 import './ProblemsPanel.css';
 

@@ -11,9 +11,9 @@ import {
 import { Presence } from '@/shared/motion/Motion';
 import type { AppearancePreference } from '@/shared/theme/appearance';
 import type { TextSize } from '@/shared/theme/textSize';
-import { Banner } from './Banner';
-import { ReviewIcon } from './ReviewIcons';
-import { chosen, selectAria } from './select';
+import { Banner } from '@/shared/ui/Banner';
+import { ReviewIcon } from '@/shared/ui/ReviewIcons';
+import { chosen, selectAria } from '@/shared/ui/select';
 import '@/shared/theme/Approved.css';
 import './SettingsPage.css';
 

@@ -21,6 +21,7 @@ import {
 import { motion as animated, type Transition } from 'motion/react';
 import { useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
+import { useElementWidth } from '@/shared/hooks/useElementWidth';
 import { formatMeasurement } from '@/shared/lib/measurement';
 import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import { curves, motion } from '@/shared/motion/motion';
@@ -28,13 +29,12 @@ import type { SignalSample } from '@/shared/testing/fixtures';
 import { useAppearance } from '@/shared/theme/appearance';
 import { rootTextScale, textScales } from '@/shared/theme/textSize';
 import { seriesColors } from '@/shared/theme/theme';
-import { StatusMessages } from './Primitives';
-import { useElementWidth } from './useElementWidth';
+import { StatusMessages } from '@/shared/ui/Primitives';
 import { useUplotChart } from './useUplotChart';
 import '@/shared/theme/Approved.css';
 import './SignalChart.css';
-import { ScrollFrame } from './ScrollFrame';
-import { useKeyedValue } from './useKeyedValue';
+import { useKeyedValue } from '@/shared/hooks/useKeyedValue';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
 export type { PlotSeries } from './ScientificPlot';
 export { ScientificPlot } from './ScientificPlot';

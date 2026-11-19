@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type uPlot from 'uplot';
-import { useKeyedValue } from './useKeyedValue';
+import { useKeyedValue } from '@/shared/hooks/useKeyedValue';
 
 export interface UplotChartOptions {
   /**

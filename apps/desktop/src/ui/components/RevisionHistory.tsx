@@ -2,10 +2,10 @@ import { useMounted } from '@mantine/hooks';
 import { type ReactNode, useRef } from 'react';
 import { formatClockTime } from '@/shared/lib/time';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
-import { ImportIcon } from './ImportDialog';
-import { StatusBanner } from './Primitives';
-import { SidebarIcon } from './RightSidebar';
+import { Chip } from '@/shared/ui/Chip';
+import { ImportIcon } from '@/shared/ui/ImportDialog';
+import { StatusBanner } from '@/shared/ui/Primitives';
+import { SidebarIcon } from '@/shared/ui/RightSidebar';
 import './RevisionHistory.css';
 
 export interface PresetRevision {

@@ -4,7 +4,7 @@ import {
   type ShortcutSection,
   shortcutSectionsFor,
 } from '@/shared/config/search-registry';
-import { KeyCaps } from './CommandCenter';
+import { KeyCaps } from '@/shared/ui/CommandCenter';
 import '@/shared/theme/Approved.css';
 import './KeyboardShortcuts.css';
 

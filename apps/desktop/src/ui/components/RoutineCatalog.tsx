@@ -16,16 +16,16 @@ import {
   SidebarEmpty,
   useCatalogPage,
   useCatalogQuery,
-} from './CatalogTable';
-import { type PageBreadcrumb, PageHeader } from './PageHeader';
+} from '@/shared/ui/CatalogTable';
+import { type PageBreadcrumb, PageHeader } from '@/shared/ui/PageHeader';
 import {
   RightSidebar,
   SidebarFacts,
   SidebarIcon,
   SidebarSection,
   WorkspaceBody,
-} from './RightSidebar';
-import { ScrollFrame } from './ScrollFrame';
+} from '@/shared/ui/RightSidebar';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 import { useAtScrollEnd } from './useAtScrollEnd';
 
 export interface CatalogRoutineStep {

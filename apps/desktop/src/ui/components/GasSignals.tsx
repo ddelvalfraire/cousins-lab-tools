@@ -8,10 +8,10 @@ import {
 } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type uPlot from 'uplot';
+import { ScientificPlot } from '@/shared/charts/SignalChart';
 import { Presence } from '@/shared/motion/Motion';
 import { seriesColors } from '@/shared/theme/theme';
-import { Panel, StatusBanner } from './Primitives';
-import { ScientificPlot } from './SignalChart';
+import { Panel, StatusBanner } from '@/shared/ui/Primitives';
 
 export function GasSignals({
   data,

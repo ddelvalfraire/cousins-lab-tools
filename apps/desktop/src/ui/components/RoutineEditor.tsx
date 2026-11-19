@@ -29,11 +29,19 @@ import type {
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Presence } from '@/shared/motion/Motion';
-import { Banner } from './Banner';
-import { Chip, StatusWord } from './Chip';
-import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
-import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
-import { chosen, selectAria } from './select';
+import { Banner } from '@/shared/ui/Banner';
+import { Chip, StatusWord } from '@/shared/ui/Chip';
+import {
+  HeaderButton,
+  type PageBreadcrumb,
+  PageHeader,
+} from '@/shared/ui/PageHeader';
+import {
+  RightSidebar,
+  SidebarIcon,
+  WorkspaceBody,
+} from '@/shared/ui/RightSidebar';
+import { chosen, selectAria } from '@/shared/ui/select';
 import {
   type RoutineDragState,
   useFrozenRoutineDrag,

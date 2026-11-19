@@ -2,20 +2,20 @@ import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useId, useMemo, useRef, useState } from 'react';
 import type uPlot from 'uplot';
+import { ScientificPlot } from '@/shared/charts/SignalChart';
+import { useKeyedValue } from '@/shared/hooks/useKeyedValue';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
+import { Chip } from '@/shared/ui/Chip';
 import {
   Announcer,
   InspectorButton,
   InspectorIcon,
   InspectorPane,
-} from './InspectorParts';
-import { StatusBanner } from './Primitives';
-import { RightSidebar, type RightSidebarTab } from './RightSidebar';
-import { ScientificPlot } from './SignalChart';
-import { chosen } from './select';
+} from '@/shared/ui/InspectorParts';
+import { StatusBanner } from '@/shared/ui/Primitives';
+import { RightSidebar, type RightSidebarTab } from '@/shared/ui/RightSidebar';
+import { chosen } from '@/shared/ui/select';
 import { useFocusOnSettle } from './useFocusOnSettle';
-import { useKeyedValue } from './useKeyedValue';
 import './PanelSource.css';
 
 /** A signal the panel can show. `line` is its style in the chart and legend. */

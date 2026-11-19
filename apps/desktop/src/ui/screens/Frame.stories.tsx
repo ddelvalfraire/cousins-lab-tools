@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { chooseOption } from '@/shared/testing/chooseOption';
+import { CommandGlyph } from '@/shared/ui/CommandCenter';
+import { PageHeader } from '@/shared/ui/PageHeader';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { CommandGlyph } from '../components/CommandCenter';
-import { PageHeader } from '../components/PageHeader';
 import type {
   CurrentAcquisition,
   RecentExperiment,

@@ -20,15 +20,19 @@ import {
   useCatalogPage,
   useCatalogQuery,
   useCatalogSort,
-} from './CatalogTable';
-import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
+} from '@/shared/ui/CatalogTable';
+import {
+  HeaderButton,
+  type PageBreadcrumb,
+  PageHeader,
+} from '@/shared/ui/PageHeader';
 import {
   RightSidebar,
   SidebarFacts,
   SidebarIcon,
   SidebarSection,
   WorkspaceBody,
-} from './RightSidebar';
+} from '@/shared/ui/RightSidebar';
 
 export interface CatalogPresetPanel {
   kind: 'line' | 'multi' | 'scatter' | 'readout' | 'input' | 'table';

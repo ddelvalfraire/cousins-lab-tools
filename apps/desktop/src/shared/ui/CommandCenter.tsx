@@ -3,9 +3,9 @@ import { Fragment, type MouseEvent, type ReactNode } from 'react';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import '@/shared/theme/Approved.css';
 import './CommandCenter.css';
+import { useWheelScrollsSideways } from '@/shared/hooks/useWheelScrollsSideways';
 import { MotionList } from '@/shared/motion/Motion';
 import { ScrollFrame } from './ScrollFrame';
-import { useWheelScrollsSideways } from './useWheelScrollsSideways';
 
 /*
  * The command center: the results list under the window bar's search box when it searches All DVDash.

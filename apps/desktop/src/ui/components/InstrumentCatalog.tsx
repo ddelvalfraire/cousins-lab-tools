@@ -1,5 +1,7 @@
 import { type ReactNode, useId, useMemo, useState } from 'react';
 import { pages } from '@/shared/config/search-registry';
+import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import {
   CatalogAction,
@@ -18,17 +20,15 @@ import {
   useCatalogPage,
   useCatalogQuery,
   useCatalogSort,
-} from './CatalogTable';
-import { type PageBreadcrumb, PageHeader } from './PageHeader';
+} from '@/shared/ui/CatalogTable';
+import { type PageBreadcrumb, PageHeader } from '@/shared/ui/PageHeader';
 import {
   RightSidebar,
   SidebarFacts,
   SidebarIcon,
   SidebarSection,
   WorkspaceBody,
-} from './RightSidebar';
-import { usePendingTimeouts } from './usePendingTimeouts';
-import { useResettingCopy } from './useResettingCopy';
+} from '@/shared/ui/RightSidebar';
 
 export type InstrumentState =
   | 'receiving'

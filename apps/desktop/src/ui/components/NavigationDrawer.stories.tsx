@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import {
   type CurrentAcquisition,
   NavigationDrawer,
   type RecentExperiment,
 } from './SideNavigation';
-import { useResettingCopy } from './useResettingCopy';
 
 const recents: RecentExperiment[] = [
   {

@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { RightSidebar, SidebarIcon } from '@/shared/ui/RightSidebar';
 import { presetRevisions, revisionChanges } from './exchange-fixtures';
 import {
   RevisionChanges,
   RevisionHistoryList,
   RevisionRestoreConfirm,
 } from './RevisionHistory';
-import { RightSidebar, SidebarIcon } from './RightSidebar';
 import './SavedVersions.css';
 
 const tabs = [

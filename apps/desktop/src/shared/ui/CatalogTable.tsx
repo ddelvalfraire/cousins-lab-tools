@@ -5,8 +5,8 @@ import { SidebarIcon, type SidebarIconName } from './RightSidebar';
 import { chosen } from './select';
 import '@/shared/theme/Approved.css';
 import './CatalogTable.css';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { ScrollFrame } from './ScrollFrame';
-import { useResettingCopy } from './useResettingCopy';
 
 /*
  * Shared pieces of the catalog pages (presets, instruments, routines), from the approved catalog mockups.

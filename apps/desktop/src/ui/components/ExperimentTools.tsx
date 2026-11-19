@@ -16,11 +16,14 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import type uPlot from 'uplot';
+import {
+  type PlotSeries,
+  ScientificPlot,
+} from '@/shared/charts/ScientificPlot';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import { formatMeasurement } from '@/shared/lib/measurement';
 import { seriesColors } from '@/shared/theme/theme';
-import { Panel } from './Primitives';
-import { type PlotSeries, ScientificPlot } from './ScientificPlot';
+import { Panel } from '@/shared/ui/Primitives';
 
 export function DataPlotPanel({
   title,

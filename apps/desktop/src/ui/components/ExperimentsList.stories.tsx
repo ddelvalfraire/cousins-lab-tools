@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { chooseOption } from '@/shared/testing/chooseOption';
 import { settleMotion } from '../../../.storybook/settleMotion';
 import type {
@@ -7,7 +8,6 @@ import type {
   ExperimentsListProps,
 } from './ExperimentsList';
 import { ExperimentsList } from './ExperimentsList';
-import { useResettingCopy } from './useResettingCopy';
 
 const experiments: ExperimentSummary[] = [
   {

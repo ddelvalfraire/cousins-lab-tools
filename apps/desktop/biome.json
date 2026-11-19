@@ -211,7 +211,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/ScientificPlot.tsx"],
+      "includes": ["src/shared/charts/ScientificPlot.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -226,7 +226,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/SignalChart.stories.tsx"],
+      "includes": ["src/shared/charts/SignalChart.stories.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -241,7 +241,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/SignalChart.tsx"],
+      "includes": ["src/shared/charts/SignalChart.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -256,7 +256,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/UnsavedChangesDialog.tsx"],
+      "includes": ["src/shared/ui/UnsavedChangesDialog.tsx"],
       "linter": {
         "rules": {
           "complexity": {

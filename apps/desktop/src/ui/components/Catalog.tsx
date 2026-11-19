@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { IconArrowRight, IconSearch } from '@tabler/icons-react';
 import { useState } from 'react';
-import { EmptyState, Panel, StatusBanner } from './Primitives';
+import { EmptyState, Panel, StatusBanner } from '@/shared/ui/Primitives';
 
 export interface TemplateSummary {
   id: string;

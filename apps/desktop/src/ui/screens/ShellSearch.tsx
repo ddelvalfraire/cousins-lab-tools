@@ -27,8 +27,8 @@ import {
   commandOptionId,
   findCommands,
   KeyCaps,
-} from '../components/CommandCenter';
-import { chosen } from '../components/select';
+} from '@/shared/ui/CommandCenter';
+import { chosen } from '@/shared/ui/select';
 
 /** A command center row and what choosing it does. */
 export type ShellCommand = CommandItem & { run: () => void };

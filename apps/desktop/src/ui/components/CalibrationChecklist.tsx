@@ -1,16 +1,16 @@
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { Presence } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
+import { Chip } from '@/shared/ui/Chip';
 import {
   Announcer,
   InspectorButton,
   InspectorIcon,
   parseNumber,
   UnitInput,
-} from './InspectorParts';
-import { type Severity, StatusBanner } from './Primitives';
-import { useResettingCopy } from './useResettingCopy';
+} from '@/shared/ui/InspectorParts';
+import { type Severity, StatusBanner } from '@/shared/ui/Primitives';
 import './CalibrationChecklist.css';
 
 /** A named reading to capture, such as "Standard 100". `known` is the standard's known value, or null for a sample. */

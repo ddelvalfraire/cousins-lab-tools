@@ -1,16 +1,16 @@
 import { useId, useRef, useState } from 'react';
 import { formatClockTime } from '@/shared/lib/time';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import { Chip } from './Chip';
+import { Chip } from '@/shared/ui/Chip';
 import {
   InspectorButton,
   InspectorIcon,
   InspectorPane,
-} from './InspectorParts';
-import { StatusBanner } from './Primitives';
-import { RightSidebar, type RightSidebarTab } from './RightSidebar';
+} from '@/shared/ui/InspectorParts';
+import { StatusBanner } from '@/shared/ui/Primitives';
+import { RightSidebar, type RightSidebarTab } from '@/shared/ui/RightSidebar';
 import './SavedResults.css';
-import { ScrollFrame } from './ScrollFrame';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
 /** A saved interval result with the inputs and calculation stored with it. Missing context is null, never reconstructed. */
 export interface SavedResult {

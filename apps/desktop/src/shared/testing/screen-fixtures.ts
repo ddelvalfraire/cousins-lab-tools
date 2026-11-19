@@ -1,4 +1,4 @@
-import type { LayoutTile } from '@/ui/components/PresetLayoutPreview';
+import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
 
 export interface PresetSpec {
   id: string;

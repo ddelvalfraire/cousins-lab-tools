@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { HeaderButton, PageHeader } from '@/shared/ui/PageHeader';
+import {
+  RightSidebar,
+  SidebarIcon,
+  WorkspaceBody,
+} from '@/shared/ui/RightSidebar';
 import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import {
   presetRevisions,
@@ -8,13 +14,11 @@ import {
   revisionChanges,
   savedPreview,
 } from './exchange-fixtures';
-import { HeaderButton, PageHeader } from './PageHeader';
 import {
   type PresetRevision,
   type RestorePhase,
   RevisionHistoryList,
 } from './RevisionHistory';
-import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import {
   SavedVersionPreview,
   type SavedVersionTab,

@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { formatClockTime } from '@/shared/lib/time';
+import { Chip } from '@/shared/ui/Chip';
+import { InspectorIcon } from '@/shared/ui/InspectorParts';
+import { PageHeader } from '@/shared/ui/PageHeader';
+import { WorkspaceBody } from '@/shared/ui/RightSidebar';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { Chip } from './Chip';
-import { InspectorIcon } from './InspectorParts';
-import { PageHeader } from './PageHeader';
-import { WorkspaceBody } from './RightSidebar';
 import {
   type ResultQuantity,
   type SavedResult,

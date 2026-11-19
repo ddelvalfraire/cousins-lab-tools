@@ -6,7 +6,7 @@ import { formatMeasurement } from '@/shared/lib/measurement';
 import { useAppearance } from '@/shared/theme/appearance';
 import { rootTextScale } from '@/shared/theme/textSize';
 import { seriesColors } from '@/shared/theme/theme';
-import { ScrollFrame } from './ScrollFrame';
+import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 import { useUplotChart } from './useUplotChart';
 
 export type LineDash = 'solid' | 'dashed' | 'dotted';
