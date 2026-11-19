@@ -15,6 +15,11 @@
       "!!**/test-results",
       "!!**/playwright-report",
       "!lint/fixtures",
+      "!src/App.tsx",
+      "!src/main.tsx",
+      "!public/tauri.svg",
+      "!vite.config.ts",
+      "!scripts/clean.mjs",
       "!bun.lock"
     ]
   },
