@@ -1,0 +1,83 @@
+
+from PyQt5.QtCore import QObject, pyqtSignal
+import PyQt5.QtCore as QtCore
+from time import time
+import sys
+from math import floor
+
+sys.path.insert(0, '../read_data')
+
+from Code.Module_Main_1_3.Application.read_data.dataUtility import DataUtility
+
+import logging
+logger = logging.getLogger(__name__)
+
+class PlotAllThread(QObject):
+    """
+    Plots the all Asc Data, and contentiously emits new data added to the folder
+    name a hold over from old code
+    """
+    finished = pyqtSignal()
+    newDataPointSignal = pyqtSignal(list)
+    throwOutOfDataExceptionSignal = pyqtSignal()
+    throwFolderNotSelectedExceptionSignal = pyqtSignal()
+    filesParsedSignal = pyqtSignal()
+    secondsAt = QtCore.pyqtSignal(str)
+
+
+    def __init__(self, globalObject, parent):
+        super(PlotAllThread, self).__init__()
+
+        self.globalObject = globalObject
+        self.sharedData = parent.sharedData
+        self._is_running = True
+
+    def stop(self):
+        self._is_running = False
+
+    def run(self):
+        """Long running task"""
+        logger.debug("PlotAllThread.run - BEGIN")
+        try:
+            if self.globalObject.application_state == "Idle":
+
+                #### Signal to throw exception
+                self.throwFolderNotSelectedExceptionSignal.emit()
+
+            else:
+
+                with self.sharedData.lock:
+                    if not self.sharedData.folderAccessed:
+                        self.sharedData.fileList.extend(DataUtility.getDataFileList())
+                        self.sharedData.folderAccessed = True
+                        ######### Signal to start to start file notifier thread.
+                        self.filesParsedSignal.emit()
+
+                # send per batch
+                batchSize = 100  # tune to your rendering cost
+                acc = []
+                any_points_sent = False
+                while self._is_running:
+                    if self.globalObject.application_state == "Paused":
+                        QtCore.QThread.msleep(100)
+                        continue
+
+                    batch = self.globalObject.dataObj.all()
+                    if not batch:
+                        batchSize = 10
+                        QtCore.QThread.msleep(100)
+                        continue
+
+                    acc.extend(batch)
+                    if len(acc) >= batchSize:
+                        try:
+                            self.secondsAt.emit(str(floor(acc[-1][0])))
+                        except Exception as e:
+                            pass
+                        self.newDataPointSignal.emit(acc)
+                        acc = []
+                        any_points_sent = True
+
+        finally:
+            logger.debug("PlotAllThread.run - END")
+            self.finished.emit()
