@@ -1,5 +1,5 @@
-import { useDidUpdate, useOs, useWindowEvent } from '@mantine/hooks';
-import { type ReactNode, useRef, useState } from 'react';
+import { useOs, useWindowEvent } from '@mantine/hooks';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 
 export { PageHeader as ScreenHeading } from '../components/PageHeader';
@@ -179,10 +179,18 @@ export function ScreenShell({
   const search = useRef<ShellSearchHandle>(null),
     main = useRef<HTMLDivElement>(null),
     sequenceStart = useRef<SequenceStart | null>(null);
-  // The page is the host's route, which can change without any handler here (the host's own navigation).
-  useDidUpdate(() => {
-    if (document.activeElement === document.body) main.current?.focus();
-  }, [page]);
+  // The page is the host's route, which can change without any handler here (the host's own navigation). The main
+  // area's ref callback changes with `page`, and React calls it once the new page has committed.
+  const shownPage = useRef(page);
+  const mainRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      main.current = node;
+      if (!node || shownPage.current === page) return;
+      shownPage.current = page;
+      if (document.activeElement === document.body) node.focus();
+    },
+    [page],
+  );
   const toggleAppearance = (from?: Element) =>
     onAppearanceChange ? onAppearanceChange() : appearance.toggle(from);
   /** Navigate from search or a shortcut, then move focus to the new page. */
@@ -414,7 +422,7 @@ export function ScreenShell({
           <ScrollFrame
             component="main"
             show="scroll"
-            ref={main}
+            ref={mainRef}
             id="dvdash-screen-main"
             className="dv-shell-page"
             data-width={widePages.has(page) ? 'wide' : 'standard'}

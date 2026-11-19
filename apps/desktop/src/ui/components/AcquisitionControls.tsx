@@ -1,5 +1,4 @@
 import { UnstyledButton, VisuallyHidden } from '@mantine/core';
-import { useDidUpdate } from '@mantine/hooks';
 import {
   IconActivity,
   IconCheck,
@@ -10,7 +9,7 @@ import {
   IconPlayerStop,
   IconPlugConnectedX,
 } from '@tabler/icons-react';
-import { type ReactNode, useId, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useId, useState } from 'react';
 import { Chip } from './Chip';
 import { Presence, Swap } from './Motion';
 import { StatusBanner, StatusMessages } from './Primitives';
@@ -59,9 +58,8 @@ export function StopAcquisitionDialog({
   onKeepAcquiring,
   onStop,
 }: StopAcquisitionDialogProps) {
-  const confirmRef = useRef<HTMLButtonElement>(null);
   const busy = phase === 'stopping';
-  useFocusWhen(phase === 'failed', confirmRef);
+  const confirmRef = useFocusWhen(phase === 'failed');
   return (
     <GuardDialog
       opened={opened}
@@ -131,6 +129,20 @@ export function StopAcquisitionDialog({
   );
 }
 
+type FocusTarget = 'start' | 'stop' | 'status';
+
+/** Where focus goes when the instrument's outcome moves the controls from `before` to `state`. */
+function focusAfter(
+  before: AcquisitionState,
+  state: AcquisitionState,
+): FocusTarget | null {
+  if (before === 'starting' && state === 'acquiring') return 'stop';
+  if ((before === 'starting' || before === 'disconnected') && state === 'ready')
+    return 'start';
+  if (state === 'recorded') return 'status';
+  return null;
+}
+
 export interface AcquisitionControlsProps {
   state: AcquisitionState;
   experimentName: string;
@@ -194,19 +206,18 @@ export function useAcquisitionControls({
   onConnect,
 }: AcquisitionControlsProps): AcquisitionControlParts {
   const statusId = useId();
-  const startRef = useRef<HTMLButtonElement>(null),
-    stopRef = useRef<HTMLButtonElement>(null),
-    statusRef = useRef<HTMLDivElement>(null);
   const [confirming, setConfirming] = useState(
     defaultStopDialogOpen || state === 'stopping',
   );
   const [seenState, setSeenState] = useState(state);
+  const [focusTo, setFocusTo] = useState<{ target: FocusTarget } | null>(null);
   if (seenState !== state) {
     setSeenState(state);
     if (state === 'stopping') setConfirming(true);
     if (state === 'recorded') setConfirming(false);
+    const target = focusAfter(seenState, state);
+    setFocusTo(target && { target });
   }
-  const previous = useRef(state);
   const running = state === 'acquiring' || state === 'stopping';
   const phase = running
     ? 'running'
@@ -214,19 +225,26 @@ export function useAcquisitionControls({
       ? 'recorded'
       : 'setup';
 
-  // The parent drives state from the instrument's outcome, so focus follows the change once it has rendered.
-  useDidUpdate(() => {
-    const before = previous.current;
-    previous.current = state;
-    if (before === 'starting' && state === 'acquiring')
-      stopRef.current?.focus();
-    else if (
-      (before === 'starting' || before === 'disconnected') &&
-      state === 'ready'
-    )
-      startRef.current?.focus();
-    else if (state === 'recorded') statusRef.current?.focus();
-  }, [state]);
+  // The parent drives state from the instrument's outcome, so no handler here runs then. React calls a changed ref
+  // callback once the change has committed, which is when the new button is there to focus.
+  const stopRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (focusTo?.target === 'stop') node?.focus();
+    },
+    [focusTo],
+  );
+  const startRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (focusTo?.target === 'start') node?.focus();
+    },
+    [focusTo],
+  );
+  const statusRef = useCallback(
+    (node: HTMLElement | null) => {
+      if (focusTo?.target === 'status') node?.focus();
+    },
+    [focusTo],
+  );
 
   const [TagIcon, tagLabel] = tags[state];
   const announcement =

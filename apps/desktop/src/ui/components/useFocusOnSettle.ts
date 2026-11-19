@@ -1,5 +1,4 @@
-import { useDidUpdate } from '@mantine/hooks';
-import { type RefObject, useRef } from 'react';
+import { type RefObject, useCallback, useRef } from 'react';
 
 export interface SettleStatuses<S> {
   pending: S;
@@ -7,13 +6,16 @@ export interface SettleStatuses<S> {
   succeeded: S;
 }
 
-function focusWithin(root: HTMLElement | null, selector: string) {
-  root?.querySelector<HTMLElement>(selector)?.focus();
+function focusWithin(root: HTMLElement, selector: string) {
+  root.querySelector<HTMLElement>(selector)?.focus();
 }
 
 /**
- * Moves focus inside `root` when a pending action settles: to the Retry button when it fails, to the first select
- * when it succeeds. The pane's controls are disabled while the action runs, so focus would otherwise be lost.
+ * A ref callback for the pane's root that moves focus inside it when a pending action settles: to the Retry button when
+ * it fails, to the first select when it succeeds. The pane's controls are disabled while the action runs, so focus
+ * would otherwise be lost. The status comes from the editor once its async action settles, after the click that started
+ * it has returned, so the callback changes with it and React calls it once the settled pane has committed. It also
+ * keeps `root` pointing at the element.
  */
 export function useFocusOnSettle<S>(
   status: S,
@@ -21,12 +23,16 @@ export function useFocusOnSettle<S>(
   { pending, failed, succeeded }: SettleStatuses<S>,
 ) {
   const previous = useRef(status);
-  // The status comes from the editor once its async action settles, after the click that started it has returned.
-  useDidUpdate(() => {
-    const settledFrom = previous.current;
-    previous.current = status;
-    if (settledFrom !== pending) return;
-    if (status === failed) focusWithin(root.current, '[data-action="retry"]');
-    if (status === succeeded) focusWithin(root.current, '.dv-select-input');
-  }, [status]);
+  return useCallback(
+    (node: HTMLElement | null) => {
+      root.current = node;
+      if (!node) return;
+      const settledFrom = previous.current;
+      previous.current = status;
+      if (settledFrom !== pending) return;
+      if (status === failed) focusWithin(node, '[data-action="retry"]');
+      if (status === succeeded) focusWithin(node, '.dv-select-input');
+    },
+    [status, root, pending, failed, succeeded],
+  );
 }

@@ -270,7 +270,7 @@ export function PanelSourceBindingPane({
         })),
     })),
   ];
-  useFocusOnSettle(status, root, {
+  const rootRef = useFocusOnSettle(status, root, {
     pending: 'switching',
     failed: 'failed',
     succeeded: 'idle',
@@ -281,7 +281,7 @@ export function PanelSourceBindingPane({
   };
   return (
     <InspectorPane
-      ref={root}
+      ref={rootRef}
       label="Panel source settings"
       actions={
         <>

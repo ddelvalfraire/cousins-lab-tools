@@ -301,7 +301,7 @@ function AlignmentPane({
   const { settings, problem, status, dirty } = editor,
     saving = status === 'saving',
     event = settings.method === 'event';
-  useFocusOnSettle(status, root, {
+  const rootRef = useFocusOnSettle(status, root, {
     pending: 'saving',
     failed: 'failed',
     succeeded: 'saved',
@@ -313,7 +313,7 @@ function AlignmentPane({
   const origins = alignmentOrigins(settings, recordings);
   return (
     <InspectorPane
-      ref={root}
+      ref={rootRef}
       label="Alignment settings"
       actions={
         <>

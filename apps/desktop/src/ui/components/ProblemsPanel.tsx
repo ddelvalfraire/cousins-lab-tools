@@ -1,4 +1,3 @@
-import { useDidUpdate } from '@mantine/hooks';
 import {
   IconAlertTriangle,
   IconCheck,
@@ -11,7 +10,7 @@ import {
   IconRefresh,
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
-import { useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { Chip } from './Chip';
 import { Presence } from './Motion';
 import { useResolvedAnnouncement } from './useResolvedAnnouncement';
@@ -150,7 +149,6 @@ export function ProblemsPanel({
   onDismiss,
 }: ProblemsPanelProps) {
   const uid = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<ReadonlySet<string>>(
     () => new Set(selectedId ? [selectedId] : []),
   );
@@ -170,17 +168,21 @@ export function ProblemsPanel({
   }
 
   // When the problem the user acted on leaves the list, keep keyboard focus in the panel. The owner removes it
-  // after the action, often once a fix finishes, so no handler here runs at that moment.
-  useDidUpdate(() => {
-    const id = actedOn.current;
-    if (!id || problems.some((p) => p.id === id)) return;
-    actedOn.current = null;
-    const active = document.activeElement;
-    if (active && active !== document.body && active.isConnected) return;
-    rootRef.current
-      ?.querySelector<HTMLElement>('[data-toggle], [data-resolved-toggle]')
-      ?.focus();
-  }, [problems]);
+  // after the action, often once a fix finishes, so no handler here runs at that moment. The root's ref callback
+  // changes with `problems`, and React calls it once the shorter list has committed.
+  const rootRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      const id = actedOn.current;
+      if (!node || !id || problems.some((p) => p.id === id)) return;
+      actedOn.current = null;
+      const active = document.activeElement;
+      if (active && active !== document.body && active.isConnected) return;
+      node
+        .querySelector<HTMLElement>('[data-toggle], [data-resolved-toggle]')
+        ?.focus();
+    },
+    [problems],
+  );
 
   const sorted = [...problems].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],

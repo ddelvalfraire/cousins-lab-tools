@@ -1,5 +1,4 @@
-import { useDidUpdate } from '@mantine/hooks';
-import { type KeyboardEvent, type ReactNode, useRef } from 'react';
+import { type KeyboardEvent, type ReactNode, useCallback, useRef } from 'react';
 import { useAppearance } from '../appearance';
 import { textScales } from '../textSize';
 import { Chip } from './Chip';
@@ -214,15 +213,19 @@ export function SavedVersionView({
     preview: null,
     changes: null,
   });
-  const panel = useRef<HTMLElement>(null),
-    restoreButton = useRef<HTMLButtonElement>(null);
-  // The owner reports the restore as finished, so no handler here runs at that moment.
+  const restoreButton = useRef<HTMLButtonElement>(null);
+  // The owner reports the restore as finished, so no handler here runs at that moment. The panel's ref callback changes
+  // with `restore`, and React calls it once the restored revision has committed.
   const previousRestore = useRef(restore);
-  useDidUpdate(() => {
-    if (previousRestore.current === 'restoring' && restore === 'restored')
-      panel.current?.focus({ preventScroll: true });
-    previousRestore.current = restore;
-  }, [restore]);
+  const panel = useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      if (previousRestore.current === 'restoring' && restore === 'restored')
+        node.focus({ preventScroll: true });
+      previousRestore.current = restore;
+    },
+    [restore],
+  );
   const isCurrent = revision.number === current,
     busy = restore === 'restoring';
   const saved = formatSavedAt(revision.savedAt);

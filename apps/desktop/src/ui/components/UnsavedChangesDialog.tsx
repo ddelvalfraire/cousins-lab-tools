@@ -1,6 +1,5 @@
 import { Modal, UnstyledButton } from '@mantine/core';
-import { useDidUpdate } from '@mantine/hooks';
-import { type ReactNode, type RefObject, useRef } from 'react';
+import { type ReactNode, type RefObject, useCallback, useRef } from 'react';
 import { Banner } from './Banner';
 import './Approved.css';
 import './GuardDialog.css';
@@ -74,16 +73,20 @@ export function GuardDialog({
 }
 
 /**
- * Focuses `ref` when `when` turns true, e.g. the Retry button after an attempt fails. The owner decides when an
- * attempt has failed, often after an await, so no event handler here can move focus at that moment.
+ * A ref callback that focuses its element when `when` turns true, e.g. the Retry button after an attempt fails. The
+ * owner decides when an attempt has failed, often after an await, so no event handler here can move focus then. React
+ * calls a changed ref callback once the change has committed, so focus moves to the updated button.
  */
-export function useFocusWhen(
-  when: boolean,
-  ref: RefObject<HTMLElement | null>,
-) {
-  useDidUpdate(() => {
-    if (when) ref.current?.focus();
-  }, [when]);
+export function useFocusWhen(when: boolean) {
+  const was = useRef(when);
+  return useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      if (when && !was.current) node.focus();
+      was.current = when;
+    },
+    [when],
+  );
 }
 
 export interface UnsavedChange {
@@ -129,11 +132,10 @@ export function UnsavedChangesDialog({
   onSave,
   onCheckStatus,
 }: UnsavedChangesDialogProps) {
-  const confirmRef = useRef<HTMLButtonElement>(null);
   const busy = phase === 'saving' || phase === 'checking';
   const closing = intent === 'close';
   const next = `R${revision + 1}`;
-  useFocusWhen(phase === 'failed' || phase === 'unknown', confirmRef);
+  const confirmRef = useFocusWhen(phase === 'failed' || phase === 'unknown');
 
   const message: { severity: 'error' | 'warning'; texts: string[] } | null =
     problems.length
