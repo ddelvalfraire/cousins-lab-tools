@@ -15,6 +15,8 @@ import {
   RevisionChanges,
   RevisionRestoreConfirm,
 } from './RevisionHistory';
+// Rendered inside catalog pages: load the catalog's reset first so these rules override it at equal specificity.
+import '@/shared/ui/CatalogTable.css';
 import './SavedVersions.css';
 
 export interface SavedChart {

@@ -6,6 +6,8 @@ import { Chip } from '@/shared/ui/Chip';
 import { ImportIcon } from '@/shared/ui/ImportDialog';
 import { StatusBanner } from '@/shared/ui/Primitives';
 import { SidebarIcon } from '@/shared/ui/RightSidebar';
+// Rendered inside catalog pages: load the catalog's reset first so these rules override it at equal specificity.
+import '@/shared/ui/CatalogTable.css';
 import './RevisionHistory.css';
 
 export interface PresetRevision {
