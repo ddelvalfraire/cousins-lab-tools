@@ -5,13 +5,13 @@ import {
   Transition,
   useMantineTheme,
 } from '@mantine/core';
-import { useDidUpdate } from '@mantine/hooks';
 import {
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   type Ref,
+  useCallback,
   useId,
   useImperativeHandle,
   useRef,
@@ -216,13 +216,22 @@ export function ShellSearch({
   };
 
   const typed = query.trim() !== '';
-  // Opening, typing, a result type and the host's commands all change the count, so it is announced after any of them.
-  useDidUpdate(() => {
-    if (all && open)
-      onAnnounce(
-        `${results.length} ${typed ? (results.length === 1 ? 'search result' : 'search results') : 'suggestions'}.`,
-      );
-  }, [all, open, typed, query, category, results.length, onAnnounce]);
+  const count =
+    all && open
+      ? `${results.length} ${typed ? (results.length === 1 ? 'search result' : 'search results') : 'suggestions'}.`
+      : '';
+  // Opening, typing, a result type and the host's commands all change the count, so it is announced after any of them,
+  // even when a keystroke leaves the number unchanged. The host's commands arrive as a prop, so the anchor's ref
+  // callback changes with the count and the query it answers, and React calls it once the new results have committed.
+  // The box starts closed, so the first commit announces nothing.
+  const countFor = count && `${category}:${query}`;
+  const anchor = useCallback(
+    (node: HTMLDivElement | null) => {
+      anchorRef.current = node;
+      if (node && countFor) onAnnounce(count);
+    },
+    [count, countFor, onAnnounce],
+  );
 
   const combobox = all
     ? ({
@@ -239,7 +248,7 @@ export function ShellSearch({
     <div
       className="dv-shell-search-anchor"
       role="none"
-      ref={anchorRef}
+      ref={anchor}
       onBlur={onBlur}
     >
       {/* The dialogs' dim and blur behind the open results. z-index -1 keeps it inside the anchor's stacking context,

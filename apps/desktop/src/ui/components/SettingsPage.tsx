@@ -1,5 +1,5 @@
 import { Select } from '@mantine/core';
-import { useDidUpdate, useTimeout } from '@mantine/hooks';
+import { useTimeout } from '@mantine/hooks';
 import { useCallback, useId, useRef, useState } from 'react';
 import type { AppearancePreference } from '../appearance';
 import {
@@ -137,7 +137,10 @@ export function SettingsPage({
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const savedMark = useTimeout(() => setSaved(false), MARK_MS);
+  const { start: startSavedMark, clear: clearSavedMark } = useTimeout(
+    () => setSaved(false),
+    MARK_MS,
+  );
   const copiedMark = useTimeout(() => setCopied(false), MARK_MS);
   const frame = useRef(0);
   const previousSettings = useRef(settings);
@@ -145,38 +148,50 @@ export function SettingsPage({
   const delimiterSelect = useRef<HTMLInputElement>(null);
 
   // Emptying the region first makes a repeated message announce again.
-  const announce = (text: string) => {
+  const announce = useCallback((text: string) => {
     cancelAnimationFrame(frame.current);
     setAnnouncement('');
     frame.current = requestAnimationFrame(() => setAnnouncement(text));
-  };
+  }, []);
   const cancelAnnouncementOnUnmount = useCallback(
     () => () => cancelAnimationFrame(frame.current),
     [],
   );
 
-  // A setting counts as saved when the host hands back the new value, which can arrive after onChange returns.
-  useDidUpdate(() => {
-    const changed = (Object.keys(LABELS) as SettingKey[]).filter(
-      (key) => previousSettings.current[key] !== settings[key],
-    );
-    previousSettings.current = settings;
-    if (!changed.length) return;
-    setSaved(true);
-    announce(`${LABELS[changed[changed.length - 1]]} saved.`);
-    savedMark.clear();
-    savedMark.start();
-  }, [settings]);
+  // A setting counts as saved when the host hands back the new value, which can arrive after onChange returns. The
+  // page's ref callback changes with `settings`, and React calls it once the new value has committed.
+  const followSettings = useCallback(
+    (node: HTMLElement | null) => {
+      if (!node) return;
+      const changed = (Object.keys(LABELS) as SettingKey[]).filter(
+        (key) => previousSettings.current[key] !== settings[key],
+      );
+      previousSettings.current = settings;
+      if (!changed.length) return;
+      setSaved(true);
+      announce(`${LABELS[changed[changed.length - 1]]} saved.`);
+      clearSavedMark();
+      startSavedMark();
+    },
+    [settings, announce, clearSavedMark, startSavedMark],
+  );
 
-  // The host reports the system folder dialog's outcome, so no handler here runs when it arrives.
-  useDidUpdate(() => {
-    if (folderState.status === 'choosing')
-      announce('Choose a folder in the system dialog.');
-    if (folderState.status === 'error') {
-      chooseAgain.current?.focus();
-      announce('That folder can’t be used. Still using the previous folder.');
-    }
-  }, [folderState.status]);
+  // The host reports the system folder dialog's outcome, so no handler here runs when it arrives. This ref callback
+  // sits on an ancestor of the error's Choose button, so React has attached the button's ref before calling it.
+  const shownFolderStatus = useRef(folderState.status);
+  const followFolder = useCallback(
+    (node: HTMLElement | null) => {
+      if (!node || shownFolderStatus.current === folderState.status) return;
+      shownFolderStatus.current = folderState.status;
+      if (folderState.status === 'choosing')
+        announce('Choose a folder in the system dialog.');
+      if (folderState.status === 'error') {
+        chooseAgain.current?.focus();
+        announce('That folder can’t be used. Still using the previous folder.');
+      }
+    },
+    [folderState.status, announce],
+  );
 
   const copyCommit = async () => {
     try {
@@ -222,6 +237,7 @@ export function SettingsPage({
 
   return (
     <section
+      ref={followSettings}
       className="dv-settings"
       data-header={hideHeader ? 'hidden' : undefined}
       aria-labelledby={hideHeader ? undefined : ids.title}
@@ -370,7 +386,7 @@ export function SettingsPage({
           data-search-target={settingTarget('recordings')}
         >
           {heading('recordings')}
-          <div className="dv-settings-fields">
+          <div className="dv-settings-fields" ref={followFolder}>
             <div
               className="dv-settings-field"
               data-search-target={settingTarget('recordings', 'folder')}
