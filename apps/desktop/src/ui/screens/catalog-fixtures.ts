@@ -1,10 +1,9 @@
 import type { SetupPreset, SetupRoutine } from '@/features/experiments';
 import type { CatalogPreset, CatalogPresetPanel } from '@/features/presets';
+import type { CatalogRoutine, RoutineDefinition } from '@/features/routines';
 import { type PresetSpec, presets } from '@/shared/testing/screen-fixtures';
 import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
 import type { CatalogInstrument } from '../components/InstrumentCatalog';
-import type { CatalogRoutine } from '../components/RoutineCatalog';
-import type { RoutineDefinition } from '../components/RoutineEditor';
 
 /*
  * Sample catalog rows from the approved catalog mockups:

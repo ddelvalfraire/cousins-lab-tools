@@ -2,6 +2,7 @@ import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
 import { PresetCatalog, type PresetCatalogProps } from '@/features/presets';
+import { RoutineCatalog, type RoutineCatalogProps } from '@/features/routines';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import { CatalogChip, CatalogRoot } from '@/shared/ui/CatalogTable';
@@ -23,10 +24,6 @@ import {
   type RestorePhase,
   RevisionHistoryList,
 } from '../components/RevisionHistory';
-import {
-  RoutineCatalog,
-  type RoutineCatalogProps,
-} from '../components/RoutineCatalog';
 import {
   SavedVersionPreview,
   type SavedVersionTab,

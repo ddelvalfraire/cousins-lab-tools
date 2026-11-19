@@ -181,7 +181,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/RoutineCatalog.tsx"],
+      "includes": ["src/features/routines/RoutineCatalog.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -196,7 +196,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/RoutineEditor.tsx"],
+      "includes": ["src/features/routines/RoutineEditor.tsx"],
       "linter": {
         "rules": {
           "complexity": {

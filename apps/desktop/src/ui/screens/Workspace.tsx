@@ -7,6 +7,7 @@ import {
   type PreparedExperiment,
 } from '@/features/experiments';
 import { PresetEditor } from '@/features/presets';
+import { RoutineEditor } from '@/features/routines';
 import { savedResults } from '@/shared/testing/fixtures';
 import {
   type ExperimentSummary,
@@ -20,7 +21,6 @@ import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { PresetImport } from '../components/PresetImport';
 import { RecordingImport } from '../components/RecordingImport';
-import { RoutineEditor } from '../components/RoutineEditor';
 import {
   type AppSettings,
   type FolderState,

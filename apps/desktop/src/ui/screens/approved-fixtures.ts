@@ -12,12 +12,12 @@ import type {
   PanelSpan,
   PresetPanel,
 } from '@/features/presets';
+import type { RoutineDefinition } from '@/features/routines';
 import {
   type ExperimentSummary,
   type PresetSpec,
   presets,
 } from '@/shared/testing/screen-fixtures';
-import type { RoutineDefinition } from '../components/RoutineEditor';
 import type { AppSettings, BuildInfo } from '../components/SettingsPage';
 import type {
   CurrentAcquisition,
