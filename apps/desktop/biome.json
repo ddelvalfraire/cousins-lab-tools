@@ -61,7 +61,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/ui/components/AcquisitionControls.tsx"],
+      "includes": ["src/features/acquisition/AcquisitionControls.tsx"],
       "linter": {
         "rules": {
           "complexity": {

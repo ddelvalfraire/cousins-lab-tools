@@ -1,5 +1,6 @@
 import { IconHistory } from '@tabler/icons-react';
 import { useState } from 'react';
+import type { IntervalResult } from '@/features/acquisition';
 import { savedResults } from '@/shared/testing/fixtures';
 import {
   type ExperimentSummary,
@@ -11,7 +12,6 @@ import {
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import type { IntervalResult } from '../components/ExperimentPanels';
 import {
   ExperimentSetupForm,
   type PreparedExperiment,

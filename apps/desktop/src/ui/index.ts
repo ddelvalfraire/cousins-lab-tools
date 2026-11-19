@@ -1,3 +1,5 @@
+export * from '@/features/acquisition';
+export * from '@/features/acquisition';
 export * from '@/shared/charts/SignalChart';
 export { formatClockTime } from '@/shared/lib/time';
 export { brand, dvdashTheme, seriesColors } from '@/shared/theme/theme';
@@ -14,12 +16,10 @@ export * from '@/shared/ui/RightSidebar';
 export * from '@/shared/ui/ScientificQuantityInput';
 export * from '@/shared/ui/select';
 export * from '@/shared/ui/UnsavedChangesDialog';
-export * from './components/AcquisitionControls';
 export * from './components/CalibrationChecklist';
 export * from './components/CalibrationCurve';
 export * from './components/Catalog';
 export * from './components/DerivedValues';
-export * from './components/ExperimentPanels';
 export * from './components/ExperimentSetupForm';
 export * from './components/ExperimentsList';
 export * from './components/ExperimentTools';

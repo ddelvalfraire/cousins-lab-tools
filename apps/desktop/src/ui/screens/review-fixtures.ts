@@ -3,6 +3,7 @@
  * Traces follow alignment-inspector-review.html and source-binding-review.html; nothing is read from disk.
  */
 
+import type { IntervalResult } from '@/features/acquisition';
 import type {
   ExperimentSummary,
   PresetSpec,
@@ -11,7 +12,6 @@ import type {
   ChecklistStep,
   IntervalSummary,
 } from '../components/CalibrationChecklist';
-import type { IntervalResult } from '../components/ExperimentPanels';
 import type { RecordedSample } from '../components/ExperimentWorkspace.fixtures';
 import type {
   PanelChannel,

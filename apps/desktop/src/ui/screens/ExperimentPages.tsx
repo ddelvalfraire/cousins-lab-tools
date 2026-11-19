@@ -2,6 +2,8 @@ import { Tabs } from '@mantine/core';
 import { useInterval, useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { type KeyboardEvent, useState } from 'react';
+import type { IntervalResult } from '@/features/acquisition';
+import { useAcquisitionControls } from '@/features/acquisition';
 import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
 import { Presence, Swap } from '@/shared/motion/Motion';
 import {
@@ -20,9 +22,7 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
-import { useAcquisitionControls } from '../components/AcquisitionControls';
 import { CalibrationChecklist } from '../components/CalibrationChecklist';
-import type { IntervalResult } from '../components/ExperimentPanels';
 import {
   DerivedCard,
   DetailsPane,
