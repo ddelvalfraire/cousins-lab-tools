@@ -47,7 +47,7 @@ sys.path.append("../uiElements")
 sys.path.append("../calculations")
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
-from Code.Module_Main_1_3.Application.CustomWidgets.customCalculatoinPlot import (
+from Code.Module_Main_1_3.Application.CustomWidgets.customCalculationPlot import (
     customCalculationPlot,
 )
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
