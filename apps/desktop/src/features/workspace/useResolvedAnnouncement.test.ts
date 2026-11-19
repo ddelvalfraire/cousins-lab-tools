@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { Problem, ResolvedProblem } from './ProblemsPanel';
+import type { Problem, ResolvedProblem } from './problems';
 import { resolvedAnnouncement } from './useResolvedAnnouncement';
 
 const problem = (id: string, done?: string): Problem => ({

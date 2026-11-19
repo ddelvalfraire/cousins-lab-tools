@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Problem, ResolvedProblem } from './ProblemsPanel';
+import type { Problem, ResolvedProblem } from './problems';
 
 interface ProblemLists {
   problems: readonly Problem[];

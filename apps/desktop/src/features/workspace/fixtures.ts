@@ -1,5 +1,5 @@
 import type { TracePoint } from '@/shared/charts/SignalChart';
-import type { Problem } from './ProblemsPanel';
+import type { Problem } from './problems';
 
 /** A live stream shown as a card (right-sidebar-review.html `streams`). */
 export interface LiveStream {
