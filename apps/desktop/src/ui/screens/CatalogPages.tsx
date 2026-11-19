@@ -1,6 +1,10 @@
 import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
+import {
+  InstrumentCatalog,
+  type InstrumentCatalogProps,
+} from '@/features/instruments';
 import { PresetCatalog, type PresetCatalogProps } from '@/features/presets';
 import { RoutineCatalog, type RoutineCatalogProps } from '@/features/routines';
 import { keyedBy } from '@/shared/lib/keyedBy';
@@ -15,10 +19,6 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
-import {
-  InstrumentCatalog,
-  type InstrumentCatalogProps,
-} from '../components/InstrumentCatalog';
 import {
   type PresetRevision,
   type RestorePhase,

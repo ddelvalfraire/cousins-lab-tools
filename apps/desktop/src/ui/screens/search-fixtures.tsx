@@ -1,5 +1,6 @@
 // Command center records built from the screen fixtures. Synthetic data; nothing here reads files.
 import type { ReactNode } from 'react';
+import { InstrumentStatus } from '@/features/instruments';
 import {
   type ExperimentSummary,
   presets,
@@ -7,7 +8,6 @@ import {
 import { type StatusTone, StatusWord } from '@/shared/ui/Chip';
 import { CommandGlyph } from '@/shared/ui/CommandCenter';
 import { ReviewIcon } from '@/shared/ui/ReviewIcons';
-import { InstrumentStatus } from '../components/InstrumentCatalog';
 import { toListExperiment, toRecents } from './approved-fixtures';
 import {
   catalogInstruments,
