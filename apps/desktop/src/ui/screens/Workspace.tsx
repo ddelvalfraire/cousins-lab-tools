@@ -9,6 +9,11 @@ import {
 } from '@/features/experiments';
 import { PresetEditor } from '@/features/presets';
 import { RoutineEditor } from '@/features/routines';
+import {
+  type AppSettings,
+  type FolderState,
+  SettingsPage,
+} from '@/features/settings';
 import { savedResults } from '@/shared/testing/fixtures';
 import {
   type ExperimentSummary,
@@ -20,11 +25,6 @@ import {
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import {
-  type AppSettings,
-  type FolderState,
-  SettingsPage,
-} from '../components/SettingsPage';
 import {
   buildInfo,
   defaultSettings,
