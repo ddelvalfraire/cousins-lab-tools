@@ -9,7 +9,7 @@ module 1 and 2 are complete built and working, module 3 has not been touched but
 - run the build.bat bash file
 - or:
 1. to download all requirements: pip install -r Code/Module_Main_1_3/Application/requirements.txt
-2. To build: run from outside the code folder: pyinstaller --name LabView_module_1 --onefile --windowed --paths . --paths Code\Module_Main_1_3\Application\mainUI\MainAndBuildFiles\mianMoudle1.py --add-data "Code\Module_Main_1_3\Application\mainUI\spinner50px.gif;Code/Module_Main_1_3/Application/mainUI"
+2. To build: run from outside the code folder: pyinstaller --name LabView_module_1 --onefile --windowed --paths . --paths Code\Module_Main_1_3\Application\mainUI\MainAndBuildFiles\mainModule1.py --add-data "Code\Module_Main_1_3\Application\mainUI\spinner50px.gif;Code/Module_Main_1_3/Application/mainUI"
 3. Replace the 1's with 2's to build module 2
 
 ## Outline
@@ -43,4 +43,3 @@ module 1 and 2 are complete built and working, module 3 has not been touched but
   - newFileNotifier: reads the Acq folder and updates when a new file gets added to that folder.
   - plotAllThread: plots an acq folder, updates automatically when the files gets added, can be tested with Data/Test Data/simulate.py
   - SamplePlotCalcWorker: handles the calculations for SamplePlot.
-  
