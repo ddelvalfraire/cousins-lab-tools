@@ -1,4 +1,4 @@
-import { REDUCED_MOTION_QUERY } from '../src/ui/motion';
+import { REDUCED_MOTION_QUERY } from '../src/shared/motion/motion';
 
 const nextFrame = () => new Promise(requestAnimationFrame);
 

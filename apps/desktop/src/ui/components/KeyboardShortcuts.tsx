@@ -3,12 +3,15 @@ import {
   commands,
   type ShortcutSection,
   shortcutSectionsFor,
-} from '../search-registry';
+} from '@/shared/config/search-registry';
 import { KeyCaps } from './CommandCenter';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './KeyboardShortcuts.css';
 
-export type { ShortcutRow, ShortcutSection } from '../search-registry';
+export type {
+  ShortcutRow,
+  ShortcutSection,
+} from '@/shared/config/search-registry';
 
 /** Every shortcut (command-center-review.html, "Keyboard reference"), from the search registry. `Mod` is ⌘ or Ctrl. */
 export const shortcutSections: readonly ShortcutSection[] =

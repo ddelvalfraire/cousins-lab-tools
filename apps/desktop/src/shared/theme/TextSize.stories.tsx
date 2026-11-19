@@ -11,14 +11,14 @@ import {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createRoot } from 'react-dom/client';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { AppearanceProvider, useAppearance } from '../appearance';
+import { AppearanceProvider, useAppearance } from './appearance';
 import {
   TEXT_SIZE_ATTRIBUTE,
   TEXT_SIZE_KEY,
   type TextSize,
   textScales,
-} from '../textSize';
-import { dvdashTheme } from '../theme';
+} from './textSize';
+import { dvdashTheme } from './theme';
 
 const steps = (Object.keys(textScales) as TextSize[]).map((value) => ({
   value,

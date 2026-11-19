@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { templates } from '../fixtures';
+import { templates } from '@/shared/testing/fixtures';
 import { TemplateLibrary } from './Catalog';
 
 const meta = {

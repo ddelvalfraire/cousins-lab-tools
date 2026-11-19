@@ -16,9 +16,9 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import type uPlot from 'uplot';
-import { formatMeasurement } from '../measurement';
-import { seriesColors } from '../theme';
-import { keyedBy } from './keyedBy';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import { formatMeasurement } from '@/shared/lib/measurement';
+import { seriesColors } from '@/shared/theme/theme';
 import { Panel } from './Primitives';
 import { type PlotSeries, ScientificPlot } from './ScientificPlot';
 

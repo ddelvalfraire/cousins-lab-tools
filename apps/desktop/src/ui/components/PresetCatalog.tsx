@@ -1,6 +1,8 @@
 import { type ReactNode, useId, useMemo, useState } from 'react';
-import { pages } from '../search-registry';
-import { formatClockTime } from '../time';
+import { pages } from '@/shared/config/search-registry';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import { formatClockTime } from '@/shared/lib/time';
+import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import {
   CatalogAction,
   CatalogChip,
@@ -19,8 +21,6 @@ import {
   useCatalogQuery,
   useCatalogSort,
 } from './CatalogTable';
-import { keyedBy } from './keyedBy';
-import { MotionList, Presence, Swap } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import {
   RightSidebar,

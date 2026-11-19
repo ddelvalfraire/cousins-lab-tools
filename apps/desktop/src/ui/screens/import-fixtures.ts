@@ -1,5 +1,6 @@
 /** Fixture readers for the workspace's import dialogs. No Tauri calls; files are read in the browser only. */
 
+import { type PresetSpec, presets } from '@/shared/testing/screen-fixtures';
 import type {
   PresetFileCheck,
   PresetTile,
@@ -10,7 +11,6 @@ import type {
   RecordingFile,
   RecordingPresetOption,
 } from '../components/RecordingImport';
-import { type PresetSpec, presets } from './screen-fixtures';
 
 export const recordingPresetOptions: RecordingPresetOption[] = presets.map(
   (preset) => ({

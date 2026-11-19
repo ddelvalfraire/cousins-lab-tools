@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { type SignalSample, samples } from '@/shared/testing/fixtures';
 import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
-import { type SignalSample, samples } from '../fixtures';
 import type { ChartState } from './SignalChart';
 import { analyseSignal, SignalChart, SignalTrace } from './SignalChart';
 

@@ -1,8 +1,8 @@
 import { Anchor, Breadcrumbs, Text } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { keyedBy } from './keyedBy';
-import './Approved.css';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import '@/shared/theme/Approved.css';
 import './PageHeader.css';
 
 export interface PageBreadcrumb {

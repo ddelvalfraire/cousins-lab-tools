@@ -1,13 +1,14 @@
 import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import { CatalogChip, CatalogRoot } from '../components/CatalogTable';
 import { Chip } from '../components/Chip';
 import {
   InstrumentCatalog,
   type InstrumentCatalogProps,
 } from '../components/InstrumentCatalog';
-import { keyedBy } from '../components/keyedBy';
 import { HeaderButton, PageHeader } from '../components/PageHeader';
 import {
   PresetCatalog,
@@ -46,7 +47,6 @@ import {
   presetRevisionList,
 } from './revision-fixtures';
 import type { Navigate } from './ScreenShell';
-import type { PresetSpec } from './screen-fixtures';
 
 const workspace = (navigate?: Navigate) => ({
   label: 'Workspace',

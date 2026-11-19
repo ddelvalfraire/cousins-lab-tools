@@ -1,20 +1,20 @@
 import { Select } from '@mantine/core';
 import { useTimeout } from '@mantine/hooks';
 import { useCallback, useId, useRef, useState } from 'react';
-import type { AppearancePreference } from '../appearance';
 import {
   settings as declared,
   type SettingsSectionId,
   settingTarget,
   textSizeOptions,
   themeOptions,
-} from '../search-registry';
-import type { TextSize } from '../textSize';
+} from '@/shared/config/search-registry';
+import { Presence } from '@/shared/motion/Motion';
+import type { AppearancePreference } from '@/shared/theme/appearance';
+import type { TextSize } from '@/shared/theme/textSize';
 import { Banner } from './Banner';
-import { Presence } from './Motion';
 import { ReviewIcon } from './ReviewIcons';
 import { chosen, selectAria } from './select';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './SettingsPage.css';
 
 export type ThemePreference = AppearancePreference;

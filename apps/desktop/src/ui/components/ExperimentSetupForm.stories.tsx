@@ -7,7 +7,7 @@ import {
   waitFor,
   within,
 } from 'storybook/test';
-import { chooseOption } from './chooseOption';
+import { chooseOption } from '@/shared/testing/chooseOption';
 import {
   ExperimentSetupForm,
   type SetupPreset,

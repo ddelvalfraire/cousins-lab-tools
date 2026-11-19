@@ -22,7 +22,7 @@ import {
 } from './RightSidebar';
 import { SignalTrace } from './SignalChart';
 import { chosen } from './select';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './ExperimentWorkspace.css';
 import { ScrollFrame } from './ScrollFrame';
 

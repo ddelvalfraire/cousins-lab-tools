@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { motion, prefersReducedMotion } from './motion';
 
 const css = readFileSync(
-  new URL('./components/Approved.css', import.meta.url),
+  new URL('../theme/Approved.css', import.meta.url),
   'utf8',
 );
 const token = (name: string) =>

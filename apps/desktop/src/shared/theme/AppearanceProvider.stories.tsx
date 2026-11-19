@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createRoot } from 'react-dom/client';
 import { expect, waitFor } from 'storybook/test';
-import { AppearanceProvider, STORAGE_KEY, useAppearance } from '../appearance';
-import { dvdashTheme } from '../theme';
+import { AppearanceProvider, STORAGE_KEY, useAppearance } from './appearance';
+import { dvdashTheme } from './theme';
 
 const SCHEME_ATTRIBUTE = 'data-mantine-color-scheme';
 const html = () => document.documentElement;

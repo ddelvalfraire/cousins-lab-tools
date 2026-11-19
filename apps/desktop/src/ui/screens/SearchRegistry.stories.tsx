@@ -8,7 +8,7 @@ import {
   pages,
   settingsRecords,
   titleOf,
-} from '../search-registry';
+} from '@/shared/config/search-registry';
 import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';
 

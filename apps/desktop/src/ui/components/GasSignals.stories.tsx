@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import type uPlot from 'uplot';
+import { experimentRecording } from '@/shared/testing/fixtures';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { experimentRecording } from '../fixtures';
 import { GasSignals } from './GasSignals';
 
 const data: uPlot.AlignedData = [

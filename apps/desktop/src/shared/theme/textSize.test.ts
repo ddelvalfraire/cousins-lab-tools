@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { textSizeOptions } from './search-registry';
+import { textSizeOptions } from '@/shared/config/search-registry';
 import {
   isTextSize,
   readTextSize,
@@ -11,10 +11,7 @@ import {
   writeTextSize,
 } from './textSize';
 
-const css = readFileSync(
-  new URL('./components/Approved.css', import.meta.url),
-  'utf8',
-);
+const css = readFileSync(new URL('./Approved.css', import.meta.url), 'utf8');
 // Either quote style, so the check survives the stylesheet being reformatted.
 const rootRule = (size: TextSize) => {
   const selector = `html\\[${TEXT_SIZE_ATTRIBUTE}=["']${size}["']\\]`;

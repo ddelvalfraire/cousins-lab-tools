@@ -13,8 +13,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { curves, motion } from '../motion';
-import './Approved.css';
+import { curves, motion } from './motion';
+import '@/shared/theme/Approved.css';
 
 const seconds = (milliseconds: number) => milliseconds / 1000;
 

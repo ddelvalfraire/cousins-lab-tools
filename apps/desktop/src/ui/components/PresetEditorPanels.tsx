@@ -16,8 +16,8 @@ import type {
   PointerEvent as ReactPointerEvent,
   Ref,
 } from 'react';
+import { keyedBy } from '@/shared/lib/keyedBy';
 import { Chip } from './Chip';
-import { keyedBy } from './keyedBy';
 import './AcquisitionControls.css';
 
 /** `inputs` is a settings panel (labelled quantity fields); `controls` holds the recording controls. */

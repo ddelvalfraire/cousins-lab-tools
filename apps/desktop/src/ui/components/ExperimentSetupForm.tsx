@@ -1,10 +1,10 @@
 import { Select } from '@mantine/core';
 import { type RefObject, useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { Presence } from '@/shared/motion/Motion';
 import { Banner } from './Banner';
-import { Presence } from './Motion';
 import { chosen, selectAria } from './select';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './ExperimentSetupForm.css';
 
 export interface SetupPreset {

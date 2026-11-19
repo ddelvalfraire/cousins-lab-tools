@@ -1,5 +1,7 @@
 import { type ReactNode, useId, useMemo, useState } from 'react';
-import { pages } from '../search-registry';
+import { pages } from '@/shared/config/search-registry';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import {
   CatalogAction,
   CatalogArrow,
@@ -15,8 +17,6 @@ import {
   useCatalogPage,
   useCatalogQuery,
 } from './CatalogTable';
-import { keyedBy } from './keyedBy';
-import { MotionList, Presence, Swap } from './Motion';
 import { type PageBreadcrumb, PageHeader } from './PageHeader';
 import {
   RightSidebar,

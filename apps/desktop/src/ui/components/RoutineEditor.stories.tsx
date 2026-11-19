@@ -7,8 +7,8 @@ import {
   waitFor,
   within,
 } from 'storybook/test';
+import { chooseOption } from '@/shared/testing/chooseOption';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { chooseOption } from './chooseOption';
 import type { RoutineDefinition } from './RoutineEditor';
 import { RoutineEditor } from './RoutineEditor';
 

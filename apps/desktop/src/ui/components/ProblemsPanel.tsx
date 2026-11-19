@@ -11,8 +11,8 @@ import {
 } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
+import { Presence } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
-import { Presence } from './Motion';
 import { useResolvedAnnouncement } from './useResolvedAnnouncement';
 import './ProblemsPanel.css';
 

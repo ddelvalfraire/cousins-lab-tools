@@ -1,6 +1,14 @@
 import { IconHistory } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useAppearance } from '../appearance';
+import { savedResults } from '@/shared/testing/fixtures';
+import {
+  type ExperimentSummary,
+  experiments,
+  presets,
+  routines,
+  type SetupPreview,
+} from '@/shared/testing/screen-fixtures';
+import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '../components/Chip';
 import type { IntervalResult } from '../components/ExperimentPanels';
 import {
@@ -18,7 +26,6 @@ import {
   type FolderState,
   SettingsPage,
 } from '../components/SettingsPage';
-import { savedResults } from '../fixtures';
 import {
   buildInfo,
   defaultSettings,
@@ -56,17 +63,10 @@ import {
   recordingPresetOptions,
 } from './import-fixtures';
 import { ScreenBody, type ScreenRoute, ScreenShell } from './ScreenShell';
-import {
-  type ExperimentSummary,
-  experiments,
-  presets,
-  routines,
-  type SetupPreview,
-} from './screen-fixtures';
 import { searchRecords } from './search-fixtures';
 import './screens.css';
 import './screen-layouts.css';
-import { pages } from '../search-registry';
+import { pages } from '@/shared/config/search-registry';
 
 export interface WorkspaceProps {
   initialPage?: ScreenRoute /** A place on the first page to open, as a search result does. */;

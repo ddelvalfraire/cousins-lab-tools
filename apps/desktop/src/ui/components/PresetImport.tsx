@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import {
   formatFileSize,
@@ -9,8 +11,6 @@ import {
   ImportIcon,
   ImportProgressNote,
 } from './ImportDialog';
-import { keyedBy } from './keyedBy';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { useResetOnClose } from './useResetOnClose';
 import './PresetImport.css';

@@ -6,11 +6,11 @@ import {
 } from '@tabler/icons-react';
 import { useId, useMemo, useRef, useState } from 'react';
 import uPlot from 'uplot';
-import { useAppearance } from '../appearance';
-import { rootTextScale } from '../textSize';
+import { useAppearance } from '@/shared/theme/appearance';
+import { rootTextScale } from '@/shared/theme/textSize';
 import { Banner } from './Banner';
 import { StatusWord } from './Chip';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './CalibrationCurve.css';
 import { ScrollFrame } from './ScrollFrame';
 import { useUplotChart } from './useUplotChart';

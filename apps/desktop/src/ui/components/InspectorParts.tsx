@@ -4,7 +4,7 @@ import type {
   ReactNode,
   Ref,
 } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './Inspectors.css';
 import { ScrollFrame } from './ScrollFrame';
 

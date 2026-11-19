@@ -7,10 +7,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { keyedBy } from './keyedBy';
-import './Approved.css';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import '@/shared/theme/Approved.css';
 import './RightSidebar.css';
-import { Swap } from './Motion';
+import { Swap } from '@/shared/motion/Motion';
 import { ScrollFrame } from './ScrollFrame';
 
 export interface RightSidebarTab {

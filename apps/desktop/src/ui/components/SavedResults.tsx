@@ -1,12 +1,12 @@
 import { useId, useRef, useState } from 'react';
-import { formatClockTime } from '../time';
+import { formatClockTime } from '@/shared/lib/time';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import {
   InspectorButton,
   InspectorIcon,
   InspectorPane,
 } from './InspectorParts';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import './SavedResults.css';

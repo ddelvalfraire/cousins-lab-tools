@@ -1,5 +1,6 @@
 import { Select } from '@mantine/core';
 import { useId, useState } from 'react';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import {
   formatDuration,
@@ -9,7 +10,6 @@ import {
   ImportIcon,
   ImportProgressNote,
 } from './ImportDialog';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { chosen } from './select';
 import { useResetOnClose } from './useResetOnClose';

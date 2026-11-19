@@ -16,9 +16,9 @@
  * drift apart.
  */
 
-import type { AppearancePreference } from './appearance';
-import type { CommandGlyphName } from './components/CommandCenter';
-import type { TextSize } from './textSize';
+import type { AppearancePreference } from '@/shared/theme/appearance';
+import type { TextSize } from '@/shared/theme/textSize';
+import type { CommandGlyphName } from '@/ui/components/CommandCenter';
 
 /** What a title or detail may depend on. */
 export interface SearchContext {

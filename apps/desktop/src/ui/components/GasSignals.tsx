@@ -8,8 +8,8 @@ import {
 } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import type uPlot from 'uplot';
-import { seriesColors } from '../theme';
-import { Presence } from './Motion';
+import { Presence } from '@/shared/motion/Motion';
+import { seriesColors } from '@/shared/theme/theme';
 import { Panel, StatusBanner } from './Primitives';
 import { ScientificPlot } from './SignalChart';
 

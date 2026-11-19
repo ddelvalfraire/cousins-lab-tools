@@ -2,6 +2,12 @@ import { Tabs } from '@mantine/core';
 import { useInterval, useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPlayerPlay } from '@tabler/icons-react';
 import { type KeyboardEvent, useState } from 'react';
+import { Presence, Swap } from '@/shared/motion/Motion';
+import {
+  type ExperimentSummary,
+  type PresetSpec,
+  routines,
+} from '@/shared/testing/screen-fixtures';
 import { useAcquisitionControls } from '../components/AcquisitionControls';
 import { CalibrationChecklist } from '../components/CalibrationChecklist';
 import { Chip, StatusWord } from '../components/Chip';
@@ -31,7 +37,6 @@ import {
   recordedSamples,
   recordedSamplesWithGap,
 } from '../components/ExperimentWorkspace.fixtures';
-import { Presence, Swap } from '../components/Motion';
 import { HeaderButton, PageHeader } from '../components/PageHeader';
 import {
   PanelSourceAppliedPane,
@@ -90,11 +95,6 @@ import {
   summarizeMass44,
 } from './review-fixtures';
 import type { Navigate } from './ScreenShell';
-import {
-  type ExperimentSummary,
-  type PresetSpec,
-  routines,
-} from './screen-fixtures';
 
 /** Starting state of the experiment page, for frozen review stories. Every field is optional. */
 export interface ExperimentViewOptions {

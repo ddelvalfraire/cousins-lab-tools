@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 
 export type ChipTone = 'neutral' | 'accent' | 'warning';
 export type StatusTone = 'neutral' | 'accent' | 'warning' | 'error' | 'info';

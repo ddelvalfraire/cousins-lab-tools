@@ -1,15 +1,15 @@
 import { Select } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
-import { formatClockTime } from '../time';
+import { formatClockTime } from '@/shared/lib/time';
+import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import type { StatusTone } from './Chip';
 import { Chip, StatusWord } from './Chip';
-import { MotionList, Presence, Swap } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import { ReviewIcon } from './ReviewIcons';
 import { chosen } from './select';
 import './ExperimentsList.css';
-import { pages } from '../search-registry';
+import { pages } from '@/shared/config/search-registry';
 import { CatalogAction, focusPane, SidebarEmpty } from './CatalogTable';
 import {
   RightSidebar,

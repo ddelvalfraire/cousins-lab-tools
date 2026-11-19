@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { StatusBanner } from '@/ui/components/Primitives';
 import { reduceMotion } from '../../../.storybook/settleMotion';
-import { motion } from '../motion';
 import { MotionList, Presence, Swap } from './Motion';
-import { StatusBanner } from './Primitives';
+import { motion } from './motion';
 
 function pauseAnimations(element: Element) {
   for (const animation of element.getAnimations()) animation.pause();

@@ -7,10 +7,10 @@ import 'uplot/dist/uPlot.min.css';
 import {
   type AppearancePreference,
   AppearanceProvider,
-} from '../src/ui/appearance';
-import { isTextSize, type TextSize } from '../src/ui/textSize';
-import { dvdashTheme } from '../src/ui/theme';
-import '../src/ui/dvdash.css';
+} from '../src/shared/theme/appearance';
+import { isTextSize, type TextSize } from '../src/shared/theme/textSize';
+import { dvdashTheme } from '../src/shared/theme/theme';
+import '../src/shared/theme/dvdash.css';
 import '../src/ui/screens/screens.css';
 import { StoryFrame } from './StoryFrame';
 import { settleMotion } from './settleMotion';

@@ -1,8 +1,8 @@
 import { createTheme, type MantineColorsTuple, Select } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 import { createElement } from 'react';
-import './components/Approved.css';
-import { motion } from './motion';
+import './Approved.css';
+import { motion } from '@/shared/motion/motion';
 export const brand = {
   forest: '#063D30',
   jade: '#16A887',

@@ -1,11 +1,11 @@
 import { useComputedColorScheme } from '@mantine/core';
 import { useRef, useState } from 'react';
 import uPlot from 'uplot';
-import { useAppearance } from '../appearance';
-import { formatMeasurement } from '../measurement';
-import { rootTextScale } from '../textSize';
-import { seriesColors } from '../theme';
-import { keyedBy } from './keyedBy';
+import { keyedBy } from '@/shared/lib/keyedBy';
+import { formatMeasurement } from '@/shared/lib/measurement';
+import { useAppearance } from '@/shared/theme/appearance';
+import { rootTextScale } from '@/shared/theme/textSize';
+import { seriesColors } from '@/shared/theme/theme';
 import { ScrollFrame } from './ScrollFrame';
 import { useUplotChart } from './useUplotChart';
 

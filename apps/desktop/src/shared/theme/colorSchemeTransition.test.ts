@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
+import { motion } from '@/shared/motion/motion';
 import { switchColorScheme } from './colorSchemeTransition';
-import { motion } from './motion';
 
 /** A view transition whose update callback the test runs, as the browser would once it has captured the old view. */
 function fakeTransition(update: () => void) {

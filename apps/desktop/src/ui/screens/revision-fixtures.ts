@@ -1,5 +1,6 @@
 /** Saved revisions and read-only layout previews for the preset and revision history pages. */
 
+import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import {
   presetRevisions,
   revisionChanges,
@@ -11,7 +12,6 @@ import type {
 } from '../components/RevisionHistory';
 import type { SavedChart, SavedReadout } from '../components/SavedVersions';
 import { catalogPresets } from './catalog-fixtures';
-import type { PresetSpec } from './screen-fixtures';
 
 /** A panel as the preset sidebar lists it. */
 export interface PresetPanelSummary {

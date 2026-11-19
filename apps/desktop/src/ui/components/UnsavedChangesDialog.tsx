@@ -1,7 +1,7 @@
 import { Modal, UnstyledButton } from '@mantine/core';
 import { type ReactNode, type RefObject, useCallback, useRef } from 'react';
 import { Banner } from './Banner';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './GuardDialog.css';
 
 /** Approved confirmation dialog shell: title, body, safe action on the left, consequential actions on the right. */

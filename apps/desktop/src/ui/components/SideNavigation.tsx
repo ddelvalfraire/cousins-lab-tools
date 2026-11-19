@@ -1,8 +1,8 @@
 import { Drawer } from '@mantine/core';
 import { type ReactNode, useId, useRef, useState } from 'react';
+import { Presence } from '@/shared/motion/Motion';
 import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
 import { StatusWord } from './Chip';
-import { Presence } from './Motion';
 import { ScrollFrame } from './ScrollFrame';
 import { useFlyoutDismissal } from './useFlyoutDismissal';
 import './SideNavigation.css';

@@ -1,6 +1,11 @@
 // Adapters and sample data that feed the approved components from the screen fixtures.
 // Synthetic data for screen review; nothing here reads files or contacts an instrument.
 
+import {
+  type ExperimentSummary,
+  type PresetSpec,
+  presets,
+} from '@/shared/testing/screen-fixtures';
 import type {
   SetupPreset,
   SetupRoutine,
@@ -15,11 +20,6 @@ import type {
   CurrentAcquisition,
   RecentExperiment,
 } from '../components/SideNavigation';
-import {
-  type ExperimentSummary,
-  type PresetSpec,
-  presets,
-} from './screen-fixtures';
 
 const instrumentFor = (row: ExperimentSummary) =>
   row.setup?.source && !row.setup.source.startsWith('sample')

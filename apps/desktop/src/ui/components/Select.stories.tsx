@@ -2,7 +2,7 @@ import { type ComboboxData, Modal, Select } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useId, useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { chooseOption } from './chooseOption';
+import { chooseOption } from '@/shared/testing/chooseOption';
 import { chosen, selectAria } from './select';
 
 const separators = [

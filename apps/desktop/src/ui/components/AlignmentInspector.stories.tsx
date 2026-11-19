@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { chooseOption } from '@/shared/testing/chooseOption';
 import { settleMotion } from '../../../.storybook/settleMotion';
 import { Chip } from './Chip';
-import { chooseOption } from './chooseOption';
 import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';
 import {

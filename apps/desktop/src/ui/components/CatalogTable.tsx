@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { Chip } from './Chip';
 import { SidebarIcon, type SidebarIconName } from './RightSidebar';
 import { chosen } from './select';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './CatalogTable.css';
 import { ScrollFrame } from './ScrollFrame';
 import { useResettingCopy } from './useResettingCopy';

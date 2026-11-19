@@ -4,6 +4,10 @@
  */
 
 import type {
+  ExperimentSummary,
+  PresetSpec,
+} from '@/shared/testing/screen-fixtures';
+import type {
   ChecklistStep,
   IntervalSummary,
 } from '../components/CalibrationChecklist';
@@ -23,7 +27,6 @@ import type {
   RecordingExportSettings,
 } from '../components/RecordingExport';
 import type { ResultQuantity, SavedResult } from '../components/SavedResults';
-import type { ExperimentSummary, PresetSpec } from './screen-fixtures';
 
 const DURATION = 300;
 /** A response 18 s after the event, then a smaller one 55 s after it (alignment-inspector-review.html `raw`). */

@@ -1,4 +1,4 @@
-import { motion, prefersReducedMotion } from './motion';
+import { motion, prefersReducedMotion } from '@/shared/motion/motion';
 
 export interface RevealOrigin {
   x: number;

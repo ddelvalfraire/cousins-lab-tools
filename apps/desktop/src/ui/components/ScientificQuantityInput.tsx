@@ -2,7 +2,7 @@ import { Select } from '@mantine/core';
 import { useId, useState } from 'react';
 import { Banner } from './Banner';
 import { chosen } from './select';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './ScientificQuantityInput.css';
 
 /** Millivolts per unit. The stored quantity is always in mV because the instrument reports mV. */

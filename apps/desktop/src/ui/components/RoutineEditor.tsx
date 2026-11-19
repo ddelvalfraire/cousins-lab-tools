@@ -28,9 +28,9 @@ import type {
 } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { Presence } from '@/shared/motion/Motion';
 import { Banner } from './Banner';
 import { Chip, StatusWord } from './Chip';
-import { Presence } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import { RightSidebar, SidebarIcon, WorkspaceBody } from './RightSidebar';
 import { chosen, selectAria } from './select';

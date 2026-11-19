@@ -2,6 +2,7 @@ import { Select, useComputedColorScheme } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useId, useMemo, useRef, useState } from 'react';
 import type uPlot from 'uplot';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import {
   Announcer,
@@ -9,7 +10,6 @@ import {
   InspectorIcon,
   InspectorPane,
 } from './InspectorParts';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { RightSidebar, type RightSidebarTab } from './RightSidebar';
 import { ScientificPlot } from './SignalChart';

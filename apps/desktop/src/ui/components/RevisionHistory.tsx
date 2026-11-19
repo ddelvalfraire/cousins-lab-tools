@@ -1,9 +1,9 @@
 import { useMounted } from '@mantine/hooks';
 import { type ReactNode, useRef } from 'react';
-import { formatClockTime } from '../time';
+import { formatClockTime } from '@/shared/lib/time';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import { ImportIcon } from './ImportDialog';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import { SidebarIcon } from './RightSidebar';
 import './RevisionHistory.css';

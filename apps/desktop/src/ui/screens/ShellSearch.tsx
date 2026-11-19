@@ -18,6 +18,8 @@ import {
   useState,
 } from 'react';
 import { flushSync } from 'react-dom';
+import { Presence } from '@/shared/motion/Motion';
+import { motion } from '@/shared/motion/motion';
 import {
   type CommandCategory,
   CommandCenter,
@@ -26,9 +28,7 @@ import {
   findCommands,
   KeyCaps,
 } from '../components/CommandCenter';
-import { Presence } from '../components/Motion';
 import { chosen } from '../components/select';
-import { motion } from '../motion';
 
 /** A command center row and what choosing it does. */
 export type ShellCommand = CommandItem & { run: () => void };

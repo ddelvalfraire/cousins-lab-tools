@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { formatClockTime } from '@/shared/lib/time';
 import { settleMotion } from '../../../.storybook/settleMotion';
-import { formatClockTime } from '../time';
 import { Chip } from './Chip';
 import { InspectorIcon } from './InspectorParts';
 import { PageHeader } from './PageHeader';

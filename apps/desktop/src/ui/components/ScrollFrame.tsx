@@ -1,6 +1,6 @@
 import { ScrollArea } from '@mantine/core';
 import type { ElementType, HTMLAttributes, Ref } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 
 export interface ScrollFrameProps extends HTMLAttributes<HTMLElement> {
   /** Axes that scroll. */

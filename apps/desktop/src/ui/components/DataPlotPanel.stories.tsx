@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { alignedData, samples } from '../fixtures';
+import { alignedData, samples } from '@/shared/testing/fixtures';
 import { DataPlotPanel } from './ExperimentTools';
 
 const meta = {

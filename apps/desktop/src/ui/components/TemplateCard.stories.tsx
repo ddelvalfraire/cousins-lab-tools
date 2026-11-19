@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { templates } from '../fixtures';
+import { templates } from '@/shared/testing/fixtures';
 import { TemplateCard } from './Catalog';
 
 const meta = {

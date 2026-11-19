@@ -1,4 +1,4 @@
-import { motion, prefersReducedMotion } from '../motion';
+import { motion, prefersReducedMotion } from '@/shared/motion/motion';
 
 /** How long a search target stays highlighted before it fades. */
 export const REVEAL_MS = 1600;

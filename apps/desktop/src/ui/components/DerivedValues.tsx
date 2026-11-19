@@ -1,6 +1,6 @@
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { Fragment, useId } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './DerivedValues.css';
 
 export interface DerivedOutput {

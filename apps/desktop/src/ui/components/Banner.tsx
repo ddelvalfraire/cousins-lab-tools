@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './Banner.css';
 
 export type BannerSeverity = 'info' | 'warning' | 'error' | 'success';

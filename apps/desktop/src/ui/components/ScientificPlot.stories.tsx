@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { samples } from '../fixtures';
+import { samples } from '@/shared/testing/fixtures';
 import { ScientificPlot } from './SignalChart';
 
 const paired = [...samples].sort((a, b) => (a.mass44 ?? 0) - (b.mass44 ?? 0));

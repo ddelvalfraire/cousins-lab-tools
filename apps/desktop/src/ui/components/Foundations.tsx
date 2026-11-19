@@ -20,7 +20,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react';
 import { useState } from 'react';
-import { brand } from '../theme';
+import { brand } from '@/shared/theme/theme';
 import { Help, Panel, StatusBanner } from './Primitives';
 
 export function ColorPalette() {

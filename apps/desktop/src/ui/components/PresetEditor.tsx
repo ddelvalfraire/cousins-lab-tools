@@ -18,8 +18,8 @@ import {
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip, StatusWord } from './Chip';
-import { Presence, Swap } from './Motion';
 import { HeaderButton, type PageBreadcrumb, PageHeader } from './PageHeader';
 import type {
   PanelSpan,

@@ -1,5 +1,9 @@
 // Command center records built from the screen fixtures. Synthetic data; nothing here reads files.
 import type { ReactNode } from 'react';
+import {
+  type ExperimentSummary,
+  presets,
+} from '@/shared/testing/screen-fixtures';
 import { type StatusTone, StatusWord } from '../components/Chip';
 import { CommandGlyph } from '../components/CommandCenter';
 import { InstrumentStatus } from '../components/InstrumentCatalog';
@@ -11,7 +15,6 @@ import {
   catalogRoutines,
 } from './catalog-fixtures';
 import type { SearchRecord } from './ScreenShell';
-import { type ExperimentSummary, presets } from './screen-fixtures';
 
 /** The Experiments list's status words (ExperimentsList). */
 const experimentStatus: Record<

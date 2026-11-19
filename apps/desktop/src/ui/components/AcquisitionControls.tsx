@@ -10,11 +10,11 @@ import {
   IconPlugConnectedX,
 } from '@tabler/icons-react';
 import { type ReactNode, useCallback, useId, useState } from 'react';
+import { Presence, Swap } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
-import { Presence, Swap } from './Motion';
 import { StatusBanner, StatusMessages } from './Primitives';
 import { GuardDialog, useFocusWhen } from './UnsavedChangesDialog';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './AcquisitionControls.css';
 import './GuardDialog.css';
 

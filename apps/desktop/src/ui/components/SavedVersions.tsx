@@ -1,8 +1,8 @@
 import { type KeyboardEvent, type ReactNode, useCallback, useRef } from 'react';
-import { useAppearance } from '../appearance';
-import { textScales } from '../textSize';
+import { Presence, Swap } from '@/shared/motion/Motion';
+import { useAppearance } from '@/shared/theme/appearance';
+import { textScales } from '@/shared/theme/textSize';
 import { Chip } from './Chip';
-import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
 import {
   formatSavedAt,

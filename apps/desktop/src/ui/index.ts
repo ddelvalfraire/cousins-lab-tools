@@ -1,3 +1,5 @@
+export { formatClockTime } from '@/shared/lib/time';
+export { brand, dvdashTheme, seriesColors } from '@/shared/theme/theme';
 export * from './components/AcquisitionControls';
 export * from './components/CalibrationChecklist';
 export * from './components/CalibrationCurve';
@@ -41,5 +43,3 @@ export * from './components/SignalChart';
 export * from './components/select';
 export * from './components/UnsavedChangesDialog';
 export * from './Screens';
-export { brand, dvdashTheme, seriesColors } from './theme';
-export { formatClockTime } from './time';

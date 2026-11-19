@@ -20,8 +20,6 @@ import {
   type ShellSearchHandle,
 } from './ShellSearch';
 import './screens.css';
-import { useAppearance } from '../appearance';
-import { ScrollFrame } from '../components/ScrollFrame';
 import {
   appearanceTitle,
   type CommandId,
@@ -34,7 +32,9 @@ import {
   settingsRecords,
   shortcutSectionsFor,
   titleOf,
-} from '../search-registry';
+} from '@/shared/config/search-registry';
+import { useAppearance } from '@/shared/theme/appearance';
+import { ScrollFrame } from '../components/ScrollFrame';
 import { revealTarget } from './revealTarget';
 
 export type ScreenRoute =

@@ -6,7 +6,7 @@ import {
   useId,
   useRef,
 } from 'react';
-import './Approved.css';
+import '@/shared/theme/Approved.css';
 import './ImportDialog.css';
 import { ScrollFrame } from './ScrollFrame';
 

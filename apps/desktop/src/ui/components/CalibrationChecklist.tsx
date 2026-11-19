@@ -1,5 +1,6 @@
 import { useCallback, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { Presence } from '@/shared/motion/Motion';
 import { Chip } from './Chip';
 import {
   Announcer,
@@ -8,7 +9,6 @@ import {
   parseNumber,
   UnitInput,
 } from './InspectorParts';
-import { Presence } from './Motion';
 import { type Severity, StatusBanner } from './Primitives';
 import { useResettingCopy } from './useResettingCopy';
 import './CalibrationChecklist.css';

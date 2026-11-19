@@ -1,7 +1,7 @@
 import { Button, Group, Paper, Stack, Text, TextInput } from '@mantine/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { type AppearancePreference, useAppearance } from '../appearance';
+import { type AppearancePreference, useAppearance } from './appearance';
 
 const choices: { value: AppearancePreference; label: string }[] = [
   { value: 'light', label: 'Light' },
