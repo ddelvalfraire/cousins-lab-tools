@@ -46,7 +46,7 @@
       },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
-          "level": "warn",
+          "level": "error",
           "options": {
             "maxAllowedComplexity": 25
           }
@@ -59,6 +59,233 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/ui/components/AcquisitionControls.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 58
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/CalibrationChecklist.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 39
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/ExperimentSetupForm.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 47
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/PresetEditor.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 48
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/PresetImport.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 38
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/RecordingAlignment.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 27
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/RecordingExport.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 37
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/RecordingImport.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 51
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/RoutineCatalog.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 29
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/RoutineEditor.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 42
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/ScientificPlot.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 33
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/SignalChart.stories.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 30
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/SignalChart.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 63
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/components/UnsavedChangesDialog.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 31
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/ui/screens/ExperimentPages.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 33
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single"
