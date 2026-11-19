@@ -1,17 +1,17 @@
 // Adapters and sample data that feed the approved components from the screen fixtures.
 // Synthetic data for screen review; nothing here reads files or contacts an instrument.
 
+import type {
+  ExperimentSummary as ListExperiment,
+  SetupPreset,
+  SetupRoutine,
+  SetupSource,
+} from '@/features/experiments';
 import {
   type ExperimentSummary,
   type PresetSpec,
   presets,
 } from '@/shared/testing/screen-fixtures';
-import type {
-  SetupPreset,
-  SetupRoutine,
-  SetupSource,
-} from '../components/ExperimentSetupForm';
-import type { ExperimentSummary as ListExperiment } from '../components/ExperimentsList';
 import type { EditablePreset } from '../components/PresetEditor';
 import type { PanelSpan, PresetPanel } from '../components/PresetEditorPanels';
 import type { RoutineDefinition } from '../components/RoutineEditor';

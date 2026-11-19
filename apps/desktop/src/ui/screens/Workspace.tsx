@@ -1,6 +1,11 @@
 import { IconHistory } from '@tabler/icons-react';
 import { useState } from 'react';
 import type { IntervalResult } from '@/features/acquisition';
+import {
+  ExperimentSetupForm,
+  ExperimentsList,
+  type PreparedExperiment,
+} from '@/features/experiments';
 import { savedResults } from '@/shared/testing/fixtures';
 import {
   type ExperimentSummary,
@@ -12,11 +17,6 @@ import {
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import {
-  ExperimentSetupForm,
-  type PreparedExperiment,
-} from '../components/ExperimentSetupForm';
-import { ExperimentsList } from '../components/ExperimentsList';
 import { PresetEditor } from '../components/PresetEditor';
 import { PresetImport } from '../components/PresetImport';
 import { RecordingImport } from '../components/RecordingImport';

@@ -91,7 +91,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/ExperimentSetupForm.tsx"],
+      "includes": ["src/features/experiments/ExperimentSetupForm.tsx"],
       "linter": {
         "rules": {
           "complexity": {

@@ -1,9 +1,6 @@
+import type { SetupPreset, SetupRoutine } from '@/features/experiments';
 import { type PresetSpec, presets } from '@/shared/testing/screen-fixtures';
 import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
-import type {
-  SetupPreset,
-  SetupRoutine,
-} from '../components/ExperimentSetupForm';
 import type { CatalogInstrument } from '../components/InstrumentCatalog';
 import type {
   CatalogPreset,
