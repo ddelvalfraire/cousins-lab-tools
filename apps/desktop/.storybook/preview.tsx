@@ -11,7 +11,7 @@ import {
 import { isTextSize, type TextSize } from '../src/shared/theme/textSize';
 import { dvdashTheme } from '../src/shared/theme/theme';
 import '../src/shared/theme/dvdash.css';
-import '../src/ui/screens/screens.css';
+import '../src/app/screens/screens.css';
 import { StoryFrame } from './StoryFrame';
 import { settleMotion } from './settleMotion';
 import './preview.css';

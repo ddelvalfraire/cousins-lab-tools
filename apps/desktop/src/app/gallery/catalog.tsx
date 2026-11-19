@@ -9,11 +9,7 @@ type PortableStory = ComponentType & {
   parameters: { previewWidth?: number; gallery?: boolean };
 };
 const modules = import.meta.glob<StoryModule>(
-  [
-    './components/*.stories.tsx',
-    '../features/*/*.stories.tsx',
-    '../shared/*/*.stories.tsx',
-  ],
+  ['../../features/*/*.stories.tsx', '../../shared/*/*.stories.tsx'],
   {
     eager: true,
   },

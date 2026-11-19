@@ -11,7 +11,7 @@ import { useTimeout } from '@mantine/hooks';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { StoryFrame } from '../../../.storybook/StoryFrame';
-import { reviewCases } from '../catalog';
+import { reviewCases } from './catalog';
 
 function AllComponentsGallery() {
   const [query, setQuery] = useState(''),

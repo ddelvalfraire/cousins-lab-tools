@@ -271,7 +271,7 @@
       }
     },
     {
-      "includes": ["src/ui/screens/ExperimentPages.tsx"],
+      "includes": ["src/app/screens/ExperimentPages.tsx"],
       "linter": {
         "rules": {
           "complexity": {
