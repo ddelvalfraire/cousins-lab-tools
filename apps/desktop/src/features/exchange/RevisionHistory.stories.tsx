@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { RightSidebar, SidebarIcon } from '@/shared/ui/RightSidebar';
-import { presetRevisions, revisionChanges } from './exchange-fixtures';
+import { presetRevisions, revisionChanges } from './fixtures';
 import {
   RevisionChanges,
   RevisionHistoryList,

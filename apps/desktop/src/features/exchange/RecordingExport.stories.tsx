@@ -8,7 +8,7 @@ import {
   exportRecording,
   exportRows,
   exportSignals,
-} from './exchange-fixtures';
+} from './fixtures';
 import {
   RecordingExportDialog,
   type RecordingExportDialogProps,

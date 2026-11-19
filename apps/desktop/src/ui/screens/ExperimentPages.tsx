@@ -6,6 +6,12 @@ import type { IntervalResult } from '@/features/acquisition';
 import { useAcquisitionControls } from '@/features/acquisition';
 import { CalibrationChecklist } from '@/features/calibration';
 import {
+  type ExportResult,
+  RecordingExportDialog,
+  type RecordingExportPhase,
+  type RecordingExportSettings,
+} from '@/features/exchange';
+import {
   AlignmentPreviewChart,
   PanelSourceAppliedPane,
   PanelSourceBindingPane,
@@ -65,12 +71,6 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
-import {
-  type ExportResult,
-  RecordingExportDialog,
-  type RecordingExportPhase,
-  type RecordingExportSettings,
-} from '../components/RecordingExport';
 import {
   alignmentDefaults,
   alignmentEvents,

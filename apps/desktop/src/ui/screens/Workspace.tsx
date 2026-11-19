@@ -1,6 +1,7 @@
 import { IconHistory } from '@tabler/icons-react';
 import { useState } from 'react';
 import type { IntervalResult } from '@/features/acquisition';
+import { PresetImport, RecordingImport } from '@/features/exchange';
 import {
   ExperimentSetupForm,
   ExperimentsList,
@@ -19,8 +20,6 @@ import {
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
-import { PresetImport } from '../components/PresetImport';
-import { RecordingImport } from '../components/RecordingImport';
 import {
   type AppSettings,
   type FolderState,

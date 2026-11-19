@@ -6,6 +6,10 @@
 import type { IntervalResult } from '@/features/acquisition';
 import type { ChecklistStep, IntervalSummary } from '@/features/calibration';
 import type {
+  ExportSignal,
+  RecordingExportSettings,
+} from '@/features/exchange';
+import type {
   AlignmentEvent,
   AlignmentRecording,
   AlignmentSettings,
@@ -19,10 +23,6 @@ import type {
   ExperimentSummary,
   PresetSpec,
 } from '@/shared/testing/screen-fixtures';
-import type {
-  ExportSignal,
-  RecordingExportSettings,
-} from '../components/RecordingExport';
 
 const DURATION = 300;
 /** A response 18 s after the event, then a smaller one 55 s after it (alignment-inspector-review.html `raw`). */

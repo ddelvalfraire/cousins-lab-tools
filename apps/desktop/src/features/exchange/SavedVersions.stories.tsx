@@ -13,7 +13,7 @@ import {
   restoredRevision,
   revisionChanges,
   savedPreview,
-} from './exchange-fixtures';
+} from './fixtures';
 import {
   type PresetRevision,
   type RestorePhase,

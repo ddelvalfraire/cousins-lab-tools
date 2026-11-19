@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { gasExchangeDefinition, presetFile } from './exchange-fixtures';
+import { gasExchangeDefinition, presetFile } from './fixtures';
 import {
   type PresetFileCheck,
   PresetImport,

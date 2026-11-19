@@ -121,7 +121,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/PresetImport.tsx"],
+      "includes": ["src/features/exchange/PresetImport.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -151,7 +151,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/RecordingExport.tsx"],
+      "includes": ["src/features/exchange/RecordingExport.tsx"],
       "linter": {
         "rules": {
           "complexity": {
@@ -166,7 +166,7 @@
       }
     },
     {
-      "includes": ["src/ui/components/RecordingImport.tsx"],
+      "includes": ["src/features/exchange/RecordingImport.tsx"],
       "linter": {
         "rules": {
           "complexity": {

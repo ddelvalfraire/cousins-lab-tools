@@ -2,6 +2,14 @@ import { useTimeout } from '@mantine/hooks';
 import { IconDownload, IconPencil, IconPlayerPlay } from '@tabler/icons-react';
 import { useState } from 'react';
 import {
+  type PresetRevision,
+  type RestorePhase,
+  RevisionHistoryList,
+  SavedVersionPreview,
+  type SavedVersionTab,
+  SavedVersionView,
+} from '@/features/exchange';
+import {
   InstrumentCatalog,
   type InstrumentCatalogProps,
 } from '@/features/instruments';
@@ -19,16 +27,6 @@ import {
   SidebarSection,
   WorkspaceBody,
 } from '@/shared/ui/RightSidebar';
-import {
-  type PresetRevision,
-  type RestorePhase,
-  RevisionHistoryList,
-} from '../components/RevisionHistory';
-import {
-  SavedVersionPreview,
-  type SavedVersionTab,
-  SavedVersionView,
-} from '../components/SavedVersions';
 import {
   catalogInstruments,
   catalogPresets,

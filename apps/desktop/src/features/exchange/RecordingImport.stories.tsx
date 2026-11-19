@@ -7,7 +7,7 @@ import {
   recordingPresets,
   unreadableRecording,
   unreadableRecording2,
-} from './exchange-fixtures';
+} from './fixtures';
 import { type RecordingFile, RecordingImportDialog } from './RecordingImport';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
