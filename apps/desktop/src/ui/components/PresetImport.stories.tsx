@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { useState } from 'react';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { gasExchangeDefinition, presetFile } from './exchange-fixtures';
-import { PresetImportDialog, PresetThumbnail } from './PresetImport';
+import {
+  type PresetFileCheck,
+  PresetImport,
+  PresetImportDialog,
+  PresetThumbnail,
+} from './PresetImport';
 
 /** The dialog renders in a portal, so queries run against the whole document. */
 const dialog = (canvasElement: HTMLElement) =>
@@ -201,4 +207,63 @@ export const Thumbnail: StoryObj<typeof PresetThumbnail> = {
       <PresetThumbnail layout={gasExchangeDefinition.layout} />
     </div>
   ),
+};
+
+let finishCheck: (check: PresetFileCheck) => void = () => {};
+/** The stateful import, with a check that waits for the story to finish it. */
+function ReopenableImport() {
+  const [opened, setOpened] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setOpened(true)}>
+        Import preset
+      </button>
+      <PresetImport
+        opened={opened}
+        onClose={() => setOpened(false)}
+        checkFile={() =>
+          new Promise((resolve) => {
+            finishCheck = resolve;
+          })
+        }
+        importPreset={async () => {}}
+      />
+    </>
+  );
+}
+
+/** Closing while a file is still being checked drops that check, so the dialog opens fresh next time. */
+export const ClosingCancelsTheCheck: StoryObj<typeof PresetImport> = {
+  render: () => <ReopenableImport />,
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const input = canvasElement.ownerDocument.querySelector<HTMLInputElement>(
+      '[role=dialog] input[type=file]',
+    );
+    if (!input) throw new Error('The import dialog has no file input');
+    await userEvent.upload(
+      input,
+      new File(['{}'], presetFile.name, { type: 'application/json' }),
+    );
+    await expect(dialog(canvasElement).getByRole('status')).toHaveTextContent(
+      /Checking file/,
+    );
+    await userEvent.click(
+      dialog(canvasElement).getByRole('button', {
+        name: 'Close import dialog',
+      }),
+    );
+    await waitFor(() => expect(page.queryByRole('dialog')).toBeNull());
+
+    finishCheck({ valid: true, definition: gasExchangeDefinition });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await userEvent.click(page.getByRole('button', { name: 'Import preset' }));
+    const body = within(await page.findByRole('dialog'));
+    await waitFor(() =>
+      expect(body.getByText('Drop a preset definition here')).toBeVisible(),
+    );
+    await expect(
+      body.queryByRole('button', { name: 'Review preset' }),
+    ).toBeNull();
+  },
 };

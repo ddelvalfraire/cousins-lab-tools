@@ -1,5 +1,4 @@
-import { useDidUpdate } from '@mantine/hooks';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Chip } from './Chip';
 import {
   formatFileSize,
@@ -13,6 +12,7 @@ import {
 import { keyedBy } from './keyedBy';
 import { Presence, Swap } from './Motion';
 import { StatusBanner } from './Primitives';
+import { useResetOnClose } from './useResetOnClose';
 import './PresetImport.css';
 
 export type PresetTileKind =
@@ -490,6 +490,13 @@ export interface PresetImportProps {
   ) => Promise<void>;
 }
 
+const FRESH_IMPORT: {
+  phase: PresetImportPhase;
+  file?: PresetFile;
+  check?: PresetFileCheck;
+  name: string;
+} = { phase: 'choose', name: '' };
+
 /** `PresetImportDialog` with its own state: checks the file, then imports it. */
 export function PresetImport({
   opened,
@@ -497,37 +504,34 @@ export function PresetImport({
   checkFile,
   importPreset,
 }: PresetImportProps) {
-  const [phase, setPhase] = useState<PresetImportPhase>('choose');
-  const [file, setFile] = useState<PresetFile>();
-  const [check, setCheck] = useState<PresetFileCheck>();
-  const [name, setName] = useState('');
-  const attempt = useRef(0);
-  const reset = () => {
-    attempt.current += 1;
-    setPhase('choose');
-    setFile(undefined);
-    setCheck(undefined);
-    setName('');
-  };
-  // Closing also cancels a file check still in flight, which bumps a ref and so can't happen during render.
-  useDidUpdate(() => {
-    if (!opened) reset();
-  }, [opened]);
+  const [{ phase, file, check, name }, setImport] = useState(FRESH_IMPORT);
+  const setPhase = (next: PresetImportPhase) =>
+    setImport((current) => ({ ...current, phase: next }));
+  const reset = () => setImport(FRESH_IMPORT);
+  // Closing also cancels a file check still in flight: its result only lands while its file is still the chosen one.
+  useResetOnClose(opened, reset);
 
   const choose = async (chosen: File) => {
-    const id = ++attempt.current;
-    setFile({ name: chosen.name, size: chosen.size });
-    setPhase('checking');
+    const picked: PresetFile = { name: chosen.name, size: chosen.size };
+    setImport({ ...FRESH_IMPORT, file: picked, phase: 'checking' });
     const result = await checkFile(chosen).catch(
       (): PresetFileCheck => ({
         valid: false,
         problems: ['The file couldn’t be read.'],
       }),
     );
-    if (id !== attempt.current) return;
-    setCheck(result);
-    if (result.valid) setName(result.suggestedName ?? result.definition.name);
-    setPhase(result.valid ? 'ready' : 'invalid');
+    setImport((current) =>
+      current.file !== picked
+        ? current
+        : {
+            ...current,
+            check: result,
+            name: result.valid
+              ? (result.suggestedName ?? result.definition.name)
+              : current.name,
+            phase: result.valid ? 'ready' : 'invalid',
+          },
+    );
   };
   const add = async () => {
     if (!check?.valid) return;
@@ -552,7 +556,9 @@ export function PresetImport({
       onChooseFile={(chosen) => {
         void choose(chosen);
       }}
-      onNameChange={setName}
+      onNameChange={(next) =>
+        setImport((current) => ({ ...current, name: next }))
+      }
       onReview={() => setPhase('review')}
       onBack={() => setPhase('ready')}
       onImport={() => {
