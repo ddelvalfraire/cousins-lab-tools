@@ -41,12 +41,14 @@ STORYBOOK_ALLOWED_HOSTS=<hostname> bun run storybook --host <address> --ci
 ## Verification
 
 ```sh
-bun run check
+bun run check              # types, Biome lint and format, and the effect ban's fixtures
 bun run storybook:check
 bun run storybook:build
 bun run storybook:test     # Storybook's native Vitest/browser tests, including play
 bun run storybook:e2e      # supplementary integration/accessibility/layout checks
 ```
+
+Effects are banned in this app, including Mantine's effect wrappers: Biome rejects them through `lint/no-effect-hooks.grit` and `noRestrictedImports` (`lint/effects.json`), and `bun run lint:fixtures` proves each file in `lint/fixtures/` is rejected. Cognitive complexity is an error above 25; the files already over it have their current score as a per-file limit in `biome.json`, to lower as they are split.
 
 Install Chromium once with `bunx playwright install chromium`, or select an existing browser using `PLAYWRIGHT_CHROMIUM_EXECUTABLE`. To run integration checks against a Storybook that is already running, set `STORYBOOK_URL` to its address, for example `STORYBOOK_URL=http://127.0.0.1:6141`. Run the integration suite serially; Playwright owns its output directory. Accessibility checks are bounded automated checks, not full screen-reader/localization/performance certification. Native component tests also run the a11y addon; the browser panel is available on demand.
 

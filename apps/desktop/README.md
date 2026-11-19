@@ -44,3 +44,14 @@ bun run --cwd apps/desktop clean
 This removes only this desktop project's `node_modules`, `dist`, `dist-ssr`, `src-tauri/target` (including app and DMG bundles), and `tsconfig.node.tsbuildinfo`. Paths are anchored to this project even when the script runs from another directory. The command also works when those outputs are already absent.
 
 Source files, lockfiles, toolchains, and shared caches stay in place. Run `bun install --frozen-lockfile` before developing again; the next native build recompiles Rust dependencies.
+
+## Lint and format
+
+`bun run check` also runs these:
+
+```sh
+bun run lint               # Biome lint and format check
+bun run lint:fixtures      # proves the effect ban rejects every file in lint/fixtures
+```
+
+`bun run format` rewrites files with Biome's formatting. See [the UI README](src/ui/README.md#verification) for the rules they enforce.
