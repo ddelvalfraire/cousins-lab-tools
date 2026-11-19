@@ -1,0 +1,12 @@
+language js
+
+// Applies to src/**. The layer rules match import paths, so a relative path that climbs out of its folder could slip
+// past them; only the Storybook setup and the repository's design folder sit outside src.
+or {
+  JsModuleSource() as $source,
+  `import($source)`
+} where {
+  $source <: r"['\"]\.\./.*['\"]",
+  not $source <: r"['\"](?:\.\./)+(?:\.storybook|design)/.*['\"]",
+  register_diagnostic(span=$source, message="Relative imports stay inside their folder. Import another folder through @/shared/..., @/features/<name> or @/app/....", severity="error")
+}

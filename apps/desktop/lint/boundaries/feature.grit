@@ -1,0 +1,11 @@
+language js
+
+// Applies to src/features/**. Inside a feature, files import each other by relative path, so any @/features or @/app
+// specifier here reaches another feature or the app.
+or {
+  JsModuleSource() as $source,
+  `import($source)`
+} where {
+  $source <: r"['\"]@/(?:features|app)(?:/.*)?['\"]",
+  register_diagnostic(span=$source, message="A feature imports only its own files and src/shared. Compose features in src/app, or move what two features need to src/shared.", severity="error")
+}

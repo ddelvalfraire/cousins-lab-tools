@@ -1,0 +1,11 @@
+language js
+
+// Applies everywhere. fixtures.ts is a feature's second entry point, for the sample data that app stories reuse.
+or {
+  JsModuleSource() as $source,
+  `import($source)`
+} where {
+  $source <: r"['\"]@/features/[^/'\"]+/.+['\"]",
+  not $source <: r"['\"]@/features/[^/'\"]+/fixtures['\"]",
+  register_diagnostic(span=$source, message="Import a feature through its public API: @/features/<name> (its index.ts), or @/features/<name>/fixtures for sample data.", severity="error")
+}

@@ -15,6 +15,7 @@
       "!!**/test-results",
       "!!**/playwright-report",
       "!lint/fixtures",
+      "!lint/boundaries/fixtures",
       "!src/App.tsx",
       "!src/main.tsx",
       "!public/tauri.svg",
@@ -24,7 +25,10 @@
     ]
   },
   "extends": ["./lint/effects.json"],
-  "plugins": ["./lint/no-effect-hooks.grit"],
+  "plugins": [
+    "./lint/no-effect-hooks.grit",
+    "./lint/boundaries/public-api.grit"
+  ],
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -60,6 +64,18 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["src/**"],
+      "plugins": ["./lint/boundaries/relative.grit"]
+    },
+    {
+      "includes": ["src/features/**"],
+      "plugins": ["./lint/boundaries/feature.grit"]
+    },
+    {
+      "includes": ["src/shared/**"],
+      "plugins": ["./lint/boundaries/shared.grit"]
+    },
     {
       "includes": ["src/features/acquisition/AcquisitionControls.tsx"],
       "linter": {
