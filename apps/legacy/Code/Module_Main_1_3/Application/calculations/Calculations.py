@@ -1,8 +1,7 @@
-
-
-from statistics import mean
-import numpy as np
 import logging
+from statistics import mean
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -11,18 +10,18 @@ class Calculations:
     """
     stores calculations methods to be used thought the program, complete stati, should not be declared
     """
+
     @staticmethod
     def segment_linearity(y, x, start_idx, end_idx):
         """
-            Returns the given lines diffrence form its line of best fit.
+        Returns the given lines diffrence form its line of best fit.
         """
         try:
-
             y = np.array(y, dtype=float)
             x = np.array(x, dtype=float)
 
-            t_seg = x[start_idx:end_idx + 1]
-            y_seg = y[start_idx:end_idx + 1]
+            t_seg = x[start_idx : end_idx + 1]
+            y_seg = y[start_idx : end_idx + 1]
 
             # best fit line through all points, not just endpoints
             p = np.polyfit(t_seg, y_seg, 1)
@@ -37,13 +36,13 @@ class Calculations:
     @staticmethod
     def getMean(dataPoints, xleft, xright, graph):
         """
-            Returns mean from a one data stream 
-            based on the left and right x values
-            :param {dataPoints : dict} -> dictionary of data points
-            :param {xleft: Float} -> left x value from mean bars
-            :param {xright: Float} -> right x value from mean bars
-            :param {graph_num: int} -> index of the graph we're getting the mean from
-            :return -> mean value
+        Returns mean from a one data stream
+        based on the left and right x values
+        :param {dataPoints : dict} -> dictionary of data points
+        :param {xleft: Float} -> left x value from mean bars
+        :param {xright: Float} -> right x value from mean bars
+        :param {graph_num: int} -> index of the graph we're getting the mean from
+        :return -> mean value
         """
 
         i = 0
@@ -51,7 +50,7 @@ class Calculations:
         keys = list(dataPoints.keys())
 
         # append all the y values in the desired graph_num from xleft to xright
-        while (keys[i] <= xright):
+        while keys[i] <= xright:
             if keys[i] < xleft:
                 i += 1
                 continue
@@ -71,7 +70,9 @@ class Calculations:
         """
 
         # Calculate temperature dependent solubility
-        tempSolubility = (-0.0018 * (temp ** 3)) + (0.2229 * (temp ** 2)) - (12.387 * temp) + 456.49
+        tempSolubility = (
+            (-0.0018 * (temp**3)) + (0.2229 * (temp**2)) - (12.387 * temp) + 456.49
+        )
 
         # Calculate O2 calibration
         o2Calibration = tempSolubility / mean_value
@@ -89,10 +90,12 @@ class Calculations:
 
         # only calculate the slope if there is more than one point in the data set
         if len(dataPoints) > 1:
-            if (voltages[-1] == voltages[0]):
+            if voltages[-1] == voltages[0]:
                 return None
             else:
-                return (concentrations[-1] - concentrations[0]) / (voltages[-1] - voltages[0])
+                return (concentrations[-1] - concentrations[0]) / (
+                    voltages[-1] - voltages[0]
+                )
 
         else:
             return 0
@@ -105,7 +108,7 @@ class Calculations:
         mvdiff1 = cal1 - calZero
         mvdiff2 = cal2 - cal1
         mvdiff3 = cal3 - cal2
-        if (mvdiff1 == 0 or mvdiff2 == 0 or mvdiff3 == 0):
+        if mvdiff1 == 0 or mvdiff2 == 0 or mvdiff3 == 0:
             return -99999  # return val to be undefined
         co2Volt1 = (1 / 28) / mvdiff1
         co2Volt2 = (1 / 28) / mvdiff2
@@ -137,7 +140,12 @@ class Calculations:
         Calculates and returns O2 air value using the given temperature in degrees C.
         """
 
-        result = -0.0018 * pow(temperature, 3) + 0.2229 * pow(temperature, 2) - 12.387 * temperature + 456.49
+        result = (
+            -0.0018 * pow(temperature, 3)
+            + 0.2229 * pow(temperature, 2)
+            - 12.387 * temperature
+            + 456.49
+        )
         return result
 
     @staticmethod
@@ -146,7 +154,12 @@ class Calculations:
         Calculates and returns O2 air value using the given temperature in degrees C.
         """
 
-        result = 0.0018 * pow(temperature, 3) + 0.2229 * pow(temperature, 2) - 12.387 * temperature + 456.49
+        result = (
+            0.0018 * pow(temperature, 3)
+            + 0.2229 * pow(temperature, 2)
+            - 12.387 * temperature
+            + 456.49
+        )
         return result
 
     @staticmethod
@@ -200,17 +213,17 @@ class Calculations:
         Calculates atom%49 from y_values, return y value to plot on atom49% graph. (likely graph2)
         """
         # mass| y-value
-            # 32  | 0
-            # 34  | 1
-            # 36  | 2
-            # 44  | 3
-            # 45  | 4
-            # 46  | 5
-            # 47  | 6
-            # 49  | 7
+        # 32  | 0
+        # 34  | 1
+        # 36  | 2
+        # 44  | 3
+        # 45  | 4
+        # 46  | 5
+        # 47  | 6
+        # 49  | 7
 
-        #atom%49 = 49_mv / (45_mv + 47_mv + 49_mv)
-        atom49_percent = max(y[7],0) / (max(y[4],0) + max(y[6],0) + max(y[7],0))
+        # atom%49 = 49_mv / (45_mv + 47_mv + 49_mv)
+        atom49_percent = max(y[7], 0) / (max(y[4], 0) + max(y[6], 0) + max(y[7], 0))
         ## increase the value by a factor of 100
         atom49_percent = atom49_percent * 100
         return atom49_percent
@@ -287,5 +300,8 @@ class Calculations:
     @staticmethod
     def adverageDown(data, window):
         """takes a list "data" adverage every "widnow" elements toghter
-            returns the averaged of the list"""
-        return [sum(data[i:i+window]) / len(data[i:i+window]) for i in range(0, len(data), window)]
+        returns the averaged of the list"""
+        return [
+            sum(data[i : i + window]) / len(data[i : i + window])
+            for i in range(0, len(data), window)
+        ]

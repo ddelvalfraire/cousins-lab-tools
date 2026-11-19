@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -11,8 +10,8 @@ __status__ = "Completed"
 import os
 import re
 
-class DataUtility:
 
+class DataUtility:
     @staticmethod
     def setDataDirectory(filePath):
         # os.chdir("../Data/Acquisition-1111/Acquisition-1111")
@@ -26,5 +25,9 @@ class DataUtility:
         if ".DS_Store" in fileList:
             fileList.remove(".DS_Store")
         # print(fileList)
-        fileList.sort(key=lambda var:[int(x) if x.isdigit() else x for x in re.findall(r'[^0-9]|[0-9]+', var)])
+        fileList.sort(
+            key=lambda var: [
+                int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)
+            ]
+        )
         return fileList

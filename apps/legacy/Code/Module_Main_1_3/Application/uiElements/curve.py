@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,20 +8,16 @@ __status__ = "Completed"
 """
 
 import sys
-import PyQt5.QtWidgets as qtw
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as qtg
+
 import pyqtgraph as pg
-import time
-import numpy as np
 
 # adding UI to the system path
-sys.path.insert(0, '../read_data')
+sys.path.insert(0, "../read_data")
 
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 
-class Curve:
 
+class Curve:
     def __init__(self, name, y, pen, graph):
         self.name = name
         if type(y) != list:
@@ -33,18 +28,19 @@ class Curve:
         with self.points.lock:
             # If y is provided during init, we should have matching x.
             # However, in this project y seems to be passed as an empty list [] usually.
-            self.x = list(self.points.dataPoints.keys())[:len(self.y)]
+            self.x = list(self.points.dataPoints.keys())[: len(self.y)]
         self.graph = graph
         self.isChecked = False
         self.firstPoint = False
 
     def plotCurve(self):
-        
-        self.data_line = pg.PlotDataItem(skipFiniteCheck=True, clipToView=True, useOpenGL=True)
+
+        self.data_line = pg.PlotDataItem(
+            skipFiniteCheck=True, clipToView=True, useOpenGL=True
+        )
         self.data_line.setPen(self.pen)
         self.graph.setClipToView(True)
         self.graph.addItem(self.data_line)
-
 
     def updateDataPoints(self, x, y):
         self.x += x
@@ -56,6 +52,7 @@ class Curve:
                 self.data_line.setData(x=self.x, y=self.y)
             else:
                 import logging
+
                 logging.getLogger(__name__).warning(
                     f"Skipping plot update for {self.name}: X({len(self.x)}) and Y({len(self.y)}) shape mismatch."
                 )
@@ -67,7 +64,6 @@ class Curve:
                 self.xMax = x[-1]
                 self.yMax = y[-1]
                 self.firstPoint = True
-
 
     def hide(self):
 
@@ -81,6 +77,7 @@ class Curve:
             self.data_line.setData(x=self.x, y=self.y)
         else:
             import logging
+
             logging.getLogger(__name__).warning(
                 f"Skipping unhide update for {self.name}: X({len(self.x)}) and Y({len(self.y)}) shape mismatch."
             )
@@ -90,7 +87,3 @@ class Curve:
         self.y = []
         self.x = []
         self.data_line.clear()
-        
-
-
-        

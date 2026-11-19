@@ -1,0 +1,36 @@
+# Ruff settings for the legacy application. Lint uses Ruff's default rules.
+# CI installs this exact version, so local runs and CI agree.
+required-version = "==0.17.3"
+
+# Findings in existing code whose fixes would change behavior. Each entry
+# covers only the rules that file breaks today, so new files get every rule.
+#
+# BLE001, E722, S110, S112: the code catches broad exceptions on purpose.
+#   Narrowing them changes which errors the app survives.
+# LOG015: these files log through the root logger. A named logger changes the
+#   logger name written to crash_report.log.
+# SIM115: these files close (or never close) files outside a `with` block.
+#   A `with` block changes when the file closes.
+# RUF015: `next(iter(...))` raises StopIteration instead of IndexError on
+#   empty data, which an iterator's caller reads as "no more items".
+# G201: `logger.exception()` also triggers TRY401, whose fix changes the
+#   logged message.
+[lint.per-file-ignores]
+"Code/Module_Main_1_3/Application/CustomWidgets/customCalculatoinPlot.py" = ["BLE001", "E722", "S110", "S112"]
+"Code/Module_Main_1_3/Application/CustomWidgets/rawPlotFrame.py" = ["BLE001", "E722", "LOG015"]
+"Code/Module_Main_1_3/Application/MainAndBuildFiles/mianMoudle1.py" = ["BLE001", "E722", "LOG015", "S110"]
+"Code/Module_Main_1_3/Application/MainAndBuildFiles/mianMoudle2.py" = ["BLE001", "E722", "LOG015", "S110"]
+"Code/Module_Main_1_3/Application/Workers/ExportWorker.py" = ["BLE001"]
+"Code/Module_Main_1_3/Application/Workers/SamplePlotCalcWorker.py" = ["BLE001", "E722"]
+"Code/Module_Main_1_3/Application/Workers/newFileNotifierThread.py" = ["E722"]
+"Code/Module_Main_1_3/Application/Workers/plotAllThread.py" = ["BLE001", "S110"]
+"Code/Module_Main_1_3/Application/calculations/Calculations.py" = ["BLE001", "E722"]
+"Code/Module_Main_1_3/Application/mainUI/module1.py" = ["BLE001", "E722", "G201", "S110", "S112", "SIM115"]
+"Code/Module_Main_1_3/Application/mainUI/module2.py" = ["BLE001", "E722", "S110", "SIM115"]
+"Code/Module_Main_1_3/Application/mainUI/module3.py" = ["SIM115"]
+"Code/Module_Main_1_3/Application/read_data/file.py" = ["E722", "RUF015"]
+"Code/Module_Main_1_3/Application/read_data/getData.py" = ["E722"]
+"Code/Module_Main_1_3/Application/read_data/readEZView.py" = ["BLE001", "SIM115"]
+"module3/application/mainUI/main.py" = ["SIM115"]
+"module3/application/read-data/file.py" = ["RUF015"]
+"module4/application/main.py" = ["BLE001", "SIM115"]

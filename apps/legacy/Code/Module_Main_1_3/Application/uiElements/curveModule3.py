@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,20 +8,16 @@ __status__ = "Completed"
 """
 
 import sys
-import PyQt5.QtWidgets as qtw
-import PyQt5.QtCore as QtCore
-import PyQt5.QtGui as qtg
+
 import pyqtgraph as pg
-import time
-import numpy as np
 
 # adding UI to the system path
-sys.path.insert(0, '../read_data')
+sys.path.insert(0, "../read_data")
 
 from Code.Module_Main_1_3.Application.read_data.sharedSingleton import SharedSingleton
 
-class CurveModule3:
 
+class CurveModule3:
     def __init__(self, name, y, pen, graph):
         self.name = name
         if type(y) != list:
@@ -36,12 +31,13 @@ class CurveModule3:
         self.firstPoint = False
 
     def plotCurve(self):
-        
-        self.data_line = pg.PlotDataItem(skipFiniteCheck=True, clipToView=True, useOpenGL=True)
+
+        self.data_line = pg.PlotDataItem(
+            skipFiniteCheck=True, clipToView=True, useOpenGL=True
+        )
         self.data_line.setPen(self.pen)
         self.graph.setClipToView(True)
         self.graph.addItem(self.data_line)
-
 
     def updateDataPoints(self, x, y):
 
@@ -49,7 +45,6 @@ class CurveModule3:
         self.x = list(self.points.da49data.keys())
 
         if self.isChecked == True:
-
             self.data_line.setData(x=self.x, y=self.y)
 
             if self.firstPoint == False:
@@ -59,7 +54,6 @@ class CurveModule3:
                 self.xMax = x
                 self.yMax = y
                 self.firstPoint = True
-
 
     def hide(self):
 
@@ -77,10 +71,6 @@ class CurveModule3:
         self.x = []
         self.isChecked = False
         self.firstPoint = False
-        if hasattr(self, 'data_line'):
+        if hasattr(self, "data_line"):
             self.data_line.clear()
             self.data_line.setData(x=[], y=[])
-        
-
-
-        

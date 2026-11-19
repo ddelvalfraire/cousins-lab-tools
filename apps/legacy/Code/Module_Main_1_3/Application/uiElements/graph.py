@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,17 +8,15 @@ __status__ = "Completed"
 """
 
 import pyqtgraph as pg
-from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import Qt
 
+
 class Graph(pg.PlotWidget):
-
-
     def __init__(self, xRange, yRange):
-        super(Graph, self).__init__()
+        super().__init__()
 
         self.showGrid(x=True, y=True)
-        self.setBackground('black')
+        self.setBackground("black")
         self.xRange = xRange
         self.yRange = yRange
         self.setXRange(0, xRange)
@@ -32,13 +29,11 @@ class Graph(pg.PlotWidget):
     def mouseMoveEvent(self, event):
 
         if event.buttons() == Qt.RightButton:
-
             # consume the event and return without doing anything
             event.accept()
             return
-        
-        elif event.buttons() == Qt.LeftButton:
 
+        elif event.buttons() == Qt.LeftButton:
             self.graphInteraction = True
             event.accept()
 
@@ -50,10 +45,9 @@ class Graph(pg.PlotWidget):
         self.graphInteraction = True
         super().contextMenuEvent(event)
 
-    
     def getXAxisRange(self):
         return self.plotItem.getAxis("bottom").range
-        
+
     def getYAxisRange(self):
         return self.plotItem.getAxis("left").range
 
