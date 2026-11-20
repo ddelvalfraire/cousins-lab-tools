@@ -1,3 +1,4 @@
+// rejected by feature.grit
 import type { BetaProps } from '@/features/beta';
 
 export type Used = BetaProps;

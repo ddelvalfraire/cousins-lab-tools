@@ -1,6 +1,7 @@
-// Each file in lint/boundaries/fixtures breaks one import boundary, except *.allowed.ts files, which show imports the
-// rules must let through. The fixtures run under the boundary plugins and override globs read from biome.json, so a
-// change there is tested here as well.
+// Each file in lint/boundaries/fixtures breaks one import boundary and names the rule that must reject it on its first
+// line (`// rejected by <rule>.grit`), except *.allowed.ts files, which show imports the rules must let through. The
+// fixtures run under the boundary plugins and override globs read from biome.json, so a change there is tested here as
+// well. Every plugin reports under the same `plugin` category, so the rule is told apart by its message.
 import { spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -64,21 +65,50 @@ try {
 }
 if (biome.error) throw biome.error;
 
-const flagged = new Set();
+// The message of each rule, read from its register_diagnostic call.
+const ruleOf = new Map();
+for (const plugin of new Set([
+  ...absolute(config.plugins ?? []),
+  ...overrides.flatMap((override) => override.plugins),
+])) {
+  const message = /message="([^"]+)"/.exec(readFileSync(plugin, 'utf8'))?.[1];
+  if (!message) throw new Error(`No diagnostic message in ${plugin}`);
+  ruleOf.set(message, relative(join(app, 'lint/boundaries'), plugin));
+}
+
+const fired = new Map();
 for (const line of biome.stdout.split('\n')) {
-  const match = /^::error title=plugin,file=([^,]+),/.exec(line);
-  if (match) flagged.add(relative(work, match[1]));
+  const match = /^::error title=plugin,file=([^,]+),[^:]*::(.*)$/.exec(line);
+  if (!match) continue;
+  const file = relative(work, match[1]);
+  const rule =
+    ruleOf.get(decodeURIComponent(match[2])) ?? `unknown: ${match[2]}`;
+  fired.set(file, [...(fired.get(file) ?? []), rule]);
 }
 
 const files = filesIn(fixtures);
 const wrong = [];
 for (const file of files) {
   const allowed = file.endsWith('.allowed.ts');
-  const ok = allowed !== flagged.has(file);
+  const rules = fired.get(file) ?? [];
+  const expected = allowed
+    ? null
+    : /^\/\/ rejected by (\S+\.grit)\n/.exec(
+        readFileSync(join(fixtures, file), 'utf8'),
+      )?.[1];
+  const ok = allowed ? rules.length === 0 : rules.includes(expected);
   if (!ok) wrong.push(file);
-  console.log(
-    `${ok ? (allowed ? 'allowed ' : 'rejected') : allowed ? 'FLAGGED ' : 'MISSED  '} ${file}`,
-  );
+  const verdict = ok
+    ? allowed
+      ? 'allowed '
+      : 'rejected'
+    : allowed
+      ? 'FLAGGED '
+      : 'MISSED  ';
+  const detail = allowed
+    ? rules.join(', ')
+    : `${expected ?? 'no "// rejected by <rule>.grit" line'}${ok ? '' : `; fired: ${rules.join(', ') || 'nothing'}`}`;
+  console.log(`${verdict} ${file}${detail ? ` (${detail})` : ''}`);
 }
 
 const rejected = files.filter((file) => !file.endsWith('.allowed.ts'));
@@ -92,5 +122,5 @@ if (!rejected.length || !overrides.length || wrong.length) {
   process.exit(1);
 }
 console.log(
-  `The boundary rules rejected all ${rejected.length} fixtures and allowed the ${files.length - rejected.length} allowed ones.`,
+  `The boundary rules rejected all ${rejected.length} fixtures with the intended rule and allowed the ${files.length - rejected.length} allowed ones.`,
 );
