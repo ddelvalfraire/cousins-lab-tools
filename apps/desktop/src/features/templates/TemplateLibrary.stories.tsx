@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { templates } from '@/shared/testing/fixtures';
 import { TemplateLibrary } from './Catalog';
+import { templates } from './sample-templates';
 
 const meta = {
   title: 'Components/TemplateLibrary',
