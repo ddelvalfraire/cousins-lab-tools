@@ -1,9 +1,0 @@
-{
-  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
-  "extends": ["../effects.json"],
-  "plugins": ["../no-effect-hooks.grit"],
-  "files": { "includes": ["**/*.ts", "**/*.tsx"] },
-  "formatter": { "enabled": false },
-  "assist": { "enabled": false },
-  "linter": { "rules": { "preset": "none" } }
-}
