@@ -12,10 +12,10 @@ or {
     $arguments <: contains TsStringLiteralType() as $source
   }
 } where {
-  $source <: r"['\"]\.\./.*['\"]",
+  $source <: r"['\"]\.\.(?:/.*)?['\"]",
   not and {
     $filename <: r".*/src/shared/ui/BrandMark\.tsx",
-    $source <: r"['\"](?:\.\./)+assets/branding/dvdash/[\w.-]+\.svg['\"]"
+    $source <: r"['\"]\.\./\.\./\.\./\.\./\.\./assets/branding/dvdash/icon\.svg['\"]"
   },
   or {
     not $source <: r"['\"](?:\.\./)+\.storybook/.*['\"]",

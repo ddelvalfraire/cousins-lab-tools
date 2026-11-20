@@ -4,8 +4,9 @@ language js
 // ('@/shared/../features/x/y', './../x'), a `.` segment after the first ('@/./features/x/y', '././x') or an empty
 // segment ('@/features//x/y') would reach a slice they never see. A backslash is rejected too: an escape such as
 // '@/\x66eatures/x/y' spells a path the patterns can't read. So is a leading `/`, which Vite resolves from the app
-// root ('/src/features/x/y') and no other rule reads. A template literal anywhere in an import() call is rejected:
-// the other rules read only plain strings, and tsc and Vite resolve import(`@/features/x/y`) like one.
+// root ('/src/features/x/y') and no other rule reads. An import() call must take one plain string as its path: a
+// template literal, a concatenation, a variable or any other expression is rejected, because the other rules read
+// only plain strings, and tsc and Vite resolve import(`@/features/x/y`) or import('@/' + 'features/x/y') like one.
 or {
   or {
     JsModuleSource() as $source,
@@ -26,7 +27,12 @@ or {
   },
   JsTemplateExpression() as $source where {
     $source <: within JsImportCallExpression()
+  },
+  JsImportCallExpression() as $source where {
+    not $source <: contains `import($first, $...)` where {
+      $first <: JsStringLiteralExpression()
+    }
   }
 } where {
-  register_diagnostic(span=$source, message="Write import paths as plain strings, without a leading `/`, without `..` after a folder name, without `.` after the first segment, without `//` and without escapes, so the boundary rules see where they lead.", severity="error")
+  register_diagnostic(span=$source, message="Write import paths as plain strings, without a leading `/`, without `..` after a folder name, without `.` after the first segment, without `//` and without escapes, so the boundary rules see where they lead. An import() takes one plain string.", severity="error")
 }

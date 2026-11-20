@@ -12,7 +12,7 @@ or {
     $arguments <: contains TsStringLiteralType() as $source
   }
 } where {
-  $source <: r"['\"](?:\.\.|@)/.*['\"]",
+  $source <: r"['\"](?:\.\.(?:/.*)?|@/.*)['\"]",
   not $source <: r"['\"](?:\.\./src|@)/shared/.*['\"]",
   not $source <: r"['\"]\.\./src/app/screens/screens\.css['\"]",
   register_diagnostic(span=$source, message="The Storybook setup imports only from src/shared and the app stylesheet, because every story can import it.", severity="error")
