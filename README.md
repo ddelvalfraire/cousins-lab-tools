@@ -68,7 +68,6 @@ See the [desktop guide](apps/desktop/README.md) for builds and cleanup.
 apps/
   desktop/       Desktop application in development
   legacy/        Python instrument tools and regression checks
-design/          Visual studies and local design reviews
 documentation/  Project requirements, reports, manual tests, and history
 reference/      Reference material
 ```
