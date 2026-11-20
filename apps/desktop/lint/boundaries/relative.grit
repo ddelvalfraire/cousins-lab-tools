@@ -4,7 +4,9 @@ language js
 // past them; only the Storybook setup and the repository's DVDash brand SVGs sit outside src.
 or {
   JsModuleSource() as $source,
-  `import($source)`,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
   TsImportTypeArguments() as $arguments where {
     $arguments <: contains TsStringLiteralType() as $source
   }

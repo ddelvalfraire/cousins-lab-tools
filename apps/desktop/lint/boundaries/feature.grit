@@ -4,7 +4,9 @@ language js
 // specifier here reaches another feature or the app.
 or {
   JsModuleSource() as $source,
-  `import($source)`,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
   TsImportTypeArguments() as $arguments where {
     $arguments <: contains TsStringLiteralType() as $source
   }

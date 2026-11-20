@@ -5,7 +5,9 @@ language js
 // src/, '../src/features/x/y' from .storybook/ or tests/.
 or {
   JsModuleSource() as $source,
-  `import($source)`,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
   TsImportTypeArguments() as $arguments where {
     $arguments <: contains TsStringLiteralType() as $source
   }

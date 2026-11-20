@@ -36,7 +36,7 @@ src/
     ui            UI atoms and layout pieces (Chip, Primitives, PageHeader, RightSidebar, CatalogTable, ...)
 ```
 
-Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`). They cover `import` and `export ... from` statements, `import()` calls and `import('...')` types:
+Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`). They cover `import` and `export ... from` statements, every string literal inside an `import()` call (so options and parentheses do not hide it) and `import('...')` types:
 
 - A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
 - `shared` never imports `@/features` or `@/app`.

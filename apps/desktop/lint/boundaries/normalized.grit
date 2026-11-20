@@ -6,7 +6,9 @@ language js
 // '@/\x66eatures/x/y' spells a path the patterns can't read.
 or {
   JsModuleSource() as $source,
-  `import($source)`,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
   TsImportTypeArguments() as $arguments where {
     $arguments <: contains TsStringLiteralType() as $source
   }

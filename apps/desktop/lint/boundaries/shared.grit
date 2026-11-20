@@ -3,7 +3,9 @@ language js
 // Applies to src/shared/**.
 or {
   JsModuleSource() as $source,
-  `import($source)`,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
   TsImportTypeArguments() as $arguments where {
     $arguments <: contains TsStringLiteralType() as $source
   }
