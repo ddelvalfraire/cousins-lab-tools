@@ -15,13 +15,6 @@ import {
   SettingsPage,
 } from '@/features/settings';
 import { savedResults } from '@/shared/testing/fixtures';
-import {
-  type ExperimentSummary,
-  experiments,
-  presets,
-  routines,
-  type SetupPreview,
-} from '@/shared/testing/screen-fixtures';
 import { useAppearance } from '@/shared/theme/appearance';
 import { Chip } from '@/shared/ui/Chip';
 import { PageHeader } from '@/shared/ui/PageHeader';
@@ -62,6 +55,13 @@ import {
   recordingPresetOptions,
 } from './import-fixtures';
 import { ScreenBody, type ScreenRoute, ScreenShell } from './ScreenShell';
+import {
+  type ExperimentSummary,
+  experiments,
+  presets,
+  routines,
+  type SetupPreview,
+} from './screen-fixtures';
 import { searchRecords } from './search-fixtures';
 import './screens.css';
 import './screen-layouts.css';

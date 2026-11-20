@@ -19,10 +19,7 @@ import type {
   SavedResult,
 } from '@/features/inspectors';
 import type { RecordedSample } from '@/features/workspace/fixtures';
-import type {
-  ExperimentSummary,
-  PresetSpec,
-} from '@/shared/testing/screen-fixtures';
+import type { ExperimentSummary, PresetSpec } from './screen-fixtures';
 
 const DURATION = 300;
 /** A response 18 s after the event, then a smaller one 55 s after it. */

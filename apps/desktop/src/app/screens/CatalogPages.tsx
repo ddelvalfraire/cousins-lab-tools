@@ -16,7 +16,6 @@ import {
 import { PresetCatalog, type PresetCatalogProps } from '@/features/presets';
 import { RoutineCatalog, type RoutineCatalogProps } from '@/features/routines';
 import { keyedBy } from '@/shared/lib/keyedBy';
-import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import { CatalogChip, CatalogRoot } from '@/shared/ui/CatalogTable';
 import { Chip } from '@/shared/ui/Chip';
 import { HeaderButton, PageHeader } from '@/shared/ui/PageHeader';
@@ -39,6 +38,7 @@ import {
   presetRevisionList,
 } from './revision-fixtures';
 import type { Navigate } from './ScreenShell';
+import type { PresetSpec } from './screen-fixtures';
 
 const workspace = (navigate?: Navigate) => ({
   label: 'Workspace',

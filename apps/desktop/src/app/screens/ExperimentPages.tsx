@@ -55,11 +55,6 @@ import {
 } from '@/features/workspace/fixtures';
 import { usePendingTimeouts } from '@/shared/hooks/usePendingTimeouts';
 import { Presence, Swap } from '@/shared/motion/Motion';
-import {
-  type ExperimentSummary,
-  type PresetSpec,
-  routines,
-} from '@/shared/testing/screen-fixtures';
 import { Chip, StatusWord } from '@/shared/ui/Chip';
 import { HeaderButton, PageHeader } from '@/shared/ui/PageHeader';
 import { StatusBanner } from '@/shared/ui/Primitives';
@@ -89,6 +84,11 @@ import {
   summarizeMass44,
 } from './review-fixtures';
 import type { Navigate } from './ScreenShell';
+import {
+  type ExperimentSummary,
+  type PresetSpec,
+  routines,
+} from './screen-fixtures';
 
 /** Starting state of the experiment page, for frozen review stories. Every field is optional. */
 export interface ExperimentViewOptions {

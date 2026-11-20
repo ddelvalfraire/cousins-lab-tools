@@ -11,8 +11,8 @@ import {
   revisionChanges,
   savedPreview,
 } from '@/features/exchange/fixtures';
-import type { PresetSpec } from '@/shared/testing/screen-fixtures';
 import { catalogPresets } from './catalog-fixtures';
+import type { PresetSpec } from './screen-fixtures';
 
 /** A panel as the preset sidebar lists it. */
 export interface PresetPanelSummary {

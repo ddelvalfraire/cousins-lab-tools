@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import type { InstrumentCatalogProps } from '@/features/instruments';
-import { experiments } from '@/shared/testing/screen-fixtures';
 import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import { toAcquisition, toRecents } from './approved-fixtures';
 import { InstrumentsPage } from './CatalogPages';
 import { ScreenShell } from './ScreenShell';
+import { experiments } from './screen-fixtures';
 import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';
 

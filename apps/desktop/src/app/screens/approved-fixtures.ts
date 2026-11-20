@@ -22,7 +22,7 @@ import {
   type ExperimentSummary,
   type PresetSpec,
   presets,
-} from '@/shared/testing/screen-fixtures';
+} from './screen-fixtures';
 
 const instrumentFor = (row: ExperimentSummary) =>
   row.setup?.source && !row.setup.source.startsWith('sample')
