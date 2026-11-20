@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "includes": ["src/features/**", "!src/features/shortcuts/**"],
+      "plugins": ["./lint/boundaries/feature.grit"]
+    }
+  ]
+}

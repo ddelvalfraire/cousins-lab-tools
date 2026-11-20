@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "includes": ["src/shared/**"],
+      "plugins": ["./lint/boundaries/relative.grit"]
+    }
+  ]
+}
