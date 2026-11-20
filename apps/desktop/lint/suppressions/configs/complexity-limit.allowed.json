@@ -1,0 +1,17 @@
+{
+  "overrides": [
+    {
+      "includes": ["src/features/presets/PresetEditor.tsx"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": { "maxAllowedComplexity": 40 }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

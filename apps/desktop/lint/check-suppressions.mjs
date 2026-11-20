@@ -2,12 +2,18 @@
 // report under lint/plugin, and the effect ban's import half is lint/style/noRestrictedImports. This fails on any such
 // suppression in the app. Each file in lint/suppressions/fixtures must be caught, except *.allowed.ts files, which
 // suppress unrelated rules and must not be.
+//
+// biome.json can do the same without a comment: an override that switches the linter off, or one that sets
+// noRestrictedImports, which only lint/effects.json should. Each file in lint/suppressions/configs is a config that must
+// be caught, except *.allowed.json files. Dropping the ban's plugin, its extends or a folder from files.includes is
+// caught by lint:fixtures, which runs under the real config.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const app = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtures = join(app, 'lint/suppressions/fixtures');
+const configs = join(app, 'lint/suppressions/configs');
 const skipped = new Set([
   'node_modules',
   'dist',
@@ -36,19 +42,32 @@ const caught = (path) =>
     categories.split(/\s+/).some((category) => banned.test(category)),
   );
 
+const configSuppresses = (path) => {
+  const config = JSON.parse(readFileSync(path, 'utf8'));
+  return [config, ...(config.overrides ?? [])].some(
+    ({ linter }) =>
+      linter?.enabled === false ||
+      linter?.rules?.style?.noRestrictedImports !== undefined,
+  );
+};
+
 const wrong = [];
-const fixtureFiles = readdirSync(fixtures).sort();
-for (const name of fixtureFiles) {
-  const allowed = name.endsWith('.allowed.ts');
-  const ok = caught(join(fixtures, name)) !== allowed;
+const fixtureFiles = [
+  ...readdirSync(fixtures).map((name) => [fixtures, name, caught]),
+  ...readdirSync(configs).map((name) => [configs, name, configSuppresses]),
+].sort(([, a], [, b]) => a.localeCompare(b));
+for (const [dir, name, check] of fixtureFiles) {
+  const allowed = /\.allowed\.(?:ts|json)$/.test(name);
+  const ok = check(join(dir, name)) !== allowed;
   if (!ok) wrong.push(name);
   console.log(
-    `${ok ? (allowed ? 'allowed ' : 'caught  ') : allowed ? 'FLAGGED ' : 'MISSED  '} ${name}`,
+    `${ok ? (allowed ? 'allowed ' : 'caught  ') : allowed ? 'FLAGGED ' : 'MISSED  '} ${relative(join(app, 'lint/suppressions'), join(dir, name))}`,
   );
 }
 const found = sources(app)
   .filter(caught)
   .map((path) => relative(app, path));
+if (configSuppresses(join(app, 'biome.json'))) found.push('biome.json');
 
 if (!fixtureFiles.length || wrong.length) {
   console.error(
@@ -61,7 +80,7 @@ if (!fixtureFiles.length || wrong.length) {
 if (found.length) {
   for (const file of found) console.error(`suppressed ${file}`);
   console.error(
-    `${found.length} file(s) suppress the effect ban or the import boundaries. Fix the import instead.`,
+    `${found.length} file(s) suppress the effect ban or the import boundaries. Remove the suppression and fix the code instead.`,
   );
   process.exit(1);
 }

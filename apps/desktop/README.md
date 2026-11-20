@@ -53,7 +53,7 @@ Source files, lockfiles, toolchains, and shared caches stay in place. Run `bun i
 bun run lint               # Biome lint and format check
 bun run lint:fixtures      # proves the effect ban, as biome.json configures it, rejects every file in lint/fixtures
 bun run lint:boundaries    # proves the import boundary rules reject every file in lint/boundaries/fixtures
-bun run lint:suppressions  # fails on a biome-ignore that switches off the effect ban or the boundary rules
+bun run lint:suppressions  # fails on a biome-ignore or biome.json override that switches off the effect ban or the boundary rules
 ```
 
 `bun run format` rewrites files with Biome's formatting. See [the UI README](src/README.md#verification) for the rules they enforce and [its layout section](src/README.md#layout) for how the source is organised.
