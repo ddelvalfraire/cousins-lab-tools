@@ -2,7 +2,8 @@ language js
 
 // Applies everywhere. The other boundary rules read an import path as written, so `..` after a folder name
 // ('@/shared/../features/x/y', './../x'), a `.` segment after the first ('@/./features/x/y', '././x') or an empty
-// segment ('@/features//x/y') would reach a slice they never see.
+// segment ('@/features//x/y') would reach a slice they never see. A backslash is rejected too: an escape such as
+// '@/\x66eatures/x/y' spells a path the patterns can't read.
 or {
   JsModuleSource() as $source,
   `import($source)`,
@@ -13,7 +14,8 @@ or {
   or {
     $source <: r"['\"](?:[^'\"]*/)?(?:[^./'\"][^/'\"]*|\.[^./'\"][^/'\"]*|\.\.[^/'\"]+|\.)/\.\.(?:/[^'\"]*)?['\"]",
     $source <: r"['\"][^'\"]*/\.(?:/[^'\"]*)?['\"]",
-    $source <: r"['\"][^'\"]*//[^'\"]*['\"]"
+    $source <: r"['\"][^'\"]*//[^'\"]*['\"]",
+    $source <: r"['\"][^'\"]*\\[^'\"]*['\"]"
   },
-  register_diagnostic(span=$source, message="Write import paths without `..` after a folder name, without `.` after the first segment and without `//`, so the boundary rules see where they lead.", severity="error")
+  register_diagnostic(span=$source, message="Write import paths without `..` after a folder name, without `.` after the first segment, without `//` and without escapes, so the boundary rules see where they lead.", severity="error")
 }
