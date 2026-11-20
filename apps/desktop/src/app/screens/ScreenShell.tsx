@@ -1,6 +1,5 @@
 import { useOs, useWindowEvent } from '@mantine/hooks';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
-import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 
 export { PageHeader as ScreenHeading } from '@/shared/ui/PageHeader';
 
@@ -13,6 +12,7 @@ import {
   SideNavigation,
 } from '@/features/navigation';
 import { KeyboardShortcuts } from '@/features/shortcuts';
+import { BrandMark } from '@/shared/ui/BrandMark';
 import { CommandGlyph, type CommandItem } from '@/shared/ui/CommandCenter';
 import {
   type ShellCommand,
@@ -362,9 +362,7 @@ export function ScreenShell({
           aria-label="DVDash experiments home"
           onClick={() => navigate('experiments')}
         >
-          <span className="dv-brand-mark" aria-hidden="true">
-            <img src={brandIcon} alt="" />
-          </span>
+          <BrandMark size={28} />
           <span>DVDash</span>
         </button>
         <ShellSearch

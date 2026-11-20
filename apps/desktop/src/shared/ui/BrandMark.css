@@ -1,0 +1,10 @@
+/* icon.svg draws its own rounded corners. */
+.dv-brand-mark {
+  display: block;
+  flex: none;
+}
+.dv-brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

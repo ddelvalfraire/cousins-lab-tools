@@ -154,18 +154,6 @@ button.dv-unit {
   font-weight: 750;
   letter-spacing: -0.045em;
 }
-/* icon.svg draws its own rounded corners. */
-.dv-brand-mark {
-  display: block;
-  width: 34px;
-  height: 34px;
-  flex: none;
-}
-.dv-brand-mark img {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
 .dv-legend {
   display: flex;
   flex-wrap: wrap;

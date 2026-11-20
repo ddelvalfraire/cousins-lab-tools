@@ -14,8 +14,8 @@ import { IconChartLine, IconHelp, IconRefresh } from '@tabler/icons-react';
 import { isValidElement, type ReactNode } from 'react';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import { formatMeasurement } from '@/shared/lib/measurement';
-import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 import { Banner } from './Banner';
+import { BrandMark } from './BrandMark';
 export type Severity = 'info' | 'warning' | 'error' | 'success';
 /** The approved banner, keeping the older call signature. Any fix renders inline after the text. */
 export function StatusBanner({
@@ -213,9 +213,7 @@ export function WorkspaceHeader({
     <header className="dv-header">
       <div className="dv-header-top">
         <div className="dv-brand">
-          <span className="dv-brand-mark" aria-hidden="true">
-            <img src={brandIcon} alt="" />
-          </span>
+          <BrandMark />
           DVDash
         </div>
         <nav aria-label="Experiment workspace" className="dv-workspace-nav">

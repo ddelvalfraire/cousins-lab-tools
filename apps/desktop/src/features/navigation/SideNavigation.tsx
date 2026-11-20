@@ -1,9 +1,9 @@
 import { Drawer } from '@mantine/core';
 import { type ReactNode, useId, useRef, useState } from 'react';
 import { Presence } from '@/shared/motion/Motion';
+import { BrandMark } from '@/shared/ui/BrandMark';
 import { StatusWord } from '@/shared/ui/Chip';
 import { ScrollFrame } from '@/shared/ui/ScrollFrame';
-import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 import { useFlyoutDismissal } from './useFlyoutDismissal';
 import './SideNavigation.css';
 
@@ -175,9 +175,7 @@ const recentStateWord: Record<RecentExperimentState, string> = {
 export function Brand() {
   return (
     <span className="dv-navigation-brand">
-      <span className="dv-brand-mark" aria-hidden="true">
-        <img src={brandIcon} alt="" />
-      </span>
+      <BrandMark size={28} />
       <span className="dv-navigation-wordmark">DVDash</span>
     </span>
   );
