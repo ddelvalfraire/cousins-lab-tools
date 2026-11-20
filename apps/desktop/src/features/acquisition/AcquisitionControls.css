@@ -1,0 +1,25 @@
+/* Acquisition controls: the phase swap, the status line under the bar and its link. */
+
+/* Swap and Presence wrappers lay their content out as the slot around them would. */
+.dv-acq-swap,
+.dv-acq-swap > .dv-swap-item {
+  display: flex;
+  flex-wrap: inherit;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+}
+
+.dv-acq-status {
+  margin-top: 16px;
+}
+.dv-acq-status:focus {
+  outline: none;
+}
+.dv-acq-link {
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

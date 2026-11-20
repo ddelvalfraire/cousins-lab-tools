@@ -1,9 +1,8 @@
 /*
- * Acquisition header action bar, plus the confirmation dialog shell shared by
- * StopAcquisitionDialog and UnsavedChangesDialog.
+ * Header action bar: a status tag and chips on the left, a button on the right. The acquisition controls render it
+ * live, and the preset editor draws an inert copy in its controls panel.
  */
 
-/* Header action bar: status tag and chips on the left, Start/Stop on the right. */
 .dv-acq-bar {
   display: flex;
   align-items: center;
@@ -51,16 +50,6 @@
   color: var(--dv-warn);
 }
 
-/* Swap and Presence wrappers lay their content out as the slot around them would. */
-.dv-acq-swap,
-.dv-acq-swap > .dv-swap-item {
-  display: flex;
-  flex-wrap: inherit;
-  align-items: center;
-  gap: inherit;
-  min-width: 0;
-}
-
 .dv-acq-button {
   display: inline-flex;
   align-items: center;
@@ -97,18 +86,4 @@
 .dv-acq-button:disabled {
   opacity: 0.55;
   cursor: default;
-}
-
-.dv-acq-status {
-  margin-top: 16px;
-}
-.dv-acq-status:focus {
-  outline: none;
-}
-.dv-acq-link {
-  color: inherit;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }

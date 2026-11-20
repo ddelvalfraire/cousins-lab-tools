@@ -15,7 +15,8 @@ import { Chip } from '@/shared/ui/Chip';
 import { StatusBanner, StatusMessages } from '@/shared/ui/Primitives';
 import { GuardDialog, useFocusWhen } from '@/shared/ui/UnsavedChangesDialog';
 import '@/shared/theme/Approved.css';
-import '@/shared/ui/AcquisitionControls.css';
+import '@/shared/ui/ActionBar.css';
+import './AcquisitionControls.css';
 import '@/shared/ui/GuardDialog.css';
 
 export type AcquisitionState =
