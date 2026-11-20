@@ -25,7 +25,6 @@ import { useElementWidth } from '@/shared/hooks/useElementWidth';
 import { formatMeasurement } from '@/shared/lib/measurement';
 import { MotionList, Presence, Swap } from '@/shared/motion/Motion';
 import { curves, motion } from '@/shared/motion/motion';
-import type { SignalSample } from '@/shared/testing/fixtures';
 import { useAppearance } from '@/shared/theme/appearance';
 import { rootTextScale, textScales } from '@/shared/theme/textSize';
 import { seriesColors } from '@/shared/theme/theme';
@@ -35,6 +34,13 @@ import '@/shared/theme/Approved.css';
 import './SignalChart.css';
 import { useKeyedValue } from '@/shared/hooks/useKeyedValue';
 import { ScrollFrame } from '@/shared/ui/ScrollFrame';
+
+/** One row of the two-signal sample charts: a time and each signal's reading, null for a gap. */
+export interface SignalSample {
+  time: number;
+  mass44: number | null;
+  mass49: number | null;
+}
 
 export type { PlotSeries } from './ScientificPlot';
 export { ScientificPlot } from './ScientificPlot';

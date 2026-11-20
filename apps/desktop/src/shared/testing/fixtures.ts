@@ -1,9 +1,5 @@
 import type uPlot from 'uplot';
-export interface SignalSample {
-  time: number;
-  mass44: number | null;
-  mass49: number | null;
-}
+import type { SignalSample } from '@/shared/charts/SignalChart';
 export const samples: SignalSample[] = Array.from({ length: 121 }, (_, i) => ({
   time: i,
   mass44: 10 + 2 * Math.sin(i / 12) + 3 * Math.exp(-(((i - 48) / 12) ** 2)),
