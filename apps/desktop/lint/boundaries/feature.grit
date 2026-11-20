@@ -4,7 +4,10 @@ language js
 // specifier here reaches another feature or the app.
 or {
   JsModuleSource() as $source,
-  `import($source)`
+  `import($source)`,
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
 } where {
   $source <: r"['\"]@/(?:features|app)(?:/.*)?['\"]",
   register_diagnostic(span=$source, message="A feature imports only its own files and src/shared. Compose features in src/app, or move what two features need to src/shared.", severity="error")

@@ -3,7 +3,10 @@ language js
 // Applies everywhere. fixtures.ts is a feature's second entry point, for the sample data that app stories reuse.
 or {
   JsModuleSource() as $source,
-  `import($source)`
+  `import($source)`,
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
 } where {
   $source <: r"['\"]@/features/[^/'\"]+/.+['\"]",
   not $source <: r"['\"]@/features/[^/'\"]+/fixtures['\"]",

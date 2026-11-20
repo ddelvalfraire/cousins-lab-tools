@@ -4,3 +4,4 @@ import { Chip } from '@/shared/ui/Chip';
 import { Shell } from './Shell';
 
 export const used = [Beta, betaRows, Chip, Shell];
+export type Props = import('@/features/beta').BetaProps;

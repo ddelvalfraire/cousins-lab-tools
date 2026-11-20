@@ -3,7 +3,10 @@ language js
 // Applies to src/shared/**.
 or {
   JsModuleSource() as $source,
-  `import($source)`
+  `import($source)`,
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
 } where {
   $source <: r"['\"]@/(?:features|app)(?:/.*)?['\"]",
   register_diagnostic(span=$source, message="src/shared is used by every feature and by the app, so it can't import from src/features or src/app.", severity="error")
