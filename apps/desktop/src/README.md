@@ -54,7 +54,7 @@ The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overri
 To add a feature:
 
 1. Create `src/features/<name>/` and put the components, hooks, stories, tests and CSS in it, importing each other by relative path.
-2. Add `index.ts` with named exports of what other layers import (`export { Thing, type ThingProps } from './Thing';`), never `export *`. Add `fixtures.ts` only if app stories reuse its sample data.
+2. Once another layer imports from it, add `index.ts` with named exports of what they import (`export { Thing, type ThingProps } from './Thing';`), never `export *`. Add `fixtures.ts` only if app stories reuse its sample data.
 3. Compose it in `src/app/screens/` through `@/features/<name>`.
 4. Stories are found anywhere under `src/`; the gallery collects every story in `src/features` and `src/shared`. Keep each story's `title` (story ids derive from it).
 
@@ -142,4 +142,4 @@ The approved mockups set component structure, and GREEN FIELD supplies the theme
 
 No actual IPC, catalog persistence, acquisition or scientific calculation service is implemented. Scientific arithmetic and results in the prototype panels remain illustrative. Screen compositions are fixture scenarios, not migrated production workflows. The native starter (`src/App.tsx`, `src/main.tsx`, `public/`, `vite.config.ts`, `scripts/clean.mjs`) is linted and formatted with the same Biome rules as the UI. UI modules do not import Tauri invoke/listen; data-provider/service contracts remain separate work.
 
-Source: see [Layout](#layout); each feature's public exports are its `index.ts`. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.
+Source: see [Layout](#layout); each feature's public exports are its `index.ts`; `signals` and `templates` have none yet, since only their own stories use them. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.
