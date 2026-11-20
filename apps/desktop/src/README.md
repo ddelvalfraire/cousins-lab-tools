@@ -25,7 +25,7 @@ src/
     signals       live signal panels: gas signals, derived values, data plot, playback controls
     templates     template library, template card and definition editor
     workspace     experiment workspace and its problems panel
-  shared/       used by two or more features or by the app, never feature-specific
+  shared/       generic code for the features and the app; it imports nothing from either
     charts        SignalChart, ScientificPlot and the uPlot hook
     config        the search registry (pages, commands, settings)
     hooks         generic hooks
@@ -36,20 +36,26 @@ src/
     ui            UI atoms and layout pieces (Chip, Primitives, PageHeader, RightSidebar, CatalogTable, ...)
 ```
 
-Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`):
+Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`). They cover `import` and `export ... from` statements, `import()` calls and `import('...')` types:
 
 - A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
 - `shared` never imports `@/features` or `@/app`.
 - Outside a feature, import it only through its public API: `@/features/<name>` (its `index.ts`), or `@/features/<name>/fixtures` for the sample data that app stories reuse.
-- Relative imports stay inside their folder; other folders are reached through `@/` (`tsconfig.json` `paths`, which Vite reads with `resolve.tsconfigPaths`). Only `.storybook/` and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it.
+- Relative imports stay inside their folder; other folders are reached through `@/`. Only `.storybook/` and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it. Storybook setup and Playwright tests reach a feature by relative path (`../src/features/<name>`), and the public-API rule applies to those paths too.
+- Import paths are written without a `..` after a folder name and without `//` (`@/shared/../features/x` is rejected), so the rules see where each import leads.
+- No `biome-ignore` comment may switch off the effect ban or these rules: `bun run lint:suppressions` rejects suppressions of `lint`, `lint/plugin` and `lint/style/noRestrictedImports`.
 
-The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule and must be rejected; `*.allowed.ts` files must pass.
+The `@/` alias comes from `tsconfig.json` `paths`. Vite (`resolve.tsconfigPaths` in `vite.config.ts`), Vitest (`vitest.config.ts`) and Storybook (`.storybook/main.ts`) all read it.
+
+The rules read import paths as written. They do not see `vi.mock('...')`, `import.meta.glob`, `new URL('...', import.meta.url)`, `require()`, template-literal `import()` or CSS `@import`; none of these crosses a slice today. A feature is one flat folder: a subfolder could not reach its parent's files, because relative imports cannot climb and `@/features/<own name>` is rejected inside a feature.
+
+The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule, names it on its first line (`// rejected by feature.grit`) and must be rejected by that rule; `*.allowed.ts` files must pass. `lint/suppressions/fixtures/` holds the suppressions the gate must catch.
 
 To add a feature:
 
 1. Create `src/features/<name>/` and put the components, hooks, stories, tests and CSS in it, importing each other by relative path.
-2. Add `index.ts` exporting what the app uses (`export * from './Thing';` or named exports). Add `fixtures.ts` only if app stories reuse its sample data.
-3. Compose it in `src/app/screens/` through `@/features/<name>`, and add it to `src/app/index.ts` if it is part of the public exports.
+2. Add `index.ts` with named exports of what other layers import (`export { Thing, type ThingProps } from './Thing';`), never `export *`. Add `fixtures.ts` only if app stories reuse its sample data.
+3. Compose it in `src/app/screens/` through `@/features/<name>`.
 4. Stories are found anywhere under `src/`; the gallery collects every story in `src/features` and `src/shared`. Keep each story's `title` (story ids derive from it).
 
 ## Story conventions
@@ -91,12 +97,15 @@ STORYBOOK_ALLOWED_HOSTS=<hostname> bun run storybook --host <address> --ci
 ## Verification
 
 ```sh
-bun run check              # types, Biome lint and format, and the effect ban's and boundary rules' fixtures
+bun run check              # types, Biome lint and format, the effect ban's and boundary rules' fixtures, and the suppression gate
+bun run test               # Vitest unit (*.test.ts, node) and dom (*.test.tsx, jsdom) projects
 bun run storybook:check
 bun run storybook:build
 bun run storybook:test     # Storybook's native Vitest/browser tests, including play
 bun run storybook:e2e      # supplementary integration/accessibility/layout checks
 ```
+
+Vitest reads `vitest.config.ts` and ignores `vite.config.ts`, so every test project lives there. Main's CircleCI pipeline (`.circleci/continue_config.yml`) runs `biome ci .`, `bun run check`, `bun run test` and `bun run build` in this folder; the Storybook tests and the Playwright suite run locally only.
 
 Effects are banned in this app, including Mantine's effect wrappers: Biome rejects them through `lint/no-effect-hooks.grit` and `noRestrictedImports` (`lint/effects.json`), and `bun run lint:fixtures` proves each file in `lint/fixtures/` is rejected. Cognitive complexity is an error above 25; the files already over it have their current score as a per-file limit in `biome.json`, to lower as they are split.
 
@@ -134,4 +143,4 @@ The approved mockups set component structure, and GREEN FIELD supplies the theme
 
 No actual IPC, catalog persistence, acquisition or scientific calculation service is implemented. Scientific arithmetic and results in the prototype panels remain illustrative. Screen compositions are fixture scenarios, not migrated production workflows. The native starter (`src/App.tsx`, `src/main.tsx`, `public/`, `vite.config.ts`, `scripts/clean.mjs`) is linted and formatted with the same Biome rules as the UI. UI modules do not import Tauri invoke/listen; data-provider/service contracts remain separate work.
 
-Source: see [Layout](#layout); public exports: `app/index.ts`. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.
+Source: see [Layout](#layout); each feature's public exports are its `index.ts`. Consumers use `MantineProvider` with `dvdashTheme`, the Mantine/uPlot styles and a `.dvdash` root. Build outputs and test reports are ignored.
