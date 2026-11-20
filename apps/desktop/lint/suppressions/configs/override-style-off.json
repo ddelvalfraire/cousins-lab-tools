@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "includes": ["src/features/presets/**"],
+      "linter": { "rules": { "style": "off" } }
+    }
+  ]
+}

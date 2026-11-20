@@ -107,8 +107,10 @@ const configProblems = (config) => [
     return [
       section.linter?.enabled === false && 'linter.enabled',
       section.linter?.includes !== undefined && 'linter.includes',
-      section.linter?.rules?.style?.noRestrictedImports !== undefined &&
-        'noRestrictedImports',
+      (section.linter?.rules?.style?.noRestrictedImports !== undefined ||
+        typeof section.linter?.rules?.style === 'string' ||
+        (index > 0 && section.linter?.rules?.style !== undefined)) &&
+        'linter.rules.style',
       section.javascript?.linter !== undefined && 'javascript.linter',
       section.files?.maxSize !== undefined && 'files.maxSize',
       index > 0 && section.extends !== undefined && 'extends',
