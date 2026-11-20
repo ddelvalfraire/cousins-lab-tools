@@ -1,0 +1,17 @@
+language js
+
+// Applies everywhere. The other boundary rules read an import path as written, so `..` after a folder name
+// ('@/shared/../features/x/y', './../x') or an empty segment ('@/features//x/y') would reach a slice they never see.
+or {
+  JsModuleSource() as $source,
+  `import($source)`,
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
+} where {
+  or {
+    $source <: r"['\"](?:[^'\"]*/)?(?:[^./'\"][^/'\"]*|\.[^./'\"][^/'\"]*|\.\.[^/'\"]+|\.)/\.\.(?:/[^'\"]*)?['\"]",
+    $source <: r"['\"][^'\"]*//[^'\"]*['\"]"
+  },
+  register_diagnostic(span=$source, message="Write import paths without `..` after a folder name and without `//`, so the boundary rules see where they lead.", severity="error")
+}

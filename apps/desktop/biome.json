@@ -22,7 +22,8 @@
   "extends": ["./lint/effects.json"],
   "plugins": [
     "./lint/no-effect-hooks.grit",
-    "./lint/boundaries/public-api.grit"
+    "./lint/boundaries/public-api.grit",
+    "./lint/boundaries/normalized.grit"
   ],
   "formatter": {
     "enabled": true,
