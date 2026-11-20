@@ -16,7 +16,7 @@ import {
   useAlignmentEditor,
 } from './RecordingAlignment';
 
-/** Synthetic recordings from alignment-inspector-review.html: the same response, 15 s apart. */
+/** Synthetic recordings: the same response, 15 s apart. */
 const trace = (origin: number) =>
   Array.from({ length: 301 }, (_, t) => ({
     t,

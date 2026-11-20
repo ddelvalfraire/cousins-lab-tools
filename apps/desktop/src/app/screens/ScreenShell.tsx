@@ -91,7 +91,7 @@ const pageScope: Record<ScreenRoute, string> = {
   settings: 'Settings',
 };
 
-/* Window-bar glyphs from right-sidebar-review.html (24 px grid, 1.7 stroke). */
+/* Window-bar glyphs (24 px grid, 1.7 stroke). */
 const glyph = (path: ReactNode) => (
   <svg
     className="dv-shell-ico"
@@ -151,7 +151,6 @@ export type SearchRecord = CommandItem & { page: ScreenRoute; pageId?: string };
 /**
  * The application frame: a window bar (wordmark, search, tools) across the top; below it, on the frame
  * colour, the main sidebar and the page as a bordered, rounded card.
- * Values from design/dvdash-field-review/main-sidebar-review.html and right-sidebar-review.html (top bar).
  */
 export function ScreenShell({
   page,
@@ -255,7 +254,7 @@ export function ScreenShell({
     'go-instruments': () => go('instruments'),
   };
   const available = registryCommands.filter((entry) => handlers[entry.id]);
-  /* Commands and settings from command-center-review.html. Stop acquisition stays on the experiment page. */
+  /* Commands and settings for the command center. Stop acquisition stays on the experiment page. */
   const commands: ShellCommand[] = [
     ...available
       .filter((entry) => entry.inSearch !== false)
@@ -286,7 +285,7 @@ export function ScreenShell({
     })),
   ];
 
-  /* Window-wide shortcuts (command-center-review.html). Single keys and "G then" run outside text fields. */
+  /* Window-wide shortcuts. Single keys and "G then" run outside text fields. */
   const onKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented || event.isComposing || shortcuts) return;
     const target = event.target instanceof Element ? event.target : null;

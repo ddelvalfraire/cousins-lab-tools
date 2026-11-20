@@ -186,8 +186,8 @@ export interface AcquisitionControlParts {
 
 /**
  * Acquisition status and Start/Stop as separate parts, so a page can put them in `PageHeader`'s meta and actions.
- * The instrument chip shows until acquisition starts (start-acquisition-review.html); while acquiring and once recorded
- * the meta shows samples and elapsed time only (stop-confirmation-review.html). The meta and action cross-fade between
+ * The instrument chip shows until acquisition starts; while acquiring and once recorded
+ * the meta shows samples and elapsed time only. The meta and action cross-fade between
  * setting up, acquiring and recorded, and the status line collapses in and out.
  */
 export function useAcquisitionControls({

@@ -86,7 +86,7 @@ const STATE_ORDER: Record<InstrumentState, number> = {
 };
 const noun = (n: number) => `${n} ${n === 1 ? 'instrument' : 'instruments'}`;
 
-/** Instrument glyphs from instrument-catalog-review.html (stroke 1.5). */
+/** Instrument glyphs (stroke 1.5). */
 export function InstrumentGlyph({ kind }: { kind: CatalogInstrument['kind'] }) {
   return (
     <svg
@@ -166,7 +166,7 @@ function compare(
 
 /**
  * Instruments catalog: identity, channel count and connection health in separate columns, with channels and
- * connection details in the right sidebar. Values from design/dvdash-field-review/instrument-catalog-review.html.
+ * connection details in the right sidebar.
  */
 export function InstrumentCatalog({
   instruments,

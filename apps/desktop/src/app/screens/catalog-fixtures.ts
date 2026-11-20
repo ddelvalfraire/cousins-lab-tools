@@ -6,9 +6,7 @@ import { type PresetSpec, presets } from '@/shared/testing/screen-fixtures';
 import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
 
 /*
- * Sample catalog rows from the approved catalog mockups:
- * design/dvdash-field-review/preset-catalog-review.html (presetSpecs),
- * instrument-catalog-review.html (instrumentSeed) and routine-catalog-review.html (routineDefinitions).
+ * Sample catalog rows from the approved catalog mockups.
  * "Reaction kinetics" uses the id `reaction-kinetics` so it never resolves to the app's "Enzyme kinetics" (`kinetics`).
  */
 const panel = (

@@ -1,7 +1,7 @@
 import type { TracePoint } from '@/shared/charts/SignalChart';
 import type { Problem } from './problems';
 
-/** A live stream shown as a card (right-sidebar-review.html `streams`). */
+/** A live stream shown as a card. */
 export interface LiveStream {
   id: string;
   title: string;
@@ -16,7 +16,7 @@ export interface LiveStream {
   captured: boolean;
 }
 
-/** A recorded signal shown as a playback card (sticky-playback-review.html `pbChannels`). */
+/** A recorded signal shown as a playback card. */
 export interface RecordedChannel {
   id: 'mass44' | 'mass45';
   name: string;
@@ -31,7 +31,7 @@ export interface RecordedSample {
   mass45: number | null;
 }
 
-/** Values from right-sidebar-review.html: 2 samples/s, a wave around each stream's middle, ending on the mockup's reading. */
+/** 2 samples/s, a wave around each stream's middle, ending on the mockup's reading. */
 function livePoints(
   middle: number,
   amplitude: number,
@@ -104,7 +104,7 @@ export const recordedChannels: RecordedChannel[] = [
   },
 ];
 
-/** sticky-playback-review.html `dxRecording`: 601 samples at 0.5 s, 0–300 s. */
+/** 601 samples at 0.5 s, 0–300 s. */
 export const recordedSamples: RecordedSample[] = Array.from(
   { length: 601 },
   (_, i) => ({
@@ -114,7 +114,7 @@ export const recordedSamples: RecordedSample[] = Array.from(
   }),
 );
 
-/** The same recording with 15 s missing at 150–165 s (diagnostics-review.html, "Recording with a gap"). */
+/** The same recording with 15 s missing at 150–165 s. */
 export const recordedSamplesWithGap: RecordedSample[] = recordedSamples.map(
   (row) =>
     row.time > 150 && row.time < 165
@@ -131,7 +131,7 @@ export const workspacePanels = {
   charts: { id: 'charts', title: 'Recorded signals' },
 } as const;
 
-/** diagnostics-review.html "Several problems", pointed at this workspace's panels. */
+/** Several problems, pointed at this workspace's panels. */
 export const liveProblems: Problem[] = [
   {
     id: 'i1',
@@ -199,7 +199,7 @@ export const liveProblems: Problem[] = [
   },
 ];
 
-/** diagnostics-review.html "Recording with a gap". */
+/** A recording with a gap. */
 export const recordedProblems: Problem[] = [
   {
     id: 'r1',

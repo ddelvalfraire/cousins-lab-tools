@@ -1,4 +1,4 @@
-/* Calibration readings checklist. Values from design/dvdash-field-review/calibration-checklist-review.html. */
+/* Calibration readings checklist. */
 .dv-cal {
   container: dv-cal / inline-size;
   max-width: 850px;
@@ -383,7 +383,7 @@
     animation: none;
   }
 }
-/* calibration-checklist-review.html's dark success banner. The other approved mockups keep dvdash.css's shared values. */
+/* The calibration checklist mockup's dark success banner. The other approved mockups keep dvdash.css's shared values. */
 [data-mantine-color-scheme="dark"]
   .dv-cal
   .dv-banner-approved[data-severity="success"] {

@@ -9,8 +9,6 @@ import { ScrollFrame } from './ScrollFrame';
 
 /*
  * The command center: the results list under the window bar's search box when it searches All DVDash.
- * Structure, copy and values from design/dvdash-field-review/command-library-review.html
- * (rows, keycaps, groups) and command-center-review.html (commands, settings, empty states).
  */
 
 export type CommandGroupKind =

@@ -140,7 +140,7 @@ function PresetPanelsPane({ preset }: { preset: PresetSpec }) {
 
 /**
  * A preset's own page: its current layout, read-only, beside Details, Panels and Revisions in the right sidebar.
- * Choosing a revision opens the revision history. Values from preset-catalog-review.html and revision-chips-review.html.
+ * Choosing a revision opens the revision history.
  */
 export function PresetPage({
   preset,
@@ -235,7 +235,6 @@ type HistoryRevision = PresetRevision & { restoredFrom?: number };
 /**
  * Revision history: the selected saved revision with Preview and Changes, and the saved revisions in the sidebar's
  * Revisions tab. Restoring an earlier revision appends a new one after confirmation.
- * Values from design/dvdash-field-review/revision-chips-review.html; restore confirmation from revision-history-review.html.
  */
 export function RevisionHistoryPage({
   preset,

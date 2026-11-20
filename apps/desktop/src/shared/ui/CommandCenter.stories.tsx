@@ -11,7 +11,7 @@ import {
 } from './CommandCenter';
 import { ReviewIcon } from './ReviewIcons';
 
-/** Sample rows from command-center-review.html. */
+/** Sample rows for the command center. */
 const items: CommandItem[] = [
   {
     id: 'new',

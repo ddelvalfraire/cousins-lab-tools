@@ -1,7 +1,5 @@
 /*
- * Shared inspector pieces. Values copied from design/dvdash-field-review
- * alignment-inspector-review.html, saved-result-inspector-review.html and source-binding-review.html
- * (--p-* tokens map to the --dv-* tokens in Approved.css).
+ * Shared inspector pieces. The mockups' --p-* tokens map to the --dv-* tokens in Approved.css.
  */
 .dv-insp {
   color: var(--dv-ink);

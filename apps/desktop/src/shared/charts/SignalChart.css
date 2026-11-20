@@ -1,4 +1,4 @@
-/* Signal chart gap handling (approved design/dvdash-field-review/signal-edge-cases-review.html). */
+/* Signal chart gap handling. */
 .dv-signal-summary {
   margin-top: 2px;
   font-size: 0.75rem;
@@ -65,7 +65,7 @@
   color: var(--dv-warn);
 }
 
-/* Compact traces for workspace cards: right-sidebar-review.html (.live-plot) and sticky-playback-review.html (.playback-plot). */
+/* Compact traces for workspace cards: live streams and playback. */
 .dv-trace {
   display: block;
   width: 100%;

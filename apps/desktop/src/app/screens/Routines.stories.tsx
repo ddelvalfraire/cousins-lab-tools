@@ -46,7 +46,7 @@ const rows = (canvasElement: HTMLElement) => [
 
 /** Navigable catalog in the workspace fixture. */
 export const Catalog: Story = {};
-/** routine-catalog-review.html, Catalog example: sorted by name, sidebar collapsed to its rail. */
+/** Catalog example: sorted by name, sidebar collapsed to its rail. */
 export const Default: Story = {
   render: () => <FrozenRoutines />,
   play: async ({ canvasElement }) => {

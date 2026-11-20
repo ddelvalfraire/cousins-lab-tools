@@ -48,7 +48,6 @@ const ChevronSeparator = (
  * and a 48 px action bar (meta on the left, header buttons on the right), shown when it has content.
  * A collection header with buttons and no meta shows the buttons on the title line instead,
  * and below 600 px in a row under the title, like the action bar.
- * Values from design/dvdash-field-review/shared-header-review.html.
  */
 export function PageHeader({
   title,

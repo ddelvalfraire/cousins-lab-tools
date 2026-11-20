@@ -1,6 +1,5 @@
-/* Experiment workspace parts. Live: design/dvdash-field-review/right-sidebar-review.html (.live-summary, .stream-card,
-   .live-component, .side-signal). Recorded: sticky-playback-review.html (compact sticky .playback-toolbar, .playback-chart,
-   .pb-recorded-samples, .playback-shortcuts). */
+/* Experiment workspace parts: the live summary, stream cards and signals, and the recorded playback toolbar,
+   chart, samples and shortcuts. */
 .dv-xw-sr {
   position: absolute;
   width: 1px;
@@ -244,7 +243,7 @@
 }
 
 /* Compact sticky transport. Sticky offsets count from the scroller's padding edge, so the page-top padding is taken back:
-   the bar sits --dv-page-top under the header at rest and 8 px under it once stuck (sticky-playback-review.html). */
+   the bar sits --dv-page-top under the header at rest and 8 px under it once stuck. */
 .dv-xw-transport {
   position: sticky;
   top: calc(8px - var(--dv-page-top));
@@ -472,7 +471,7 @@
   justify-content: space-between;
   gap: 12px;
 }
-/* Recorded cards use the page's card title (the live stream cards, live-experiment-states-review.html .stream-heading h2).
+/* Recorded cards use the page's card title (as on the live stream cards).
    The 18 px line box is the sticky-playback mockup's, so the cards keep its 228 px height. */
 .dv-xw-chart h2 {
   margin: 0;
@@ -777,7 +776,7 @@
 .dv-xw-panel {
   min-width: 0;
 }
-/* Problems tab count (diagnostics-review.html .tab-count): filled with the most severe problem's colour. */
+/* Problems tab count: filled with the most severe problem's colour. */
 .dv-xw-page
   .dv-right-sidebar-tabs
   [data-tab="problems"]

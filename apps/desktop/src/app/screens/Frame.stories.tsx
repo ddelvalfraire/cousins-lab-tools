@@ -42,7 +42,7 @@ const acquisition: CurrentAcquisition = {
   trace: acquisitionTrace,
 };
 
-/** Sample records for the command center (command-center-review.html). */
+/** Sample records for the command center. */
 const searchRecords: SearchRecord[] = [
   {
     id: '025',
@@ -95,7 +95,7 @@ const titles: Partial<Record<ScreenRoute, string>> = {
   settings: 'Settings',
 };
 
-/** The frame around a placeholder page, as in main-sidebar-review.html. Routing is simulated. */
+/** The frame around a placeholder page. Routing is simulated. */
 function FrameExample(args: ScreenShellProps) {
   const [page, setPage] = useState<ScreenRoute>(args.page),
     [query, setQuery] = useState('');
@@ -289,7 +289,7 @@ export const CompactWindow: Story = {
   },
 };
 
-/** Narrow window: the search box drops its keycaps so the placeholder fits, as in unified-search-review.html. */
+/** Narrow window: the search box drops its keycaps so the placeholder fits. */
 export const NarrowSearch: Story = {
   parameters: { previewWidth: 390 },
   play: async ({ canvasElement }) => {

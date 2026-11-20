@@ -1,7 +1,6 @@
 /*
  * Acquisition header action bar, plus the confirmation dialog shell shared by
  * StopAcquisitionDialog and UnsavedChangesDialog.
- * Source: design/dvdash-field-review/{start-acquisition,stop-confirmation,unsaved-changes}-review.html.
  */
 
 /* Header action bar: status tag and chips on the left, Start/Stop on the right. */

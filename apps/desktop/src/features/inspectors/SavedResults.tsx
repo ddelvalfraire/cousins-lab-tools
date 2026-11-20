@@ -54,7 +54,6 @@ const savedDate = (iso: string) =>
 
 /**
  * Saved results with a details button per row and pages of `pageSize`.
- * Values from design/dvdash-field-review/saved-result-inspector-review.html (.table-card).
  */
 export function SavedResultsTable({
   results,
@@ -264,7 +263,6 @@ const tabs: RightSidebarTab[] = [
 
 /**
  * Right-sidebar inspector for one saved result: Details (value and saved calculation) and Context (source, preset, calibration).
- * Values from design/dvdash-field-review/saved-result-inspector-review.html.
  */
 export function SavedResultInspector({
   result,

@@ -1,4 +1,4 @@
-/* Problems panel, header trigger and affected-panel flag. Source: design/dvdash-field-review/diagnostics-review.html. */
+/* Problems panel, header trigger and affected-panel flag. */
 .dv-prob {
   color: var(--dv-ink);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;

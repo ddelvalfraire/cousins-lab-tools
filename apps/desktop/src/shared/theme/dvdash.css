@@ -1,4 +1,4 @@
-/* Window frame behind the sidebar and page card (main-sidebar-review.html --p-frame). */
+/* Window frame behind the sidebar and page card. */
 .dvdash {
   --dv-frame: #eef2ee;
 }
@@ -192,7 +192,7 @@ button.dv-unit {
 .dv-plot .uplot {
   font-family: inherit;
 }
-/* Sparse inspector frame (alignment-inspector-review.html, source-binding-review.html: .plot text, .x-title). */
+/* Sparse inspector frame. */
 .dv-plot.dv-plot-sparse {
   min-height: 0;
 }

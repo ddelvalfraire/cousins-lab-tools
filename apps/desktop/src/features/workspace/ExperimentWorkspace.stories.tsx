@@ -16,7 +16,7 @@ import {
   recordedSamplesWithGap,
 } from './fixtures.ts';
 
-/** The compact sticky playback transport (sticky-playback-review.html). Position and play state are owned by the page.
+/** The compact sticky playback transport. Position and play state are owned by the page.
  *  The page's workspace container is what switches the bar to two rows when narrow, so the harness provides one. */
 function Transport(args: PlaybackTransportProps) {
   const [position, setPosition] = useState(args.position),

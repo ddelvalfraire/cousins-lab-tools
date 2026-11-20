@@ -236,7 +236,6 @@ const tabs: RightSidebarTab[] = [
 
 /**
  * Right-sidebar inspector for comparing recordings: Align (reference mode, event, origins, Apply) and Sources.
- * Values from design/dvdash-field-review/alignment-inspector-review.html.
  */
 export function RecordingAlignmentInspector({
   editor,
@@ -513,7 +512,6 @@ const lineColors = {
 
 /**
  * Chart card that previews the draft alignment immediately. Original timestamps are not changed.
- * Values from design/dvdash-field-review/alignment-inspector-review.html (.chart-card).
  */
 export function AlignmentPreviewChart({
   editor,

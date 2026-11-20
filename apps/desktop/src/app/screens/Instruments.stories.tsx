@@ -41,7 +41,7 @@ const rows = (canvasElement: HTMLElement) => [
 
 /** Navigable catalog in the workspace fixture. */
 export const Profiles: Story = {};
-/** instrument-catalog-review.html, Mixed connections example: sorted by name, sidebar collapsed to its rail. */
+/** Mixed connections example: sorted by name, sidebar collapsed to its rail. */
 export const Default: Story = {
   render: () => <FrozenInstruments />,
   play: async ({ canvasElement }) => {

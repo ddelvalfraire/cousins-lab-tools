@@ -120,9 +120,8 @@ const parse = (text: string) => {
 
 /**
  * The experiment page inside the frame: shared header, workspace and right sidebar.
- * Live: acquisition controls in the header and live stream cards (right-sidebar-review.html, start-acquisition-review.html,
- * stop-confirmation-review.html). Recorded: the compact sticky playback transport over the charts (sticky-playback-review.html).
- * Problems: diagnostics-review.html.
+ * Live: acquisition controls in the header and live stream cards. Recorded: the compact sticky playback transport
+ * over the charts.
  */
 export function CapturePage({
   experiment,
@@ -575,8 +574,6 @@ const clockDate = (iso: string) =>
 /**
  * Review & export: the recording's signals and details (Overview), the comparison with a reference (Align & compare)
  * and saved interval results (Results), each beside its inspector in the right sidebar. Export opens the export dialog.
- * Values from source-binding-review.html, alignment-inspector-review.html, saved-result-inspector-review.html and
- * recording-export-review.html.
  */
 export function ReviewPage({
   experiment,

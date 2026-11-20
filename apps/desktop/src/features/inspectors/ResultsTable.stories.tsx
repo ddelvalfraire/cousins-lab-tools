@@ -15,7 +15,7 @@ import {
   useSavedResultInspector,
 } from './SavedResults';
 
-/** Synthetic saved results from saved-result-inspector-review.html. */
+/** Synthetic saved results. */
 const results: SavedResult[] = [1.508, 1.742, 2.713, 1.92, 1.335, 0.85].map(
   (mean, i) => ({
     id: `result-${i + 1}`,

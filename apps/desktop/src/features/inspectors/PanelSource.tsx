@@ -185,7 +185,6 @@ const tabs: RightSidebarTab[] = [
 
 /**
  * Right-sidebar inspector choosing one panel's source and visible signals (Data), and describing the applied source (Source).
- * Values from design/dvdash-field-review/source-binding-review.html.
  */
 export function PanelSourceInspector({
   editor,
@@ -455,7 +454,6 @@ const lineColors = {
 
 /**
  * The panel's chart. It always shows the applied source: a pending or failed switch leaves it unchanged.
- * Values from design/dvdash-field-review/source-binding-review.html (.chart-card).
  */
 export function PanelSourceChart({
   editor,

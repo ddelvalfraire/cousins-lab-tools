@@ -34,7 +34,7 @@ export interface PresetTile {
 /** Panels never overlap, so a panel's corner names it. */
 const tilePlace = (tile: { x: number; y: number }) => `${tile.x},${tile.y}`;
 
-/** Miniature of a preset layout (.preset-thumb), from design/dvdash-field-review/preset-import-review.html. */
+/** Miniature of a preset layout (.preset-thumb). */
 export function PresetThumbnail({
   layout,
   className,
@@ -224,7 +224,6 @@ function DefinitionOverview({
 /**
  * Imports a preset definition file: choose a file, wait for it to be checked, review what it contains
  * and name it, then add it. Instruments are assigned later, when the preset is used.
- * Values from design/dvdash-field-review/preset-import-review.html.
  */
 export function PresetImportDialog({
   opened,

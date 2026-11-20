@@ -71,8 +71,8 @@ const glyph = (path: ReactNode) => (
 );
 
 /**
- * The window bar's unified search (unified-search-review.html): one box, two scopes. The page scope filters the
- * page through its query; All DVDash opens the command center (command-library-review.html) under the box.
+ * The window bar's unified search: one box, two scopes. The page scope filters the
+ * page through its query; All DVDash opens the command center under the box.
  */
 export function ShellSearch({
   ref,

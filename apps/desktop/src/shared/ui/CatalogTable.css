@@ -1,7 +1,6 @@
 /*
  * Catalog pages (presets, instruments, routines).
- * Values from design/dvdash-field-review/preset-catalog-review.html (.preset-*), instrument-catalog-review.html
- * (.instrument-*, .channel-*) and routine-catalog-review.html (.routine-*). Mockup tokens map to Approved.css:
+ * Mockup tokens map to Approved.css:
  * --p-border → --dv-line, --p-muted → --dv-ink-muted, --p-text → --dv-ink, --p-bg/paper/soft/accent → --dv-*.
  */
 .dv-cat {

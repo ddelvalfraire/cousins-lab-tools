@@ -58,7 +58,7 @@ export function WorkspaceGlyph({ name }: { name: keyof typeof glyphs }) {
 
 const fixed = (value: number | null | undefined, digits: number) =>
   value === null || value === undefined ? '—' : value.toFixed(digits);
-/** `mm:ss.t`, as in sticky-playback-review.html (`pbTimecode`). */
+/** `mm:ss.t`. */
 export function timecode(seconds: number) {
   const ticks = Math.max(0, Math.round(seconds * 10)),
     whole = Math.floor(ticks / 10);
@@ -75,7 +75,7 @@ export function sampleIndexAt(
   return index;
 }
 
-/* ---------- Live workspace (right-sidebar-review.html, experiment page) ---------- */
+/* ---------- Live workspace (experiment page) ---------- */
 
 /** Clocks and counts above the stream cards (.live-summary). */
 export function LiveSummary({
@@ -197,7 +197,7 @@ export function DerivedCard({
   );
 }
 
-/* ---------- Recorded workspace (sticky-playback-review.html, compact sticky transport) ---------- */
+/* ---------- Recorded workspace (compact sticky transport) ---------- */
 
 export interface PlaybackTransportProps {
   position: number;
@@ -551,7 +551,7 @@ function SideField({
   );
 }
 
-/* ---------- Right sidebar panes (right-sidebar-review.html, diagnostics-review.html) ---------- */
+/* ---------- Right sidebar panes ---------- */
 
 export type ExperimentSidebarTab =
   | 'problems'

@@ -1,6 +1,5 @@
 /*
  * Shared import and export dialog shell.
- * Values from design/dvdash-field-review/recording-import-review.html (.recording-dialog and .import-*).
  */
 /* Mantine's fixed layer sets no left offset, so a flex-centred body would shift it. */
 .dv-import-inner {

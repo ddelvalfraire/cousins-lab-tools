@@ -56,7 +56,6 @@ export interface RevisionHistoryListProps {
 /**
  * Saved revisions for the right sidebar's Revisions tab: borderless R labels, Current and selected marks,
  * and date and panel chips, separated by inset rules.
- * Values from design/dvdash-field-review/revision-chips-review.html (.saved-history-*).
  */
 export function RevisionHistoryList({
   revisions,
@@ -214,7 +213,6 @@ export type RestorePhase =
 
 /**
  * Confirmation above the saved version: restoring copies the selected revision into a new revision.
- * Values from design/dvdash-field-review/revision-history-review.html (the restore confirmation above the saved version).
  */
 export function RevisionRestoreConfirm({
   phase,

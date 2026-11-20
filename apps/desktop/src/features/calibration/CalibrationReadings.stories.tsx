@@ -8,7 +8,7 @@ import {
   type IntervalSummary,
 } from './CalibrationChecklist';
 
-/** Steps and synthetic samples from calibration-checklist-review.html. */
+/** Steps and synthetic samples. */
 const steps: ChecklistStep[] = [
   { id: 'zero', label: 'Zero offset', known: 0 },
   { id: 'std100', label: 'Standard 100', known: 100 },

@@ -1159,7 +1159,7 @@ export function traceSegments(
  * and keep the margins, the height and the 9 px labels.
  */
 const traceFrames = {
-  /** right-sidebar-review.html `.live-plot`: the last 30 s of a live stream. */
+  /** The last 30 s of a live stream. */
   live: {
     width: 214,
     height: 100,
@@ -1168,7 +1168,7 @@ const traceFrames = {
     right: 10,
     plotHeight: 58,
   },
-  /** sticky-playback-review.html `.playback-plot`: the whole recording with a playhead. */
+  /** The whole recording with a playhead. */
   playback: {
     width: 260,
     height: 145,

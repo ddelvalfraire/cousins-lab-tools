@@ -28,7 +28,7 @@ export interface PlotSeries {
 
 /**
  * Room for the tick labels in the sparse frame, in px: left of and below the plot area.
- * alignment-inspector-review.html uses 42 × 37; source-binding-review.html uses 38 × 34.
+ * The alignment inspector uses 42 × 37; the panel source inspector uses 38 × 34.
  */
 export interface SparseFrame {
   left?: number;
@@ -47,7 +47,7 @@ interface Overlay {
   labels: TickLabel[];
 }
 
-/** The sparse frame's fixed edges (alignment-inspector-review.html `paintChart`): 24 px above, 12 px right. */
+/** The sparse frame's fixed edges: 24 px above, 12 px right. */
 const SPARSE_TOP = 24,
   SPARSE_RIGHT = 12;
 const clockText = (seconds: number) => {
@@ -95,8 +95,7 @@ export function ScientificPlot({
   minimumWidth?: number;
   /**
    * Inspector chart frame: three ticks per axis (both ends and the middle, values to one decimal), the unit above the
-   * vertical axis and `xLabel` as a caption below the chart. Needs `limits`. Values from alignment-inspector-review.html
-   * and source-binding-review.html.
+   * vertical axis and `xLabel` as a caption below the chart. Needs `limits`.
    */
   sparse?: boolean | SparseFrame;
   /** Unit shown above the vertical axis in the sparse frame, e.g. "mV". */

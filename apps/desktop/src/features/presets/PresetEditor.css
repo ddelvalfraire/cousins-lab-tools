@@ -1,4 +1,4 @@
-/* Preset editor: design/dvdash-field-review/preset-editor-review.html. Sizes follow the approved mockup. */
+/* Preset editor. Sizes follow the approved mockup. */
 .dv-preset-editor {
   container: dv-preset-editor / inline-size;
   position: relative;
@@ -119,7 +119,7 @@
   position: relative;
   margin-top: 12px;
 }
-/* Add panel menu: the approved header menu (shared-header-review.html .header-menu), opening below its button. */
+/* Add panel menu: the approved header menu, opening below its button. */
 .pe-add-menu {
   position: absolute;
   left: 0;
@@ -573,7 +573,7 @@
 .pe-mini-table tr:nth-child(even) td {
   background: var(--dv-bg);
 }
-/* Settings preview: the approved quantity input (quantity-input-review.html .field and .qty), drawn inert. */
+/* Settings preview: the approved quantity input, drawn inert. */
 .pe-settings {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

@@ -1,4 +1,4 @@
-/* Right sidebar shell. Values from design/dvdash-field-review/right-sidebar-review.html (.right-sidebar, .side-tabs, .sidebar-*). */
+/* Right sidebar shell. */
 /* Docked to the page's right edge: full height below the header, a rule on its left side only, its own scroll.
    Width eases between the open pane and the rail; the pane slides out from under the rail's left edge. */
 /* Holds the sidebar's Escape handler without a box of its own, so the pane and tabs stay the aside's flex items. */

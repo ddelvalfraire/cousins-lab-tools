@@ -1,7 +1,5 @@
 /*
  * Revision list, changes and restore confirmation.
- * Values from design/dvdash-field-review/revision-chips-review.html (.saved-history-*, .revision-*)
- * and revision-history-review.html (.revision-restore-*).
  */
 .dv-revision-sr {
   position: absolute;

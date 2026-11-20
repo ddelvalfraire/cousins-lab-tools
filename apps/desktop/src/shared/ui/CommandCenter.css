@@ -1,5 +1,4 @@
-/* Command center results. Values from design/dvdash-field-review/command-library-review.html
-   (.search-popover, .search-types, .search-result, .result-group, .search-empty, .search-footer). */
+/* Command center results. */
 .dv-cmd {
   position: absolute;
   top: calc(100% + 9px);

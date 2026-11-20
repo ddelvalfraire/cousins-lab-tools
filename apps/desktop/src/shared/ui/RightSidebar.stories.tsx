@@ -47,7 +47,7 @@ function SampleSelect({
   );
 }
 
-/** Sample settings for each tab, as in right-sidebar-review.html. */
+/** Sample settings for each tab. */
 function Pane({ tab }: { tab?: string }) {
   if (tab === 'signals')
     return (

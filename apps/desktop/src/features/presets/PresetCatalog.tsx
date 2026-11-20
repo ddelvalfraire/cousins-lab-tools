@@ -260,7 +260,7 @@ function compare(key: PresetSortKey, a: CatalogPreset, b: CatalogPreset) {
 
 /**
  * Presets catalog: sortable list (or grid) of preset definitions with layout thumbnails, a quiet "Use preset" action,
- * and the selected preset in the right sidebar. Values from design/dvdash-field-review/preset-catalog-review.html.
+ * and the selected preset in the right sidebar.
  */
 export function PresetCatalog({
   presets,

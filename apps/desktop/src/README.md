@@ -41,7 +41,7 @@ Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both 
 - A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
 - `shared` never imports `@/features` or `@/app`.
 - Outside a feature, import it only through its public API: `@/features/<name>` (its `index.ts`), or `@/features/<name>/fixtures` for the sample data that app stories reuse.
-- Relative imports stay inside their folder; other folders are reached through `@/` (`tsconfig.json` `paths`, which Vite reads with `resolve.tsconfigPaths`). Only `.storybook/` and the repository's `design/` folder are reached by relative path, because Vite applies the alias only to files `tsconfig.json` includes.
+- Relative imports stay inside their folder; other folders are reached through `@/` (`tsconfig.json` `paths`, which Vite reads with `resolve.tsconfigPaths`). Only `.storybook/` and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it.
 
 The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule and must be rejected; `*.allowed.ts` files must pass.
 
@@ -106,7 +106,7 @@ Install Chromium once with `bunx playwright install chromium`, or select an exis
 
 ### V1 screen inventory
 
-The application opens on **Experiments**. The Screens section holds full-page, navigable stories for each screen below, built from the `feat/acquisition-ui-prototype` workflow. Layouts and navigation follow the approved screen mockups in `design/dvdash-field-review/`.
+The application opens on **Experiments**. The Screens section holds full-page, navigable stories for each screen below, built from the `feat/acquisition-ui-prototype` workflow. Layouts and navigation follow the approved screen mockups.
 
 | Screen               | Responsibility                                                                                                                                   |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -130,7 +130,7 @@ The sidebar has its own stories: expanded/collapsed, selected utility, long labe
 
 The visual direction is GREEN FIELD: forest/jade/mint/lime/ivory, independent scientific series colors and severity colors. The header, window bar and navigation drawer show `icon.svg` from the repository's [`assets/branding/dvdash/`](../../../assets/branding/dvdash/README.md) beside the DVDash wordmark set in the system font. No optional leaf terminal, domain or tagline is adopted.
 
-The mockups in `design/dvdash-field-review/` set component structure, and GREEN FIELD supplies the theme. Ambit-specific work is excluded and belongs to another owner. Generic routine controls remain shared UI abstractions. Rebinding, live inspection and recovery remain open product questions.
+The approved mockups set component structure, and GREEN FIELD supplies the theme. Ambit-specific work is excluded and belongs to another owner. Generic routine controls remain shared UI abstractions. Rebinding, live inspection and recovery remain open product questions.
 
 No actual IPC, catalog persistence, acquisition or scientific calculation service is implemented. Scientific arithmetic and results in the prototype panels remain illustrative. Screen compositions are fixture scenarios, not migrated production workflows. The native starter (`src/App.tsx`, `src/main.tsx`, `public/`, `vite.config.ts`, `scripts/clean.mjs`) is linted and formatted with the same Biome rules as the UI. UI modules do not import Tauri invoke/listen; data-provider/service contracts remain separate work.
 

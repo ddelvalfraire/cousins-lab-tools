@@ -13,7 +13,7 @@ export type {
   ShortcutSection,
 } from '@/shared/config/search-registry';
 
-/** Every shortcut (command-center-review.html, "Keyboard reference"), from the search registry. `Mod` is ⌘ or Ctrl. */
+/** Every shortcut, from the search registry. `Mod` is ⌘ or Ctrl. */
 export const shortcutSections: readonly ShortcutSection[] =
   shortcutSectionsFor(commands);
 

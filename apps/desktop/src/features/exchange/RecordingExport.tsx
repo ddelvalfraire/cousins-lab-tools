@@ -123,7 +123,6 @@ export function exportFileNameProblem(name: string) {
 /**
  * Exports a recording's signals as CSV or JSON: the full recording or a configurable interval,
  * the signals to include, and the file name. Gaps are reported without blocking the export.
- * Values from design/dvdash-field-review/recording-export-review.html.
  */
 const FORMAT_LABEL = 'Format';
 const FORMATS = [

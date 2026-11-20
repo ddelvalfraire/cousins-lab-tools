@@ -1,4 +1,4 @@
-/* Shared page header. Values from design/dvdash-field-review/shared-header-review.html (.shared-header, .shared-actionbar). */
+/* Shared page header. */
 .dv-page-header {
   container: dv-page-header / inline-size;
   flex: none;

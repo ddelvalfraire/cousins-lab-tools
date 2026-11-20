@@ -88,7 +88,6 @@ const statusWord: Record<RecordingFileStatus, string> = {
 /**
  * Imports recorded files as experiments: choose files, review names and the preset, then import.
  * Files that can't be read are listed together and must be removed before review.
- * Values from design/dvdash-field-review/recording-import-review.html.
  */
 export function RecordingImportDialog({
   opened,

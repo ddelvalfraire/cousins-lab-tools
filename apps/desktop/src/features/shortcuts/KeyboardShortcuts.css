@@ -1,5 +1,4 @@
-/* Keyboard shortcuts dialog. Values from design/dvdash-field-review/command-library-review.html
-   (.command-dialog, .shortcut-section, .shortcut-list). */
+/* Keyboard shortcuts dialog. */
 /* Mantine's fixed layer sets no left offset, so a padded or flex-centred body would shift it. */
 .dv-shortcuts-inner {
   left: 0;

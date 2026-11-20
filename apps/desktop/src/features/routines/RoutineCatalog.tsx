@@ -195,7 +195,7 @@ function StepStrip({
 
 /**
  * Routines catalog: names and inputs on the left, revision and a quiet "View steps" action, and the complete step
- * sequence beneath each row. Values from design/dvdash-field-review/routine-catalog-review.html.
+ * sequence beneath each row.
  */
 export function RoutineCatalog({
   routines,

@@ -61,7 +61,7 @@ const stroke = {
   strokeLinejoin: 'round',
   focusable: false,
 } as const;
-/** The mockup's sidebar glyphs (right-sidebar-review.html, sideIcons). */
+/** The mockup's sidebar glyphs. */
 const glyphs = {
   details: (
     <>
@@ -146,7 +146,6 @@ function useSheetMode() {
  * collapse button, then a labelled vertical tab rail. Collapsing slides the pane away and keeps only the rail.
  * In a page narrower than 800 px the rail stays and the pane opens as a sheet over the content;
  * Escape, the collapse button or a click outside closes it.
- * Values from design/dvdash-field-review/right-sidebar-review.html.
  */
 export function RightSidebar({
   tabs,

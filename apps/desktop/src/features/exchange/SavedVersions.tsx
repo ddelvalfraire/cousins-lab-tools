@@ -99,7 +99,6 @@ function SavedPlot({ chart }: { chart: SavedChart }) {
 
 /**
  * Read-only preview of a saved preset layout: chart panels, then readouts and inputs.
- * Values from design/dvdash-field-review/revision-chips-review.html (.saved-version-preview).
  */
 export function SavedVersionPreview({
   charts,
@@ -191,7 +190,6 @@ export interface SavedVersionViewProps {
 /**
  * Main area of the revision history page: the selected revision with Preview and Changes tabs.
  * Earlier revisions can be restored as a new revision after confirmation.
- * Values from design/dvdash-field-review/revision-chips-review.html; restore confirmation from revision-history-review.html.
  */
 export function SavedVersionView({
   title,

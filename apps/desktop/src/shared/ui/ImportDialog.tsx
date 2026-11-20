@@ -16,7 +16,7 @@ const round = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 } as const;
-/** Glyphs copied from the import and export mockups (recording-import-review.html, sideIcons). */
+/** Glyphs copied from the import and export mockups. */
 const glyphs = {
   file: {
     attributes: { ...round, strokeWidth: 1.5 },
@@ -149,7 +149,6 @@ export interface ImportDialogProps {
 /**
  * Shared shell for the import and export dialogs: title and description with a close button,
  * optional step trail, scrolling body and a footer with a note on the left and actions on the right.
- * Values from design/dvdash-field-review/recording-import-review.html (.recording-dialog).
  */
 export function ImportDialog({
   opened,

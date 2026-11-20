@@ -1,5 +1,4 @@
-/* Application frame. Values from design/dvdash-field-review/main-sidebar-review.html (frame, sidebar, card)
-   and right-sidebar-review.html (window bar). */
+/* Application frame: frame, sidebar, page card and window bar. */
 .dv-shell {
   container: dv-shell / inline-size;
   --dv-nav-text: #51635a;
@@ -767,7 +766,7 @@
   border-radius: 0;
   background: none;
 }
-/* settings-review.html's 760 px card less its 24 px padding, kept at the title's left edge. */
+/* The settings mockup's 760 px card less its 24 px padding, kept at the title's left edge. */
 .dv-shell-page .dv-settings {
   max-width: 712px;
   margin-inline: 0;

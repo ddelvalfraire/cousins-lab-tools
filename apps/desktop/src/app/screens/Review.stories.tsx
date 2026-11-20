@@ -28,7 +28,7 @@ const page = { parameters: { previewWidth: 'viewport' } } as const;
 const box = (root: HTMLElement, selector: string) =>
   root.querySelector(selector)!.getBoundingClientRect();
 
-/** Paused at 42 s, as in sticky-playback-review.html. Keyboard steps and jumps move the playhead. */
+/** Paused at 42 s. Keyboard steps and jumps move the playhead. */
 export const PlaybackPaused: Story = {
   args: { ...recorded },
   play: async ({ canvasElement }) => {
@@ -239,7 +239,7 @@ export const RecordedNoProblemsDark: Story = {
   ...dark,
 };
 
-/** Review & export page: the recording's signals beside its details (source-binding-review.html chart, right-sidebar-review.html facts). */
+/** Review & export page: the recording's signals beside its details. */
 export const RecordingOverview: Story = {
   ...page,
   play: async ({ canvasElement }) => {
@@ -258,7 +258,7 @@ export const RecordingOverview: Story = {
     await expect(canvas.queryByRole('tab', { name: 'Export' })).toBeNull();
   },
 };
-/** The recording beside its reference, aligned in the sidebar (alignment-inspector-review.html). */
+/** The recording beside its reference, aligned in the sidebar. */
 export const Alignment: Story = {
   ...page,
   play: async ({ canvasElement }) => {
@@ -276,7 +276,7 @@ export const Alignment: Story = {
     ).toBeVisible();
   },
 };
-/** Saved interval results with the selected result's details (saved-result-inspector-review.html). */
+/** Saved interval results with the selected result's details. */
 export const Results: Story = {
   ...page,
   play: async ({ canvasElement }) => {
@@ -296,7 +296,7 @@ export const Results: Story = {
     await expect(canvas.getByText('1–3 of 6')).toBeVisible();
   },
 };
-/** Export recording opens the export dialog (recording-export-review.html). */
+/** Export recording opens the export dialog. */
 export const Export: Story = {
   ...page,
   play: async ({ canvasElement }) => {

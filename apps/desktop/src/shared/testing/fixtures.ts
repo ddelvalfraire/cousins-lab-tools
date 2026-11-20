@@ -16,7 +16,7 @@ export function alignedData(rows: SignalSample[]): uPlot.AlignedData {
     rows.map((row) => row.mass49),
   ];
 }
-/** Saved interval results of Sample 024, with the calibration stored with them (saved-result-inspector-review.html means). */
+/** Saved interval results of Sample 024, with the calibration stored with them. */
 export const savedResults = [1.508, 1.742, 2.713, 1.92, 1.335, 0.85].map(
   (mean, i) => ({
     id: `result-${i + 1}`,

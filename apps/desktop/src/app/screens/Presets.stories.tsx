@@ -48,7 +48,7 @@ const rows = (canvasElement: HTMLElement) => [
 
 /** Navigable catalog in the workspace fixture. */
 export const Catalog: Story = {};
-/** preset-catalog-review.html, Catalog example: sorted by name, sidebar collapsed to its rail. */
+/** Catalog example: sorted by name, sidebar collapsed to its rail. */
 export const Default: Story = {
   render: () => <FrozenPresets />,
   play: async ({ canvasElement }) => {
@@ -245,7 +245,7 @@ export const PresetRevisions: Story = {
     );
   },
 };
-/** Open a preset from the catalog sidebar, then an earlier revision from its Revisions tab (revision-chips-review.html). */
+/** Open a preset from the catalog sidebar, then an earlier revision from its Revisions tab. */
 export const OpenRevision: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

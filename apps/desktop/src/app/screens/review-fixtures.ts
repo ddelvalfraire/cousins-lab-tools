@@ -1,6 +1,6 @@
 /**
  * Review & export page fixtures: the recording and a reference recording, shaped for the approved inspectors.
- * Traces follow alignment-inspector-review.html and source-binding-review.html; nothing is read from disk.
+ * Nothing is read from disk.
  */
 
 import type { IntervalResult } from '@/features/acquisition';
@@ -25,7 +25,7 @@ import type {
 } from '@/shared/testing/screen-fixtures';
 
 const DURATION = 300;
-/** A response 18 s after the event, then a smaller one 55 s after it (alignment-inspector-review.html `raw`). */
+/** A response 18 s after the event, then a smaller one 55 s after it. */
 const response = (t: number, event: number) =>
   0.303 +
   0.85 * Math.exp(-(((t - event - 18) / 13) ** 2)) +
@@ -100,7 +100,7 @@ export const reviewChannels: PanelChannel[] = [
   { id: 'mass49', label: 'Mass 49', line: 'dotted' },
 ];
 export const reviewSignalUnit = { unit: 'mV', quantity: 'voltage signals' };
-/** Sources the overview chart can show: this recording and the reference, both at 2 samples/s (source-binding-review.html `raw`). */
+/** Sources the overview chart can show: this recording and the reference, both at 2 samples/s. */
 export function reviewSources(
   experiment: ExperimentSummary,
 ): PanelSourceOption[] {
@@ -253,7 +253,7 @@ export function exportCsv(
   ].join('\n');
 }
 
-/** Calibration steps from calibration-checklist-review.html. */
+/** Calibration steps. */
 export const calibrationSteps: ChecklistStep[] = [
   { id: 'zero', label: 'Zero offset', known: 0 },
   { id: 'std100', label: 'Standard 100', known: 100 },

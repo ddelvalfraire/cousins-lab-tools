@@ -75,7 +75,6 @@ const fmt = (value: number) => value.toFixed(3);
 
 /**
  * Checklist of named calibration readings. Each capture stores the selected interval's mean with that interval.
- * Values from design/dvdash-field-review/calibration-checklist-review.html.
  */
 export function CalibrationChecklist({
   title = 'Calibration readings',

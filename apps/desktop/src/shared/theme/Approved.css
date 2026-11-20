@@ -1,6 +1,6 @@
 /*
  * Approved review palette and shared pieces.
- * Values come from design/dvdash-field-review (light and "Matcha dark").
+ * Light and "Matcha dark" schemes.
  * New components use these tokens; older components keep their own until replaced.
  * Text sizes are rem against a 16 px root (.75rem is 12 px, .6875rem is 11 px), so all text follows the root font size.
  * Borders, icons and layout widths stay in px.

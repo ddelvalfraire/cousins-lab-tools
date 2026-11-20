@@ -16,7 +16,7 @@ import {
   usePanelSource,
 } from './PanelSource';
 
-/** Synthetic sources from source-binding-review.html. */
+/** Synthetic sources. */
 const rows = (count: number, n: number) =>
   Array.from({ length: count }, (_, i) => ({
     t: i / 2,
