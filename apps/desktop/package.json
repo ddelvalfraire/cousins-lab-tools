@@ -15,7 +15,7 @@
     "storybook:check": "tsc --project tsconfig.storybook.json --noEmit",
     "tauri": "tauri",
     "check": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit && bun run lint && bun run lint:fixtures && bun run lint:boundaries",
-    "test": "vitest run",
+    "test": "vitest run --project unit --project dom",
     "lint": "biome check .",
     "lint:fixtures": "bun lint/check-fixtures.mjs",
     "lint:boundaries": "bun lint/check-boundaries.mjs",
