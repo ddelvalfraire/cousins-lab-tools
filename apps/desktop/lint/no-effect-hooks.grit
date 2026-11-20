@@ -2,8 +2,16 @@ language js
 
 // Matches the banned names wherever they appear as a name, not only as a call, so React.useEffect, a destructured or
 // aliased binding, React['useEffect'], React[`useEffect`] and a re-export are caught along with plain calls. A computed
-// member key with an escape (React['use\x45ffect']) can spell any of them, so such keys are rejected outright.
+// member key with an escape (React['use\x45ffect']) can spell any of them, so such keys are rejected outright. Biome
+// matches names by their source text, so an escaped name (use\u0045ffect, 'use\u0045ffect' as run) is rejected too.
 or {
+  or {
+    JsReferenceIdentifier(),
+    JsIdentifierBinding(),
+    JsName(),
+    JsLiteralMemberName(),
+    JsLiteralExportName()
+  } as $name where { $name <: r".*\\.*" },
   or {
     JsReferenceIdentifier(),
     JsIdentifierBinding(),

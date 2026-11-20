@@ -38,8 +38,9 @@ const ban = /message="([^"]+)"/.exec(
   readFileSync(join(app, 'lint/no-effect-hooks.grit'), 'utf8'),
 )?.[1];
 if (!ban) throw new Error('No diagnostic message in lint/no-effect-hooks.grit');
+// noRestrictedImports does not decode an escaped name, so fixtures that escape one rely on the plugin alone.
 const namesBannedImport = (file) =>
-  /^(?:import|export) \{[^}]*\} from '(?:react|@mantine\/hooks)'/m.test(
+  /^(?:import|export) \{[^}\\]*\} from '(?:react|@mantine\/hooks)'/m.test(
     readFileSync(join(dir, file), 'utf8'),
   );
 
