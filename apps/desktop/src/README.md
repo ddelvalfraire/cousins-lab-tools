@@ -97,9 +97,8 @@ STORYBOOK_ALLOWED_HOSTS=<hostname> bun run storybook --host <address> --ci
 ## Verification
 
 ```sh
-bun run check              # types, Biome lint and format, the effect ban's and boundary rules' fixtures, and the suppression gate
+bun run check              # types (src, vite.config.ts, and through storybook:check .storybook/, tests/ and the Vitest and Playwright configs), Biome lint and format, the effect ban's and boundary rules' fixtures, and the suppression gate
 bun run test               # Vitest unit (*.test.ts, node) and dom (*.test.tsx, jsdom) projects
-bun run storybook:check
 bun run storybook:build
 bun run storybook:test     # Storybook's native Vitest/browser tests, including play
 bun run storybook:e2e      # supplementary integration/accessibility/layout checks

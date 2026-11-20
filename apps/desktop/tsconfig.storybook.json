@@ -8,7 +8,7 @@
     ".storybook",
     "vitest.config.ts",
     "playwright.storybook.config.ts",
-    "tests/storybook.spec.ts"
+    "tests"
   ],
   "references": []
 }

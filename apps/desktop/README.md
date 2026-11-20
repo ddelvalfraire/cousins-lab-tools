@@ -50,6 +50,7 @@ Source files, lockfiles, toolchains, and shared caches stay in place. Run `bun i
 `bun run check` also runs these:
 
 ```sh
+bun run storybook:check    # type-checks .storybook/, tests/ and the Vitest and Playwright configs
 bun run lint               # Biome lint and format check
 bun run lint:fixtures      # proves the effect ban, as biome.json configures it, rejects every file in lint/fixtures
 bun run lint:boundaries    # proves the import boundary rules reject every file in lint/boundaries/fixtures
