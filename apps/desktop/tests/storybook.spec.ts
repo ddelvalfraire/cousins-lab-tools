@@ -520,6 +520,31 @@ test('a scrolling import dialog body can take keyboard focus to scroll', async (
   ).toEqual([]);
 });
 
+// The icon is a file outside the app, so a server or build that cannot reach it shows a broken image at the right size.
+test('the brand mark loads its icon in the window bar, the drawer and the workspace header', async ({
+  page,
+}) => {
+  for (const id of [
+    'screens-experiments--home',
+    'components-navigationdrawer--open',
+    'components-workspaceheader--recorded',
+  ]) {
+    await story(page, id);
+    const icons = await page.locator('.dv-brand-mark img').all();
+    expect(icons.length, `${id} shows a brand mark`).toBeGreaterThan(0);
+    for (const icon of icons)
+      await expect
+        .poll(
+          () =>
+            icon.evaluate((img: HTMLImageElement) =>
+              img.complete ? img.naturalWidth : 0,
+            ),
+          { message: `${id} loads ${await icon.getAttribute('src')}` },
+        )
+        .toBeGreaterThan(0);
+  }
+});
+
 test('the skip link is inside the window bar landmark and still comes first', async ({
   page,
 }) => {
