@@ -42,7 +42,7 @@ Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both 
 - `shared` never imports `@/features` or `@/app`.
 - Outside a feature, import it only through its public API: `@/features/<name>` (its `index.ts`), or `@/features/<name>/fixtures` for the sample data that app stories reuse.
 - Relative imports stay inside their folder; other folders are reached through `@/`. Only `.storybook/` and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it. Storybook setup and Playwright tests reach a feature by relative path (`../src/features/<name>`), and the public-API rule applies to those paths too.
-- Import paths are written without a `..` after a folder name and without `//` (`@/shared/../features/x` is rejected), so the rules see where each import leads.
+- Import paths are written without a `..` after a folder name, without a `.` segment after the first and without `//` (`@/shared/../features/x` and `@/./features/x` are rejected), so the rules see where each import leads.
 - No `biome-ignore` comment may switch off the effect ban or these rules: `bun run lint:suppressions` rejects suppressions of `lint`, `lint/plugin` and `lint/style/noRestrictedImports`.
 
 The `@/` alias comes from `tsconfig.json` `paths`. Vite (`resolve.tsconfigPaths` in `vite.config.ts`), Vitest (`vitest.config.ts`) and Storybook (`.storybook/main.ts`) all read it.
