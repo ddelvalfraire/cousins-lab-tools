@@ -16,6 +16,7 @@
       "!!**/playwright-report",
       "!lint/fixtures",
       "!lint/boundaries/fixtures",
+      "!lint/suppressions/fixtures",
       "!bun.lock"
     ]
   },
