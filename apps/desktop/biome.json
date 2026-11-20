@@ -9,11 +9,11 @@
   "files": {
     "includes": [
       "**",
-      "!!**/src-tauri",
-      "!!**/dist",
-      "!!**/storybook-static",
-      "!!**/test-results",
-      "!!**/playwright-report",
+      "!!src-tauri",
+      "!!dist",
+      "!!storybook-static",
+      "!!test-results",
+      "!!playwright-report",
       "!lint/fixtures",
       "!lint/boundaries/fixtures",
       "!lint/suppressions/fixtures",

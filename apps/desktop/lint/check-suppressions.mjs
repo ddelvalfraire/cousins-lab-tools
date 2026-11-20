@@ -14,14 +14,15 @@ import { fileURLToPath } from 'node:url';
 const app = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixtures = join(app, 'lint/suppressions/fixtures');
 const configs = join(app, 'lint/suppressions/configs');
-const skipped = new Set([
-  'node_modules',
-  'dist',
-  'storybook-static',
-  'test-results',
-  'playwright-report',
-  'src-tauri',
-]);
+// The same top-level folders biome.json skips with `!!`, so a folder of the same name deeper down is still read.
+const skipped = new Set(
+  [
+    'node_modules',
+    ...JSON.parse(readFileSync(join(app, 'biome.json'), 'utf8'))
+      .files.includes.filter((glob) => glob.startsWith('!!'))
+      .map((glob) => glob.slice(2)),
+  ].map((folder) => join(app, folder)),
+);
 // A suppression lists one or more categories before its colon, and any one of them takes effect, so each is tested.
 const suppression = /biome-ignore(?:-all|-start|-end)?\s([^:\n]*)/g;
 const banned =
@@ -31,7 +32,7 @@ function sources(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      return skipped.has(entry.name) || path === fixtures ? [] : sources(path);
+      return skipped.has(path) || path === fixtures ? [] : sources(path);
     }
     return /\.[cm]?[jt]sx?$/.test(entry.name) ? [path] : [];
   });

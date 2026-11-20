@@ -25,6 +25,8 @@ const roots = [
   'src',
   'src/app/probe',
   'src/features/probe',
+  // Named like the Tauri folder, which biome.json skips only at the top level.
+  'src/features/probe/src-tauri',
   'src/shared/probe',
   'tests',
   '.storybook',
