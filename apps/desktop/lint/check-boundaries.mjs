@@ -1,7 +1,7 @@
 // Each file in lint/boundaries/fixtures breaks one import boundary and names the rule that must reject it on its first
-// line (`// rejected by <rule>.grit`), except *.allowed.ts files, which show imports the rules must let through. The
-// fixtures run under the boundary plugins and override globs read from biome.json, so a change there is tested here as
-// well. Every plugin reports under the same `plugin` category, so the rule is told apart by its message.
+// line (`// rejected by <rule>.grit`), except *.allowed.ts and *.allowed.stories.tsx files, which show imports the rules
+// must let through. The fixtures run under the boundary plugins and override globs read from biome.json, so a change
+// there is tested here as well. Every plugin reports under the same `plugin` category, so the rule is told apart by its message.
 import { spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -28,6 +28,8 @@ const overrides = (config.overrides ?? [])
     includes: override.includes,
     plugins: absolute(override.plugins),
   }));
+
+const isAllowed = (file) => /\.allowed(?:\.stories)?\.tsx?$/.test(file);
 
 function filesIn(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
@@ -89,7 +91,7 @@ for (const line of biome.stdout.split('\n')) {
 const files = filesIn(fixtures);
 const wrong = [];
 for (const file of files) {
-  const allowed = file.endsWith('.allowed.ts');
+  const allowed = isAllowed(file);
   const rules = fired.get(file) ?? [];
   const expected = allowed
     ? null
@@ -111,7 +113,7 @@ for (const file of files) {
   console.log(`${verdict} ${file}${detail ? ` (${detail})` : ''}`);
 }
 
-const rejected = files.filter((file) => !file.endsWith('.allowed.ts'));
+const rejected = files.filter((file) => !isAllowed(file));
 if (!rejected.length || !overrides.length || wrong.length) {
   console.error(biome.stderr);
   console.error(

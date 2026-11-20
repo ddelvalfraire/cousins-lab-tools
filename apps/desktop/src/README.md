@@ -38,10 +38,10 @@ src/
 
 Rules, enforced by `bun run lint` and proved by `bun run lint:boundaries` (both part of `bun run check`). They cover `import` and `export ... from` statements, every string literal inside an `import()` call (so options and parentheses do not hide it) and `import('...')` types:
 
-- A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
-- `shared` never imports `@/features` or `@/app`.
+- A feature imports only its own files, by relative path (`./PresetEditor`), and `@/shared/...`. It never imports another feature or `@/app`, and any other `@/` path is rejected too, so a file elsewhere in `src` can't re-export a feature to it. When two features need the same thing, move it to `shared` if it is generic, or merge the features.
+- `shared` imports only its own files and `@/shared/...`, never `@/features`, `@/app` or any other `@/` path.
 - Outside a feature, import it only through its public API: `@/features/<name>` (its `index.ts`), or `@/features/<name>/fixtures` for the sample data that app stories reuse.
-- Relative imports stay inside their folder; other folders are reached through `@/`. Only `.storybook/` and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it. Storybook setup and Playwright tests reach a feature by relative path (`../src/features/<name>`), and the public-API rule applies to those paths too.
+- Relative imports stay inside their folder; other folders are reached through `@/`. Only `.storybook/`, from story files, and the brand SVGs in the repository's `assets/branding/dvdash/` are reached by relative path, because `@/` points at `src/` and they sit outside it. Storybook setup and Playwright tests reach a feature by relative path (`../src/features/<name>`), and the public-API rule applies to those paths too.
 - Import paths are written without a `..` after a folder name, without a `.` segment after the first, without `//` and without backslash escapes (`@/shared/../features/x` and `@/./features/x` are rejected), so the rules see where each import leads.
 - No `biome-ignore` comment may switch off the effect ban or these rules: `bun run lint:suppressions` rejects suppressions of `lint`, `lint/plugin` and `lint/style/noRestrictedImports`.
 
@@ -49,7 +49,7 @@ The `@/` alias comes from `tsconfig.json` `paths`. Vite (`resolve.tsconfigPaths`
 
 The rules read import paths as written. They do not see `vi.mock('...')`, `import.meta.glob`, `new URL('...', import.meta.url)`, `require()`, template-literal `import()` or CSS `@import`; none of these crosses a slice today. A feature is one flat folder: a subfolder could not reach its parent's files, because relative imports cannot climb and `@/features/<own name>` is rejected inside a feature.
 
-The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule, names it on its first line (`// rejected by feature.grit`) and must be rejected by that rule; `*.allowed.ts` files must pass. `lint/suppressions/fixtures/` holds the suppressions the gate must catch.
+The rules are GritQL plugins in `lint/boundaries/`, scoped per folder by `overrides` in `biome.json`. Each file in `lint/boundaries/fixtures/` breaks one rule, names it on its first line (`// rejected by feature.grit`) and must be rejected by that rule; `*.allowed.ts` and `*.allowed.stories.tsx` files must pass. `lint/suppressions/fixtures/` holds the suppressions the gate must catch.
 
 To add a feature:
 

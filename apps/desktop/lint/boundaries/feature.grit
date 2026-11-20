@@ -1,7 +1,7 @@
 language js
 
-// Applies to src/features/**. Inside a feature, files import each other by relative path, so any @/features or @/app
-// specifier here reaches another feature or the app.
+// Applies to src/features/**. Inside a feature, files import each other by relative path, so any alias other than
+// @/shared reaches another feature, the app, or a file elsewhere in src that could re-export either.
 or {
   JsModuleSource() as $source,
   JsStringLiteralExpression() as $source where {
@@ -11,6 +11,7 @@ or {
     $arguments <: contains TsStringLiteralType() as $source
   }
 } where {
-  $source <: r"['\"]@/(?:features|app)(?:/.*)?['\"]",
+  $source <: r"['\"]@/.*['\"]",
+  not $source <: r"['\"]@/shared(?:/.*)?['\"]",
   register_diagnostic(span=$source, message="A feature imports only its own files and src/shared. Compose features in src/app, or move what two features need to src/shared.", severity="error")
 }

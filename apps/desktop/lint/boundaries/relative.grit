@@ -1,7 +1,8 @@
 language js
 
 // Applies to src/**. The layer rules match import paths, so a relative path that climbs out of its folder could slip
-// past them; only the Storybook setup and the repository's DVDash brand SVGs sit outside src.
+// past them; only the repository's DVDash brand SVGs and, from story files, the Storybook setup sit outside src. Any
+// other file reaching .storybook/ could use it as a bridge to another feature.
 or {
   JsModuleSource() as $source,
   JsStringLiteralExpression() as $source where {
@@ -12,6 +13,10 @@ or {
   }
 } where {
   $source <: r"['\"]\.\./.*['\"]",
-  not $source <: r"['\"](?:\.\./)+(?:\.storybook/.*|assets/branding/dvdash/[\w.-]+\.svg)['\"]",
-  register_diagnostic(span=$source, message="Relative imports stay inside their folder. Import another folder through @/shared/..., @/features/<name> or @/app/....", severity="error")
+  not $source <: r"['\"](?:\.\./)+assets/branding/dvdash/[\w.-]+\.svg['\"]",
+  or {
+    not $source <: r"['\"](?:\.\./)+\.storybook/.*['\"]",
+    not $filename <: r".*\.stories\.tsx?"
+  },
+  register_diagnostic(span=$source, message="Relative imports stay inside their folder. Import another folder through @/shared/..., @/features/<name> or @/app/..., and .storybook/ only from a story.", severity="error")
 }
