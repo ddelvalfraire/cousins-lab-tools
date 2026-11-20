@@ -6,3 +6,4 @@ export {
 } from './PresetCatalog';
 export { type EditablePreset, PresetEditor } from './PresetEditor';
 export type { PanelSpan, PresetPanel } from './PresetEditorPanels';
+export type { LayoutTile } from './PresetLayoutPreview';

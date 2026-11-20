@@ -7,7 +7,7 @@ import type {
   RecordingFile,
   RecordingPresetOption,
 } from '@/features/exchange';
-import type { LayoutTile } from '@/shared/ui/PresetLayoutPreview';
+import type { LayoutTile } from '@/features/presets';
 import { type PresetSpec, presets } from './screen-fixtures';
 
 export const recordingPresetOptions: RecordingPresetOption[] = presets.map(
