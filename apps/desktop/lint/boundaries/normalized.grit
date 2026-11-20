@@ -4,22 +4,29 @@ language js
 // ('@/shared/../features/x/y', './../x'), a `.` segment after the first ('@/./features/x/y', '././x') or an empty
 // segment ('@/features//x/y') would reach a slice they never see. A backslash is rejected too: an escape such as
 // '@/\x66eatures/x/y' spells a path the patterns can't read. So is a leading `/`, which Vite resolves from the app
-// root ('/src/features/x/y') and no other rule reads.
+// root ('/src/features/x/y') and no other rule reads. A template literal anywhere in an import() call is rejected:
+// the other rules read only plain strings, and tsc and Vite resolve import(`@/features/x/y`) like one.
 or {
-  JsModuleSource() as $source,
-  JsStringLiteralExpression() as $source where {
-    $source <: within JsImportCallExpression()
+  or {
+    JsModuleSource() as $source,
+    JsStringLiteralExpression() as $source where {
+      $source <: within JsImportCallExpression()
+    },
+    TsImportTypeArguments() as $arguments where {
+      $arguments <: contains TsStringLiteralType() as $source
+    }
+  } where {
+    or {
+      $source <: r"['\"](?:[^'\"]*/)?(?:[^./'\"][^/'\"]*|\.[^./'\"][^/'\"]*|\.\.[^/'\"]+|\.)/\.\.(?:/[^'\"]*)?['\"]",
+      $source <: r"['\"][^'\"]*/\.(?:/[^'\"]*)?['\"]",
+      $source <: r"['\"][^'\"]*//[^'\"]*['\"]",
+      $source <: r"['\"][^'\"]*\\[^'\"]*['\"]",
+      $source <: r"['\"]/[^'\"]*['\"]"
+    }
   },
-  TsImportTypeArguments() as $arguments where {
-    $arguments <: contains TsStringLiteralType() as $source
+  JsTemplateExpression() as $source where {
+    $source <: within JsImportCallExpression()
   }
 } where {
-  or {
-    $source <: r"['\"](?:[^'\"]*/)?(?:[^./'\"][^/'\"]*|\.[^./'\"][^/'\"]*|\.\.[^/'\"]+|\.)/\.\.(?:/[^'\"]*)?['\"]",
-    $source <: r"['\"][^'\"]*/\.(?:/[^'\"]*)?['\"]",
-    $source <: r"['\"][^'\"]*//[^'\"]*['\"]",
-    $source <: r"['\"][^'\"]*\\[^'\"]*['\"]",
-    $source <: r"['\"]/[^'\"]*['\"]"
-  },
-  register_diagnostic(span=$source, message="Write import paths without a leading `/`, without `..` after a folder name, without `.` after the first segment, without `//` and without escapes, so the boundary rules see where they lead.", severity="error")
+  register_diagnostic(span=$source, message="Write import paths as plain strings, without a leading `/`, without `..` after a folder name, without `.` after the first segment, without `//` and without escapes, so the boundary rules see where they lead.", severity="error")
 }
