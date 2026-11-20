@@ -89,7 +89,7 @@ const STATUS: Record<
     icon: <ReviewIcon name="warn" />,
   },
 };
-/** Row marks from the approved mockup: an instrument trace in a rounded box, and a file with a trace. */
+/** Row marks: an instrument trace in a rounded box, and a file with a trace. */
 const InstrumentMark = () => (
   <svg
     viewBox="0 0 24 24"

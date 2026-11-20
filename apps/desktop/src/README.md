@@ -114,7 +114,7 @@ Install Chromium once with `bunx playwright install chromium`, or select an exis
 
 ### V1 screen inventory
 
-The application opens on **Experiments**. The Screens section holds full-page, navigable stories for each screen below, built from the `feat/acquisition-ui-prototype` workflow. Layouts and navigation follow the approved screen mockups.
+The application opens on **Experiments**. The Screens section holds full-page, navigable stories for each screen below, built from the `feat/acquisition-ui-prototype` workflow.
 
 | Screen               | Responsibility                                                                                                                                   |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -138,7 +138,7 @@ The sidebar has its own stories: expanded/collapsed, selected utility, long labe
 
 The visual direction is GREEN FIELD: forest/jade/mint/lime/ivory, independent scientific series colors and severity colors. The header, window bar and navigation drawer show `icon.svg` from the repository's [`assets/branding/dvdash/`](../../../assets/branding/dvdash/README.md) beside the DVDash wordmark set in the system font. No optional leaf terminal, domain or tagline is adopted.
 
-The approved mockups set component structure, and GREEN FIELD supplies the theme. Ambit-specific work is excluded and belongs to another owner. Generic routine controls remain shared UI abstractions. Rebinding, live inspection and recovery remain open product questions.
+GREEN FIELD supplies the theme. Ambit-specific work is excluded and belongs to another owner. Generic routine controls remain shared UI abstractions. Rebinding, live inspection and recovery remain open product questions.
 
 No actual IPC, catalog persistence, acquisition or scientific calculation service is implemented. Scientific arithmetic and results in the prototype panels remain illustrative. Screen compositions are fixture scenarios, not migrated production workflows. The native starter (`src/App.tsx`, `src/main.tsx`, `public/`, `vite.config.ts`, `scripts/clean.mjs`) is linted and formatted with the same Biome rules as the UI. UI modules do not import Tauri invoke/listen; data-provider/service contracts remain separate work.
 

@@ -123,7 +123,7 @@ const meta = {
   title: 'Components/SavedResultInspector',
   component: SavedResultsExample,
   tags: ['autodocs'],
-  // 1302 px gives the 898 px main column of the mockup's 1280 px page (WorkspaceBody pads 24 px where the mockup pads 16 px).
+  // 1302 px gives the 898 px main column of a 1280 px page padded 16 px, since WorkspaceBody pads 24 px.
   parameters: { layout: 'fullscreen', previewWidth: 1302 },
   args: { scenario: 'saved', onExport: fn() },
   argTypes: {

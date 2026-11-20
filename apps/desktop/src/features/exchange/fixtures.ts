@@ -1,4 +1,4 @@
-/** Story data for revision history, saved versions, import and export. Mirrors the approved mockups' sample data. */
+/** Story data for revision history, saved versions, import and export. */
 
 import type { PresetDefinitionSummary } from './PresetImport';
 import type { ExportSignal, RecordingExportSettings } from './RecordingExport';

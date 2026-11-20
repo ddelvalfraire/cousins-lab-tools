@@ -26,7 +26,7 @@ import '@/shared/theme/Approved.css';
 import './ExperimentWorkspace.css';
 import { ScrollFrame } from '@/shared/ui/ScrollFrame';
 
-/* Glyphs from the approved mockups (24 px grid, 1.6 stroke). */
+/* Glyphs on a 24 px grid, 1.6 stroke. */
 const strokeProps = {
   viewBox: '0 0 24 24',
   fill: 'none',

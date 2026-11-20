@@ -61,7 +61,7 @@ const stroke = {
   strokeLinejoin: 'round',
   focusable: false,
 } as const;
-/** The mockup's sidebar glyphs. */
+/** Sidebar glyphs. */
 const glyphs = {
   details: (
     <>

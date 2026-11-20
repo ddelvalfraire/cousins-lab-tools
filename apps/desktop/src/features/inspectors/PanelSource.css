@@ -131,7 +131,7 @@
   font-size: 0.6875rem;
   line-height: 1.6;
 }
-/* The mockup's 50 px left offset sits on uPlot's wider y-axis (58 px plus its label), so start past it. */
+/* A 50 px left offset would sit on uPlot's wider y-axis (58 px plus its label), so start past it. */
 .dv-insp .dv-src-empty-trace {
   position: absolute;
   top: 45px;

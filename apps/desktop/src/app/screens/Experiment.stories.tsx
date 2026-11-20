@@ -5,7 +5,7 @@ import { reduceMotion, settleMotion } from '../../../.storybook/settleMotion';
 import { renderScreen } from './screen-story';
 import { DVDashWorkspace } from './Workspace';
 
-/** The live experiment page (Sample 025 is acquiring). Frozen states for review against the approved mockups. */
+/** The live experiment page (Sample 025 is acquiring). Motion is frozen so each state renders the same way every time. */
 const meta = {
   title: 'Screens/Experiment',
   component: DVDashWorkspace,

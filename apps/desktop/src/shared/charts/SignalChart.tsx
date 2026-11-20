@@ -1161,7 +1161,7 @@ export function traceSegments(
 }
 
 /**
- * Plot geometry from the approved mockups, in px. The mockups draw at `width`; wider cards stretch the plot area
+ * Plot geometry in px, designed at `width`; wider cards stretch the plot area
  * and keep the margins, the height and the 9 px labels.
  */
 const traceFrames = {

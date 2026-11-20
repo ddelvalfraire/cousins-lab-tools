@@ -1,7 +1,5 @@
 /*
- * Catalog pages (presets, instruments, routines).
- * Mockup tokens map to Approved.css:
- * --p-border → --dv-line, --p-muted → --dv-ink-muted, --p-text → --dv-ink, --p-bg/paper/soft/accent → --dv-*.
+ * Catalog pages (presets, instruments, routines), styled with the --dv-* tokens in Approved.css.
  */
 .dv-cat {
   --dv-cat-warn: #805800;
@@ -45,7 +43,7 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-/* Chips sit on the row colour, as the mockups' .side-chip (no fill). */
+/* Chips sit on the row colour, with no fill. */
 .dv-cat .dv-chip {
   background: transparent;
 }
@@ -480,7 +478,7 @@
   height: 124px;
   padding: 8px;
 }
-/* Rendered values: in the mockup `.sidebar-section h3` (11 px, 650, 12 px below) outranks `.preset-inspector-heading`. */
+/* Sidebar section headings: 11 px, weight 650, 12 px above what follows. */
 .dv-cat .dv-cat-side-heading {
   font-size: 0.6875rem;
   line-height: 1.5;
@@ -833,7 +831,7 @@
   font-size: 0.625rem;
   padding: 3px 6px;
 }
-/* The mockup's label and value are separate flex items (5 px gap, then 2 px margin); Chip wraps both in one span. */
+/* Label and value sit apart (5 px gap, then 2 px margin), but Chip wraps both in one span. */
 .dv-cat-routine-inputs .dv-chip strong {
   font-weight: 550;
   color: var(--dv-ink);
@@ -1097,7 +1095,7 @@
   }
 }
 
-/* Muted text on the selected row's accent tint falls below 4.5:1, so the row uses ink (as the instrument mockup does for its meta). */
+/* Muted text on the selected row's accent tint falls below 4.5:1, so the row uses ink. */
 .dv-cat-table tbody tr[data-selected="true"] {
   --dv-ink-muted: var(--dv-ink);
 }

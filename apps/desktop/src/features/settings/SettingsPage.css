@@ -257,7 +257,7 @@ fieldset.dv-settings-path {
   width: 14px;
   height: 14px;
 }
-/* The settings mockup sets its banner fixes at 12px (other mockups use 11px). */
+/* Settings banners list their fixes at 12px; other pages use 11px. */
 .dv-settings .dv-banner-approved > div > .dv-settings-fix {
   font-size: 0.75rem;
 }

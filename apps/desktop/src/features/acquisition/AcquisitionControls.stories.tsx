@@ -37,7 +37,7 @@ const meta = {
     onStop: fn(),
     onConnect: fn(),
   },
-  // Example context: the experiment header the action bar sits in, as in the mockups.
+  // Example context: the experiment header the action bar sits in.
   decorators: [
     (Story, { args }) => (
       <div

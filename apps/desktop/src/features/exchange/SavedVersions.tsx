@@ -39,7 +39,7 @@ export interface SavedReadout {
   input?: boolean;
 }
 
-/** Read-only plot of a chart panel (.saved-plot). Drawn at 260 px in the mockup; wider cards stretch the plot area. */
+/** Read-only plot of a chart panel (.saved-plot). Designed at 260 px; wider cards stretch the plot area. */
 function SavedPlot({ chart }: { chart: SavedChart }) {
   const { min, max, points, window = 30 } = chart;
   const { textSize } = useAppearance(),

@@ -171,7 +171,7 @@
   }
 }
 
-/* This mockup's banner lists have no gap between items. */
+/* These banner lists have no gap between items. */
 .dv-curve .dv-banner-approved li + li {
   margin-top: 0;
 }

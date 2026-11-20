@@ -762,7 +762,7 @@
   border-radius: 0;
   background: none;
 }
-/* The settings mockup's 760 px card less its 24 px padding, kept at the title's left edge. */
+/* A 760 px settings card less its 24 px padding, kept at the title's left edge. */
 .dv-shell-page .dv-settings {
   max-width: 712px;
   margin-inline: 0;
@@ -794,7 +794,7 @@
 .dv-shell-page .dv-settings-preview {
   box-shadow: inset 0 0 0 1px var(--dv-line);
 }
-/* Frame stories: the mockup's page placeholder (.page-placeholder). */
+/* Frame stories: a placeholder page body. */
 .dv-frame-placeholder {
   display: grid;
   place-items: center;

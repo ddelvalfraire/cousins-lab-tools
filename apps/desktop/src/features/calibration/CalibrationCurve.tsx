@@ -217,7 +217,7 @@ export function CalibrationCurve({
                         ? '—'
                         : `${residual > 0 ? '+' : ''}${fixed(residual, 2)}`}
                     </td>
-                    {/* The mockup sets Included in body ink and the others muted; each keeps its icon. */}
+                    {/* Included is set in body ink and the others muted; each keeps its icon. */}
                     <td
                       className={
                         status === 'Included' ? undefined : 'dv-curve-muted'
@@ -381,7 +381,7 @@ function CurvePlot({
     });
     return new uPlot(
       {
-        // Plot margins from the mockup: 10 px above, 12 px right; at the Default text size the axes take 58 px left and 44 px below.
+        // Plot margins: 10 px above, 12 px right; at the Default text size the axes take 58 px left and 44 px below.
         ...size(el),
         padding: [10, 12, 0, 0],
         legend: { show: false },

@@ -31,7 +31,7 @@ export interface RecordedSample {
   mass45: number | null;
 }
 
-/** 2 samples/s, a wave around each stream's middle, ending on the mockup's reading. */
+/** 2 samples/s, a wave around each stream's middle, ending exactly on `last`. */
 function livePoints(
   middle: number,
   amplitude: number,

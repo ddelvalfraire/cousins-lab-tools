@@ -357,7 +357,7 @@ export const LongLabels: Story = {
   },
 };
 
-/** Chart previews fill a wide card instead of staying at the mockup's 260 px. */
+/** Chart previews fill a wide card instead of staying at their 260 px design width. */
 export const WidePreview: Story = {
   render: () => (
     <div style={{ width: 1600, padding: 24 }}>

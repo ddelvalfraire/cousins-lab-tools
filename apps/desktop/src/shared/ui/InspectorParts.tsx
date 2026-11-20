@@ -10,7 +10,6 @@ import { ScrollFrame } from './ScrollFrame';
 
 /**
  * Shared pieces for the calibration checklist, alignment, saved-result and panel-source inspectors.
- * Glyphs and values come from the approved inspector mockups.
  */
 const paths = {
   check: 'm5 12 4 4L19 6',

@@ -6,7 +6,7 @@
   left: 0;
 }
 .dvdash .dv-import-dialog {
-  /* Mockup --p-red: file errors and failures. */
+  /* File errors and failures. */
   --dv-import-red: #ad3737;
   border: 1px solid var(--dv-line);
   border-radius: 10px;

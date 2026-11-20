@@ -41,7 +41,7 @@
   white-space: nowrap;
 }
 
-/* Header and action bar: the shared PageHeader. Status words in its meta are 10 px, as in the mockup. */
+/* Header and action bar: the shared PageHeader. Status words in its meta are 10 px. */
 .dv-re .dv-page-meta .dv-status-word {
   font-size: 0.625rem;
   gap: 4px;
@@ -660,7 +660,7 @@
   }
 }
 
-/* The mockup's viewport breakpoints, measured against the editor's own width. */
+/* Window-width breakpoints, measured against the editor's own width. */
 @container dv-re (max-width: 620px) {
   .dv-re-tools {
     opacity: 1;
@@ -691,7 +691,7 @@
   }
 }
 
-/* This mockup's banner lists have no gap between items. */
+/* These banner lists have no gap between items. */
 .dv-re .dv-banner-approved li + li {
   margin-top: 0;
 }

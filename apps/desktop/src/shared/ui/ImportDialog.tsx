@@ -16,7 +16,7 @@ const round = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 } as const;
-/** Glyphs copied from the import and export mockups. */
+/** Glyphs for the import and export dialogs. */
 const glyphs = {
   file: {
     attributes: { ...round, strokeWidth: 1.5 },
@@ -106,7 +106,7 @@ const glyphs = {
 } as const;
 export type ImportIconName = keyof typeof glyphs;
 
-/** Stroke icon from the approved import and export mockups. Size comes from the surrounding CSS. */
+/** Stroke icon. Size comes from the surrounding CSS. */
 export function ImportIcon({ name }: { name: ImportIconName }) {
   const { attributes, shape } = glyphs[name];
   return (

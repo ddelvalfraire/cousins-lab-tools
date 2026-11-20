@@ -77,7 +77,6 @@ const defaults = (routine?: SetupRoutine) =>
   Object.fromEntries(
     (routine?.fields ?? []).map((field) => [field.id, String(field.value)]),
   );
-/** Icons as drawn in the approved setup mockup. */
 const ICONS = {
   file: 'M14 2H5v20h14V7l-5-5v5h5M8 12h8m-8 4h8',
   signal: 'M3 12h3l3-7 6 14 3-7h3',
@@ -522,7 +521,7 @@ export function ExperimentSetupForm({
                   describedBy: describedBy(ids.requirements),
                 },
               )}
-              {/* The line keeps its space when no source is chosen, as in the mockup. */}
+              {/* The line keeps its space when no source is chosen, so the form does not shift when one is. */}
               <p className="dv-setup-meta">
                 {source &&
                   (values.mode === 'recorded' ? (

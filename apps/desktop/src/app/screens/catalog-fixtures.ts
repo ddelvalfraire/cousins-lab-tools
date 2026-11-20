@@ -9,7 +9,7 @@ import type { CatalogRoutine, RoutineDefinition } from '@/features/routines';
 import { type PresetSpec, presets } from './screen-fixtures';
 
 /*
- * Sample catalog rows from the approved catalog mockups.
+ * Sample catalog rows.
  * "Reaction kinetics" uses the id `reaction-kinetics` so it never resolves to the app's "Enzyme kinetics" (`kinetics`).
  */
 const panel = (

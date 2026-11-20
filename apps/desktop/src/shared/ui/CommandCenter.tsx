@@ -228,7 +228,7 @@ const glyphPaths = {
   ),
 };
 export type CommandGlyphName = keyof typeof glyphPaths;
-/** Row icons from the command center mockups (24 px grid, 1.7 stroke). */
+/** Row icons (24 px grid, 1.7 stroke). */
 export function CommandGlyph({ name }: { name: CommandGlyphName }) {
   return (
     <svg

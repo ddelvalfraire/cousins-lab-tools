@@ -57,7 +57,7 @@ export function presetPanels(preset: PresetSpec): PresetPanelSummary[] {
   }));
 }
 
-/** Newest first. CO₂ & O₂ analysis uses the revisions of the approved mockups. */
+/** Newest first. */
 export function presetRevisionList(preset: PresetSpec): PresetRevision[] {
   if (preset.id === 'gas') return presetRevisions;
   const latest = new Date(

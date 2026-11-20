@@ -156,7 +156,7 @@
   gap: 8px;
   padding-top: 2px;
 }
-/* The approved Chip is 2.4 px shorter than the mockup's 24.4 px identity pill; keep the row at the mockup's height. */
+/* Chip is 2.4 px shorter than the 24.4 px identity pill the row was sized for; keep the row at that height. */
 .dv-res-identity {
   min-height: 26.4px;
 }

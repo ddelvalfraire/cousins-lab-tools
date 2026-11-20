@@ -104,7 +104,7 @@ export function ScientificPlot({
   marker?: number;
   /** Labels time ticks as UTC clock times (hh:mm:ss): the clock time of 0 s, in seconds since midnight. `null` shows "—" when the clock is unknown. */
   clock?: number | null;
-  /** Colour of the selected interval: `lime` (default) or the mockups' soft panel colour. The sparse frame always uses `soft`. */
+  /** Colour of the selected interval: `lime` (default) or the soft panel colour. The sparse frame always uses `soft`. */
   band?: 'lime' | 'soft';
 }) {
   const lastYExtent = useRef<[number, number] | undefined>(undefined);
@@ -137,7 +137,7 @@ export function ScientificPlot({
         );
       return right > left ? ([left, right] as const) : null;
     };
-    // Sparse frame: grid, then the interval, then the marker, all under the series (the mockups' SVG drawing order).
+    // Sparse frame: grid, then the interval, then the marker, all under the series.
     const drawFrame = (u: uPlot) => {
       const r = uPlot.pxRatio,
         { left, top, width, height: h } = u.bbox,

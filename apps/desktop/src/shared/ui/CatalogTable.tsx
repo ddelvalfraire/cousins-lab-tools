@@ -9,7 +9,7 @@ import { useResettingCopy } from '@/shared/hooks/useResettingCopy';
 import { ScrollFrame } from './ScrollFrame';
 
 /*
- * Shared pieces of the catalog pages (presets, instruments, routines), from the approved catalog mockups.
+ * Shared pieces of the catalog pages (presets, instruments, routines).
  * The row pattern follows ExperimentsList: a framed sortable table, quiet arrow actions, pagination and a filter line.
  */
 
@@ -144,7 +144,7 @@ export interface CatalogSort<K extends string> {
   key: K;
   ascending: boolean;
 }
-/** Sort state: a new column sorts ascending, the same column flips (as in the mockups). */
+/** Sort state: a new column sorts ascending, the same column flips. */
 export function useCatalogSort<K extends string>(initial: CatalogSort<K>) {
   const [sort, setSort] = useState(initial);
   const sortBy = (key: K) =>
@@ -362,6 +362,6 @@ export function useCatalogQuery(query: string, onClearQuery?: () => void) {
 
 export const normalize = (text: string) =>
   text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-/** Focus the sidebar pane after it opens, as the mockups do. */
+/** Focus the sidebar pane after it opens. */
 export const focusPane = (id: string) =>
   requestAnimationFrame(() => document.getElementById(`${id}-pane`)?.focus());

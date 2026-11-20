@@ -1,4 +1,4 @@
-/* Preset editor. Sizes follow the approved mockup. */
+/* Preset editor. */
 .dv-preset-editor {
   container: dv-preset-editor / inline-size;
   position: relative;
@@ -48,7 +48,7 @@
   white-space: nowrap;
 }
 
-/* Header and action bar: the shared PageHeader. Status words in its meta are 10 px, as in the mockup. */
+/* Header and action bar: the shared PageHeader. Status words in its meta are 10 px. */
 .dv-preset-editor .dv-page-meta :is(.dv-swap, .dv-swap-item) {
   display: flex;
   align-items: center;
@@ -810,7 +810,7 @@
   }
 }
 
-/* Shared StatusMessages banner, sized to the mockup's compact page banner. */
+/* Shared StatusMessages banner, at the compact page-banner size. */
 .pe-messages .dv-message-list {
   padding-inline-start: 17px;
 }

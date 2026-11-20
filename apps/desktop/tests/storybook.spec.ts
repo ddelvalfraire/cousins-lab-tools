@@ -745,7 +745,7 @@ test('calibration interval fields keep their approved width on a wide page', asy
   for (const width of widths.fields)
     expect(
       Math.abs(width - 362),
-      'field width near the 362 px in the calibration mockup',
+      'field width near 362 px',
     ).toBeLessThanOrEqual(4);
 });
 

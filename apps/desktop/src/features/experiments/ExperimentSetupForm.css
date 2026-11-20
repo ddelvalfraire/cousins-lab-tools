@@ -312,7 +312,7 @@
   background: var(--dv-accent);
   color: var(--dv-on-accent);
 }
-/* The setup and dialog mockups set dark primary text a shade greener than --dv-on-accent. */
+/* Dark primary text in the setup form and dialogs is a shade greener than --dv-on-accent. */
 [data-mantine-color-scheme="dark"]
   .dv-setup
   .dv-setup-button[data-variant="primary"] {

@@ -472,7 +472,7 @@
   gap: 12px;
 }
 /* Recorded cards use the page's card title (as on the live stream cards).
-   The 18 px line box is the sticky-playback mockup's, so the cards keep its 228 px height. */
+   The 18 px line box matches the sticky playback card, so the cards keep its 228 px height. */
 .dv-xw-chart h2 {
   margin: 0;
   font-size: 0.8125rem;
@@ -727,7 +727,7 @@
     gap: 17px;
     width: 100%;
   }
-  /* The frame's card is 16 px narrower than the mockup's page at 390, so the three figures share the row equally; with
+  /* At 390 px the frame's card is 16 px narrower than the page, so the three figures share the row equally; with
      larger text a figure that no longer fits moves to a second row instead of running into its neighbour. */
   .dv-xw-summary-main > div {
     width: auto;

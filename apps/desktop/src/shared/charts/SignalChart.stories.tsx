@@ -399,7 +399,7 @@ export const TracesLargestText: Story = {
       traces.map((svg) => svg.getBoundingClientRect().height),
     ).toEqual([150, 217.5]);
     for (const svg of traces) await labelsApart(svg);
-    // A card as narrow as the playback mockup still scales by 1.5 instead of letterboxing the trace.
+    // A card as narrow as the playback card still scales by 1.5 instead of letterboxing the trace.
     within(canvasElement).getByTestId('trace-card').style.width = '260px';
     for (const svg of traces)
       await waitFor(() => expect(viewWidth(svg)).toBeCloseTo(260 / 1.5, 3));

@@ -63,7 +63,7 @@
 .dv-cal-file {
   overflow-wrap: anywhere;
 }
-/* The approved Chip is 2.8 px taller than the mockup's 21.2 px source pill; keep the row at the mockup's height. */
+/* Chip is 2.8 px taller than the 21.2 px source pill the row was sized for; keep the row at that height. */
 .dv-cal-source > .dv-chip {
   margin-block: -1.4px;
 }
@@ -103,7 +103,7 @@
   font-size: 0.75rem;
 }
 /* On a wide page the card has no cap, so the form keeps its width at the card's own 850 px (minus 24 px padding
-   each side), as the mockup draws it: two-digit times do not get 800 px fields. */
+   each side): two-digit times do not get 800 px fields. */
 .dv-cal-form {
   display: flex;
   align-items: end;
@@ -383,7 +383,7 @@
     animation: none;
   }
 }
-/* The calibration checklist mockup's dark success banner. The other approved mockups keep dvdash.css's shared values. */
+/* The calibration checklist's dark success banner. Other pages keep dvdash.css's shared values. */
 [data-mantine-color-scheme="dark"]
   .dv-cal
   .dv-banner-approved[data-severity="success"] {

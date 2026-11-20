@@ -70,7 +70,7 @@
   padding: 2px 6px;
   font-size: 0.625rem;
 }
-/* The mockup's row note renders at the dialog's 13 px with no margin. */
+/* The row note renders at the dialog's 13 px with no margin. */
 .dv-recording-import-note {
   margin: 0;
   font-size: 0.8125rem;

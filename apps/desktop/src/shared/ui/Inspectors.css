@@ -1,5 +1,5 @@
 /*
- * Shared inspector pieces. The mockups' --p-* tokens map to the --dv-* tokens in Approved.css.
+ * Shared inspector pieces, styled with the --dv-* tokens in Approved.css.
  */
 .dv-insp {
   color: var(--dv-ink);

@@ -1,4 +1,4 @@
-/** Icons drawn exactly as in the approved review mockups (24 px grid, 1.6 stroke unless noted). */
+/** Review icons (24 px grid, 1.6 stroke unless noted). */
 const PATHS = {
   signals: 'M3 12h4l3-7 4 14 3-7h4',
   panels: 'M3 10h18M11 10v10',
