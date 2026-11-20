@@ -2,7 +2,8 @@ language js
 
 // Matches the banned names wherever they appear as a name, not only as a call, so React.useEffect, a destructured or
 // aliased binding, React['useEffect'], React[`useEffect`] and a re-export are caught along with plain calls. A computed
-// member key with an escape (React['use\x45ffect']) can spell any of them, so such keys are rejected outright. Biome
+// key, in a member access or a destructuring pattern, that holds an escape (React['use\x45ffect']), joins strings
+// ('use' + 'Effect') or has a template substitution can spell any of them, so such keys are rejected outright. Biome
 // matches names by their source text, so an escaped name (use\u0045ffect, 'use\u0045ffect' as run) is rejected too.
 or {
   or {
@@ -23,12 +24,14 @@ or {
   } as $name where {
     $name <: r"['\"`]?(?:useEffect|useLayoutEffect|useInsertionEffect|useEffectEvent|useDidUpdate|useIsomorphicEffect|useShallowEffect)['\"`]?"
   },
-  JsComputedMemberExpression(member=$name) where {
+  or {
+    JsComputedMemberName() as $name,
+    JsComputedMemberExpression(member=$name)
+  } where {
     $name <: or {
-      JsStringLiteralExpression(),
-      JsTemplateExpression()
-    },
-    $name <: r"['\"`].*\\.*['\"`]"
+      r"(?s).*\\.*",
+      r"(?s).*(?:['\"`]\s*\+|\+\s*['\"`]|\$\{).*"
+    }
   }
 } where {
   register_diagnostic(span=$name, message="Effects are banned in this app, including wrappers such as Mantine's useDidUpdate. Derive the value during render, do the work in the event handler that causes it, reset state with a key, subscribe to external stores with useSyncExternalStore, or set up and tear down DOM work in a ref callback that returns a cleanup.", severity="error")
