@@ -107,7 +107,7 @@
   white-space: nowrap;
 }
 
-/* Brand (drawer head and compact bar): the approved logo crop at 28 px (same crop as .dv-brand-concept, scaled).
+/* Brand (drawer head and compact bar): the icon at 28 px.
    The sidebar itself has no logo row; the window bar carries the wordmark. */
 .dv-navigation-brand {
   display: flex;
@@ -119,16 +119,9 @@
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
-.dv-navigation-brand .dv-brand-concept {
+.dv-navigation-brand .dv-brand-mark {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-}
-.dv-navigation-brand .dv-brand-concept img {
-  width: 252.99px;
-  height: 168.66px;
-  left: -11.36px;
-  top: -30.8px;
 }
 
 /* Destinations */

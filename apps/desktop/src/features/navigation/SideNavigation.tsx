@@ -3,7 +3,7 @@ import { type ReactNode, useId, useRef, useState } from 'react';
 import { Presence } from '@/shared/motion/Motion';
 import { StatusWord } from '@/shared/ui/Chip';
 import { ScrollFrame } from '@/shared/ui/ScrollFrame';
-import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
+import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 import { useFlyoutDismissal } from './useFlyoutDismissal';
 import './SideNavigation.css';
 
@@ -171,12 +171,12 @@ const recentStateWord: Record<RecentExperimentState, string> = {
   opened: 'Opened recently',
 };
 
-/** The DVDash wordmark with the approved logo crop at 28 px. Lives in the window bar, and in the drawer head. */
+/** The DVDash icon at 28 px beside the wordmark. Lives in the window bar, and in the drawer head. */
 export function Brand() {
   return (
     <span className="dv-navigation-brand">
-      <span className="dv-brand-concept" aria-hidden="true">
-        <img src={identityBoard} alt="" />
+      <span className="dv-brand-mark" aria-hidden="true">
+        <img src={brandIcon} alt="" />
       </span>
       <span className="dv-navigation-wordmark">DVDash</span>
     </span>

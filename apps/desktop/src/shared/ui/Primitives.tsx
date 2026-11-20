@@ -14,7 +14,7 @@ import { IconChartLine, IconHelp, IconRefresh } from '@tabler/icons-react';
 import { isValidElement, type ReactNode } from 'react';
 import { keyedBy } from '@/shared/lib/keyedBy';
 import { formatMeasurement } from '@/shared/lib/measurement';
-import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
+import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 import { Banner } from './Banner';
 export type Severity = 'info' | 'warning' | 'error' | 'success';
 /** The approved banner, keeping the older call signature. Any fix renders inline after the text. */
@@ -213,11 +213,8 @@ export function WorkspaceHeader({
     <header className="dv-header">
       <div className="dv-header-top">
         <div className="dv-brand">
-          <span
-            className="dv-brand-concept"
-            title="Selected GREEN FIELD concept crop; production vector pending"
-          >
-            <img src={identityBoard} alt="GREEN FIELD concept mark" />
+          <span className="dv-brand-mark" aria-hidden="true">
+            <img src={brandIcon} alt="" />
           </span>
           DVDash
         </div>

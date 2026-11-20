@@ -1,6 +1,6 @@
 import { useOs, useWindowEvent } from '@mantine/hooks';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
-import identityBoard from '../../../../../design/dvdash-field-review/identity-review.png';
+import brandIcon from '../../../../../assets/branding/dvdash/icon.svg';
 
 export { PageHeader as ScreenHeading } from '@/shared/ui/PageHeader';
 
@@ -363,8 +363,8 @@ export function ScreenShell({
           aria-label="DVDash experiments home"
           onClick={() => navigate('experiments')}
         >
-          <span className="dv-brand-concept" aria-hidden="true">
-            <img src={identityBoard} alt="" />
+          <span className="dv-brand-mark" aria-hidden="true">
+            <img src={brandIcon} alt="" />
           </span>
           <span>DVDash</span>
         </button>

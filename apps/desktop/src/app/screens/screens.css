@@ -76,16 +76,9 @@
   font-weight: 700;
   letter-spacing: -0.05em;
 }
-.dv-shell-wordmark .dv-brand-concept {
+.dv-shell-wordmark .dv-brand-mark {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-}
-.dv-shell-wordmark .dv-brand-concept img {
-  width: 252.99px;
-  height: 168.66px;
-  left: -11.36px;
-  top: -30.8px;
 }
 .dv-shell-search-anchor {
   position: relative;

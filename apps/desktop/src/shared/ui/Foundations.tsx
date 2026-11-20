@@ -47,9 +47,8 @@ export function ColorPalette() {
         colors.
       </StatusBanner>
       <Text size="xs" c="dimmed">
-        System font is provisional. The exact vector mark and licensed wordmark
-        typeface are pending. The header shows a crop of the selected concept
-        board, not a production icon export.
+        System font is provisional. The header shows the DVDash icon from
+        assets/branding/dvdash beside the wordmark set in the system font.
       </Text>
     </Stack>
   );

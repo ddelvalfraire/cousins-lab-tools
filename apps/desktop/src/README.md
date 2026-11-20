@@ -128,7 +128,7 @@ The sidebar has its own stories: expanded/collapsed, selected utility, long labe
 
 ### Identity and implementation boundaries
 
-The visual direction is GREEN FIELD: forest/jade/mint/lime/ivory, independent scientific series colors and severity colors. The header displays a conceptual crop of `design/dvdash-field-review/identity-review.png`, not a production icon export. Exact vector geometry, licensed type selection and small-size exports remain pending. No optional leaf terminal, domain or tagline is adopted.
+The visual direction is GREEN FIELD: forest/jade/mint/lime/ivory, independent scientific series colors and severity colors. The header, window bar and navigation drawer show `icon.svg` from the repository's [`assets/branding/dvdash/`](../../../assets/branding/dvdash/README.md) beside the DVDash wordmark set in the system font. No optional leaf terminal, domain or tagline is adopted.
 
 The mockups in `design/dvdash-field-review/` set component structure, and GREEN FIELD supplies the theme. Ambit-specific work is excluded and belongs to another owner. Generic routine controls remain shared UI abstractions. Rebinding, live inspection and recovery remain open product questions.
 

@@ -170,7 +170,7 @@ export const Expanded: Story = {
     await expect(Math.round(shell.bottom - page.bottom)).toBe(8);
     // The logo is in the window bar, not the sidebar.
     await expect(
-      canvasElement.querySelector('.dv-side-navigation .dv-brand-concept'),
+      canvasElement.querySelector('.dv-side-navigation .dv-brand-mark'),
     ).toBeNull();
     await expect(
       canvas.getByRole('button', { name: 'DVDash experiments home' }),
