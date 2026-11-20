@@ -2,7 +2,7 @@ language js
 
 // Applies everywhere. fixtures.ts is a feature's second entry point, for the sample data that app stories reuse.
 // Files outside src/features/ reach a feature by alias or by a relative path: './features/x/y' from a file directly in
-// src/, '../src/features/x/y' from .storybook/ or tests/.
+// src/, './src/features/x/y' from the app root, '../src/features/x/y' from .storybook/ or tests/.
 or {
   JsModuleSource() as $source,
   JsStringLiteralExpression() as $source where {
@@ -12,7 +12,7 @@ or {
     $arguments <: contains TsStringLiteralType() as $source
   }
 } where {
-  $source <: r"['\"](?:@/|\./|(?:\.\./)+(?:src/)?)features/[^/'\"]+/.+['\"]",
-  not $source <: r"['\"](?:@/|\./|(?:\.\./)+(?:src/)?)features/[^/'\"]+/fixtures['\"]",
+  $source <: r"['\"](?:@/|\./(?:src/)?|(?:\.\./)+(?:src/)?)features/[^/'\"]+/.+['\"]",
+  not $source <: r"['\"](?:@/|\./(?:src/)?|(?:\.\./)+(?:src/)?)features/[^/'\"]+/fixtures['\"]",
   register_diagnostic(span=$source, message="Import a feature through its public API: @/features/<name> (its index.ts), or @/features/<name>/fixtures for sample data.", severity="error")
 }
