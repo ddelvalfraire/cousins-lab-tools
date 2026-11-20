@@ -1,6 +1,6 @@
 // Each file in lint/boundaries/fixtures breaks one import boundary and names the rule that must reject it on its first
-// line (`// rejected by <rule>.grit`), except *.allowed.ts and *.allowed.stories.tsx files, which show imports the rules
-// must let through. The fixtures run under the boundary plugins and override globs read from biome.json, so a change
+// line (`// rejected by <rule>.grit`), except *.allowed.ts and *.allowed.stories.tsx files, and files that start with
+// `// allowed: <why>` because a rule reads their name, which show imports the rules must let through. The fixtures run under the boundary plugins and override globs read from biome.json, so a change
 // there is tested here as well. Every plugin reports under the same `plugin` category, so the rule is told apart by its message.
 import { spawnSync } from 'node:child_process';
 import {
@@ -29,7 +29,9 @@ const overrides = (config.overrides ?? [])
     plugins: absolute(override.plugins),
   }));
 
-const isAllowed = (file) => /\.allowed(?:\.stories)?\.tsx?$/.test(file);
+const isAllowed = (file) =>
+  /\.allowed(?:\.stories)?\.tsx?$/.test(file) ||
+  readFileSync(join(fixtures, file), 'utf8').startsWith('// allowed: ');
 
 function filesIn(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })

@@ -24,7 +24,8 @@
   "plugins": [
     "./lint/no-effect-hooks.grit",
     "./lint/boundaries/public-api.grit",
-    "./lint/boundaries/normalized.grit"
+    "./lint/boundaries/normalized.grit",
+    "./lint/boundaries/stories.grit"
   ],
   "formatter": {
     "enabled": true,
@@ -72,6 +73,10 @@
     {
       "includes": ["src/shared/**"],
       "plugins": ["./lint/boundaries/shared.grit"]
+    },
+    {
+      "includes": [".storybook/**"],
+      "plugins": ["./lint/boundaries/storybook.grit"]
     },
     {
       "includes": ["src/features/acquisition/AcquisitionControls.tsx"],

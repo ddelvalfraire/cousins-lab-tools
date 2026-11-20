@@ -1,0 +1,19 @@
+language js
+
+// Applies to .storybook/**. Every story may import the Storybook setup, so whatever the setup imports would reach every
+// feature's stories, and through them any file that imports a story. It imports only from src/shared and the app
+// stylesheet the preview loads.
+or {
+  JsModuleSource() as $source,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
+} where {
+  $source <: r"['\"](?:\.\.|@)/.*['\"]",
+  not $source <: r"['\"](?:\.\./src|@)/shared/.*['\"]",
+  not $source <: r"['\"]\.\./src/app/screens/screens\.css['\"]",
+  register_diagnostic(span=$source, message="The Storybook setup imports only from src/shared and the app stylesheet, because every story can import it.", severity="error")
+}

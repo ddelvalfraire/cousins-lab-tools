@@ -1,0 +1,17 @@
+language js
+
+// Applies everywhere. Stories may import the Storybook setup, which other files may not, so a file that imports a story
+// could reach through it whatever the story reaches.
+or {
+  JsModuleSource() as $source,
+  JsStringLiteralExpression() as $source where {
+    $source <: within JsImportCallExpression()
+  },
+  TsImportTypeArguments() as $arguments where {
+    $arguments <: contains TsStringLiteralType() as $source
+  }
+} where {
+  $source <: r"['\"][^'\"]*\.stories[^'\"]*['\"]",
+  not $filename <: r".*\.stories\.tsx?",
+  register_diagnostic(span=$source, message="Only stories import stories. Move what the other file needs out of the story file.", severity="error")
+}
