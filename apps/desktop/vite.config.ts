@@ -1,7 +1,6 @@
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { defineConfig, searchForWorkspaceRoot } from 'vite';
+import { defineConfig } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -29,13 +28,6 @@ export default defineConfig(() => ({
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ['**/src-tauri/**'],
-    },
-    // The DVDash brand SVGs sit in the repository's assets/, outside the app; serve only that folder from there.
-    fs: {
-      allow: [
-        searchForWorkspaceRoot(process.cwd()),
-        fileURLToPath(new URL('../../assets/branding/dvdash', import.meta.url)),
-      ],
     },
   },
 }));
