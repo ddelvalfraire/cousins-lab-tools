@@ -16,8 +16,10 @@ const skipped = new Set([
   'playwright-report',
   'src-tauri',
 ]);
-const suppression =
-  /biome-ignore(?:-all|-start)?\s+lint(?:\/plugin(?:\/[\w-]+)?|\/style(?:\/noRestrictedImports)?)?(?=[\s:(]|$)/m;
+// A suppression lists one or more categories before its colon, and any one of them takes effect, so each is tested.
+const suppression = /biome-ignore(?:-all|-start|-end)?\s([^:\n]*)/g;
+const banned =
+  /^lint(?:\/plugin(?:\/[\w-]+)?|\/style(?:\/noRestrictedImports)?)?(?:\(.*\))?$/;
 
 function sources(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -29,7 +31,10 @@ function sources(dir) {
   });
 }
 
-const caught = (path) => suppression.test(readFileSync(path, 'utf8'));
+const caught = (path) =>
+  [...readFileSync(path, 'utf8').matchAll(suppression)].some(([, categories]) =>
+    categories.split(/\s+/).some((category) => banned.test(category)),
+  );
 
 const wrong = [];
 const fixtureFiles = readdirSync(fixtures).sort();
