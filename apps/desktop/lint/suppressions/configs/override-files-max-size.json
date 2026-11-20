@@ -1,0 +1,5 @@
+{
+  "overrides": [
+    { "includes": ["src/features/presets/**"], "files": { "maxSize": 1 } }
+  ]
+}

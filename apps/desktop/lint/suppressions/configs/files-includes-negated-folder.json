@@ -1,0 +1,17 @@
+{
+  "files": {
+    "includes": [
+      "**",
+      "!!src-tauri",
+      "!!dist",
+      "!!storybook-static",
+      "!!test-results",
+      "!!playwright-report",
+      "!lint/fixtures",
+      "!lint/boundaries/fixtures",
+      "!lint/suppressions/fixtures",
+      "!bun.lock",
+      "!src/features/presets"
+    ]
+  }
+}

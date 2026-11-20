@@ -1,0 +1,1 @@
+{ "linter": { "includes": ["**", "!src/features/presets"] } }

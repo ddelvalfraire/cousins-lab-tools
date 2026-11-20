@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "includes": ["src/features/presets/**"],
+      "javascript": { "linter": { "enabled": false } }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{ "extends": ["./lint/effects.json", "./lint/more.json"] }

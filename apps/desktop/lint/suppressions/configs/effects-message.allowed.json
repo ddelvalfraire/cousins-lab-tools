@@ -1,0 +1,5 @@
+{
+  "linter": {
+    "rules": { "style": { "noRestrictedImports": { "level": "error" } } }
+  }
+}

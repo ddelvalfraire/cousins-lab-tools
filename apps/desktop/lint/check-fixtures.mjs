@@ -20,6 +20,14 @@ import { fileURLToPath } from 'node:url';
 const app = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dir = join(app, 'lint/fixtures');
 const config = JSON.parse(readFileSync(join(app, 'biome.json'), 'utf8'));
+// Every real folder two levels into src is probed too, so an edit that leaves one folder out of linting fails here.
+const realFolders = readdirSync(join(app, 'src'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .flatMap((layer) =>
+    readdirSync(join(app, 'src', layer.name), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `src/${layer.name}/${entry.name}`),
+  );
 const roots = [
   '.',
   'src',
@@ -30,6 +38,7 @@ const roots = [
   'src/shared/probe',
   'tests',
   '.storybook',
+  ...realFolders.sort(),
 ];
 const fixtures = readdirSync(dir)
   .filter((file) => /\.tsx?$/.test(file))
