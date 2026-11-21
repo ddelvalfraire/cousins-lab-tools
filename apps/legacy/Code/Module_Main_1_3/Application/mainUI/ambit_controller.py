@@ -14,9 +14,6 @@ class AmbitStopped(Exception):
     pass
 
 
-# Notebook suggestions for external LEDs; boundary values use the shorter
-# duration where the notebook's ranges overlap. These are not hardware limits.
-INTENSITY_LIMITS = ((50, math.inf), (100, 120), (200, 10), (500, 2), (1001, 0.5))
 PULSER_CHANNELS = {"B": 2, "R": 4}
 
 
@@ -29,23 +26,10 @@ def load_protocol(path):
     return protocol
 
 
-def enforce_light_limits(channel, intensity, elapsed_time):
-    """Reject an invalid setting or an external LED exposure at its limit."""
-    maximum = 255 if channel == "Ambit" else 1000
-    if channel not in ("Ambit", "B", "R"):
-        raise ValueError(f"Unknown light channel: {channel!r}.")
+def _validate_intensity(channel, intensity):
+    maximum = 255 if channel == "Ambit" else 4094
     if type(intensity) is not int or not 0 <= intensity <= maximum:
         raise ValueError(f"{channel} intensity must be an integer from 0 to {maximum}.")
-    if type(elapsed_time) not in (int, float) or not math.isfinite(elapsed_time) or elapsed_time < 0:
-        raise ValueError("Light exposure must be a non-negative finite number.")
-    if channel == "Ambit" or intensity == 0:
-        return
-    for upper_bound, duration in INTENSITY_LIMITS:
-        if intensity < upper_bound:
-            if elapsed_time >= duration:
-                raise ValueError(f"{channel} LED at intensity {intensity} reached its {duration:g}s exposure limit.")
-            return
-    raise ValueError(f"No exposure limit is configured for {channel} intensity {intensity}.")
 
 
 # Validate every step before opening the device. Supported forms are:
@@ -56,7 +40,6 @@ def enforce_light_limits(channel, intensity, elapsed_time):
 def validate_protocol(protocol):
     if not isinstance(protocol, list) or not protocol:
         raise ValueError("The protocol must be a non-empty JSON list.")
-    active_leds = {}
     cumulative_time = 0
     for index, step in enumerate(protocol, 1):
         if not isinstance(step, list) or not step:
@@ -69,7 +52,7 @@ def validate_protocol(protocol):
                 raise ValueError(f"Step {index}: measurement count must be a positive integer.")
             if type(interval) not in (int, float) or not math.isfinite(interval) or interval <= 0:
                 raise ValueError(f"Step {index}: interval must be a positive finite number.")
-            enforce_light_limits("Ambit", actinic, 0)
+            _validate_intensity("Ambit", actinic)
             duration = count * interval
         elif command == "W" and len(step) == 2:
             duration = step[1]
@@ -81,93 +64,22 @@ def validate_protocol(protocol):
             channel, intensity = step[1], step[2]
             if not isinstance(channel, str) or channel not in PULSER_CHANNELS:
                 raise ValueError(f"Step {index}: external LED channel must be B or R.")
-            started = active_leds[channel][1] if channel in active_leds else cumulative_time
-            enforce_light_limits(channel, intensity, cumulative_time - started)
-            if intensity == 0:
-                active_leds.pop(channel, None)
-            else:
-                active_leds[channel] = (intensity, started)
+            _validate_intensity(channel, intensity)
         else:
             raise ValueError(f"Step {index}: invalid or unsupported command.")
         cumulative_time += duration
         if not math.isfinite(cumulative_time):
             raise ValueError(f"Step {index}: protocol duration is too large.")
-        for channel, (intensity, started) in active_leds.items():
-            enforce_light_limits(channel, intensity, cumulative_time - started)
+
+def _pulser_command(pulser, command, stopped):
+    pulser.write(command.encode("ascii"))
+    pulser.flush()
+    _wait_for(pulser, "Done", stopped)
 
 
-class _LightGuard:
-    """Best-effort watchdog; serial and operating-system delays can exceed limits."""
-    def __init__(self, pulser):
-        self.pulser = pulser
-        self.lock = threading.Lock()
-        self.active = {}
-        self.failure = None
-        self.finished = threading.Event()
-        self.thread = threading.Thread(target=self._watch, daemon=True)
-        self.thread.start()
-
-    def check(self):
-        with self.lock:
-            if self.failure:
-                raise self.failure
-
-    def send(self, data, channel=None, intensity=None):
-        with self.lock:
-            if self.failure:
-                raise self.failure
-            if channel is not None and intensity:
-                previous, started = self.active.get(channel, (0, time.monotonic()))
-                conservative_intensity = max(previous, intensity)
-                enforce_light_limits(channel, conservative_intensity, time.monotonic() - started)
-                self.active[channel] = (conservative_intensity, started)
-            self.pulser.write(data)
-            self.pulser.flush()
-
-    def set_intensity(self, channel, intensity):
-        with self.lock:
-            if self.failure:
-                raise self.failure
-            started = self.active[channel][1]
-            enforce_light_limits(channel, intensity, time.monotonic() - started)
-            self.active[channel] = (intensity, started)
-
-    def off(self, channel):
-        with self.lock:
-            self.active.pop(channel, None)
-
-    def _watch(self):
-        while not self.finished.wait(0.005):
-            with self.lock:
-                try:
-                    now = time.monotonic()
-                    for channel, (intensity, started) in self.active.items():
-                        enforce_light_limits(channel, intensity, now - started)
-                except ValueError as exc:
-                    self.failure = exc
-                    try:
-                        self.pulser.write(b"LED_OFF,0,\n")
-                        self.pulser.flush()
-                    except (serial.SerialException, OSError) as shutdown_error:
-                        self.failure = RuntimeError(f"{exc} Emergency LED shutdown failed: {shutdown_error}")
-                    return
-
-    def close(self):
-        self.finished.set()
-        self.thread.join()
-
-
-def _pulser_command(guard, command, stopped, channel=None, intensity=None):
-    guard.send(command.encode("ascii"), channel, intensity)
-    _wait_for(guard.pulser, "Done", stopped)
-    guard.check()
-
-
-def _wait_with_guard(seconds, stopped, guard):
+def _wait(seconds, stopped):
     deadline = time.monotonic() + seconds
     while True:
-        if guard:
-            guard.check()
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             return
@@ -242,7 +154,6 @@ def run_protocol(port, protocol, offset, output_path, stopped, on_measurement, p
         raise ValueError("Ambit and pulser must use different serial ports.")
     device = None
     pulser = None
-    guard = None
     start_requested = False
     primary_error = None
     try:
@@ -258,8 +169,7 @@ def run_protocol(port, protocol, offset, output_path, stopped, on_measurement, p
             if any(step[0] == "A" for step in protocol):
                 pulser = serial.Serial(pulser_port, 115200, timeout=0.05, write_timeout=1,
                                        dsrdtr=True, rtscts=False)
-                guard = _LightGuard(pulser)
-                _pulser_command(guard, "LED_OFF,0,\n", stopped)
+                _pulser_command(pulser, "LED_OFF,0,\n", stopped)
             # Match the notebook's serial startup sequence. Record that startup
             # was requested before sending "ww" so cleanup also runs if the
             # handshake fails partway through.
@@ -277,30 +187,22 @@ def run_protocol(port, protocol, offset, output_path, stopped, on_measurement, p
             for step in protocol:
                 if stopped.is_set():
                     raise AmbitStopped()
-                if guard:
-                    guard.check()
                 if step[0] == "W":
-                    _wait_with_guard(step[1], stopped, guard)
+                    _wait(step[1], stopped)
                 elif step[0] == "A":
                     channel, intensity = step[1:]
                     hardware_channel = PULSER_CHANNELS[channel]
                     if intensity:
-                        _pulser_command(guard, f"DAC,{hardware_channel},{intensity},\n",
-                                        stopped, channel, intensity)
-                        guard.set_intensity(channel, intensity)
-                        _pulser_command(guard, f"LED_ON,{hardware_channel},\n", stopped)
+                        _pulser_command(pulser, f"DAC,{hardware_channel},{intensity},\n", stopped)
+                        _pulser_command(pulser, f"LED_ON,{hardware_channel},\n", stopped)
                     else:
-                        _pulser_command(guard, f"LED_OFF,{hardware_channel},\n", stopped)
-                        guard.off(channel)
+                        _pulser_command(pulser, f"LED_OFF,{hardware_channel},\n", stopped)
                 elif step[0] == "M":
-                    enforce_light_limits("Ambit", step[3], 0)
                     device.write(bytes([65, step[3]]))
                     device.flush()
                     for _ in range(step[1]):
                         if stopped.is_set():
                             raise AmbitStopped()
-                        if guard:
-                            guard.check()
                         started = time.monotonic()
                         device.write(b"G")
                         device.flush()
@@ -329,21 +231,13 @@ def run_protocol(port, protocol, offset, output_path, stopped, on_measurement, p
                         # without another sleep; precise timing is not assured.
                         remaining = step[2] - (time.monotonic() - started)
                         if remaining > 0:
-                            _wait_with_guard(remaining, stopped, guard)
+                            _wait(remaining, stopped)
     # Preserve the original failure while attempting every cleanup operation.
     except Exception as exc:
         primary_error = exc
     finally:
         cleanup_errors = []
-        if guard is not None:
-            guard.close()
-            try:
-                guard.check()
-            except (ValueError, RuntimeError) as exc:
-                if primary_error is None or isinstance(primary_error, AmbitStopped):
-                    primary_error = exc
-                elif primary_error is not exc:
-                    cleanup_errors.append(f"light watchdog: {exc}")
+        if pulser is not None:
             try:
                 pulser.write(b"LED_OFF,0,\n")
                 pulser.flush()

@@ -75,8 +75,9 @@ class AmbitControllerTest(unittest.TestCase):
         path = Path(self.temp.name) / "protocol.json"
         path.write_text(json.dumps([["M", 1, 0.1, 0], ["W", 0], ["P"]]))
         self.assertEqual(len(controller.load_protocol(path)), 3)
-        for protocol in ([["M", 1, 0, 0]], [["A", "R", 1001]],
-                         [["A", "B", 200], ["M", 3, 1, 0]]):
+        for protocol in ([["M", 1, 0, 0]], [["A", "R", 4095]],
+                         [["A", "B", -1]], [["A", "B", 1.5]],
+                         [["M", 1, 1, 256]]):
             with self.subTest(protocol=protocol), self.assertRaises(ValueError):
                 self.run_protocol(protocol)
         self.serial.assert_not_called()
@@ -86,48 +87,45 @@ class AmbitControllerTest(unittest.TestCase):
         examples = Path(__file__).resolve().parents[1] / "protocols"
         self.assertEqual(controller.load_protocol(examples / "signal_offset_protocol.json"),
                          [["M", 50, 0.1, 0]])
-        self.assertTrue(controller.load_protocol(examples / "reference_only" / "measurement_example.json"))
-        with self.assertRaisesRegex(ValueError, "exposure limit"):
-            controller.load_protocol(examples / "reference_only" / "blue_actinic_test.json")
+        for path in (examples / "reference_only").glob("*.json"):
+            with self.subTest(path=path):
+                self.assertTrue(controller.load_protocol(path))
         self.serial.assert_not_called()
 
-    def test_exposure_limits_and_continuous_intensity_changes(self):
-        for intensity, limit in ((50, 120), (100, 10), (200, 2), (500, 0.5)):
-            with self.subTest(intensity=intensity):
-                controller.enforce_light_limits("B", intensity, limit - 0.001)
-                with self.assertRaisesRegex(ValueError, "exposure limit"):
-                    controller.enforce_light_limits("B", intensity, limit)
-        controller.validate_protocol([["A", "B", 49], ["W", 10000], ["A", "B", 0]])
+    def test_exposures_and_intensity_changes_are_not_time_limited(self):
         for protocol in (
             [["A", "B", 100], ["M", 10, 1, 0], ["A", "B", 0]],
             [["A", "B", 100], ["W", 9], ["A", "B", 100], ["W", 1]],
             [["A", "B", 50], ["W", 3], ["A", "B", 200]],
             [["A", "R", 500], ["W", 0.5]],
+            [["A", "R", 4094], ["W", 120], ["A", "R", 0]],
         ):
-            with self.subTest(protocol=protocol), self.assertRaisesRegex(ValueError, "exposure limit"):
+            with self.subTest(protocol=protocol):
                 controller.validate_protocol(protocol)
 
     def test_external_and_ambit_commands_execute_and_cleanup(self):
         pulser = FakePulser()
         self.serial.side_effect = lambda port, *args, **kwargs: pulser if port == "COM2" else self.device
-        self.run_protocol([["A", "B", 50], ["M", 1, 0.001, 125],
+        self.run_protocol([["A", "B", 4094], ["M", 1, 0.001, 125],
+                           ["A", "B", 1001],
                            ["A", "B", 0], ["M", 1, 0.001, 0]], pulser_port="COM2")
-        self.assertEqual(pulser.writes, [b"LED_OFF,0,\n", b"DAC,2,50,\n", b"LED_ON,2,\n",
+        self.assertEqual(pulser.writes, [b"LED_OFF,0,\n", b"DAC,2,4094,\n", b"LED_ON,2,\n",
+                                        b"DAC,2,1001,\n", b"LED_ON,2,\n",
                                         b"LED_OFF,2,\n", b"LED_OFF,0,\n"])
         self.assertIn(bytes([65, 125]), self.device.writes)
         self.assertLess(self.device.writes.index(bytes([65, 125])), self.device.writes.index(b"G"))
         self.assertTrue(pulser.closed)
         self.assertTrue(self.device.closed)
 
-    def test_runtime_watchdog_shuts_down_during_blocked_callback(self):
+    def test_no_runtime_exposure_cutoff_during_callback(self):
         pulser = FakePulser()
         self.serial.side_effect = lambda port, *args, **kwargs: pulser if port == "COM2" else self.device
         def delayed_callback(x, y):
             time.sleep(0.65)
-            self.assertGreaterEqual(pulser.writes.count(b"LED_OFF,0,\n"), 2)
-        with self.assertRaisesRegex(ValueError, "exposure limit"):
-            self.run_protocol([["A", "R", 500], ["M", 1, 0.01, 125]],
-                              delayed_callback, pulser_port="COM2")
+            self.assertEqual(pulser.writes.count(b"LED_OFF,0,\n"), 1)
+        self.run_protocol([["A", "R", 2500], ["M", 1, 0.01, 125]],
+                          delayed_callback, pulser_port="COM2")
+        self.assertIn(b"DAC,4,2500,\n", pulser.writes)
         self.assertEqual(pulser.writes[-1], b"LED_OFF,0,\n")
         self.assertEqual(self.device.writes[-2:], [bytes([65, 0]), b"E\n"])
         self.assertTrue(pulser.closed)
@@ -166,8 +164,8 @@ class AmbitControllerTest(unittest.TestCase):
         self.assertTrue(pulser.closed)
         self.assertTrue(self.device.closed)
 
-    def test_watchdog_shutdown_failure_is_reported(self):
-        class FailingEmergencyOff(FakePulser):
+    def test_cleanup_shutdown_failure_is_reported(self):
+        class FailingCleanupOff(FakePulser):
             def __init__(self):
                 super().__init__()
                 self.off_attempts = 0
@@ -179,12 +177,11 @@ class AmbitControllerTest(unittest.TestCase):
                         raise OSError("off failed")
                 super().write(data)
 
-        pulser = FailingEmergencyOff()
+        pulser = FailingCleanupOff()
         self.serial.side_effect = lambda port, *args, **kwargs: pulser if port == "COM2" else self.device
-        with self.assertRaisesRegex(RuntimeError, "Emergency LED shutdown failed: off failed"):
-            self.run_protocol([["A", "R", 500], ["M", 1, 0.01, 0]],
-                              lambda x, y: time.sleep(0.65), pulser_port="COM2")
-        self.assertEqual(pulser.off_attempts, 3)
+        with self.assertRaisesRegex(RuntimeError, "turning off external LEDs: off failed"):
+            self.run_protocol([["A", "R", 500], ["M", 1, 0.01, 0]], pulser_port="COM2")
+        self.assertEqual(pulser.off_attempts, 2)
         self.assertTrue(pulser.closed)
 
     def test_external_command_requires_pulser_before_opening(self):
@@ -247,6 +244,35 @@ class AmbitControllerTest(unittest.TestCase):
             self.run_protocol([["M", 1, 0.001, 0]])
         self.assertEqual(Path(self.output).read_text(), "existing")
         self.serial.assert_not_called()
+
+
+class Module2AmbitIntegrationTest(unittest.TestCase):
+    def test_menu_folder_guard_and_shutdown(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PyQt5 import QtWidgets
+        from Code.Module_Main_1_3.Application.mainUI.module2 import LabViewModule2
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        with tempfile.TemporaryDirectory() as folder, \
+                patch("os.getlogin", return_value="test"), \
+                patch("serial.tools.list_ports.comports", return_value=[]):
+            window = LabViewModule2(800, 600, app)
+            try:
+                window.ambit_action.trigger()
+                app.processEvents()
+                self.assertTrue(window.ambitDialog.isVisible())
+                window.ambitDialog.output_path = str(Path(folder) / "ambit.csv")
+                with patch.object(QtWidgets.QFileDialog, "getExistingDirectory", return_value=folder), \
+                        patch.object(QtWidgets.QMessageBox, "warning") as warning:
+                    window.select_folder()
+                warning.assert_called_once()
+                self.assertEqual(window.folder_path, "")
+                with patch.object(window.ambitDialog, "shutdown", wraps=window.ambitDialog.shutdown) as shutdown:
+                    window.close()
+                    shutdown.assert_called()
+            finally:
+                window.close()
+                app.processEvents()
 
 
 class AmbitUiTest(unittest.TestCase):

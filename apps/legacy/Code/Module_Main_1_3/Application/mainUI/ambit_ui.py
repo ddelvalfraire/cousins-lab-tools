@@ -78,7 +78,7 @@ class AmbitDialog(QtWidgets.QDialog):
         self.start_button = QtWidgets.QPushButton("Connect and start")
         self.stop_button = QtWidgets.QPushButton("Stop")
         self.stop_button.setEnabled(False)
-        self.status = QtWidgets.QLabel("Light limits are best-effort software safeguards, not a hardware cutoff.")
+        self.status = QtWidgets.QLabel("External LED exposure is not automatically limited; verify safe settings for your hardware.")
         self.status.setWordWrap(True)
         self.plot = pg.PlotWidget()
         self.plot.setLabel("left", "Fluorescence (S - offset) / R")

@@ -100,8 +100,7 @@ baseline procedure; the application does not calculate the offset for you.
 
 The `reference_only` subfolder contains the notebook's other examples,
 including the expanded `Protocol_1`, `Protocol_2`, and `Protocol_5`. They are
-preserved for reference, not approved for hardware use. Some exceed the
-configured limits or supported intensity range and are rejected. If loading fails, the
+preserved for reference, not approved for hardware use. If loading fails, the
 previously selected protocol remains selected; check the displayed filename
 before starting. The notebook's duplicated saturation-flash definitions are
 represented by one file per distinct version.
@@ -112,19 +111,16 @@ waits in seconds; `P` is accepted but the plot updates continuously.
 blue and red LEDs (0 turns a channel off). The Ambit actinic setting remains
 on until another `M` step changes it or cleanup requests shutdown.
 
-External LED exposure suggestions from the notebook are checked before and
-during a run: intensities 1-49 have no time limit; 50-99 must remain below
-120 seconds, 100-199 below 10 seconds, 200-499 below 2 seconds, and 500-1000
-below 0.5 seconds. At overlapping notebook boundaries the shorter limit is
-used. Each channel's continuous on-time is retained across intensity changes
-and resets when switched off; no minimum cooldown is enforced. The built-in
-Ambit accepts 0-255 and has no configured exposure limit. Researchers must
-decide appropriate Ambit limits and cooldowns for their setup.
+Like the notebook, Module 2 does not enforce exposure-duration limits. External
+LED values must be integers from 0 to 4094, matching the notebook's DAC check;
+the built-in Ambit accepts 0-255. The notebook warns that external LEDs should
+not be left on for long periods and lists suggested exposure durations. Verify
+safe intensities, durations, and cooldowns with the instrument owner before
+running a protocol; the reference examples are not hardware safety guidance.
 
-These are best-effort software safeguards, **not a hardware cutoff**. Timing,
-serial operations, system stalls, disconnects, and shutdown failures can delay
-or prevent switching a light off. Verify the setup, limits, and physical
-shutdown with the instrument owner; do not assume measurement pulses or
+Shutdown requests are **not a hardware cutoff**. Timing, serial operations,
+system stalls, disconnects, and shutdown failures can delay or prevent switching
+a light off. Verify physical shutdown; do not assume measurement pulses or
 independently operated lights are disabled.
 
 Each Ambit row is saved immediately with its raw response, instrument time,
