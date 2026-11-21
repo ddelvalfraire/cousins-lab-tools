@@ -1,0 +1,38 @@
+# Sprint 2 Report 11/5/2025
+## YouTube link of Sprint 2 Video: https://youtu.be/6bhzIRqpdnA
+
+## What's New (User Facing)
+* More graphs plotting data critical to the experiment.
+* More post export calculations have been added to the export function.
+
+## Work Summary (Developer Facing)
+Plotting data has been split among more threads to increase performance.
+
+## Unfinished Work
+A test rubisco calculation was created and verified by graduate students. It still needs to be implemented into the system. Its method for exporting to file also needs to be created.
+
+## Completed Issues/User Stories
+Here are links to the issues that we completed in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/13
+https://github.com/SkywalkerWesley/python-desktop-app/issues/2
+https://github.com/SkywalkerWesley/python-desktop-app/issues/1
+https://github.com/SkywalkerWesley/python-desktop-app/issues/12
+https://github.com/SkywalkerWesley/python-desktop-app/issues/11
+
+## Incomplete Issues/User Stories
+Here are links to issues we worked on but did not complete in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/16 Rubisco has not been implemented yet.
+https://github.com/SkywalkerWesley/python-desktop-app/issues/18 Requirement was just learned about.
+https://github.com/SkywalkerWesley/python-desktop-app/issues/14 Rubisco calculation had to be verified before implementation was possible.
+https://github.com/SkywalkerWesley/python-desktop-app/issues/17 Issues with displaying mass44 2nd derivative was just discovered.
+
+## Retrospective Summary
+Here's what went well:
+We've had good success producing features for the client without the need to modify them.
+
+Here's what we'd like to improve:
+As the semester comes to a close we'd like to learn more about what comes next after we complete what is needed for the experiment.
+
+Here are changes we plan to implement in the next sprint:
+
+Wrapping up the final calculations for the experiment (Rubisco)

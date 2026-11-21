@@ -1,0 +1,33 @@
+# Sprint 1 Report 10/5/2025
+## YouTube link of Sprint 1 Video: https://youtu.be/-iE_jyVMLbA?si=A9ZyWptA78JrRLlW
+
+## What's New (User Facing)
+* Module 1 outer frames now resizable
+* Calculation plots can now be exported
+
+## Work Summary (Developer Facing)
+After collecting client requirements and spending time understanding the system we've been able to add a new graph to the module which plots the difference between the natural logs of two different species of gases for experimental purposes.
+
+## Unfinished Work
+More work needs to be done for specific client requirements related to saving snapshots of the data and exporting them to a CSV file with additional desired calculations. We plan to tackle this in sprint two since it requires learning some new parts of the system which we haven't interacted with yet.
+
+## Completed Issues/User Stories
+Here are links to the issues that we completed in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/6
+https://github.com/SkywalkerWesley/python-desktop-app/issues/7
+
+## Incomplete Issues/User Stories
+Here are links to issues we worked on but did not complete in this sprint:
+https://github.com/SkywalkerWesley/python-desktop-app/issues/1 Did not have time to address this issue yet.
+https://github.com/SkywalkerWesley/python-desktop-app/issues/2 Need more information from the client in order to complete.
+https://github.com/SkywalkerWesley/python-desktop-app/issues/4 General bug squashing, never ending.
+
+## Retrospective Summary
+Here's what went well:
+Having access to a large codebase has been helpful for adding new features which are derivative of what's already been created.
+
+Here's what we'd like to improve:
+Become more informed on the process the client is working with experimentally so it becomes easier to make suggestions for additions to the code.
+
+Here are changes we plan to implement in the next sprint:
+Spend more time in between meetings working on the code so we have more to show each meeting

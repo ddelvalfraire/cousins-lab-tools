@@ -1,0 +1,10 @@
+PyQt5
+pyqtgraph
+watchdog
+pandas
+matplotlib
+numpy
+sympy
+openpyxl
+scipy
+pyserial

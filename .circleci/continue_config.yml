@@ -57,85 +57,522 @@ jobs:
       - run: echo "No << parameters.section >> checks yet."
 
   # --- legacy ---
+  legacy-checks:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - legacy-pip-v1-{{ checksum "apps/legacy/Code/Module_Main_1_3/Application/requirements.txt" }}-{{ checksum "apps/legacy/requirements-dev.txt" }}
+            - legacy-pip-v1-
+      - run:
+          name: Install dependencies
+          working_directory: apps/legacy
+          command: |
+            python -m venv ~/venv
+            ~/venv/bin/pip install -r Code/Module_Main_1_3/Application/requirements.txt -r requirements-dev.txt
+      - save_cache:
+          key: legacy-pip-v1-{{ checksum "apps/legacy/Code/Module_Main_1_3/Application/requirements.txt" }}-{{ checksum "apps/legacy/requirements-dev.txt" }}
+          paths:
+            - ~/.cache/pip
+      - run:
+          name: Check formatting
+          working_directory: apps/legacy
+          command: ~/venv/bin/ruff format --check .
+      # Run the remaining checks even if an earlier one fails, so that one
+      # pipeline reports every problem.
+      - run:
+          name: Lint
+          working_directory: apps/legacy
+          command: ~/venv/bin/ruff check .
+          when: always
+      - run:
+          name: Test
+          working_directory: apps/legacy
+          command: ~/venv/bin/pytest --junitxml=test-results/junit.xml
+          environment:
+            QT_QPA_PLATFORM: offscreen
+          when: always
+      - store_test_results:
+          path: apps/legacy/test-results
 
   # --- desktop front end ---
+  desktop-frontend:
+    docker:
+      # Matches .nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/desktop
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - desktop-frontend-bun-v1-{{ arch }}-{{ checksum "apps/desktop/bun.lock" }}
+            - desktop-frontend-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: desktop-frontend-bun-v1-{{ arch }}-{{ checksum "apps/desktop/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Lint and format (Biome)
+          working_directory: apps/desktop
+          command: bun x biome ci .
+      - run:
+          name: Check types
+          working_directory: apps/desktop
+          command: bun run check
+      - run:
+          name: Test (Vitest)
+          working_directory: apps/desktop
+          command: bun run test
+      - run:
+          name: Build
+          working_directory: apps/desktop
+          command: bun run build
 
   # --- desktop Rust ---
+  desktop-rust-checks:
+    docker:
+      - image: cimg/rust:1.99.1
+    resource_class: medium
+    steps:
+      - checkout
+      # Linux system libraries for Tauri 2, from
+      # https://v2.tauri.app/start/prerequisites/. Later jobs on a cimg image
+      # can reuse this step with `- *install-tauri-linux-deps`.
+      - &install-tauri-linux-deps
+        run:
+          name: Install Tauri system libraries
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              build-essential \
+              file \
+              libayatana-appindicator3-dev \
+              librsvg2-dev \
+              libssl-dev \
+              libwebkit2gtk-4.1-dev \
+              libxdo-dev
+      - run:
+          name: Install rustfmt and Clippy
+          command: rustup component add rustfmt clippy
+      - restore_cache:
+          keys:
+            - cargo-v1-{{ arch }}-{{ checksum "Cargo.lock" }}
+            - cargo-v1-{{ arch }}-
+      # Debug builds of the Tauri app do not embed the front end (tauri.conf.json
+      # sets devUrl), so these checks do not need apps/desktop/dist.
+      - run:
+          name: rustfmt
+          command: cargo fmt --all --check
+      - run:
+          name: Clippy
+          command: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run:
+          name: Tests
+          command: cargo test --workspace --locked
+      - save_cache:
+          key: cargo-v1-{{ arch }}-{{ checksum "Cargo.lock" }}
+          paths:
+            - ~/.cargo/registry/index
+            - ~/.cargo/registry/cache
+            - ~/.cargo/git/db
+            - target
 
   # --- docs ---
+  docs-build:
+    docker:
+      # Matches apps/docs/.nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/docs
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+            - docs-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/docs
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Build the site
+          working_directory: apps/docs
+          command: bun run build
 
   # --- desktop release ---
+  # Release builds are unsigned and start from a clean checkout without
+  # caches. `tauri build` runs beforeBuildCommand (`bun run build`) first, so
+  # the installers embed the current front end.
+  desktop-release-check-tag:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Check the tag against the app version
+          command: |
+            version=$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)
+            if [[ ! $CIRCLE_TAG =~ ^desktop-v([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?$ ]]; then
+              echo "Use a tag like desktop-v${version} or desktop-v${version}-rc.1, not ${CIRCLE_TAG}."
+              exit 1
+            fi
+            if [[ ${BASH_REMATCH[1]} != "$version" ]]; then
+              echo "${CIRCLE_TAG} does not match version ${version} in tauri.conf.json."
+              exit 1
+            fi
+
+  desktop-release-windows:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    shell: bash.exe -eo pipefail
+    steps:
+      - checkout
+      # Same Rust version as the Linux checks (cimg/rust:1.99.1). The image's
+      # Node.js runs Vite and the Tauri CLI.
+      - run:
+          name: Install Rust and Bun
+          command: |
+            curl -sSfLo rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+            ./rustup-init.exe -y --no-modify-path --profile minimal --default-toolchain 1.99.1
+            rm rustup-init.exe
+            npm install --global "$(node -p 'require("./apps/desktop/package.json").packageManager')"
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - run:
+          name: Build the installers
+          working_directory: apps/desktop
+          command: |
+            export PATH="$HOME/.cargo/bin:$PATH"
+            bun run tauri build --bundles nsis,msi
+      - run:
+          name: Install and launch the app
+          shell: powershell.exe -ExecutionPolicy Bypass
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $setup = Get-Item target\release\bundle\nsis\*-setup.exe
+            $install = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+            if ($install.ExitCode -ne 0) { throw "The installer exited with code $($install.ExitCode)." }
+            $dir = Join-Path $env:LOCALAPPDATA 'DV-Dash'
+            Get-ChildItem $dir | Format-Table Name, Length
+            $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notlike 'uninstall*' } | Select-Object -First 1
+            if (-not $exe) { throw "No app executable in $dir." }
+            $app = Start-Process -FilePath $exe.FullName -PassThru
+            Start-Sleep -Seconds 15
+            if ($app.HasExited) { throw "$($exe.Name) exited with code $($app.ExitCode) within 15 seconds." }
+            Write-Host "$($exe.Name) is running (process $($app.Id), $($app.MainWindowTitle))."
+            Stop-Process -Id $app.Id
+      - run:
+          name: Collect the installers
+          command: |
+            mkdir -p installers/windows
+            cp target/release/bundle/nsis/*-setup.exe target/release/bundle/msi/*.msi installers/windows/
+            ls -l installers/windows
+      - persist_to_workspace:
+          root: installers
+          paths:
+            - windows
+
+  desktop-release-macos:
+    macos:
+      xcode: 27.1.0
+    resource_class: m4pro.medium
+    environment:
+      # Ad-hoc signature, not a developer identity. Apple Silicon Macs refuse
+      # to open downloaded apps without any signature.
+      APPLE_SIGNING_IDENTITY: "-"
+    steps:
+      - checkout
+      # One universal build runs on both Apple Silicon and Intel Macs.
+      - run:
+          name: Install Rust and Bun
+          command: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path \
+              --profile minimal --default-toolchain 1.99.1 \
+              --target aarch64-apple-darwin --target x86_64-apple-darwin
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$BASH_ENV"
+            npm install --global "$(node -p 'require("./apps/desktop/package.json").packageManager')"
+      - run:
+          name: Install dependencies
+          working_directory: apps/desktop
+          command: bun install --frozen-lockfile
+      - run:
+          name: Build the installer
+          working_directory: apps/desktop
+          command: bun run tauri build --target universal-apple-darwin --bundles dmg
+      - run:
+          name: Collect the installer
+          command: |
+            mkdir -p installers/macos
+            cp target/universal-apple-darwin/release/bundle/dmg/*.dmg installers/macos/
+            ls -l installers/macos
+      - persist_to_workspace:
+          root: installers
+          paths:
+            - macos
+
+  desktop-release-publish:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: installers
+      - run:
+          name: Install the GitHub CLI
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends gh
+      # GITHUB_TOKEN comes from the github-releases context. The script
+      # creates a draft, uploads the files, and then publishes it. It stops
+      # with an error if the release is already published.
+      - run:
+          name: Publish the GitHub release
+          command: .circleci/scripts/desktop-release-publish.sh
 
   # --- legacy release ---
+  # Release builds start from a clean checkout without caches, on the same
+  # Python version as the legacy checks (cimg/python:3.12).
+  legacy-release-windows:
+    machine:
+      image: windows-server-2022-gui:current
+    resource_class: windows.medium
+    shell: bash.exe -eo pipefail
+    steps:
+      - run:
+          name: Check the tag
+          command: |
+            if [[ ! $CIRCLE_TAG =~ ^legacy-v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+              echo "Use a tag like legacy-v0.2.0 or legacy-v0.2.0-rc.1, not ${CIRCLE_TAG}."
+              exit 1
+            fi
+      - checkout
+      - run:
+          name: Install Python and the build tools
+          working_directory: apps/legacy
+          command: |
+            powershell.exe -ExecutionPolicy Bypass -c "irm https://astral.sh/uv/0.13.6/install.ps1 | iex"
+            export PATH="$HOME/.local/bin:$PATH"
+            uv venv --python 3.12 .venv
+            uv pip install -r Code/Module_Main_1_3/Application/requirements.txt -r requirements-build.txt
+      - run:
+          name: Build the executables
+          working_directory: apps/legacy
+          command: |
+            export PATH="$PWD/.venv/Scripts:$PATH"
+            ./build.bat
+      # Nobody on the team has Windows, so start each executable here. A
+      # one-file executable unpacks itself and starts a second process with
+      # the same name, which opens the window. Wait for the app's window
+      # (title LabView): if the app crashes, PyInstaller shows an error dialog
+      # instead, and the process keeps running.
+      - run:
+          name: Start each executable
+          working_directory: apps/legacy/dist
+          shell: powershell.exe -ExecutionPolicy Bypass
+          command: |
+            $ErrorActionPreference = 'Stop'
+            foreach ($name in 'LabView_module_1', 'LabView_module_2') {
+              $app = Start-Process -FilePath "$name.exe" -PassThru
+              $deadline = (Get-Date).AddSeconds(90)
+              do {
+                Start-Sleep -Seconds 2
+                if ($app.HasExited) { throw "$name.exe exited with code $($app.ExitCode)." }
+                $window = Get-Process -Name $name | Where-Object MainWindowTitle -eq 'LabView'
+              } until ($window -or (Get-Date) -gt $deadline)
+              if (-not $window) {
+                $titles = (Get-Process -Name $name).MainWindowTitle -join "', '"
+                throw "$name.exe opened no LabView window within 90 seconds. Window titles: '$titles'."
+              }
+              Start-Sleep -Seconds 10
+              if ($app.HasExited) { throw "$name.exe exited with code $($app.ExitCode) after opening its window." }
+              Write-Host "$name.exe is running with its LabView window open (process $($window.Id))."
+              Get-Process -Name $name | Stop-Process -Force
+            }
+            Get-ChildItem *.exe | Format-Table Name, Length
+      - persist_to_workspace:
+          root: apps/legacy/dist
+          paths:
+            - LabView_module_1.exe
+            - LabView_module_2.exe
+
+  legacy-release-publish:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: executables
+      - run:
+          name: Install the GitHub CLI
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends gh
+      # GITHUB_TOKEN comes from the github-releases context. The script
+      # publishes the release from a draft, because published releases are
+      # immutable, and stops if the tag is already released.
+      - run:
+          name: Publish the GitHub release
+          command: bash .circleci/scripts/publish-legacy-release.sh executables
 
   # --- docs release ---
+  docs-publish:
+    docker:
+      # Matches apps/docs/.nvmrc.
+      - image: cimg/node:26.12.1
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Install Bun from packageManager
+          working_directory: apps/docs
+          command: |
+            npm install --global --prefix "$HOME/.local" "$(node -p 'require("./package.json").packageManager')"
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+            - docs-bun-v1-{{ arch }}-
+      - run:
+          name: Install dependencies
+          working_directory: apps/docs
+          command: bun install --frozen-lockfile
+      - save_cache:
+          key: docs-bun-v1-{{ arch }}-{{ checksum "apps/docs/bun.lock" }}
+          paths:
+            - ~/.bun/install/cache
+      - run:
+          name: Build the site
+          working_directory: apps/docs
+          command: bun run build
+      - run:
+          # Replace the contents of gh-pages with the new build and add one
+          # commit, so that the branch keeps a history of each release.
+          # GITHUB_TOKEN comes from the github-releases context. The
+          # credential helper passes it to git, so it never appears in a URL
+          # or in the log. A separate git config file keeps the checkout
+          # step's SSH settings from redirecting this HTTPS push.
+          name: Publish to gh-pages
+          working_directory: apps/docs
+          command: |
+            : "${GITHUB_TOKEN:?Add the github-releases context to this job.}"
+            export GIT_CONFIG_GLOBAL="$HOME/.gitconfig-gh-pages"
+            git config --global user.name "CircleCI"
+            git config --global user.email "noreply@circleci.com"
+            git config --global credential.helper \
+              '!f() { echo username=x-access-token; echo "password=${GITHUB_TOKEN}"; }; f'
+            repo="https://github.com/ddelvalfraire/cousins-lab-tools.git"
+            git clone --quiet --depth 1 --branch gh-pages "$repo" /tmp/gh-pages
+            find /tmp/gh-pages -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            cp -R dist/. /tmp/gh-pages/
+            cd /tmp/gh-pages
+            git add --all
+            if git diff --cached --quiet; then
+              echo "gh-pages already matches this build."
+              exit 0
+            fi
+            git commit --quiet -m "Publish the user manual from ${CIRCLE_TAG}" \
+              -m "Built from ${CIRCLE_SHA1}."
+            git push --quiet origin gh-pages
 
 workflows:
   # --- legacy ---
   legacy:
     when: << pipeline.parameters.run-legacy >>
     jobs:
-      - placeholder:
-          name: legacy-placeholder
-          section: legacy
+      - legacy-checks
 
   # --- desktop front end ---
   desktop-frontend:
     when: << pipeline.parameters.run-desktop-frontend >>
     jobs:
-      - placeholder:
-          name: desktop-frontend-placeholder
-          section: desktop front-end
+      - desktop-frontend
 
   # --- desktop Rust ---
   desktop-rust:
     when: << pipeline.parameters.run-desktop-rust >>
     jobs:
-      - placeholder:
-          name: desktop-rust-placeholder
-          section: desktop Rust
+      - desktop-rust-checks
 
   # --- docs ---
   docs:
     when: << pipeline.parameters.run-docs >>
     jobs:
-      - placeholder:
-          name: docs-placeholder
-          section: docs
+      - docs-build
 
   # --- desktop release ---
   desktop-release:
     when: << pipeline.parameters.run-desktop-release >>
     jobs:
-      - placeholder:
-          name: desktop-release-placeholder
-          section: desktop release
-          filters:
+      - desktop-release-check-tag:
+          filters: &desktop-release-tags
             branches:
               ignore: /.*/
             tags:
               only: /^desktop-v.*/
+      - desktop-release-windows:
+          requires:
+            - desktop-release-check-tag
+          filters: *desktop-release-tags
+      - desktop-release-macos:
+          requires:
+            - desktop-release-check-tag
+          filters: *desktop-release-tags
+      - desktop-release-publish:
+          context: github-releases
+          requires:
+            - desktop-release-windows
+            - desktop-release-macos
+          filters: *desktop-release-tags
 
   # --- legacy release ---
   legacy-release:
     when: << pipeline.parameters.run-legacy-release >>
     jobs:
-      - placeholder:
-          name: legacy-release-placeholder
-          section: legacy release
-          filters:
+      - legacy-release-windows:
+          filters: &legacy-release-tags
             branches:
               ignore: /.*/
             tags:
               only: /^legacy-v.*/
+      - legacy-release-publish:
+          context: github-releases
+          requires:
+            - legacy-release-windows
+          filters: *legacy-release-tags
 
   # --- docs release ---
   docs-release:
     when: << pipeline.parameters.run-docs-release >>
     jobs:
-      - placeholder:
-          name: docs-release-placeholder
-          section: docs release
+      - docs-publish:
+          context: github-releases
           filters:
             branches:
               ignore: /.*/

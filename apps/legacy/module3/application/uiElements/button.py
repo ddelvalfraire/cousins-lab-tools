@@ -1,4 +1,3 @@
-
 """
 __author__ = "Ritik Agarwal, Zoe Parker"
 __credits__ = ["Ritik Agarwal", "Zoe Parker"]
@@ -9,19 +8,18 @@ __status__ = "Completed"
 """
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QPushButton, QFrame, QSizePolicy
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QSizePolicy
+
 
 class Button(QtWidgets.QPushButton):
-
     def __init__(self, text, width, height):
-        super(Button, self).__init__()
+        super().__init__()
 
         self.setText(text)
         self.setMinimumWidth(width)
         self.setMinimumHeight(height)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        
-    
+
     def setMargins(self, l, t, r, b):
         self.setContentsMargins(l, t, r, b)
