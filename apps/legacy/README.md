@@ -32,6 +32,22 @@ For Module 2, replace `mainModule1` with `mainModule2`.
 
 Run from `apps/legacy` so the `Code` package resolves. To build Windows executables, install `requirements-build.txt`, then run `build.bat` from that directory. The executables are written to `apps/legacy/dist`.
 
+### Try the Ambit UI without hardware
+
+From `apps/legacy`, run:
+
+```sh
+python -m tools.simulate_ambit
+```
+
+The simulation opens the real Ambit dialog with simulated Ambit and pulser
+ports, a 15-second example protocol, and an offset of zero. Click **Connect
+and start**, then choose a new CSV filename. The plot fluctuates as synthetic
+measurements arrive. You can load another JSON protocol or stop a run early.
+Only the simulated ports can be opened in this process; the normal Module 2
+launcher still uses real hardware. Each synthetic CSV row includes
+`SIMULATED:1` in its raw response. Simulated values are not scientific data.
+
 ### Modules 3 and 4
 
 For Module 3, start from the repository root:

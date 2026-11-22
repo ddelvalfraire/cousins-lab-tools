@@ -42,6 +42,7 @@ sys.path.append("../calculations")
 
 from Code.Module_Main_1_3.Application.calculations.Calculations import Calculations
 from Code.Module_Main_1_3.Application.CustomWidgets.rawPlotFrame import RawPlotFrame
+from Code.Module_Main_1_3.Application.mainUI.ambit_ui import AmbitDialog
 from Code.Module_Main_1_3.Application.read_data.getData import GetData
 from Code.Module_Main_1_3.Application.uiElements.button import Button
 from Code.Module_Main_1_3.Application.uiElements.curve import Curve
@@ -60,6 +61,7 @@ class LabViewModule2(QtWidgets.QMainWindow):
         super().__init__()
 
         self.app = app
+        self._closing = False
         self.screen_width = width
         self.screen_height = height
 
@@ -194,8 +196,15 @@ class LabViewModule2(QtWidgets.QMainWindow):
         """
         Handles the application close event.
         """
+        self._closing = True
+        if hasattr(self, "ambitDialog"):
+            self.ambitDialog.shutdown()
         self.rawDataPlotFrame.stopBackgroundTasks()
         event.accept()
+
+    @property
+    def folder_path(self):
+        return self.rawDataPlotFrame.folder_path
 
     def calculatedPlotsUI(self):
 
@@ -337,6 +346,9 @@ class LabViewModule2(QtWidgets.QMainWindow):
         self.file_menu.addAction(self.select_folder_action)
         self.file_menu.addAction(self.select_file_action)
         self.file_menu.addAction(self.select_ezview_action)
+        self.ambit_action = QAction("Ambit acquisition", self)
+        self.ambit_action.triggered.connect(self.openAmbit)
+        self.file_menu.addAction(self.ambit_action)
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.select_save_calc_action)
 
@@ -716,6 +728,13 @@ class LabViewModule2(QtWidgets.QMainWindow):
         # Copy Table Row connect method
         self.copyTableRowButton.clicked.connect(self.copyTableRowButtonPressed)
 
+    def openAmbit(self):
+        if not hasattr(self, "ambitDialog"):
+            self.ambitDialog = AmbitDialog(self)
+        self.ambitDialog.show()
+        self.ambitDialog.raise_()
+        self.ambitDialog.activateWindow()
+
     def select_ezview(self):
         logger.info("Selecting EZView file (Module 2)")
         ezview_path, _ = QFileDialog.getOpenFileName(
@@ -739,6 +758,12 @@ class LabViewModule2(QtWidgets.QMainWindow):
         folder_path = QFileDialog.getExistingDirectory(self, "Select a folder")
         if not folder_path:
             logger.info("Folder selection cancelled (Module 2)")
+            return
+
+        if hasattr(self, "ambitDialog") and self.ambitDialog.uses_output_folder(folder_path):
+            QtWidgets.QMessageBox.warning(
+                self, "Ambit", "Choose a different mass-spectrometer acquisition folder."
+            )
             return
 
         self.rawDataPlotFrame.folder_path = os.path.abspath(folder_path)
