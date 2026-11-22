@@ -95,8 +95,10 @@ The protocol format follows the notebook's command lists. For example:
 Notebook examples are in `apps/legacy/Code/Module_Main_1_3/Application/protocols/`.
 In **Load protocol**, browse to that folder and select
 `signal_offset_protocol.json`: it requests 50 zero-actinic measurements at
-0.1-second intervals. Use the resulting raw `S` values according to your lab's
-baseline procedure; the application does not calculate the offset for you.
+0.1-second intervals. To calculate an offset, select **Calculate offset from
+baseline CSV**, choose a baseline run, and review its mean `S` before applying
+it. The application cannot determine whether the selected file follows your
+lab's baseline procedure.
 
 The `reference_only` subfolder contains the notebook's other examples,
 including the expanded `Protocol_1`, `Protocol_2`, and `Protocol_5`. They are
@@ -106,10 +108,16 @@ before starting. The notebook's duplicated saturation-flash definitions are
 represented by one file per distinct version.
 
 `M` specifies count, interval in seconds, and Ambit actinic intensity; `W`
-waits in seconds; `P` is accepted but the plot updates continuously.
+waits in seconds. By default, the plot updates continuously and `P` does not
+change it. **Update graph only at P steps** instead shows data accumulated
+up to each `P`; if there is no `P`, the graph stays empty, including after
+the run. This controls display updates only: unlike the notebook, it does not
+pause acquisition to wait for the graph to render, so timing can differ.
 `["A", "B", intensity]` and `["A", "R", intensity]` control the external
 blue and red LEDs (0 turns a channel off). The Ambit actinic setting remains
 on until another `M` step changes it or cleanup requests shutdown.
+The protocol preview shows each step, commanded light settings, and estimated
+duration before running. Timing excludes communication and other delays.
 
 Like the notebook, Module 2 does not enforce exposure-duration limits. External
 LED values must be integers from 0 to 4094, matching the notebook's DAC check;
@@ -124,8 +132,27 @@ a light off. Verify physical shutdown; do not assume measurement pulses or
 independently operated lights are disabled.
 
 Each Ambit row is saved immediately with its raw response, instrument time,
-host UTC receipt time, offset, and calculated `(S - offset) / R`. A zero
-reference is saved as raw data and stops the run with an error. Preserve the
+host UTC receipt time, offset, calculated `(S - offset) / R`, and commanded
+Ambit (`ACT`), blue (`Blue`), and red (`Red`) light settings. These are
+commanded settings, not measured light output. If the run does not use a
+pulser, blue and red settings are unknown and their CSV fields are blank.
+Select **Show uncorrected S / R** to add the uncorrected ratio to the graph.
+
+An accompanying `<CSV filename>.metadata.json` records the exact protocol,
+offset, ports, output and plot options, and host UTC time when the run is
+initiated, before connection.
+Keep this file with its CSV. Both names must be new; errors while creating
+files or connecting can leave an empty or header-only CSV or metadata file.
+With **Save notebook-compatible CSV** selected, a separate
+`<CSV filename>.notebook.csv` is created after device cleanup, including for
+stopped or failed runs. It follows the notebook's raw numeric fields and
+`ACT`, `Blue`, and `Red` columns, including additional numeric fields found
+in later readings. Unknown blue and red settings remain blank rather than
+being assumed to be zero. The notebook CSV name must also be new. A sudden
+process termination may leave this file empty; the detailed CSV is flushed
+throughout acquisition. Export errors are reported.
+
+A zero reference is saved as raw data and stops the run with an error. Preserve the
 mass-spectrometer's original timestamped acquisition/spool data separately:
 Module 2's plotted mass data uses relative time, and this feature does not
 synchronize the instruments. The UTC receipt time is not a hardware trigger

@@ -1,5 +1,6 @@
 import os
 import math
+import csv
 import sys
 import threading
 
@@ -8,7 +9,7 @@ import serial.tools.list_ports
 from PyQt5 import QtCore, QtWidgets
 
 from Code.Module_Main_1_3.Application.mainUI.ambit_controller import (
-    AmbitStopped, load_protocol, run_protocol,
+    AmbitStopped, baseline_mean, describe_protocol, load_protocol, run_protocol,
 )
 
 
@@ -18,16 +19,21 @@ class AmbitWorker(QtCore.QObject):
     # measurement: Ambit time in seconds and fluorescence.
     # result: status text and whether it represents an error.
     measurement = QtCore.pyqtSignal(float, float)
+    uncorrected = QtCore.pyqtSignal(float, float)
+    plot_step = QtCore.pyqtSignal()
     result = QtCore.pyqtSignal(str, bool)
     finished = QtCore.pyqtSignal()
 
-    def __init__(self, port, protocol, offset, output_path, pulser_port=None):
+    def __init__(self, port, protocol, offset, output_path, pulser_port=None,
+                 notebook_export=False, plot_on_p=False):
         super().__init__()
         self.port = port
         self.protocol = protocol
         self.offset = offset
         self.output_path = output_path
         self.pulser_port = pulser_port
+        self.notebook_export = notebook_export
+        self.plot_on_p = plot_on_p
         # The controller checks this event during reads, waits, and sampling.
         self.stopped = threading.Event()
 
@@ -36,14 +42,22 @@ class AmbitWorker(QtCore.QObject):
         # status signals. Always signal finished so the thread can quit.
         try:
             run_protocol(self.port, self.protocol, self.offset, self.output_path,
-                         self.stopped, self.measurement.emit, self.pulser_port)
+                         self.stopped, self.measurement.emit, self.pulser_port,
+                         self.uncorrected.emit, self.notebook_export,
+                         self.plot_step.emit if self.plot_on_p else None)
         except AmbitStopped:
-            self.result.emit("Stopped. Measurements saved to " + self.output_path, False)
+            message = "Stopped. Measurements saved to " + self.output_path
+            if self.notebook_export:
+                message += "\nNotebook CSV: " + self.output_path + ".notebook.csv"
+            self.result.emit(message, False)
         except Exception as exc:
             print(f"Ambit error: {exc}", file=sys.stderr)
             self.result.emit(f"Ambit error: {exc}", True)
         else:
-            self.result.emit("Completed. Measurements saved to " + self.output_path, False)
+            message = "Completed. Measurements saved to " + self.output_path
+            if self.notebook_export:
+                message += "\nNotebook CSV: " + self.output_path + ".notebook.csv"
+            self.result.emit(message, False)
         finally:
             self.finished.emit()
 
@@ -63,6 +77,8 @@ class AmbitDialog(QtWidgets.QDialog):
         self.output_path = None
         self.x_values = []
         self.y_values = []
+        self.raw_x_values = []
+        self.raw_y_values = []
 
         # The port is editable for cases where USB identification is unavailable.
         # Offset is supplied by the user; the application does not measure it.
@@ -75,15 +91,32 @@ class AmbitDialog(QtWidgets.QDialog):
         self.load_button = QtWidgets.QPushButton("Load protocol")
         self.offset = QtWidgets.QLineEdit()
         self.offset.setPlaceholderText("Required baseline offset")
+        self.baseline_button = QtWidgets.QPushButton("Calculate offset from baseline CSV")
+        self.protocol_preview = QtWidgets.QPlainTextEdit()
+        self.protocol_preview.setReadOnly(True)
+        self.protocol_preview.setMaximumHeight(150)
+        self.protocol_preview.setPlaceholderText("Load a protocol to preview its steps and duration.")
+        self.show_uncorrected = QtWidgets.QCheckBox("Show uncorrected S / R")
+        self.notebook_export = QtWidgets.QCheckBox("Save notebook-compatible CSV")
+        self.notebook_export.setToolTip(
+            "Save an additional <CSV filename>.notebook.csv after the run."
+        )
+        self.plot_on_p = QtWidgets.QCheckBox("Update graph only at P steps")
+        self.plot_on_p.setToolTip(
+            "The graph stays empty until a P step; protocols without P do not update it."
+        )
         self.start_button = QtWidgets.QPushButton("Connect and start")
         self.stop_button = QtWidgets.QPushButton("Stop")
         self.stop_button.setEnabled(False)
         self.status = QtWidgets.QLabel("External LED exposure is not automatically limited; verify safe settings for your hardware.")
         self.status.setWordWrap(True)
         self.plot = pg.PlotWidget()
-        self.plot.setLabel("left", "Fluorescence (S - offset) / R")
+        self.plot.setLabel("left", "Signal / reference")
         self.plot.setLabel("bottom", "Ambit time (s)")
-        self.curve = self.plot.plot(pen=pg.mkPen("y"))
+        self.plot.addLegend()
+        self.curve = self.plot.plot(pen=pg.mkPen("y"), name="(S - offset) / R")
+        self.raw_curve = self.plot.plot(pen=pg.mkPen("c"), name="S / R")
+        self.raw_curve.setVisible(False)
 
         # Build the port/protocol/offset controls, run buttons, status, and plot.
         form = QtWidgets.QFormLayout()
@@ -95,16 +128,23 @@ class AmbitDialog(QtWidgets.QDialog):
         form.addRow("Protocol", self.protocol_label)
         form.addRow("", self.load_button)
         form.addRow("Signal offset", self.offset)
+        form.addRow("", self.baseline_button)
+        form.addRow("", self.notebook_export)
+        form.addRow("", self.plot_on_p)
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(self.start_button)
         buttons.addWidget(self.stop_button)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addLayout(form)
+        layout.addWidget(self.protocol_preview)
         layout.addLayout(buttons)
         layout.addWidget(self.status)
+        layout.addWidget(self.show_uncorrected)
         layout.addWidget(self.plot)
         self.refresh_button.clicked.connect(self.refresh_ports)
         self.load_button.clicked.connect(self.load)
+        self.baseline_button.clicked.connect(self.calculate_baseline)
+        self.show_uncorrected.toggled.connect(self.raw_curve.setVisible)
         self.start_button.clicked.connect(self.start)
         self.stop_button.clicked.connect(self.stop)
         self.refresh_ports()
@@ -142,11 +182,37 @@ class AmbitDialog(QtWidgets.QDialog):
             return
         try:
             protocol = load_protocol(path)
+            self.set_protocol(protocol, os.path.abspath(path))
         except (OSError, ValueError) as exc:
             QtWidgets.QMessageBox.critical(self, "Invalid protocol", str(exc))
             return
+
+    def set_protocol(self, protocol, label):
+        preview = describe_protocol(protocol)
         self.protocol = protocol
-        self.protocol_label.setText(os.path.abspath(path))
+        self.protocol_label.setText(label)
+        self.protocol_preview.setPlainText(preview)
+
+    def calculate_baseline(self):
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select a baseline CSV", "", "CSV files (*.csv)"
+        )
+        if not path:
+            return
+        try:
+            mean, count = baseline_mean(path)
+        except (OSError, ValueError, OverflowError, csv.Error) as exc:
+            QtWidgets.QMessageBox.critical(self, "Invalid baseline", str(exc))
+            return
+        answer = QtWidgets.QMessageBox.question(
+            self, "Apply baseline offset",
+            f"Mean S: {mean:.12g} from {count} measurements.\n"
+            "Confirm this file follows your lab's baseline procedure. Apply this offset?",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No,
+        )
+        if answer == QtWidgets.QMessageBox.Yes:
+            self.offset.setText(repr(mean))
 
     def start(self):
         # Do not start a second worker while one is already running. A port,
@@ -185,14 +251,22 @@ class AmbitDialog(QtWidgets.QDialog):
         self.output_path = path
         self.x_values.clear()
         self.y_values.clear()
+        self.raw_x_values.clear()
+        self.raw_y_values.clear()
         self.curve.setData([], [])
+        self.raw_curve.setData([], [])
         # Run the controller on a dedicated thread and deliver plot updates and
         # completion status to this dialog through Qt signals.
         self.thread = QtCore.QThread(self)
-        self.worker = AmbitWorker(port, self.protocol, offset, path, pulser_port or None)
+        self.worker = AmbitWorker(
+            port, self.protocol, offset, path, pulser_port or None,
+            self.notebook_export.isChecked(), self.plot_on_p.isChecked(),
+        )
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.measurement.connect(self.add_measurement)
+        self.worker.uncorrected.connect(self.add_uncorrected)
+        self.worker.plot_step.connect(self.refresh_plot)
         self.worker.result.connect(self.show_result)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -200,7 +274,9 @@ class AmbitDialog(QtWidgets.QDialog):
         self.thread.finished.connect(self.thread.deleteLater)
         # Freeze run configuration until the worker finishes, but keep Stop
         # available. The worker itself owns the shared cancellation event.
-        for widget in (self.ports, self.pulser_ports, self.refresh_button, self.load_button, self.offset, self.start_button):
+        for widget in (self.ports, self.pulser_ports, self.refresh_button, self.load_button,
+                       self.offset, self.baseline_button, self.notebook_export,
+                       self.plot_on_p, self.start_button):
             widget.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.status.setText("Connecting and running protocol...")
@@ -210,7 +286,18 @@ class AmbitDialog(QtWidgets.QDialog):
         # x is instrument time in seconds; y is (S - offset) / R.
         self.x_values.append(x)
         self.y_values.append(y)
+        if not self.plot_on_p.isChecked():
+            self.curve.setData(self.x_values, self.y_values)
+
+    def add_uncorrected(self, x, y):
+        self.raw_x_values.append(x)
+        self.raw_y_values.append(y)
+        if not self.plot_on_p.isChecked():
+            self.raw_curve.setData(self.raw_x_values, self.raw_y_values)
+
+    def refresh_plot(self):
         self.curve.setData(self.x_values, self.y_values)
+        self.raw_curve.setData(self.raw_x_values, self.raw_y_values)
 
     def uses_output_folder(self, folder):
         # The main window also uses this check when selecting an acquisition
@@ -246,7 +333,9 @@ class AmbitDialog(QtWidgets.QDialog):
         # Release references and allow the next run to be configured.
         self.worker = None
         self.thread = None
-        for widget in (self.ports, self.pulser_ports, self.refresh_button, self.load_button, self.offset, self.start_button):
+        for widget in (self.ports, self.pulser_ports, self.refresh_button, self.load_button,
+                       self.offset, self.baseline_button, self.notebook_export,
+                       self.plot_on_p, self.start_button):
             widget.setEnabled(True)
         self.stop_button.setEnabled(False)
 

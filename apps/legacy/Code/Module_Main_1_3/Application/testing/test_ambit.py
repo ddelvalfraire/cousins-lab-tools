@@ -199,10 +199,146 @@ class AmbitControllerTest(unittest.TestCase):
         with open(self.output, newline="", encoding="utf-8") as file:
             row = next(csv.DictReader(file))
         self.assertEqual(row["fluorescence"], "4.0")
+        self.assertEqual((row["ACT"], row["Blue"], row["Red"]), ("0", "", ""))
         self.assertTrue(row["timestamp_utc"].endswith("+00:00"))
         self.assertEqual(row["raw_response"], "T:100,S:20,R:4,F:5,B:6")
+        self.assertFalse(Path(self.output + ".notebook.csv").exists())
         self.assertEqual(self.device.writes[-2:], [bytes([65, 0]), b"E\n"])
         self.assertTrue(self.device.closed)
+
+    def test_records_protocol_light_states_and_uncorrected_values(self):
+        pulser = FakePulser()
+        self.serial.side_effect = lambda port, *args, **kwargs: pulser if port == "COM2" else self.device
+        protocol = [
+            ["A", "B", 100], ["M", 1, 0.001, 125],
+            ["A", "R", 45], ["M", 1, 0.001, 20],
+            ["A", "B", 0], ["M", 1, 0.001, 0],
+        ]
+        corrected, uncorrected = [], []
+        controller.run_protocol(
+            "COM1", protocol, 4, self.output, threading.Event(),
+            lambda x, y: corrected.append((x, y)), "COM2",
+            lambda x, y: uncorrected.append((x, y)),
+        )
+        with open(self.output, newline="", encoding="utf-8") as file:
+            rows = list(csv.DictReader(file))
+        self.assertEqual([(r["ACT"], r["Blue"], r["Red"]) for r in rows],
+                         [("125", "100", "0"), ("20", "100", "45"), ("0", "0", "45")])
+        self.assertEqual(corrected, [(0.1, 4.0)] * 3)
+        self.assertEqual(uncorrected, [(0.1, 5.0)] * 3)
+        with open(self.output + ".metadata.json", encoding="utf-8") as file:
+            metadata = json.load(file)
+        self.assertEqual(metadata["protocol"], protocol)
+        self.assertEqual(metadata["offset"], 4)
+        self.assertTrue(metadata["run_started_utc"].endswith("+00:00"))
+        self.assertEqual(metadata["ambit_port"], "COM1")
+        self.assertEqual(metadata["pulser_port"], "COM2")
+
+    def test_notebook_export_preserves_dynamic_fields_order_and_light_states(self):
+        class ChangingSerial(FakeSerial):
+            def write(self, data):
+                if data == b"G":
+                    self.response = self.responses.pop(0)
+                super().write(data)
+
+        device = ChangingSerial()
+        device.responses = [b"T:100,S:20,R:4,F:5\n", b"T:200,S:24,R:4,B:6,X:2.5\n"]
+        pulser = FakePulser()
+        self.serial.side_effect = lambda port, *args, **kwargs: pulser if port == "COM2" else device
+        protocol = [["A", "B", 50], ["M", 2, 0.001, 125]]
+        controller.run_protocol("COM1", protocol, 4, self.output, threading.Event(),
+                                lambda x, y: None, "COM2", notebook_export=True)
+        with open(self.output + ".notebook.csv", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            rows = list(reader)
+        self.assertEqual(reader.fieldnames, ["T", "S", "R", "F", "ACT", "Blue", "Red", "B", "X"])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual((rows[0]["T"], rows[0]["S"], rows[0]["ACT"], rows[0]["Blue"], rows[0]["Red"]),
+                         ("100", "20", "125", "50", "0"))
+        self.assertEqual((rows[1]["T"], rows[1]["S"], rows[1]["B"], rows[1]["X"]),
+                         ("200", "24", "6.0", "2.5"))
+        self.assertEqual(rows[1]["F"], "")
+        self.assertEqual(rows[0]["X"], "")
+
+    def test_notebook_export_keeps_partial_data_after_cancellation(self):
+        stopped = threading.Event()
+        def cancel(x, y):
+            stopped.set()
+        with self.assertRaises(controller.AmbitStopped):
+            controller.run_protocol("COM1", [["M", 2, 1, 0]], 4, self.output,
+                                    stopped, cancel, notebook_export=True)
+        with open(self.output + ".notebook.csv", newline="", encoding="utf-8") as file:
+            rows = list(csv.DictReader(file))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["T"], rows[0]["S"], rows[0]["Blue"]), ("100", "20", ""))
+        self.assertTrue(self.device.closed)
+
+    def test_notebook_export_keeps_zero_reference_reading_after_error(self):
+        self.device.response = b"T:1,S:20,R:0\n"
+        with self.assertRaisesRegex(ValueError, "R=0"):
+            controller.run_protocol("COM1", [["M", 1, 0.001, 0]], 4, self.output,
+                                    threading.Event(), lambda x, y: None, notebook_export=True)
+        with open(self.output + ".notebook.csv", newline="", encoding="utf-8") as file:
+            row = next(csv.DictReader(file))
+        self.assertEqual((row["T"], row["S"], row["R"]), ("1", "20", "0"))
+        self.assertTrue(self.device.closed)
+
+    def test_existing_notebook_export_is_not_overwritten(self):
+        path = Path(self.output + ".notebook.csv")
+        path.write_text("existing", encoding="utf-8")
+        with self.assertRaises(FileExistsError):
+            controller.run_protocol("COM1", [["M", 1, 0.001, 0]], 4, self.output,
+                                    threading.Event(), lambda x, y: None, notebook_export=True)
+        self.assertEqual(path.read_text(encoding="utf-8"), "existing")
+        self.assertFalse(Path(self.output).exists())
+        self.serial.assert_not_called()
+
+    def test_notebook_export_failure_is_reported_after_device_cleanup(self):
+        with patch.object(controller, "_export_notebook_csv", side_effect=OSError("disk full")):
+            with self.assertRaisesRegex(RuntimeError, "Notebook CSV export failed: disk full"):
+                controller.run_protocol("COM1", [["M", 1, 0.001, 0]], 4, self.output,
+                                        threading.Event(), lambda x, y: None, notebook_export=True)
+        self.assertTrue(self.device.closed)
+        with open(self.output, newline="", encoding="utf-8") as file:
+            self.assertEqual(len(list(csv.DictReader(file))), 1)
+
+    def test_notebook_export_rejects_incomplete_detailed_data(self):
+        source = Path(self.temp.name) / "incomplete.csv"
+        target = Path(self.temp.name) / "notebook.csv"
+        for contents in ("S,R\n1,2\n", "raw_response,ACT,Blue,Red\n\"T:1,S:2,R:3\",0\n"):
+            source.write_text(contents, encoding="utf-8")
+            with self.subTest(contents=contents), target.open("w", encoding="utf-8", newline="") as output:
+                with self.assertRaises(ValueError):
+                    controller._export_notebook_csv(source, output)
+
+    def test_existing_metadata_is_not_overwritten_or_used(self):
+        metadata = Path(self.output + ".metadata.json")
+        metadata.write_text("existing")
+        with self.assertRaises(FileExistsError):
+            self.run_protocol([["M", 1, 0.001, 0]])
+        self.assertEqual(metadata.read_text(), "existing")
+        self.assertFalse(Path(self.output).exists())
+        self.serial.assert_not_called()
+
+    def test_baseline_mean_checks_every_signal(self):
+        path = Path(self.temp.name) / "baseline.csv"
+        path.write_text("S,R\n10,2\n20,4\n", encoding="utf-8")
+        self.assertEqual(controller.baseline_mean(path), (15.0, 2))
+        for contents in ("R\n1\n", "S\n", "S\nnan\n", "S\ninvalid\n", "S,R\n,1\n"):
+            path.write_text(contents, encoding="utf-8")
+            with self.subTest(contents=contents), self.assertRaises(ValueError):
+                controller.baseline_mean(path)
+
+    def test_protocol_preview_shows_timing_light_state_and_general_warning(self):
+        preview = controller.describe_protocol([
+            ["A", "B", 50], ["M", 2, 0.5, 125], ["W", 2], ["A", "B", 0], ["P"],
+        ])
+        self.assertIn("0 s: Measure 2 points at 0.5 s intervals [Ambit=125, Blue=50, Red=0]", preview)
+        self.assertIn("1 s: Wait 2 s", preview)
+        self.assertIn("3 s: Set B light to 0 [Ambit=125, Blue=0, Red=0]", preview)
+        self.assertIn("Estimated duration: 3 s", preview)
+        self.assertIn("No exposure limits are enforced", preview)
+        self.assertIn("Blue=unknown, Red=unknown", controller.describe_protocol([["M", 1, 1, 0]]))
 
     # A zero reference prevents fluorescence calculation, but the raw reading
     # is still saved and the controller attempts shutdown before raising.
@@ -276,6 +412,116 @@ class Module2AmbitIntegrationTest(unittest.TestCase):
 
 
 class AmbitUiTest(unittest.TestCase):
+    def test_notebook_options_export_and_update_only_at_p(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PyQt5 import QtCore, QtWidgets
+        from Code.Module_Main_1_3.Application.mainUI.ambit_ui import AmbitDialog
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        parent = QtWidgets.QWidget()
+        parent.folder_path = ""
+        parent._closing = False
+        with tempfile.TemporaryDirectory() as temp, \
+                patch("serial.tools.list_ports.comports", return_value=[]):
+            for name, protocol, expected_shown in (
+                ("with-p", [["M", 1, 0.01, 0], ["P"], ["M", 1, 0.01, 0]], 1),
+                ("without-p", [["M", 2, 0.01, 0]], 0),
+            ):
+                with self.subTest(name=name):
+                    output = str(Path(temp) / (name + ".csv"))
+                    device = FakeSerial()
+                    with patch.object(controller.serial, "Serial", return_value=device), \
+                            patch.object(QtWidgets.QFileDialog, "getSaveFileName", return_value=(output, "CSV")):
+                        dialog = AmbitDialog(parent)
+                        dialog.set_protocol(protocol, name)
+                        dialog.ports.setEditText("COM1")
+                        dialog.offset.setText("4")
+                        dialog.notebook_export.setChecked(True)
+                        dialog.plot_on_p.setChecked(True)
+                        dialog.start()
+                        self.assertFalse(dialog.plot_on_p.isEnabled())
+                        timer = QtCore.QElapsedTimer()
+                        timer.start()
+                        while dialog.thread is not None and timer.elapsed() < 5000:
+                            app.processEvents()
+                            threading.Event().wait(0.005)
+                        self.assertIsNone(dialog.thread, "Ambit worker did not finish")
+                        self.assertIn("Completed", dialog.status.text())
+                        self.assertEqual(len(dialog.y_values), 2)
+                        plotted = dialog.curve.getData()[1]
+                        self.assertEqual(0 if plotted is None else len(plotted), expected_shown)
+                        with open(output + ".notebook.csv", newline="", encoding="utf-8") as file:
+                            self.assertEqual(len(list(csv.DictReader(file))), 2)
+                        with open(output + ".metadata.json", encoding="utf-8") as file:
+                            metadata = json.load(file)
+                        self.assertTrue(metadata["notebook_csv"])
+                        self.assertTrue(metadata["plot_on_p"])
+                        dialog.close()
+        parent.close()
+        app.processEvents()
+
+    def test_loading_protocol_updates_preview_and_invalid_load_keeps_it(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PyQt5 import QtWidgets
+        from Code.Module_Main_1_3.Application.mainUI.ambit_ui import AmbitDialog
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        parent = QtWidgets.QWidget()
+        parent.folder_path = ""
+        parent._closing = False
+        with tempfile.TemporaryDirectory() as temp, \
+                patch("serial.tools.list_ports.comports", return_value=[]):
+            path = Path(temp) / "protocol.json"
+            path.write_text(json.dumps([["M", 2, 0.5, 125]]), encoding="utf-8")
+            dialog = AmbitDialog(parent)
+            with patch.object(QtWidgets.QFileDialog, "getOpenFileName", return_value=(str(path), "JSON")):
+                dialog.load()
+                preview = dialog.protocol_preview.toPlainText()
+                self.assertIn("Estimated duration: 1 s", preview)
+                self.assertIn("Ambit=125", preview)
+                path.write_text("invalid", encoding="utf-8")
+                with patch.object(QtWidgets.QMessageBox, "critical") as error:
+                    dialog.load()
+                error.assert_called_once()
+                self.assertEqual(dialog.protocol_preview.toPlainText(), preview)
+                self.assertEqual(dialog.protocol, [["M", 2, 0.5, 125]])
+            dialog.close()
+        parent.close()
+        app.processEvents()
+
+    def test_baseline_requires_confirmation_before_applying(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PyQt5 import QtWidgets
+        from Code.Module_Main_1_3.Application.mainUI.ambit_ui import AmbitDialog
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        parent = QtWidgets.QWidget()
+        parent.folder_path = ""
+        parent._closing = False
+        with tempfile.TemporaryDirectory() as temp, \
+                patch("serial.tools.list_ports.comports", return_value=[]):
+            path = Path(temp) / "baseline.csv"
+            path.write_text("S\n10\n20\n", encoding="utf-8")
+            dialog = AmbitDialog(parent)
+            dialog.offset.setText("4")
+            with patch.object(QtWidgets.QFileDialog, "getOpenFileName", return_value=(str(path), "CSV")), \
+                    patch.object(QtWidgets.QMessageBox, "question", return_value=QtWidgets.QMessageBox.No):
+                dialog.calculate_baseline()
+                self.assertEqual(dialog.offset.text(), "4")
+            with patch.object(QtWidgets.QFileDialog, "getOpenFileName", return_value=(str(path), "CSV")), \
+                    patch.object(QtWidgets.QMessageBox, "question", return_value=QtWidgets.QMessageBox.Yes):
+                dialog.calculate_baseline()
+                self.assertEqual(float(dialog.offset.text()), 15)
+            path.write_text("S\nnan\n", encoding="utf-8")
+            with patch.object(QtWidgets.QFileDialog, "getOpenFileName", return_value=(str(path), "CSV")), \
+                    patch.object(QtWidgets.QMessageBox, "critical") as error:
+                dialog.calculate_baseline()
+                error.assert_called_once()
+                self.assertEqual(float(dialog.offset.text()), 15)
+            dialog.close()
+        parent.close()
+        app.processEvents()
+
     # An Ambit CSV cannot be saved in the selected mass-spectrometer folder:
     # the UI warns the user without starting a worker or creating a file.
     def test_refuses_to_save_into_mass_spectrometer_folder(self):
@@ -335,6 +581,12 @@ class AmbitUiTest(unittest.TestCase):
                     threading.Event().wait(0.005)
                 self.assertIsNone(dialog.thread, "Ambit worker did not finish")
                 self.assertEqual(dialog.x_values, [0.1])
+                self.assertEqual(dialog.y_values, [4.0])
+                self.assertEqual(dialog.raw_y_values, [5.0])
+                dialog.show_uncorrected.setChecked(True)
+                self.assertTrue(dialog.raw_curve.isVisible())
+                dialog.show_uncorrected.setChecked(False)
+                self.assertFalse(dialog.raw_curve.isVisible())
                 self.assertIn("Completed", dialog.status.text())
                 self.assertTrue(Path(output).exists())
                 dialog.close()
@@ -375,6 +627,57 @@ class AmbitUiTest(unittest.TestCase):
                 self.assertEqual(device.writes[-2:], [bytes([65, 0]), b"E\n"])
                 self.assertIsNone(dialog.thread)
         parent.close()
+
+
+class AmbitSimulatorTest(unittest.TestCase):
+    def test_simulator_plots_and_saves_fluctuating_data_without_hardware(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PyQt5 import QtCore, QtWidgets
+        from tools import simulate_ambit
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        parent = QtWidgets.QWidget()
+        parent.folder_path = ""
+        parent._closing = False
+        with tempfile.TemporaryDirectory() as temp, \
+                patch.object(controller.serial, "Serial", simulate_ambit.SimulatedSerial), \
+                patch("serial.tools.list_ports.comports", simulate_ambit.simulated_ports):
+            output = str(Path(temp) / "simulation.csv")
+            with patch.object(QtWidgets.QFileDialog, "getSaveFileName", return_value=(output, "CSV")):
+                dialog = simulate_ambit.create_simulation_dialog(parent)
+                try:
+                    self.assertIn("SIMULATION", dialog.windowTitle())
+                    self.assertEqual(dialog.ports.currentText(), simulate_ambit.AMBIT_PORT)
+                    self.assertEqual(dialog.pulser_ports.currentText(), simulate_ambit.PULSER_PORT)
+                    dialog.protocol = [["A", "B", 50], ["M", 30, 0.01, 0], ["A", "B", 0]]
+                    dialog.start()
+                    timer = QtCore.QElapsedTimer()
+                    timer.start()
+                    while dialog.thread is not None and timer.elapsed() < 5000:
+                        app.processEvents()
+                        threading.Event().wait(0.005)
+                    self.assertIsNone(dialog.thread, "Simulated run did not finish")
+                    self.assertIn("Completed", dialog.status.text())
+                    self.assertEqual(len(dialog.y_values), 30)
+                    changes = [b - a for a, b in zip(dialog.y_values, dialog.y_values[1:])]
+                    self.assertTrue(any(change > 0 for change in changes))
+                    self.assertTrue(any(change < 0 for change in changes))
+                    self.assertTrue(all(b > a for a, b in zip(dialog.x_values, dialog.x_values[1:])))
+                    with open(output, newline="", encoding="utf-8") as file:
+                        rows = list(csv.DictReader(file))
+                    self.assertEqual(len(rows), 30)
+                    self.assertTrue(all("SIMULATED:1" in row["raw_response"] for row in rows))
+                    self.assertEqual([float(row["fluorescence"]) for row in rows], dialog.y_values)
+                finally:
+                    dialog.close()
+                    app.processEvents()
+        parent.close()
+
+    def test_simulator_rejects_real_port_names(self):
+        from tools.simulate_ambit import SimulatedSerial
+
+        with self.assertRaisesRegex(controller.serial.SerialException, "cannot open real port"):
+            SimulatedSerial("COM1")
 
 
 if __name__ == "__main__":
